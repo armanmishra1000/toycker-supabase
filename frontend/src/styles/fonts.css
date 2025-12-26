@@ -1,0 +1,70 @@
+/* --- Grandstander Font Definitions --- */
+@font-face {
+  font-family: 'Grandstander';
+  src: url('/assets/fonts/Grandstander-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Grandstander';
+  src: url('/assets/fonts/Grandstander-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Grandstander';
+  src: url('/assets/fonts/Grandstander-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Grandstander';
+  src: url('/assets/fonts/Grandstander-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Grandstander';
+  src: url('/assets/fonts/Grandstander-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Grandstander';
+  src: url('/assets/fonts/Grandstander-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Grandstander';
+  src: url('/assets/fonts/Grandstander-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Grandstander';
+  src: url('/assets/fonts/Grandstander-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Grandstander';
+  src: url('/assets/fonts/Grandstander-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+/* --- Theme Variable Definition --- */
+:root {
+  --font-Grandstander: "Grandstander";
+  --color-primary: #ed1c24;
+  --color-secondary: #ffc300;
+}
