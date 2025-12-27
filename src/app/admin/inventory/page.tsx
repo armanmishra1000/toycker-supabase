@@ -3,17 +3,18 @@ import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import Image from "next/image"
 import Link from "next/link"
-import { TagIcon, BoxIcon, ArrowPathIcon } from "@heroicons/react/24/outline"
+import { TagIcon, ArchiveBoxIcon, ArrowPathIcon } from "@heroicons/react/24/outline"
 
 export default async function AdminInventory() {
   const products = await getAdminProducts()
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader 
-        title="Inventory" 
+      <AdminPageHeader
+        title="Inventory"
+        subtitle="Track and adjust inventory levels."
         actions={
-          <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-bold rounded-lg hover:bg-white transition-all gap-2">
+          <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all gap-2">
             <ArrowPathIcon className="h-4 w-4" />
             Update stock
           </button>
@@ -21,46 +22,45 @@ export default async function AdminInventory() {
       />
 
       <AdminCard className="p-0 border-none shadow-none bg-transparent">
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <table className="min-w-full divide-y divide-gray-100">
-            <thead className="bg-gray-50/50">
+        <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-[#f7f8f9]">
               <tr>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest w-1/2">Product</th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">SKU</th>
-                <th className="px-6 py-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">Unavailable</th>
-                <th className="px-6 py-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">Committed</th>
-                <th className="px-6 py-4 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Available</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[80px]">Image</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Unavailable</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Committed</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50/30 transition-colors">
+                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0 relative rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
-                        {product.image_url ? (
-                          <Image src={product.image_url} alt="" fill className="object-cover" />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center text-gray-300">
-                            <TagIcon className="h-5 w-5" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="ml-4">
-                        <Link href={`/admin/products/${product.id}`} className="text-sm font-bold text-gray-900 hover:underline">{product.name}</Link>
-                      </div>
+                    <div className="h-10 w-10 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                      {product.image_url ? (
+                        <Image src={product.image_url} alt="" fill className="object-cover" />
+                      ) : (
+                        <TagIcon className="h-5 w-5 text-gray-400" />
+                      )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-400 font-mono">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Link href={`/admin/products/${product.id}`} className="block">
+                      <p className="text-sm font-semibold text-gray-900 hover:underline">{product.name}</p>
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-mono">
                     {product.variants?.[0]?.sku || '---'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-400">0</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-400">0</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">0</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">0</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       defaultValue={product.stock_count}
-                      className="w-20 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-bold text-right focus:border-black focus:ring-0 transition-all bg-gray-50/50"
+                      className="w-24 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-900 text-right focus:border-indigo-500 focus:ring-indigo-500 transition-all"
                     />
                   </td>
                 </tr>

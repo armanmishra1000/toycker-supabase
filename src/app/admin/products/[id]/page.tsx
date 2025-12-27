@@ -18,9 +18,9 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
 
   const actions = (
     <div className="flex gap-2">
-      <a 
-        href={`/products/${product.handle}`} 
-        target="_blank" 
+      <a
+        href={`/products/${product.handle}`}
+        target="_blank"
         rel="noreferrer"
         className="px-4 py-2 border border-gray-300 text-sm font-bold rounded-lg hover:bg-white transition-all flex items-center gap-2"
       >
@@ -43,16 +43,16 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
       </nav>
 
       <div className="flex items-center justify-between">
-         <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">{product.name}</h1>
-            <AdminBadge variant={product.status === 'active' ? 'success' : 'warning'}>{product.status}</AdminBadge>
-         </div>
-         {actions}
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">{product.name}</h1>
+          <AdminBadge variant={product.status === 'active' ? 'success' : 'warning'}>{product.status}</AdminBadge>
+        </div>
+        {actions}
       </div>
 
       <form id="product-form" action={updateProduct} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <input type="hidden" name="id" value={product.id} />
-        
+
         <div className="lg:col-span-2 space-y-6">
           <AdminCard title="Product Details">
             <div className="space-y-5">
@@ -75,7 +75,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
               </div>
               {product.image_url && (
                 <div className="aspect-square w-48 relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-inner group">
-                   <img src={product.image_url} alt="Preview" className="object-cover w-full h-full transition-transform group-hover:scale-105" />
+                  <img src={product.image_url} alt="Preview" className="object-cover w-full h-full transition-transform group-hover:scale-105" />
                 </div>
               )}
             </div>
@@ -95,25 +95,25 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
           </AdminCard>
 
           <AdminCard title="Pricing">
-             <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Price</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
-                      <input name="price" type="number" step="0.01" defaultValue={product.price} required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Compare at</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
-                      <input name="compare_at_price" type="number" step="0.01" defaultValue={product.metadata?.compare_at_price as number || ""} className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0" />
-                    </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                    <input name="price" type="number" step="0.01" defaultValue={product.price} required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
                   </div>
                 </div>
-                <p className="text-[10px] text-gray-400 font-medium italic">To show a reduced price, move the original price into "Compare at price".</p>
-             </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Compare at</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                    <input name="compare_at_price" type="number" step="0.01" defaultValue={product.metadata?.compare_at_price as number || ""} className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0" />
+                  </div>
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400 font-medium italic">To show a reduced price, move the original price into &quot;Compare at price&quot;.</p>
+            </div>
           </AdminCard>
 
           <AdminCard title="Inventory">
@@ -137,8 +137,8 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">URL Handle</label>
                 <div className="relative">
-                   <span className="absolute left-3 top-2.5 text-gray-400 text-xs font-medium">/</span>
-                   <input name="handle" type="text" defaultValue={product.handle} required className="w-full rounded-lg border border-gray-300 pl-6 pr-4 py-2.5 text-xs font-bold text-gray-600 focus:border-black focus:ring-0 bg-gray-50/50" />
+                  <span className="absolute left-3 top-2.5 text-gray-400 text-xs font-medium">/</span>
+                  <input name="handle" type="text" defaultValue={product.handle} required className="w-full rounded-lg border border-gray-300 pl-6 pr-4 py-2.5 text-xs font-bold text-gray-600 focus:border-black focus:ring-0 bg-gray-50/50" />
                 </div>
               </div>
             </div>

@@ -35,6 +35,18 @@ module.exports = {
         primary: "#ed1c24",
         secondary: "#ffc300",
         foreground: "#ac0606",
+        // Shopify Polaris Admin Tokens
+        admin: {
+          bg: "#f1f2f4", // Surface color
+          sidebar: "#1a1a1a", // Dark sidebar
+          surface: "#ffffff",
+          border: "#e1e3e5", // Polaris border
+          text: {
+            primary: "#303030", // Polaris Text Primary
+            secondary: "#616161", // Polaris Text Secondary
+            subdued: "#8c9196", // Polaris Text Subdued
+          }
+        }
       },
       borderRadius: {
         none: "0px",

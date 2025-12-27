@@ -2,7 +2,7 @@ export interface Product {
   id: string;
   handle: string;
   name: string;
-  title: string; 
+  title: string;
   description: string | null;
   short_description: string | null;
   price: number;
@@ -174,7 +174,7 @@ export interface Order {
   id: string;
   display_id: number;
   customer_email: string;
-  email: string; 
+  email: string;
   total_amount: number;
   currency_code: string;
   status: 'pending' | 'paid' | 'failed' | 'shipped' | 'cancelled';
@@ -231,6 +231,7 @@ export interface ShippingOption {
       location?: { address?: Address };
     };
   };
+  is_active?: boolean;
 }
 
 export interface PaymentSession {
