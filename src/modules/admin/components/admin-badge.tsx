@@ -10,15 +10,15 @@ type AdminBadgeProps = {
 
 const AdminBadge = ({ children, variant = "neutral" }: AdminBadgeProps) => {
   const variants = {
-    success: "bg-emerald-100 text-emerald-800",
-    warning: "bg-amber-100 text-amber-800",
-    error: "bg-rose-100 text-rose-800",
-    info: "bg-blue-100 text-blue-800",
-    neutral: "bg-gray-100 text-gray-800",
+    success: "bg-[#e3f9e5] text-[#1a7a22]",
+    warning: "bg-[#fff4e5] text-[#b45309]",
+    error: "bg-[#fff1f0] text-[#cf1322]",
+    info: "bg-[#e6f4ff] text-[#0958d9]",
+    neutral: "bg-[#f5f5f5] text-[#595959]",
   }
 
   return (
-    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", variants[variant])}>
+    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-tight", variants[variant])}>
       {children}
     </span>
   )
