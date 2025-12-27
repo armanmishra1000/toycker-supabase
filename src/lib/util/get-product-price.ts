@@ -1,5 +1,5 @@
-import { Product, ProductVariant } from "@/lib/supabase/types"
-import { VariantPrice } from "types/global"
+import { Product } from "@/lib/supabase/types"
+import { VariantPrice } from "@/types/global"
 
 type GetProductPriceArgs = {
   product: Product
