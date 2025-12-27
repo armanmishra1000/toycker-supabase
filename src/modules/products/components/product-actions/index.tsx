@@ -33,6 +33,7 @@ import {
 import { useCartSidebar } from "@modules/layout/context/cart-sidebar-context"
 import { useCartStore } from "@modules/cart/context/cart-store-context"
 import { Product } from "@/lib/supabase/types"
+import { isSimpleProduct } from "@lib/util/product"
 
 const GIFT_WRAP_FEE = 50
 
@@ -83,6 +84,8 @@ export default function ProductActions({ product, disabled, showSupportActions =
   const { optimisticAdd } = useCartStore()
   const giftWrapInputId = useId()
 
+  const isSimple = isSimpleProduct(product)
+
   const isVariantAvailable = useCallback((variant: any) => {
     if (!variant) return false
     if (!variant.manage_inventory) return true
@@ -99,18 +102,23 @@ export default function ProductActions({ product, disabled, showSupportActions =
   }, [product.variants])
 
   const selectedVariant = useMemo(() => {
+    // If it's a simple product, use the first variant (or product itself if mocked)
+    if (isSimple && product.variants && product.variants.length > 0) {
+      return product.variants[0]
+    }
+
     if (!product.variants || product.variants.length === 0) {
-      return
+      return undefined
     }
 
     return product.variants.find((v: any) => {
       const variantOptions = optionsAsKeymap(v.options)
       return isEqual(variantOptions, options)
     })
-  }, [product.variants, options])
+  }, [product.variants, options, isSimple])
 
   useEffect(() => {
-    if (selectedVariant) {
+    if (selectedVariant || isSimple) {
       return
     }
 
@@ -128,7 +136,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
       }
       return variantOptions ?? {}
     })
-  }, [isVariantAvailable, product.variants, selectedVariant])
+  }, [isVariantAvailable, product.variants, selectedVariant, isSimple])
 
   useEffect(() => {
     if (wishlist || typeof window === "undefined") {
@@ -162,14 +170,16 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
   //check if the selected options produce a valid variant
   const isValidVariant = useMemo(() => {
+    if (isSimple) return true
+    
     return product.variants?.some((v: any) => {
       const variantOptions = optionsAsKeymap(v.options)
       return isEqual(variantOptions, options)
     })
-  }, [product.variants, options])
+  }, [product.variants, options, isSimple])
 
   useEffect(() => {
-    if (!syncVariantParam) {
+    if (!syncVariantParam || isSimple) {
       return
     }
 
@@ -187,7 +197,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
     }
 
     router.replace(pathname + "?" + params.toString())
-  }, [isValidVariant, pathname, router, searchParams, selectedVariant?.id, syncVariantParam])
+  }, [isValidVariant, pathname, router, searchParams, selectedVariant?.id, syncVariantParam, isSimple])
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
@@ -371,7 +381,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
     selectedVariant ? priceMeta.variantPrice : priceMeta.cheapestPrice
   )
 
-  const requiresSelection = (product.options?.length ?? 0) > 0 && !selectedVariant
+  const requiresSelection = !isSimple && (product.options?.length ?? 0) > 0 && !selectedVariant
 
   const canTransactBase =
     inStock &&
@@ -436,7 +446,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
         <p className="text-sm text-slate-500">Inclusive of all taxes</p>
       </div>
 
-      {(product.options?.length ?? 0) > 0 && (product.variants?.length ?? 0) > 1 && (
+      {!isSimple && (product.options?.length ?? 0) > 0 && (product.variants?.length ?? 0) > 1 && (
         <div className="flex flex-col gap-y-4">
           {(product.options || []).map((option) => {
             const normalizedTitle = option.title?.toLowerCase() ?? ""

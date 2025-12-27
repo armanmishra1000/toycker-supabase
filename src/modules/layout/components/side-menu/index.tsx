@@ -1,12 +1,10 @@
 import * as React from "react"
 import { Popover, PopoverPanel, Transition } from "@headlessui/react"
-import { ArrowRight, X } from "lucide-react"
+import { X } from "lucide-react"
 import { Text } from "@modules/common/components/text"
-import { cn } from "@lib/util/cn"
 import { Fragment } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import CountrySelect from "../country-select"
 import { Region } from "@/lib/supabase/types"
 
 const SideMenuItems = {
@@ -17,13 +15,6 @@ const SideMenuItems = {
 }
 
 const SideMenu = ({ regions }: { regions: Region[] | null }) => {
-  const [isOpen, setIsOpen] = React.useState(false)
-  const toggleState = {
-    state: isOpen,
-    open: () => setIsOpen(true),
-    close: () => setIsOpen(false)
-  }
-
   return (
     <div className="h-full">
       <div className="flex items-center h-full">
@@ -76,24 +67,6 @@ const SideMenu = ({ regions }: { regions: Region[] | null }) => {
                       })}
                     </ul>
                     <div className="flex flex-col gap-y-6">
-                      <div
-                        className="flex justify-between"
-                        onMouseEnter={toggleState.open}
-                        onMouseLeave={toggleState.close}
-                      >
-                        {regions && (
-                          <CountrySelect
-                            toggleState={toggleState}
-                            regions={regions}
-                          />
-                        )}
-                        <ArrowRight
-                          className={cn(
-                            "transition-transform duration-150 h-4 w-4",
-                            toggleState.state ? "-rotate-90" : ""
-                          )}
-                        />
-                      </div>
                       <Text className="flex justify-between text-xs">
                         © {new Date().getFullYear()} Toycker Store. All rights
                         reserved.
