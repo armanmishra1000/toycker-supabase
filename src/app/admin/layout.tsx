@@ -12,7 +12,8 @@ import {
   Cog6ToothIcon,
   ArchiveBoxIcon,
   MagnifyingGlassIcon,
-  CreditCardIcon
+  CreditCardIcon,
+  TruckIcon
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin } from "@/lib/data/admin"
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { label: "Inventory", href: "/admin/inventory", icon: ArchiveBoxIcon },
   { label: "Collections", href: "/admin/collections", icon: RectangleStackIcon },
   { label: "Categories", href: "/admin/categories", icon: FolderIcon },
+  { label: "Shipping", href: "/admin/shipping", icon: TruckIcon },
   { label: "Payments", href: "/admin/payments", icon: CreditCardIcon },
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
 ]

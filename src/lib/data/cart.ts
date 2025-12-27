@@ -2,7 +2,7 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { Cart, CartItem } from "@/lib/supabase/types"
+import { Cart, CartItem, ShippingOption } from "@/lib/supabase/types"
 import { revalidateTag } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
 import { randomUUID } from "crypto"
@@ -263,7 +263,7 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
   const { error } = await supabase
     .from("carts")
     .update({ 
-        shipping_methods: [methodData], // Correctly using the existing plural column
+        shipping_methods: [methodData], 
         updated_at: new Date().toISOString()
     })
     .eq("id", cartId)
@@ -311,7 +311,7 @@ export async function placeOrder() {
       shipping_address: cart.shipping_address,
       billing_address: cart.billing_address,
       items: cart.items,
-      shipping_methods: cart.shipping_methods, // Now supported by the new column
+      shipping_methods: cart.shipping_methods, 
       metadata: { cart_id: cart.id }
     })
     .select()
@@ -365,24 +365,26 @@ export async function createBuyNowCart({
 }
 
 export async function listCartOptions() {
-    return {
-        shipping_options: [
-            {
-                id: "so_standard",
-                name: "Standard Shipping",
-                amount: 0,
-                price_type: "flat",
-                prices: [{ amount: 0, currency_code: "inr" }]
-            },
-            {
-                id: "so_express",
-                name: "Express Shipping",
-                amount: 150,
-                price_type: "flat",
-                prices: [{ amount: 150, currency_code: "inr" }]
-            }
-        ]
-    }
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("shipping_options")
+    .select("*")
+    .eq("is_active", true)
+
+  if (error) {
+    console.error("Error fetching shipping options:", error.message)
+    return { shipping_options: [] }
+  }
+
+  return {
+    shipping_options: data.map((opt: ShippingOption) => ({
+      id: opt.id,
+      name: opt.name,
+      amount: opt.amount,
+      price_type: "flat",
+      prices: [{ amount: opt.amount, currency_code: "inr" }]
+    }))
+  }
 }
 
 export async function updateRegion(countryCode: string, currentPath: string) {

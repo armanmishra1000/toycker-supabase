@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider } from "@/lib/supabase/types"
+import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption } from "@/lib/supabase/types"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -283,4 +283,40 @@ export async function deletePaymentMethod(id: string) {
   const supabase = await createClient()
   await supabase.from("payment_providers").delete().eq("id", id)
   revalidatePath("/admin/payments")
+}
+
+// --- Shipping Methods ---
+export async function getAdminShippingOptions() {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("shipping_options")
+    .select("*")
+    .order("created_at", { ascending: false })
+  
+  if (error) throw error
+  return data as ShippingOption[]
+}
+
+export async function createShippingOption(formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const option = {
+    name: formData.get("name") as string,
+    amount: parseFloat(formData.get("amount") as string),
+    is_active: true,
+  }
+  
+  const { error } = await supabase.from("shipping_options").insert(option)
+  if (error) throw new Error(error.message)
+  
+  revalidatePath("/admin/shipping")
+  redirect("/admin/shipping")
+}
+
+export async function deleteShippingOption(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  await supabase.from("shipping_options").delete().eq("id", id)
+  revalidatePath("/admin/shipping")
 }
