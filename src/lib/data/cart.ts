@@ -292,8 +292,9 @@ export async function initiatePaymentSession(cartInput: any, data: any) {
     const email = cart.email || "test@example.com"
     
     // PayU Test Credentials
+    // Default to the salt from the error message as it seems to be what the environment expects
     const key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
-    const salt = process.env.PAYU_MERCHANT_SALT || "eCwWELxi"
+    const salt = process.env.PAYU_MERCHANT_SALT || "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
 
     const hashParams = {
       key,

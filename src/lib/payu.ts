@@ -18,9 +18,18 @@ export const generatePayUHash = (
   params: PayUHashParams,
   salt: string
 ): string => {
-  const hashString = `${params.key}|${params.txnid}|${params.amount}|${params.productinfo}|${params.firstname}|${params.email}|${params.udf1 || ""}|${params.udf2 || ""}|${params.udf3 || ""}|${params.udf4 || ""}|${params.udf5 || ""}||||||${salt}`
-  
-  return crypto.createHash("sha512").update(hashString).digest("hex")
+  const {
+    key, txnid, amount, productinfo, firstname, email,
+    udf1 = "", udf2 = "", udf3 = "", udf4 = "", udf5 = ""
+  } = params
+
+  // PayU Formula: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt
+  const hashString =
+    [key, txnid, amount, productinfo, firstname, email, udf1, udf2, udf3, udf4, udf5].join("|") +
+    "||||||" +
+    salt
+
+  return crypto.createHash("sha512").update(hashString, "utf8").digest("hex")
 }
 
 export const verifyPayUHash = (
@@ -44,13 +53,18 @@ export const verifyPayUHash = (
     additionalCharges,
   } = payload
 
+  // PayU Reverse Formula: SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
+  
+  // Base string construction starting from salt
+  const commonString = `${salt}|${status}||||||${udf5 || ""}|${udf4 || ""}|${udf3 || ""}|${udf2 || ""}|${udf1 || ""}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`
+
   let hashString = ""
   if (additionalCharges) {
-    hashString = `${additionalCharges}|${salt}|${status}|${udf5 || ""}|${udf4 || ""}|${udf3 || ""}|${udf2 || ""}|${udf1 || ""}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`
+    hashString = `${additionalCharges}|${commonString}`
   } else {
-    hashString = `${salt}|${status}|${udf5 || ""}|${udf4 || ""}|${udf3 || ""}|${udf2 || ""}|${udf1 || ""}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`
+    hashString = commonString
   }
 
-  const generatedHash = crypto.createHash("sha512").update(hashString).digest("hex")
+  const generatedHash = crypto.createHash("sha512").update(hashString, "utf8").digest("hex")
   return generatedHash === hash
 }
