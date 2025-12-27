@@ -13,12 +13,24 @@ const normalizeProductImage = (product: Product): Product => {
     return `${CDN_URL}/${url}`
   }
 
-  return {
+  // Normalize base product images
+  const normalizedProduct = {
     ...product,
     image_url: fixUrl(product.image_url),
     thumbnail: fixUrl(product.thumbnail),
     images: product.images?.map((img) => fixUrl(img) || "") || null,
   }
+
+  // Normalize variant images if they exist
+  if (product.variants && Array.isArray(product.variants)) {
+    normalizedProduct.variants = product.variants.map((v) => ({
+      ...v,
+      // If variants have their own images/thumbnail fields in the DB, normalize them here.
+      // For now, we assume variants inherit structure or stick to basic fields.
+    }))
+  }
+
+  return normalizedProduct
 }
 
 export async function listProducts({
@@ -30,7 +42,10 @@ export async function listProducts({
 } = {}): Promise<{ response: { products: Product[]; count: number } }> {
   const supabase = await createClient()
   
-  let query = supabase.from("products").select("*", { count: "exact" })
+  // Select products AND their variants
+  let query = supabase
+    .from("products")
+    .select("*, variants:product_variants(*)", { count: "exact" })
 
   if (queryParams?.limit) {
     query = query.limit(Number(queryParams.limit))
@@ -59,7 +74,7 @@ export async function retrieveProduct(id: string): Promise<Product | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select("*, variants:product_variants(*)")
     .eq("id", id)
     .single()
 
@@ -75,7 +90,7 @@ export async function getProductByHandle(handle: string): Promise<Product | null
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select("*, variants:product_variants(*)")
     .eq("handle", handle)
     .single()
 
@@ -112,9 +127,10 @@ export async function listPaginatedProducts({
   const supabase = await createClient()
   const offset = (page - 1) * limit
 
+  // Fetch products with variants
   let query = supabase
     .from("products")
-    .select("*", { count: "exact" })
+    .select("*, variants:product_variants(*)", { count: "exact" })
 
   // Apply filters from queryParams
   if (queryParams?.category_id) {
@@ -166,11 +182,18 @@ export async function listPaginatedProducts({
 
   let products = (data as Product[]).map(normalizeProductImage)
 
-  // In-memory filtering for properties not easily queryable if they are in JSONB or computed
+  // In-memory filtering
   if (availability === "in_stock") {
-    products = products.filter(p => p.stock_count > 0)
+    products = products.filter(p => {
+      // Check base stock or if any variant has stock
+      const hasVariantStock = p.variants?.some(v => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
+      return p.stock_count > 0 || hasVariantStock
+    })
   } else if (availability === "out_of_stock") {
-    products = products.filter(p => p.stock_count <= 0)
+    products = products.filter(p => {
+      const hasVariantStock = p.variants?.some(v => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
+      return p.stock_count <= 0 && !hasVariantStock
+    })
   }
 
   return {
