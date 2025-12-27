@@ -72,7 +72,7 @@ export default async function AdminProducts({
               {products.length > 0 ? products.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="h-10 w-10 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center relative">
                       {product.image_url ? (
                         <Image src={product.image_url} alt="" fill className="object-cover" />
                       ) : (
