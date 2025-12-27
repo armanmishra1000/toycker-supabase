@@ -279,11 +279,12 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
   let sessionData = data.data || {}
 
   if (data.provider_id === "pp_payu_payu") {
-    const txnid = `tx_${Date.now()}`
+    // Use a simplified unique transaction ID and sanitize strings for PayU
+    const txnid = `T${Date.now()}${Math.floor(Math.random() * 1000)}`
     const amount = (cart.total || 0).toFixed(2)
-    const productinfo = "Toycker Order"
-    const firstname = cart.shipping_address?.first_name || "Customer"
-    const email = cart.email || "test@example.com"
+    const productinfo = "Order" // Simplest possible info
+    const firstname = (cart.shipping_address?.first_name || "Guest").trim()
+    const email = (cart.email || "guest@toycker.com").trim()
     
     let key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
     let salt = process.env.PAYU_MERCHANT_SALT || "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
