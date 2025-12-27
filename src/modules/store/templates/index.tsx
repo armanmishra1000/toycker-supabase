@@ -1,7 +1,6 @@
-import { cookies } from "next/headers"
-
 import { listCategories } from "@lib/data/categories"
 import { listPaginatedProducts } from "@lib/data/products"
+import { retrieveCustomer } from "@lib/data/customer"
 import {
   AvailabilityFilter,
   PriceRangeFilter,
@@ -134,8 +133,8 @@ const StoreTemplate = async ({
   ]
 
   const accountPath = "/account"
-  const cookieStore = await cookies()
-  const isCustomerLoggedIn = Boolean(cookieStore.get("_medusa_jwt"))
+  const customer = await retrieveCustomer()
+  const isCustomerLoggedIn = !!customer
 
   return (
     <StorefrontFiltersProvider

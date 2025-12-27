@@ -1,6 +1,5 @@
-import { cookies } from "next/headers"
-
 import { listPaginatedProducts } from "@lib/data/products"
+import { retrieveCustomer } from "@lib/data/customer"
 import { Collection } from "@/lib/supabase/types"
 import { SortOptions, ViewMode } from "@modules/store/components/refinement-list/types"
 import ProductGridSection from "@modules/store/components/product-grid-section"
@@ -45,8 +44,8 @@ export default async function CollectionTemplate({
   ]
 
   const accountPath = "/account"
-  const cookieStore = await cookies()
-  const isCustomerLoggedIn = Boolean(cookieStore.get("_medusa_jwt"))
+  const customer = await retrieveCustomer()
+  const isCustomerLoggedIn = !!customer
 
   return (
     <StorefrontFiltersProvider

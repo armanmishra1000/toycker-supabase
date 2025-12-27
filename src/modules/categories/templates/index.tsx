@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
-import { cookies } from "next/headers"
 
 import { listPaginatedProducts } from "@lib/data/products"
+import { retrieveCustomer } from "@lib/data/customer"
 import { Category } from "@/lib/supabase/types"
 import InteractiveLink from "@modules/common/components/interactive-link"
 import { SortOptions, ViewMode } from "@modules/store/components/refinement-list/types"
@@ -68,8 +68,8 @@ export default async function CategoryTemplate({
   ]
 
   const accountPath = "/account"
-  const cookieStore = await cookies()
-  const isCustomerLoggedIn = Boolean(cookieStore.get("_medusa_jwt"))
+  const customer = await retrieveCustomer()
+  const isCustomerLoggedIn = !!customer
 
   return (
     <StorefrontFiltersProvider

@@ -1,7 +1,6 @@
-import { cookies } from "next/headers"
-
 import { listPaginatedProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import { retrieveCustomer } from "@lib/data/customer"
 import {
   AvailabilityFilter,
   PriceRangeFilter,
@@ -100,8 +99,8 @@ export default async function PaginatedProducts({
   const resolvedSort = sortBy || "featured"
 
   const accountPath = "/account"
-  const cookieStore = await cookies()
-  const isCustomerLoggedIn = Boolean(cookieStore.get("_medusa_jwt"))
+  const customer = await retrieveCustomer()
+  const isCustomerLoggedIn = !!customer
 
   return (
     <ProductGridSection
