@@ -52,7 +52,7 @@ const mapCartItems = (items: DatabaseCartItem[]): CartItem[] => {
       title: variant?.title || product?.name || "Product",
       product_title: product?.name || "Product",
       product_handle: product?.handle,
-      thumbnail: thumbnail,
+      thumbnail: thumbnail ?? undefined,
       unit_price: Number(variant?.price || 0),
       total: Number(variant?.price || 0) * item.quantity,
       subtotal: Number(variant?.price || 0) * item.quantity,
