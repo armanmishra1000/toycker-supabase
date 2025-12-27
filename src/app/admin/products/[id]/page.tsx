@@ -113,13 +113,6 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
              </div>
           </AdminCard>
 
-          <AdminCard title="Inventory Management">
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Quantity Available</label>
-              <input name="stock_count" type="number" defaultValue={product.stock_count} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-bold focus:border-black focus:ring-0" />
-            </div>
-          </AdminCard>
-
           <AdminCard title="Organization">
             <div className="space-y-5">
               <div>
@@ -130,6 +123,11 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
                     <option key={c.id} value={c.id}>{c.title}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Tags</label>
+                <input name="tags" type="text" placeholder="e.g. plastic, safe, summer" className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all" />
+                <p className="mt-2 text-[10px] text-gray-400 italic">Separate tags with commas.</p>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">URL Handle (Slug)</label>

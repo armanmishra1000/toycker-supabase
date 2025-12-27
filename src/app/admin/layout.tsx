@@ -9,7 +9,9 @@ import {
   RectangleStackIcon,
   ArrowTopRightOnSquareIcon,
   FolderIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  ArchiveBoxIcon,
+  MagnifyingGlassIcon
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin } from "@/lib/data/admin"
@@ -23,6 +25,7 @@ const NAV_ITEMS = [
   { label: "Home", href: "/admin", icon: HomeIcon },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBagIcon },
   { label: "Products", href: "/admin/products", icon: TagIcon },
+  { label: "Inventory", href: "/admin/inventory", icon: ArchiveBoxIcon },
   { label: "Collections", href: "/admin/collections", icon: RectangleStackIcon },
   { label: "Categories", href: "/admin/categories", icon: FolderIcon },
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
@@ -82,7 +85,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="flex-1 ml-64 min-h-screen flex flex-col">
         {/* Top Navbar */}
         <header className="h-16 bg-white border-b border-gray-200 sticky top-0 z-40 flex items-center justify-between px-8">
-           <div className="text-sm font-medium text-gray-400 italic">Management Panel</div>
+           <div className="relative flex-1 max-w-md">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input 
+                type="search" 
+                placeholder="Search products, orders..." 
+                className="w-full bg-gray-100 border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-black transition-all"
+              />
+           </div>
            <div className="flex items-center gap-4">
               <div className="h-8 w-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
                  <UsersIcon className="h-4 w-4 text-gray-500" />
