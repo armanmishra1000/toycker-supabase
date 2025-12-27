@@ -10,7 +10,9 @@ export async function ensureAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect("/account")
+  if (!user) {
+    redirect("/login?next=/admin")
+  }
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -19,11 +21,11 @@ export async function ensureAdmin() {
     .single()
 
   if (profile?.role !== "admin") {
-    // For prototype convenience, if the user email is 'admin@toycker.com', we treat them as admin temporarily
-    // or redirect away.
-    if (user.email !== "admin@toycker.com") {
-        redirect("/")
+    // Fallback for development if the email matches
+    if (user.email === "admin@toycker.com") {
+        return
     }
+    redirect("/")
   }
 }
 
@@ -36,7 +38,6 @@ export async function getAdminStats() {
   const { count: ordersCount } = await supabase.from("orders").select("*", { count: "exact", head: true })
   const { count: customersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true })
   
-  // Calculate total revenue
   const { data: orders } = await supabase.from("orders").select("total_amount")
   const totalRevenue = orders?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
 
@@ -68,12 +69,12 @@ export async function createProduct(formData: FormData) {
 
   const product = {
     name: formData.get("name") as string,
-    handle: formData.get("handle") as string, // Should auto-generate if empty in real app
+    handle: formData.get("handle") as string,
     description: formData.get("description") as string,
     price: parseFloat(formData.get("price") as string),
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
-    currency_code: "inr", // Default
+    currency_code: "inr",
   }
 
   const { error } = await supabase.from("products").insert(product)
@@ -137,7 +138,6 @@ export async function getAdminCustomers() {
   await ensureAdmin()
   const supabase = await createClient()
   
-  // Note: accessing auth.users is restricted. We use public.profiles.
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
