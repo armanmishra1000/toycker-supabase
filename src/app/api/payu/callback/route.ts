@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { verifyPayUHash } from "@/lib/payu"
 import { createClient } from "@/lib/supabase/server"
 import { retrieveCart } from "@/lib/data/cart"
-import { cookies } from "next/headers"
 
 interface PayUCallbackPayload {
   status: string
@@ -24,37 +23,31 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const payload = Object.fromEntries(formData.entries()) as unknown as PayUCallbackPayload
     
-    // Determine the correct salt to use for verification
     const key = payload.key
     let salt = process.env.PAYU_MERCHANT_SALT || ""
     
-    // Force test salt if using the public test key
     if (key === "gtKFFx") {
       salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
     }
 
-    // Verify the authenticity of the response from PayU
     const isValid = verifyPayUHash(payload, salt)
 
     if (!isValid) {
       console.error("[PayU Callback] Invalid Hash Verification Attempted")
-      return NextResponse.redirect(new URL("/checkout?step=payment&error=invalid_hash", request.url))
+      return NextResponse.redirect(new URL("/checkout?step=payment&error=invalid_hash", request.url), { status: 303 })
     }
 
     const { status, txnid, amount, email, udf1: cartId } = payload
 
     if (status === "success") {
       const supabase = await createClient()
-      
-      // Fetch the cart using the ID passed in udf1
       const cart = await retrieveCart(cartId)
       
       if (!cart) {
         console.error("[PayU Callback] Cart not found for ID:", cartId)
-        return NextResponse.redirect(new URL("/checkout?error=cart_not_found", request.url))
+        return NextResponse.redirect(new URL("/checkout?error=cart_not_found", request.url), { status: 303 })
       }
 
-      // Create the order using the data captured in the cart
       const { data: order, error } = await supabase
         .from("orders")
         .insert({
@@ -77,21 +70,18 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error("[PayU Callback] Database Error creating order:", error.message)
-        return NextResponse.redirect(new URL("/checkout?error=order_creation_failed", request.url))
+        return NextResponse.redirect(new URL("/checkout?error=order_creation_failed", request.url), { status: 303 })
       }
 
-      // Clean up the local cart session
-      const cookieStore = await cookies()
-      cookieStore.delete("toycker_cart_id")
-
-      // Redirect to the success page
-      return NextResponse.redirect(new URL(`/order/confirmed/${order.id}`, request.url))
+      // Success redirect with 303 to force GET and clean up cookie
+      const response = NextResponse.redirect(new URL(`/order/confirmed/${order.id}`, request.url), { status: 303 })
+      response.cookies.delete("toycker_cart_id")
+      return response
     }
 
-    // If payment failed at PayU, return to checkout with error
-    return NextResponse.redirect(new URL(`/checkout?step=payment&error=payment_failed&status=${status}`, request.url))
+    return NextResponse.redirect(new URL(`/checkout?step=payment&error=payment_failed&status=${status}`, request.url), { status: 303 })
   } catch (error) {
     console.error("[PayU Callback] Fatal Error Processing Response:", error)
-    return NextResponse.redirect(new URL("/checkout?error=callback_failed", request.url))
+    return NextResponse.redirect(new URL("/checkout?error=callback_failed", request.url), { status: 303 })
   }
 }
