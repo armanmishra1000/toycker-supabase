@@ -50,6 +50,11 @@ const nextConfig = {
         hostname: "*.cdn.toycker.in",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "medusa-public-images.s3.eu-west-1.amazonaws.com",
+        pathname: "/**",
+      },
       ...(R2_HOSTNAME
         ? [
             {
@@ -57,7 +62,6 @@ const nextConfig = {
               hostname: R2_HOSTNAME,
               pathname: R2_PATHNAME,
             },
-            // Support bucket-style subdomains like <bucket>.cdn.toycker.in
             {
               protocol: R2_PROTOCOL,
               hostname: `*.${R2_HOSTNAME}`,

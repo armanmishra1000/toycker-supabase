@@ -2,13 +2,13 @@ export interface Product {
   id: string;
   handle: string;
   name: string;
-  title: string; // Alias for name to support legacy code
+  title: string; 
   description: string | null;
   short_description: string | null;
   price: number;
   currency_code: string;
   image_url: string | null;
-  thumbnail: string | null; // Alias for image_url
+  thumbnail: string | null;
   images: string[] | null;
   stock_count: number;
   manage_inventory: boolean;
@@ -32,7 +32,7 @@ export interface ProductVariant {
   manage_inventory: boolean;
   allow_backorder: boolean;
   product_id: string;
-  options: any[]; // Simplified for prototype
+  options: ProductOptionValue[];
   calculated_price?: {
     calculated_amount: number;
     original_amount: number;
@@ -45,13 +45,26 @@ export interface ProductVariant {
 export interface ProductOption {
   id: string;
   title: string;
-  values: { value: string; id: string }[];
+  values: ProductOptionValue[];
+}
+
+export interface ProductOptionValue {
+  id: string;
+  value: string;
+  option_id?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Price {
   amount: number;
   currency_code: string;
-  price_rules?: any[];
+  price_rules?: PriceRule[];
+}
+
+export interface PriceRule {
+  attribute: string;
+  operator: 'gt' | 'gte' | 'lt' | 'lte' | 'eq';
+  value: string;
 }
 
 export interface Category {
@@ -85,7 +98,8 @@ export interface Cart {
   shipping_address?: Address | null;
   billing_address?: Address | null;
   shipping_methods?: ShippingMethod[];
-  payment_collection?: any; // Simplified
+  payment_collection?: PaymentCollection | null;
+  shipping_method?: string | null;
   // Totals
   subtotal?: number;
   total?: number;
@@ -101,7 +115,22 @@ export interface Cart {
   original_tax_total?: number;
   original_item_total?: number;
   region?: Region;
-  promotions?: any[];
+  promotions?: Promotion[];
+}
+
+export interface PaymentCollection {
+  payment_sessions: PaymentSession[];
+}
+
+export interface Promotion {
+  id: string;
+  code: string;
+  is_automatic: boolean;
+  application_method?: {
+    type: 'percentage' | 'fixed';
+    value: number;
+    currency_code: string;
+  };
 }
 
 export interface CartItem {
@@ -143,7 +172,7 @@ export interface Order {
   id: string;
   display_id: number;
   customer_email: string;
-  email: string; // Alias
+  email: string; 
   total_amount: number;
   currency_code: string;
   status: 'pending' | 'paid' | 'failed' | 'shipped' | 'cancelled';
@@ -157,15 +186,14 @@ export interface Order {
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
-  items?: CartItem[]; // Reusing CartItem structure for order items for simplicity in prototype
-  // Totals aliases for compatibility
+  items?: CartItem[];
   total: number;
   subtotal: number;
   tax_total: number;
   shipping_total: number;
   discount_total: number;
   gift_card_total: number;
-  payment_collections?: any[];
+  payment_collections?: PaymentCollection[];
 }
 
 export interface Region {
@@ -195,7 +223,12 @@ export interface ShippingOption {
     calculated_amount: number;
     original_amount: number;
   };
-  service_zone?: any;
+  service_zone?: {
+    fulfillment_set?: {
+      type?: string;
+      location?: { address?: Address };
+    };
+  };
 }
 
 export interface PaymentSession {

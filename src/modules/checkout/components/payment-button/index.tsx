@@ -6,9 +6,10 @@ import { Button } from "@modules/common/components/button"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
 import React, { useState } from "react"
 import ErrorMessage from "../error-message"
+import { Cart } from "@/lib/supabase/types"
 
 type PaymentButtonProps = {
-  cart: any
+  cart: Cart
   "data-testid": string
 }
 
@@ -55,7 +56,7 @@ const StripePaymentButton = ({
   notReady,
   "data-testid": dataTestId,
 }: {
-  cart: any
+  cart: Cart
   notReady: boolean
   "data-testid"?: string
 }) => {
@@ -80,7 +81,7 @@ const StripePaymentButton = ({
     (s) => s.status === "pending"
   )
 
-  const disabled = !stripe || !elements ? true : false
+  const disabled = !stripe || !elements
 
   const handlePayment = async () => {
     setSubmitting(true)
@@ -173,7 +174,6 @@ const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
 
   const handlePayment = () => {
     setSubmitting(true)
-
     onPaymentCompleted()
   }
 
@@ -201,7 +201,7 @@ const PayUPaymentButton = ({
   notReady,
   "data-testid": dataTestId,
 }: {
-  cart: any
+  cart: Cart
   notReady: boolean
   "data-testid"?: string
 }) => {
@@ -216,23 +216,18 @@ const PayUPaymentButton = ({
         (s) => s.status === "pending"
       )
 
-      // Check if we have params for form submission (POST)
       const params = session?.data?.params as Record<string, string> | undefined
       const paymentUrl = session?.data?.payment_url as string | undefined
 
-      // Store cart ID in sessionStorage for PayU callback retrieval
       if (cart.id) {
         sessionStorage.setItem("payu_cart_id", cart.id)
-        console.log("[PayU] Stored cart ID in sessionStorage:", cart.id)
       }
 
       if (paymentUrl && params) {
-        // Trigger form submission
         setTimeout(() => {
           formRef.current?.submit()
         }, 100)
       } else {
-        // Fallback for older sessions or misconfiguration
         const url = session?.data?.payment_url as string | undefined
         if (url) {
            window.location.href = url
@@ -247,7 +242,6 @@ const PayUPaymentButton = ({
     }
   }
 
-  // Extract params for rendering the hidden form
   const session = cart.payment_collection?.payment_sessions?.find(
     (s) => s.status === "pending"
   )
@@ -266,7 +260,6 @@ const PayUPaymentButton = ({
         Pay with PayU
       </Button>
       
-      {/* Hidden form for PayU POST submission */}
       {paymentUrl && params && (
         <form 
           ref={formRef} 

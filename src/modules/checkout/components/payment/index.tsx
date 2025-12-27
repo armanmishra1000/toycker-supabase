@@ -14,20 +14,15 @@ import PaymentContainer, {
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
+import { Cart } from "@/lib/supabase/types"
 
 const Payment = ({
   cart,
   availablePaymentMethods,
 }: {
-  cart: any
-  availablePaymentMethods: any[]
+  cart: Cart
+  availablePaymentMethods: { id: string; name: string }[]
 }) => {
-  type CartWithGiftCards = HttpTypes.StoreCart & {
-    gift_cards?: Array<{ id: string }>
-  }
-
-  const giftCards = (cart as CartWithGiftCards).gift_cards ?? []
-
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession) => paymentSession.status === "pending"
   )
@@ -47,10 +42,8 @@ const Payment = ({
   const currentStep = searchParams.get("step")
   const isOpen = currentStep === "payment"
 
-  // Scroll to top when payment step opens
   useEffect(() => {
     if (isOpen) {
-      // Use requestAnimationFrame to ensure DOM has updated before scrolling
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           window.scrollTo({ top: 0, behavior: "smooth" })
@@ -63,9 +56,9 @@ const Payment = ({
     setError(null)
     setSelectedPaymentMethod(method)
     if (isStripeLike(method) || isPayU(method)) {
-      // For PayU, pass cart email and shipping phone for guest checkout
-      const paymentData: HttpTypes.StoreInitializePaymentSession = {
+      const paymentData = {
         provider_id: method,
+        data: {} as Record<string, unknown>
       }
 
       if (isPayU(method)) {
@@ -80,15 +73,13 @@ const Payment = ({
     }
   }
 
-  const paidByGiftcard = giftCards.length > 0 && cart.total === 0
-
+  const paidByGiftcard = (cart.gift_card_total ?? 0) > 0 && cart.total === 0
   const paymentReady = Boolean(activeSession) || paidByGiftcard
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
       const params = new URLSearchParams(searchParams)
       params.set(name, value)
-
       return params.toString()
     },
     [searchParams]
@@ -108,9 +99,9 @@ const Payment = ({
         activeSession?.provider_id === selectedPaymentMethod
 
       if (!checkActiveSession) {
-        // For PayU, pass cart email and shipping phone for guest checkout
-        const paymentData: HttpTypes.StoreInitializePaymentSession = {
+        const paymentData = {
           provider_id: selectedPaymentMethod,
+          data: {} as Record<string, unknown>
         }
 
         if (isPayU(selectedPaymentMethod)) {
@@ -173,33 +164,31 @@ const Payment = ({
       <div>
         <div className={isOpen ? "block" : "hidden"}>
           {!paidByGiftcard && availablePaymentMethods?.length && (
-            <>
-              <RadioGroup
-                value={selectedPaymentMethod}
-                onChange={(value: string) => setPaymentMethod(value)}
-              >
-                {availablePaymentMethods.map((paymentMethod) => (
-                  <div key={paymentMethod.id}>
-                    {isStripeLike(paymentMethod.id) ? (
-                      <StripeCardContainer
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                        paymentInfoMap={paymentInfoMap}
-                        setCardBrand={setCardBrand}
-                        setError={setError}
-                        setCardComplete={setCardComplete}
-                      />
-                    ) : (
-                      <PaymentContainer
-                        paymentInfoMap={paymentInfoMap}
-                        paymentProviderId={paymentMethod.id}
-                        selectedPaymentOptionId={selectedPaymentMethod}
-                      />
-                    )}
-                  </div>
-                ))}
-              </RadioGroup>
-            </>
+            <RadioGroup
+              value={selectedPaymentMethod}
+              onChange={(value: string) => setPaymentMethod(value)}
+            >
+              {availablePaymentMethods.map((paymentMethod) => (
+                <div key={paymentMethod.id}>
+                  {isStripeLike(paymentMethod.id) ? (
+                    <StripeCardContainer
+                      paymentProviderId={paymentMethod.id}
+                      selectedPaymentOptionId={selectedPaymentMethod}
+                      paymentInfoMap={paymentInfoMap}
+                      setCardBrand={setCardBrand}
+                      setError={setError}
+                      setCardComplete={setCardComplete}
+                    />
+                  ) : (
+                    <PaymentContainer
+                      paymentInfoMap={paymentInfoMap}
+                      paymentProviderId={paymentMethod.id}
+                      selectedPaymentOptionId={selectedPaymentMethod}
+                    />
+                  )}
+                </div>
+              ))}
+            </RadioGroup>
           )}
 
           {paidByGiftcard && (
