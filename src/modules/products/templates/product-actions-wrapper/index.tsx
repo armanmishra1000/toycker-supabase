@@ -1,5 +1,5 @@
 import { retrieveCustomer } from "@lib/data/customer"
-import { getProductByHandle } from "@lib/data/products"
+import { retrieveProduct } from "@lib/data/products"
 import ProductActions from "@modules/products/components/product-actions"
 import { WishlistProvider } from "@modules/products/context/wishlist"
 
@@ -14,7 +14,7 @@ export default async function ProductActionsWrapper({
   region: any
 }) {
   const customerPromise = retrieveCustomer()
-  const product = await getProductByHandle(id) // Note: getProductByHandle is used for id/handle interchangeably in current implementation or we need getProductById
+  const product = await retrieveProduct(id)
 
   const customer = await customerPromise
 
