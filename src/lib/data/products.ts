@@ -13,24 +13,33 @@ const normalizeProductImage = (product: Product): Product => {
     return `${CDN_URL}/${url}`
   }
 
-  // Handle images if they come from a relation (product_images table)
-  let imageList: string[] = []
-  
+  // Handle images if they come from a relation or array column
+  let rawImages: any[] = []
   if (Array.isArray(product.images)) {
-     imageList = product.images.map((img: any) => {
-        if (typeof img === 'string') return img
-        if (typeof img === 'object' && img?.url) return img.url
-        if (typeof img === 'object' && img?.image?.url) return img.image.url
-        return null
-     }).filter((url): url is string => typeof url === 'string' && url.length > 0)
+    rawImages = product.images
   }
+  
+  let imageList: string[] = rawImages.map((img: any) => {
+    if (typeof img === 'string') return img
+    if (typeof img === 'object' && img?.url) return img.url
+    if (typeof img === 'object' && img?.image?.url) return img.image.url
+    return null
+  }).filter((url): url is string => typeof url === 'string' && url.length > 0)
+
+  // If we have a main image_url but no images array, ensure it's in the list
+  if (imageList.length === 0 && product.image_url) {
+    imageList.push(product.image_url)
+  }
+
+  // Ensure we have a main image reference
+  const mainImage = product.image_url || imageList[0] || null
 
   // Normalize base product images
   const normalizedProduct = {
     ...product,
-    image_url: fixUrl(product.image_url || imageList[0] || null),
-    thumbnail: fixUrl(product.thumbnail || imageList[0] || null),
-    images: imageList.map((img) => fixUrl(img) || ""),
+    image_url: fixUrl(mainImage),
+    thumbnail: fixUrl(product.thumbnail || mainImage),
+    images: imageList.map((img) => fixUrl(img)).filter((url): url is string => !!url),
   }
 
   // Normalize variant images
