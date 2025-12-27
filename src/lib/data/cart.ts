@@ -37,7 +37,7 @@ const mapCartItems = (items: any[]): CartItem[] => {
   })
 }
 
-export const retrieveCart = cache(async (cartId?: string) => {
+export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> => {
   const id = cartId || (await getCartId())
   if (!id) return null
 
@@ -87,7 +87,7 @@ export const retrieveCart = cache(async (cartId?: string) => {
   return cart
 })
 
-export async function getOrSetCart() {
+export async function getOrSetCart(): Promise<Cart> {
   let cart = await retrieveCart()
 
   if (!cart) {
@@ -107,7 +107,7 @@ export async function getOrSetCart() {
       .select()
       .single()
 
-    if (error) {
+    if (error || !newCart) {
       console.error("Error creating cart:", error)
       throw new Error("Could not create cart")
     }
@@ -292,17 +292,13 @@ export async function initiatePaymentSession(cartInput: any, data: any) {
     const email = cart.email || "test@example.com"
     
     // PayU Test Credentials
-    // Default to the salt from the error message as it seems to be what the environment expects
-    // If we are using the public test key 'gtKFFx', we FORCE the known test salt.
     let key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
     let salt = process.env.PAYU_MERCHANT_SALT || "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
     let saltV2 = process.env.PAYU_MERCHANT_SALT_V2
 
-    // Force known test credentials if using public key, to avoid env var mismatches causing hash errors
+    // Force known test credentials if using public key
     if (key === "gtKFFx") {
         salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
-        // Common V2 salt for this test key if available, otherwise undefined (user must provide if strictly required)
-        // saltV2 = "..." 
     }
 
     const hashParams = {
@@ -338,12 +334,14 @@ export async function initiatePaymentSession(cartInput: any, data: any) {
     }]
   }
 
-  await supabase
+  const { error } = await supabase
     .from("carts")
     .update({ 
         payment_collection: paymentCollection
     })
     .eq("id", cart.id)
+
+  if (error) throw new Error(error.message)
     
   revalidateTag("cart")
   revalidatePath("/checkout")
@@ -396,12 +394,14 @@ export async function createBuyNowCart({
     const { data: { user } } = await supabase.auth.getUser()
     const newCartId = randomUUID()
 
-    await supabase.from("carts").insert({
+    const { error } = await supabase.from("carts").insert({
         id: newCartId,
         user_id: user?.id || null,
         currency_code: "inr",
         email: user?.email
     })
+
+    if (error) throw new Error(error.message)
 
     const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
     
@@ -433,7 +433,7 @@ export async function listCartOptions() {
   }
 
   return {
-    shipping_options: data.map((opt: ShippingOption) => ({
+    shipping_options: (data || []).map((opt: ShippingOption) => ({
       id: opt.id,
       name: opt.name,
       amount: opt.amount,
