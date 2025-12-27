@@ -19,8 +19,6 @@ export const generatePayUHash = (
   salt: string
 ): string => {
   // Formula: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT
-  // Standard PayU hash requires exactly 6 pipes between the last UDF and the SALT.
-  
   const hashString = [
     params.key,
     params.txnid,
@@ -42,41 +40,37 @@ export const verifyPayUHash = (
   payload: any,
   salt: string
 ): boolean => {
-  const {
-    status,
-    udf10 = "",
-    udf9 = "",
-    udf8 = "",
-    udf7 = "",
-    udf6 = "",
-    udf5 = "",
-    udf4 = "",
-    udf3 = "",
-    udf2 = "",
-    udf1 = "",
-    email = "",
-    firstname = "",
-    productinfo = "",
-    amount = "",
-    txnid = "",
-    key = "",
-    hash = "",
-    additionalCharges = "",
-  } = payload
+  const status = String(payload.status || "")
+  const key = String(payload.key || "")
+  const txnid = String(payload.txnid || "")
+  const amount = String(payload.amount || "")
+  const productinfo = String(payload.productinfo || "")
+  const firstname = String(payload.firstname || "")
+  const email = String(payload.email || "")
 
-  const hashSequence = [
-    udf10, udf9, udf8, udf7, udf6, udf5, udf4, udf3, udf2, udf1, 
-    email, firstname, productinfo, amount, txnid, key
-  ].join("|")
+  const udf1 = String(payload.udf1 || "")
+  const udf2 = String(payload.udf2 || "")
+  const udf3 = String(payload.udf3 || "")
+  const udf4 = String(payload.udf4 || "")
+  const udf5 = String(payload.udf5 || "")
 
-  const hashString = `${salt}|${status}|${hashSequence}`
-  const generatedHash = crypto.createHash("sha512").update(hashString, "utf8").digest("hex")
+  const receivedHash = String(payload.hash || "").toLowerCase()
+  const additional = payload.additional_charges ?? payload.additionalCharges ?? ""
 
-  if (generatedHash !== hash && additionalCharges) {
-    const chargeHashString = `${additionalCharges}|${hashString}`
-    const generatedChargeHash = crypto.createHash("sha512").update(chargeHashString, "utf8").digest("hex")
-    return generatedChargeHash === hash
+  // Reverse Formula: salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
+  const base = `${salt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`
+
+  const computed = crypto.createHash("sha512").update(base, "utf8").digest("hex").toLowerCase()
+  
+  if (computed === receivedHash) {
+    return true
   }
 
-  return generatedHash === hash
+  if (additional) {
+    const withCharges = `${additional}|${base}`
+    const computedWithCharges = crypto.createHash("sha512").update(withCharges, "utf8").digest("hex").toLowerCase()
+    return computedWithCharges === receivedHash
+  }
+
+  return false
 }

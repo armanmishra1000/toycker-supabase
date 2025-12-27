@@ -3,25 +3,26 @@ import { verifyPayUHash } from "@/lib/payu"
 import { createClient } from "@/lib/supabase/server"
 import { retrieveCart } from "@/lib/data/cart"
 
-interface PayUCallbackPayload {
-  status: string
-  txnid: string
-  amount: string
-  email: string
-  firstname: string
-  productinfo: string
-  key: string
-  hash: string
-  udf1: string // This is our Cart ID
-  mihpayid: string
-  mode: string
-  additionalCharges?: string
+/**
+ * Returns a standard HTML response that performs a client-side redirect.
+ * This is the most robust way to handle PayU's POST callback handshakes.
+ */
+function htmlRedirect(path: string) {
+  return new NextResponse(
+    `<!doctype html><html><head><meta charset="utf-8"></head>
+     <body><script>window.location.replace(${JSON.stringify(path)})</script></body></html>`,
+    { 
+      status: 200, 
+      headers: { "Content-Type": "text/html; charset=utf-8" } 
+    }
+  )
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    const payload = Object.fromEntries(formData.entries()) as unknown as PayUCallbackPayload
+    // Parse PayU's x-www-form-urlencoded payload
+    const body = await request.text()
+    const payload = Object.fromEntries(new URLSearchParams(body).entries()) as any
     
     const key = payload.key
     let salt = process.env.PAYU_MERCHANT_SALT || ""
@@ -30,11 +31,9 @@ export async function POST(request: NextRequest) {
       salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
     }
 
-    const isValid = verifyPayUHash(payload, salt)
-
-    if (!isValid) {
-      console.error("[PayU Callback] Invalid Hash Verification Attempted")
-      return NextResponse.redirect(new URL("/checkout?step=payment&error=invalid_hash", request.url), { status: 303 })
+    if (!verifyPayUHash(payload, salt)) {
+      console.error("[PayU Callback] Invalid Hash Verification")
+      return htmlRedirect("/checkout?step=payment&error=invalid_hash")
     }
 
     const { status, txnid, amount, email, udf1: cartId } = payload
@@ -44,8 +43,7 @@ export async function POST(request: NextRequest) {
       const cart = await retrieveCart(cartId)
       
       if (!cart) {
-        console.error("[PayU Callback] Cart not found for ID:", cartId)
-        return NextResponse.redirect(new URL("/checkout?error=cart_not_found", request.url), { status: 303 })
+        return htmlRedirect("/checkout?error=cart_not_found")
       }
 
       const { data: order, error } = await supabase
@@ -69,19 +67,18 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (error) {
-        console.error("[PayU Callback] Database Error creating order:", error.message)
-        return NextResponse.redirect(new URL("/checkout?error=order_creation_failed", request.url), { status: 303 })
+        return htmlRedirect("/checkout?error=order_creation_failed")
       }
 
-      // Success redirect with 303 to force GET and clean up cookie
-      const response = NextResponse.redirect(new URL(`/order/confirmed/${order.id}`, request.url), { status: 303 })
+      const response = htmlRedirect(`/order/confirmed/${order.id}`)
+      // Explicitly delete the cart cookie on the response
       response.cookies.delete("toycker_cart_id")
       return response
     }
 
-    return NextResponse.redirect(new URL(`/checkout?step=payment&error=payment_failed&status=${status}`, request.url), { status: 303 })
+    return htmlRedirect(`/checkout?step=payment&error=payment_failed&status=${encodeURIComponent(status)}`)
   } catch (error) {
-    console.error("[PayU Callback] Fatal Error Processing Response:", error)
-    return NextResponse.redirect(new URL("/checkout?error=callback_failed", request.url), { status: 303 })
+    console.error("[PayU Callback] Fatal Error:", error)
+    return htmlRedirect("/checkout?error=callback_failed")
   }
 }
