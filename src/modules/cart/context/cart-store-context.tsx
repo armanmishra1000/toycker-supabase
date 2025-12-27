@@ -56,32 +56,28 @@ const buildOptimisticLineItem = (
   product: Product,
   variant: ProductVariant,
   quantity: number,
-  currencyCode: string,
-  cartRef: Cart,
+  _cartRef: Cart,
   metadata?: Record<string, string | number | boolean | null>,
 ): CartItem => {
   const tempId = `temp-${variant.id}-${Date.now()}`
-  const price = variant.calculated_price?.calculated_amount ?? variant.price
-  const original = variant.calculated_price?.original_amount ?? price
+  const price = variant.price
   const total = price * quantity
-  const originalTotal = original * quantity
 
   return {
     id: tempId,
-    title: variant.title ?? product.title,
-    thumbnail: product.thumbnail ?? product.image_url ?? undefined,
+    title: variant.title || product.name,
+    thumbnail: product.thumbnail || product.image_url || undefined,
     quantity,
     variant_id: variant.id,
     product_id: product.id,
     cart_id: "temp",
-    metadata: metadata ?? {},
+    metadata: (metadata as Record<string, unknown>) ?? {},
     variant: variant,
     product: product,
-    product_title: product.title,
+    product_title: product.name,
     product_handle: product.handle ?? undefined,
     unit_price: price,
     total,
-    original_total: originalTotal,
     subtotal: total,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -108,22 +104,12 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       currency_code: currencyCode,
       subtotal: 0,
       total: 0,
-      original_total: 0,
-      item_total: 0,
-      item_subtotal: 0,
-      tax_total: 0,
-      discount_total: 0,
-      gift_card_total: 0,
-      shipping_total: 0,
-      shipping_subtotal: 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }),
     [],
   )
 
-
-  // Sync in-memory cart when layout cart updates
   useEffect(() => {
     if (!layoutCart) return
     const hasChanged = layoutCart.updated_at !== previousCartRef.current?.updated_at
@@ -186,12 +172,12 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         .then(() => runServerRemove())
       await removeQueueRef.current
     },
-    [cart, setFromServer, toast],
+    [cart, setFromServer, showToast],
   )
 
   const optimisticAdd = useCallback(
     async ({ product, variant, quantity, countryCode, metadata }: OptimisticAddInput) => {
-      const targetCountry = countryCode ?? DEFAULT_COUNTRY_CODE
+      const _targetCountry = countryCode ?? DEFAULT_COUNTRY_CODE
       setLastError(null)
 
       const previousCart = cart
@@ -213,7 +199,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       const baseCart: Cart =
         cart ??
         buildEmptyCart(
-          variant.calculated_price?.currency_code ?? layoutCart?.currency_code ?? "USD",
+          layoutCart?.currency_code ?? "inr",
         )
 
       const areMetadataEqual = (
@@ -222,7 +208,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       ) => isEqual(left ?? {}, right ?? {})
 
       const existing = baseCart.items?.find(
-        (item) => item.variant_id === variant.id && areMetadataEqual(item.metadata as any, metadata),
+        (item) => item.variant_id === variant.id && areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
       )
       let nextItems: CartItem[]
 
@@ -231,8 +217,6 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           ...existing,
           quantity: existing.quantity + quantity,
           total: (existing.total ?? 0) + (existing.unit_price ?? 0) * quantity,
-          original_total:
-            (existing.original_total ?? existing.total ?? 0) + (existing.unit_price ?? 0) * quantity,
           updated_at: new Date().toISOString(),
         }
         nextItems = baseCart.items!.map((item) => (item.id === existing.id ? updatedItem : item))
@@ -241,9 +225,8 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           product,
           variant,
           quantity,
-          baseCart.currency_code,
           baseCart,
-          metadata as any,
+          metadata,
         )
         nextItems = [...(baseCart.items ?? []), optimistic]
       }
@@ -254,7 +237,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       const runServerAdd = async () => {
         try {
           const serverCart = await addToCart({
-            productId: product.id, // Changed to match Supabase addToCart signature
+            productId: product.id,
             quantity,
           })
 
@@ -276,7 +259,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       addQueueRef.current = addQueueRef.current.then(() => runServerAdd())
       await addQueueRef.current
     },
-    [buildEmptyCart, cart, layoutCart?.currency_code, setFromServer, toast],
+    [buildEmptyCart, cart, layoutCart?.currency_code, setFromServer, showToast],
   )
 
   const reloadFromServer = useCallback(async () => {
@@ -297,7 +280,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsSyncing(false)
     }
-  }, [setFromServer, toast])
+  }, [setFromServer, showToast])
 
   const value = useMemo(
     () => ({

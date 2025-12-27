@@ -4,9 +4,9 @@ import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
-import { CustomerProfile } from "@/lib/supabase/types"
+import { CustomerProfile, Address } from "@/lib/supabase/types"
 
-export const retrieveCustomer = cache(async () => {
+export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> => {
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 
@@ -19,17 +19,15 @@ export const retrieveCustomer = cache(async () => {
     .select("*")
     .eq("user_id", user.id)
 
-  // Map Supabase user to the expected customer shape
   return {
     id: user.id,
-    email: user.email,
+    email: user.email!,
     first_name: user.user_metadata?.first_name || "",
     last_name: user.user_metadata?.last_name || "",
     phone: user.phone || "",
-    metadata: user.user_metadata,
-    addresses: addresses || [],
     created_at: user.created_at,
-  } as unknown as CustomerProfile
+    addresses: (addresses as Address[]) || [],
+  }
 })
 
 export async function signup(_currentState: unknown, formData: FormData) {
@@ -41,7 +39,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
   const supabase = await createClient()
 
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {

@@ -2,20 +2,18 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { Cart, CartItem, ShippingOption } from "@/lib/supabase/types"
+import { Cart, CartItem, ShippingOption, Address } from "@/lib/supabase/types"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
 import { randomUUID } from "crypto"
 import { redirect } from "next/navigation"
 import { generatePayUHash } from "@/lib/payu"
 
-// Helper to map raw DB cart items to application CartItem type
 const mapCartItems = (items: any[]): CartItem[] => {
   return items.map((item) => {
     const product = item.product
     const variant = item.variant
     
-    // Determine thumbnail
     let thumbnail = product?.image_url
     if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
        const firstImg = product.images[0]
@@ -53,19 +51,17 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
       )
     `)
     .eq("id", id)
-    .single()
+    .maybeSingle()
 
   if (error || !cartData) {
     return null
   }
 
-  // Calculate totals
   const items = mapCartItems(cartData.items || [])
   const item_subtotal = items.reduce((sum, item) => sum + item.total, 0)
   
-  // Get shipping cost from saved methods
   const shipping_total = Array.isArray(cartData.shipping_methods) && cartData.shipping_methods.length > 0
-    ? Number(cartData.shipping_methods[0].amount || 0)
+    ? Number((cartData.shipping_methods[0] as any).amount || 0)
     : 0
 
   const tax_total = 0
@@ -108,7 +104,6 @@ export async function getOrSetCart(): Promise<Cart> {
     .single()
 
   if (error || !newCart) {
-    console.error("Error creating cart:", error)
     throw new Error("Could not create cart")
   }
 
@@ -157,12 +152,12 @@ export async function addToCart({
     .select("*")
     .eq("cart_id", cart.id)
     .eq("variant_id", targetVariantId)
-    .single()
+    .maybeSingle()
 
   if (existingItem) {
     await supabase
       .from("cart_items")
-      .update({ quantity: existingItem.quantity + quantity })
+      .update({ quantity: (existingItem as any).quantity + quantity })
       .eq("id", existingItem.id)
   } else {
     await supabase
@@ -207,7 +202,7 @@ export async function deleteLineItem(lineId: string) {
   return retrieveCart()
 }
 
-export async function setAddresses(currentState: unknown, formData: FormData) {
+export async function setAddresses(_currentState: unknown, formData: FormData) {
   const cart = await retrieveCart()
   if (!cart) return { message: "No cart found" }
 
@@ -276,30 +271,23 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
   revalidateTag("cart")
 }
 
-export async function initiatePaymentSession(cartInput: any, data: any) {
+export async function initiatePaymentSession(cartInput: { id: string }, data: { provider_id: string, data?: any }) {
   const supabase = await createClient()
-  
-  // 1. Fetch fresh cart from DB to ensure we have the latest totals and shipping info
   const cart = await retrieveCart(cartInput.id)
   if (!cart) throw new Error("Cart not found")
 
   let sessionData = data.data || {}
 
-  // If the provider is PayU, generate the required payload for the prototype
   if (data.provider_id === "pp_payu_payu") {
     const txnid = `tx_${Date.now()}`
-    // Ensure amount is formatted correctly (2 decimal places)
     const amount = (cart.total || 0).toFixed(2)
     const productinfo = "Toycker Order"
     const firstname = cart.shipping_address?.first_name || "Customer"
     const email = cart.email || "test@example.com"
     
-    // PayU Test Credentials
     let key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
     let salt = process.env.PAYU_MERCHANT_SALT || "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
-    let saltV2 = process.env.PAYU_MERCHANT_SALT_V2
 
-    // Force known test credentials if using public key
     if (key === "gtKFFx") {
         salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
     }
@@ -311,10 +299,10 @@ export async function initiatePaymentSession(cartInput: any, data: any) {
       productinfo,
       firstname,
       email,
-      udf1: cart.id // Carry cart ID in user defined field
+      udf1: cart.id
     }
 
-    const hash = generatePayUHash(hashParams, salt, saltV2)
+    const hash = generatePayUHash(hashParams, salt)
 
     sessionData = {
       payment_url: "https://test.payu.in/_payment",
@@ -340,7 +328,7 @@ export async function initiatePaymentSession(cartInput: any, data: any) {
   const { error } = await supabase
     .from("carts")
     .update({ 
-        payment_collection: paymentCollection
+        payment_collection: paymentCollection as any
     })
     .eq("id", cart.id)
 
@@ -359,7 +347,7 @@ export async function placeOrder() {
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
-      customer_email: cart.email,
+      customer_email: cart.email || "guest@toycker.in",
       total_amount: cart.total ?? 0,
       currency_code: cart.currency_code,
       status: "paid",
@@ -367,8 +355,8 @@ export async function placeOrder() {
       fulfillment_status: "not_shipped",
       shipping_address: cart.shipping_address,
       billing_address: cart.billing_address,
-      items: cart.items,
-      shipping_methods: cart.shipping_methods, 
+      items: cart.items as any,
+      shipping_methods: cart.shipping_methods as any, 
       metadata: { cart_id: cart.id }
     })
     .select()
@@ -391,7 +379,7 @@ export async function createBuyNowCart({
     variantId: string
     quantity: number
     countryCode: string
-    metadata?: any
+    metadata?: Record<string, unknown>
 }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -411,10 +399,10 @@ export async function createBuyNowCart({
     if (variant) {
         await supabase.from("cart_items").insert({
             cart_id: newCartId,
-            product_id: variant.product_id,
+            product_id: (variant as any).product_id,
             variant_id: variantId,
             quantity: quantity,
-            metadata: metadata
+            metadata: metadata as any
         })
     }
 
@@ -423,7 +411,7 @@ export async function createBuyNowCart({
     return newCartId
 }
 
-export async function listCartOptions() {
+export async function listCartOptions(): Promise<{ shipping_options: any[] }> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("shipping_options")

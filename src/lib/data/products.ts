@@ -6,7 +6,7 @@ import { SortOptions } from "@modules/store/components/refinement-list/types"
 
 const CDN_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || `https://${process.env.NEXT_PUBLIC_R2_MEDIA_HOSTNAME || "cdn.toycker.in"}`
 
-const normalizeProductImage = (product: any): Product => {
+const normalizeProductImage = (product: Product): Product => {
   const fixUrl = (url: string | null) => {
     if (!url) return null
     if (url.startsWith("http") || url.startsWith("/")) return url
@@ -15,7 +15,7 @@ const normalizeProductImage = (product: any): Product => {
 
   const rawImages: string[] = []
   if (Array.isArray(product.images)) {
-    product.images.forEach((img: any) => {
+    product.images.forEach((img: string | { url: string }) => {
       if (typeof img === 'string') rawImages.push(img)
       else if (typeof img === 'object' && img?.url) rawImages.push(img.url)
     })
@@ -34,6 +34,7 @@ const normalizeProductImage = (product: any): Product => {
 
   return {
     ...product,
+    title: product.name, // Ensure UI can use .title or .name
     image_url: mainImage,
     thumbnail: fixUrl(product.thumbnail) || mainImage,
     images: uniqueImages,
@@ -74,7 +75,7 @@ export async function listProducts(options: {
     return { response: { products: [], count: 0 } }
   }
 
-  const products = (data || []).map(normalizeProductImage)
+  const products = (data || []).map((p) => normalizeProductImage(p as Product))
   return { response: { products, count: count || 0 } }
 }
 
@@ -84,10 +85,10 @@ export async function retrieveProduct(id: string): Promise<Product | null> {
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("id", id)
-    .single()
+    .maybeSingle()
 
-  if (error) return null
-  return normalizeProductImage(data)
+  if (error || !data) return null
+  return normalizeProductImage(data as Product)
 }
 
 export async function getProductByHandle(handle: string): Promise<Product | null> {
@@ -96,10 +97,10 @@ export async function getProductByHandle(handle: string): Promise<Product | null
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("handle", handle)
-    .single()
+    .maybeSingle()
 
-  if (error) return null
-  return normalizeProductImage(data)
+  if (error || !data) return null
+  return normalizeProductImage(data as Product)
 }
 
 export async function listPaginatedProducts({
@@ -113,7 +114,7 @@ export async function listPaginatedProducts({
   limit?: number
   sortBy?: SortOptions
   countryCode?: string
-  queryParams?: Record<string, any>
+  queryParams?: Record<string, string[] | string | undefined>
   availability?: string
   priceFilter?: { min?: number; max?: number }
   ageFilter?: string
@@ -125,8 +126,8 @@ export async function listPaginatedProducts({
     .from("products")
     .select(PRODUCT_SELECT, { count: "exact" })
 
-  if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id)
-  if (queryParams?.collection_id) query = query.in("collection_id", queryParams.collection_id)
+  if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])
+  if (queryParams?.collection_id) query = query.in("collection_id", queryParams.collection_id as string[])
   if (queryParams?.q) query = query.ilike("name", `%${queryParams.q}%`)
 
   if (priceFilter?.min !== undefined) query = query.gte("price", priceFilter.min)
@@ -151,7 +152,7 @@ export async function listPaginatedProducts({
 
   return {
     response: {
-      products: (data || []).map(normalizeProductImage),
+      products: (data || []).map((p) => normalizeProductImage(p as Product)),
       count: count || 0,
     },
     pagination: { page, limit },
