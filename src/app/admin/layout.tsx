@@ -10,7 +10,6 @@ import {
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin } from "@/lib/data/admin"
-import { cn } from "@lib/util/cn"
 
 export const metadata = {
   title: "Toycker Admin",
