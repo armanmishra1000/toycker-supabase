@@ -29,13 +29,10 @@ export const getCollectionByHandle = async (handle: string) => {
     .from("collections")
     .select("*")
     .eq("handle", handle)
-    .single()
+    .maybeSingle()
 
   if (error) {
-    // If code is PGRST116, it means no rows found (404), which is expected behavior sometimes
-    if (error.code !== 'PGRST116') {
-        console.error("Error fetching collection:", error.message)
-    }
+    console.error("Error fetching collection:", error.message)
     return null
   }
 

@@ -1,7 +1,6 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { Product } from "@/lib/supabase/types"
 
 export const retrieveVariant = async (
   variant_id: string
@@ -12,7 +11,7 @@ export const retrieveVariant = async (
     .from("product_variants")
     .select("*")
     .eq("id", variant_id)
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error("Error fetching variant:", error)

@@ -31,7 +31,7 @@ export async function retrieveOrder(id: string) {
     .from("orders")
     .select("*")
     .eq("id", id)
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error("Error fetching order:", error)
