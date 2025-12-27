@@ -1,30 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyPayUHash } from "@/lib/payu"
+import { verifyPayUHash, PayUCallbackPayload } from "@/lib/payu"
 import { createClient } from "@/lib/supabase/server"
 import { retrieveCart } from "@/lib/data/cart"
 
 // Ensure this runs on Node.js to support crypto
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-
-// Define the shape of PayU Callback Data
-interface PayUCallbackBody {
-  status: string
-  txnid: string
-  amount: string
-  productinfo: string
-  firstname: string
-  email: string
-  key: string
-  hash: string
-  udf1?: string // We store cartId here
-  udf2?: string
-  udf3?: string
-  udf4?: string
-  udf5?: string
-  error_Message?: string
-  [key: string]: string | undefined
-}
 
 /**
  * Returns a standard HTML page that redirects via JavaScript.
@@ -37,9 +18,9 @@ function htmlRedirect(path: string) {
       <p>Processing payment response...</p>
       <script>window.location.replace(${JSON.stringify(path)})</script>
      </body></html>`,
-    { 
-      status: 200, 
-      headers: { "Content-Type": "text/html; charset=utf-8" } 
+    {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" }
     }
   )
 }
@@ -49,21 +30,26 @@ export async function POST(request: NextRequest) {
     // PayU sends data as application/x-www-form-urlencoded
     const bodyText = await request.text()
     const params = new URLSearchParams(bodyText)
-    const payload = Object.fromEntries(params.entries()) as unknown as PayUCallbackBody
+    const payload = Object.fromEntries(params.entries()) as PayUCallbackPayload
 
-    console.log("[PAYU] Callback hit:", payload.status, payload.txnid)
+    console.log("[PAYU] Callback hit:", {
+      status: payload.status,
+      txnid: payload.txnid,
+      amount: payload.amount,
+      key: payload.key?.substring(0, 6) + "..."
+    })
 
     // 1. Retrieve Salt from Environment
     const salt = process.env.PAYU_MERCHANT_SALT
 
     if (!salt) {
-      console.error("[PAYU] Configuration error: Missing Salt")
+      console.error("[PAYU] Configuration error: Missing PAYU_MERCHANT_SALT env var")
       return htmlRedirect("/checkout?step=payment&error=configuration_error")
     }
 
     // 2. Verify Hash integrity
     if (!verifyPayUHash(payload, salt)) {
-      console.error("[PAYU] Hash verification failed")
+      console.error("[PAYU] Hash verification failed for txnid:", payload.txnid)
       return htmlRedirect("/checkout?step=payment&error=invalid_hash")
     }
 
@@ -73,18 +59,21 @@ export async function POST(request: NextRequest) {
     const amount = payload.amount
     const email = payload.email
 
+    console.log("[PAYU] Processing payment:", { status, cartId, txnid, amount })
+
     if (status === "success") {
       const supabase = await createClient()
-      
+
       // Use cartId from UDF1 directly
       const cart = await retrieveCart(cartId)
-      
+
       if (!cart) {
         console.error("[PAYU] Cart not found:", cartId)
         return htmlRedirect("/checkout?error=cart_not_found")
       }
 
       // 3. Create Order in Database
+      // Use JSON serialization to properly type the complex objects
       const { data: order, error } = await supabase
         .from("orders")
         .insert({
@@ -98,8 +87,8 @@ export async function POST(request: NextRequest) {
           payu_txn_id: txnid,
           shipping_address: cart.shipping_address,
           billing_address: cart.billing_address,
-          items: cart.items as any,
-          shipping_methods: cart.shipping_methods as any,
+          items: JSON.parse(JSON.stringify(cart.items)),
+          shipping_methods: JSON.parse(JSON.stringify(cart.shipping_methods)),
           metadata: { cartId, payu_payload: payload }
         })
         .select()
@@ -110,6 +99,8 @@ export async function POST(request: NextRequest) {
         return htmlRedirect("/checkout?error=order_creation_failed_payment_success")
       }
 
+      console.log("[PAYU] Order created successfully:", order.id)
+
       // Success! Redirect to confirmation
       const response = htmlRedirect(`/order/confirmed/${order.id}`)
       response.cookies.delete("toycker_cart_id")
@@ -118,6 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Handle Failure
     const failureReason = payload.error_Message || "payment_failed"
+    console.log("[PAYU] Payment failed:", { status, reason: failureReason })
     return htmlRedirect(`/checkout?step=payment&error=${encodeURIComponent(failureReason)}&status=${encodeURIComponent(status)}`)
   } catch (error) {
     console.error("[PAYU] Callback fatal error:", error)

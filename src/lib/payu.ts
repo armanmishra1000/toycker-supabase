@@ -14,11 +14,43 @@ export interface PayUHashParams {
   udf5?: string
 }
 
+/**
+ * PayU Callback Payload Interface
+ * Replaces the use of 'any' type for type safety
+ */
+export interface PayUCallbackPayload {
+  status: string
+  txnid: string
+  amount: string
+  productinfo: string
+  firstname: string
+  email: string
+  key: string
+  hash: string
+  udf1?: string
+  udf2?: string
+  udf3?: string
+  udf4?: string
+  udf5?: string
+  error_Message?: string
+  additional_charges?: string
+  additionalCharges?: string
+  [key: string]: string | undefined
+}
+
+/**
+ * Generate PayU Hash for payment request
+ * 
+ * PayU Hash Formula:
+ * sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT)
+ * 
+ * Note: There are 6 empty pipes after udf5 (for udf6-udf10 + reserved) before SALT
+ */
 export const generatePayUHash = (
   params: PayUHashParams,
   salt: string
 ): string => {
-  // Formula: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT
+  // Build hash string with all parameters including empty UDFs
   const hashString = [
     params.key,
     params.txnid,
@@ -31,12 +63,32 @@ export const generatePayUHash = (
     params.udf3 || "",
     params.udf4 || "",
     params.udf5 || "",
-  ].join("|") + "||||||" + salt
+    "", // udf6 - empty
+    "", // udf7 - empty
+    "", // udf8 - empty
+    "", // udf9 - empty
+    "", // udf10 - empty
+    "", // reserved field - empty
+    salt
+  ].join("|")
+
+  // Debug logging (salt is masked for security)
+  const debugString = hashString.replace(salt, "***SALT***")
+  console.log("[PAYU] Hash string (masked):", debugString)
 
   return crypto.createHash("sha512").update(hashString, "utf8").digest("hex")
 }
 
-export const verifyPayUHash = (payload: any, salt: string): boolean => {
+/**
+ * Verify PayU Response Hash (Reverse Hash)
+ * 
+ * PayU Response Hash Formula:
+ * sha512(SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
+ * 
+ * With additional charges:
+ * sha512(additional_charges|SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
+ */
+export const verifyPayUHash = (payload: PayUCallbackPayload, salt: string): boolean => {
   const status = String(payload.status || "")
   const key = String(payload.key || "")
   const txnid = String(payload.txnid || "")
@@ -57,19 +109,53 @@ export const verifyPayUHash = (payload: any, salt: string): boolean => {
   const additional = payload.additional_charges ?? payload.additionalCharges ?? ""
 
   // Reverse Formula: salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
-  const base = `${salt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`
+  // Note: 6 empty pipes after status (for udf6-udf10 + reserved in reverse)
+  const base = [
+    salt,
+    status,
+    "", // reserved - empty
+    "", // udf10 - empty
+    "", // udf9 - empty
+    "", // udf8 - empty
+    "", // udf7 - empty
+    "", // udf6 - empty
+    udf5,
+    udf4,
+    udf3,
+    udf2,
+    udf1,
+    email,
+    firstname,
+    productinfo,
+    amount,
+    txnid,
+    key
+  ].join("|")
 
   const computed = crypto.createHash("sha512").update(base, "utf8").digest("hex").toLowerCase()
   
+  // Debug logging
+  const debugBase = base.replace(salt, "***SALT***")
+  console.log("[PAYU] Verify hash string (masked):", debugBase)
+  console.log("[PAYU] Computed hash:", computed.substring(0, 20) + "...")
+  console.log("[PAYU] Received hash:", receivedHash.substring(0, 20) + "...")
+  
   if (computed === receivedHash) {
+    console.log("[PAYU] Hash verification: PASSED")
     return true
   }
 
+  // Try with additional charges if present
   if (additional) {
     const withCharges = `${additional}|${base}`
     const computedWithCharges = crypto.createHash("sha512").update(withCharges, "utf8").digest("hex").toLowerCase()
-    return computedWithCharges === receivedHash
+    console.log("[PAYU] Trying with additional_charges:", additional)
+    if (computedWithCharges === receivedHash) {
+      console.log("[PAYU] Hash verification with charges: PASSED")
+      return true
+    }
   }
 
+  console.log("[PAYU] Hash verification: FAILED")
   return false
 }

@@ -14,11 +14,11 @@ const mapCartItems = (items: any[]): CartItem[] => {
   return items.map((item) => {
     const product = item.product
     const variant = item.variant
-    
+
     let thumbnail = product?.image_url
     if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
-       const firstImg = product.images[0]
-       thumbnail = typeof firstImg === 'string' ? firstImg : firstImg?.url || thumbnail
+      const firstImg = product.images[0]
+      thumbnail = typeof firstImg === 'string' ? firstImg : firstImg?.url || thumbnail
     }
 
     return {
@@ -60,7 +60,7 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
 
   const items = mapCartItems(cartData.items || [])
   const item_subtotal = items.reduce((sum, item) => sum + item.total, 0)
-  
+
   const shipping_total = Array.isArray(cartData.shipping_methods) && cartData.shipping_methods.length > 0
     ? Number((cartData.shipping_methods[0] as any).amount || 0)
     : 0
@@ -90,13 +90,13 @@ export async function getOrSetCart(): Promise<Cart> {
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   const newCartId = randomUUID()
-  
+
   const { data: newCart, error } = await supabase
     .from("carts")
-    .insert({ 
-      id: newCartId, 
+    .insert({
+      id: newCartId,
       user_id: user?.id || null,
       currency_code: "inr",
       email: user?.email
@@ -138,14 +138,14 @@ export async function addToCart({
       .select("id")
       .eq("product_id", productId)
       .limit(1)
-    
+
     if (variants && variants.length > 0) {
       targetVariantId = variants[0].id
     }
   }
 
   if (!targetVariantId) {
-     throw new Error("Product has no variants")
+    throw new Error("Product has no variants")
   }
 
   const { data: existingItem } = await supabase
@@ -208,7 +208,7 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
   if (!cart) return { message: "No cart found" }
 
   const supabase = await createClient()
-  
+
   const data = {
     email: formData.get("email") as string,
     shipping_address: {
@@ -250,10 +250,10 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
 
 export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: string, shippingMethodId: string }) {
   const supabase = await createClient()
-  
+
   const { shipping_options } = await listCartOptions()
   const option = shipping_options.find(o => o.id === shippingMethodId)
-  
+
   const methodData = {
     shipping_option_id: shippingMethodId,
     name: option?.name || "Standard Shipping",
@@ -262,9 +262,9 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
 
   const { error } = await supabase
     .from("carts")
-    .update({ 
-        shipping_methods: [methodData], 
-        updated_at: new Date().toISOString()
+    .update({
+      shipping_methods: [methodData],
+      updated_at: new Date().toISOString()
     })
     .eq("id", cartId)
 
@@ -324,29 +324,29 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
         hash,
         surl: `${baseUrl}/api/payu/callback`,
         furl: `${baseUrl}/api/payu/callback`,
-        phone,
-        service_provider: "payu_paisa"
+        phone
+        // Note: service_provider: "payu_paisa" removed - deprecated since 2016
       }
     }
   }
-  
-  const paymentCollection = { 
+
+  const paymentCollection = {
     payment_sessions: [{
-        provider_id: data.provider_id,
-        status: "pending",
-        data: sessionData
+      provider_id: data.provider_id,
+      status: "pending",
+      data: sessionData
     }]
   }
 
   const { error } = await supabase
     .from("carts")
-    .update({ 
-        payment_collection: paymentCollection as any
+    .update({
+      payment_collection: paymentCollection as any
     })
     .eq("id", cart.id)
 
   if (error) throw new Error(error.message)
-    
+
   revalidateTag("cart")
   revalidatePath("/checkout")
 }
@@ -356,7 +356,7 @@ export async function placeOrder() {
   if (!cart) throw new Error("No cart found")
 
   const supabase = await createClient()
-  
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -369,7 +369,7 @@ export async function placeOrder() {
       shipping_address: cart.shipping_address,
       billing_address: cart.billing_address,
       items: cart.items as any,
-      shipping_methods: cart.shipping_methods as any, 
+      shipping_methods: cart.shipping_methods as any,
       metadata: { cart_id: cart.id }
     })
     .select()
@@ -379,49 +379,49 @@ export async function placeOrder() {
 
   await removeCartId()
   revalidateTag("cart")
-  
+
   redirect(`/order/confirmed/${order.id}`)
 }
 
 export async function createBuyNowCart({
-    variantId,
-    quantity,
-    countryCode,
-    metadata
+  variantId,
+  quantity,
+  countryCode,
+  metadata
 }: {
-    variantId: string
-    quantity: number
-    countryCode: string
-    metadata?: Record<string, unknown>
+  variantId: string
+  quantity: number
+  countryCode: string
+  metadata?: Record<string, unknown>
 }) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    const newCartId = randomUUID()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const newCartId = randomUUID()
 
-    const { error } = await supabase.from("carts").insert({
-        id: newCartId,
-        user_id: user?.id || null,
-        currency_code: "inr",
-        email: user?.email
+  const { error } = await supabase.from("carts").insert({
+    id: newCartId,
+    user_id: user?.id || null,
+    currency_code: "inr",
+    email: user?.email
+  })
+
+  if (error) throw new Error(error.message)
+
+  const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
+
+  if (variant) {
+    await supabase.from("cart_items").insert({
+      cart_id: newCartId,
+      product_id: (variant as any).product_id,
+      variant_id: variantId,
+      quantity: quantity,
+      metadata: metadata as any
     })
+  }
 
-    if (error) throw new Error(error.message)
-
-    const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
-    
-    if (variant) {
-        await supabase.from("cart_items").insert({
-            cart_id: newCartId,
-            product_id: (variant as any).product_id,
-            variant_id: variantId,
-            quantity: quantity,
-            metadata: metadata as any
-        })
-    }
-
-    await setCartId(newCartId)
-    revalidateTag("cart")
-    return newCartId
+  await setCartId(newCartId)
+  revalidateTag("cart")
+  return newCartId
 }
 
 export async function listCartOptions(): Promise<{ shipping_options: any[] }> {
@@ -448,9 +448,9 @@ export async function listCartOptions(): Promise<{ shipping_options: any[] }> {
 }
 
 export async function updateRegion(countryCode: string, currentPath: string) {
-    redirect(currentPath)
+  redirect(currentPath)
 }
 
 export async function applyPromotions(codes: string[]) {
-    console.log("Applying promotions", codes)
+  console.log("Applying promotions", codes)
 }
