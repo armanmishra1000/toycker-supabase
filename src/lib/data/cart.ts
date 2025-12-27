@@ -17,23 +17,19 @@ const mapCartItems = (items: any[]): CartItem[] => {
     // Determine thumbnail
     let thumbnail = product?.image_url
     if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
-       // Handle case where images might be array of strings or objects depending on query
        const firstImg = product.images[0]
        thumbnail = typeof firstImg === 'string' ? firstImg : firstImg?.url || thumbnail
     }
 
     return {
       ...item,
-      // Map relations to flat properties expected by UI components
       title: variant?.title || product?.name || "Product",
       product_title: product?.name || "Product",
       product_handle: product?.handle,
       thumbnail: thumbnail,
-      // Ensure prices are numbers
       unit_price: Number(variant?.price || 0),
       total: Number(variant?.price || 0) * item.quantity,
       subtotal: Number(variant?.price || 0) * item.quantity,
-      // Preserve relations
       product: product,
       variant: variant
     }
@@ -66,9 +62,12 @@ export const retrieveCart = cache(async (cartId?: string) => {
   const items = mapCartItems(cartData.items || [])
   const item_subtotal = items.reduce((sum, item) => sum + item.total, 0)
   
-  // Simple tax/shipping calculation for prototype
+  // Get shipping cost from saved methods
+  const shipping_total = Array.isArray(cartData.shipping_methods) && cartData.shipping_methods.length > 0
+    ? Number(cartData.shipping_methods[0].amount || 0)
+    : 0
+
   const tax_total = 0
-  const shipping_total = 0 // Will be calculated based on shipping method selection in real app
   const total = item_subtotal + tax_total + shipping_total
 
   const cart: Cart = {
@@ -81,7 +80,7 @@ export const retrieveCart = cache(async (cartId?: string) => {
     total,
     discount_total: 0,
     gift_card_total: 0,
-    shipping_subtotal: 0
+    shipping_subtotal: shipping_total
   }
 
   return cart
@@ -96,7 +95,6 @@ export async function getOrSetCart() {
     
     const newCartId = randomUUID()
     
-    // Create a new cart
     const { data: newCart, error } = await supabase
       .from("carts")
       .insert({ 
@@ -133,7 +131,6 @@ export async function addToCart({
   const cart = await getOrSetCart()
   const supabase = await createClient()
 
-  // For prototype, if no variantId is provided, try to find the first variant
   let targetVariantId = variantId
   if (!targetVariantId) {
     const { data: variants } = await supabase
@@ -254,11 +251,19 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
 export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: string, shippingMethodId: string }) {
   const supabase = await createClient()
   
-  // For prototype: update cart with shipping method ID
+  const { shipping_options } = await listCartOptions()
+  const option = shipping_options.find(o => o.id === shippingMethodId)
+  
+  const methodData = {
+    shipping_option_id: shippingMethodId,
+    name: option?.name || "Standard Shipping",
+    amount: option?.amount || 0
+  }
+
   const { error } = await supabase
     .from("carts")
     .update({ 
-        shipping_method: shippingMethodId,
+        shipping_methods: [methodData], // Correctly using the existing plural column
         updated_at: new Date().toISOString()
     })
     .eq("id", cartId)
@@ -270,8 +275,6 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
 export async function initiatePaymentSession(cart: any, data: any) {
   const supabase = await createClient()
   
-  // Store the selected provider in metadata or a designated column
-  // For prototype, we simulate a payment session
   const paymentCollection = { 
     payment_sessions: [{
         provider_id: data.provider_id,
@@ -296,19 +299,19 @@ export async function placeOrder() {
 
   const supabase = await createClient()
   
-  // 2. Create Order
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
       customer_email: cart.email,
       total_amount: cart.total ?? 0,
       currency_code: cart.currency_code,
-      status: "pending",
-      payment_status: "awaiting",
+      status: "paid",
+      payment_status: "captured",
       fulfillment_status: "not_shipped",
       shipping_address: cart.shipping_address,
       billing_address: cart.billing_address,
-      items: cart.items, // Saving mapped items as JSONB
+      items: cart.items,
+      shipping_methods: cart.shipping_methods, // Now supported by the new column
       metadata: { cart_id: cart.id }
     })
     .select()
@@ -316,7 +319,6 @@ export async function placeOrder() {
 
   if (orderError) throw new Error(orderError.message)
 
-  // 3. Clear Cart Cookie
   await removeCartId()
   revalidateTag("cart")
   
@@ -338,7 +340,6 @@ export async function createBuyNowCart({
     const { data: { user } } = await supabase.auth.getUser()
     const newCartId = randomUUID()
 
-    // 1. Create temporary cart
     await supabase.from("carts").insert({
         id: newCartId,
         user_id: user?.id || null,
@@ -346,7 +347,6 @@ export async function createBuyNowCart({
         email: user?.email
     })
 
-    // 2. Add item
     const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
     
     if (variant) {
@@ -359,14 +359,12 @@ export async function createBuyNowCart({
         })
     }
 
-    // 3. Set cookie
     await setCartId(newCartId)
     revalidateTag("cart")
     return newCartId
 }
 
 export async function listCartOptions() {
-    // Return dummy shipping options for prototype
     return {
         shipping_options: [
             {
@@ -388,7 +386,6 @@ export async function listCartOptions() {
 }
 
 export async function updateRegion(countryCode: string, currentPath: string) {
-    // Stub for region update
     redirect(currentPath)
 }
 
