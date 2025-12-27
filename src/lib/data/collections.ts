@@ -1,68 +1,40 @@
 "use server"
 
-import { sdk } from "@lib/config"
-import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
+import { createClient } from "@/lib/supabase/server"
 
-export const retrieveCollection = async (id: string) => {
-  const next = {
-    ...(await getCacheOptions("collections")),
+export interface Collection {
+  id: string
+  title: string
+  handle: string
+  created_at: string
+}
+
+export const listCollections = async () => {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("collections")
+    .select("*")
+
+  if (error) {
+    console.error("Error fetching collections:", error)
+    return { collections: [], count: 0 }
   }
 
-  return sdk.client
-    .fetch<{ collection: HttpTypes.StoreCollection }>(
-      `/store/collections/${id}`,
-      {
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ collection }) => collection)
+  return { collections: data as Collection[], count: data.length }
 }
 
-export const listCollections = async (
-  queryParams: Record<string, string> = {}
-): Promise<{ collections: HttpTypes.StoreCollection[]; count: number }> => {
-  const next = {
-    ...(await getCacheOptions("collections")),
+export const getCollectionByHandle = async (handle: string) => {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("collections")
+    .select("*")
+    .eq("handle", handle)
+    .single()
+
+  if (error) {
+    console.error("Error fetching collection:", error)
+    return null
   }
 
-  queryParams.limit = queryParams.limit || "100"
-  queryParams.offset = queryParams.offset || "0"
-
-  return sdk.client
-    .fetch<{ collections: HttpTypes.StoreCollection[]; count: number }>(
-      "/store/collections",
-      {
-        query: queryParams,
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ collections }) => ({ collections, count: collections.length }))
-}
-
-type CollectionFetchOptions = {
-  cache?: RequestCache
-}
-
-export const getCollectionByHandle = async (
-  handle: string,
-  options?: CollectionFetchOptions
-): Promise<HttpTypes.StoreCollection> => {
-  const cacheMode = options?.cache ?? "force-cache"
-  const next =
-    cacheMode === "force-cache"
-      ? {
-          ...(await getCacheOptions("collections")),
-        }
-      : undefined
-
-  return sdk.client
-    .fetch<HttpTypes.StoreCollectionListResponse>(`/store/collections`, {
-      query: { handle, fields: "id,handle,title" },
-      next,
-      cache: cacheMode,
-    })
-    .then(({ collections }) => collections[0])
+  return data as Collection
 }

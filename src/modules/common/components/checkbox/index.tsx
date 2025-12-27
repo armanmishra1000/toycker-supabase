@@ -1,4 +1,3 @@
-import { Checkbox, Label } from "@medusajs/ui"
 import React from "react"
 
 type CheckboxProps = {
@@ -18,24 +17,21 @@ const CheckboxWithLabel: React.FC<CheckboxProps> = ({
 }) => {
   return (
     <div className="flex items-center space-x-2 ">
-      <Checkbox
-        className="text-base-regular flex items-center gap-x-2"
+      <input
+        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
         id="checkbox"
-        role="checkbox"
-        type="button"
+        type="checkbox"
         checked={checked}
-        aria-checked={checked}
-        onClick={onChange}
+        onChange={onChange}
         name={name}
         data-testid={dataTestId}
       />
-      <Label
+      <label
         htmlFor="checkbox"
-        className="!transform-none !txt-medium"
-        size="large"
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
       >
         {label}
-      </Label>
+      </label>
     </div>
   )
 }

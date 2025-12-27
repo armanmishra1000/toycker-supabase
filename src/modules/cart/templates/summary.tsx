@@ -1,6 +1,7 @@
 "use client"
 
-import { Button, Heading } from "@medusajs/ui"
+import { Button } from "@modules/common/components/button"
+import { Text } from "@modules/common/components/text"
 
 import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
@@ -9,9 +10,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { HttpTypes } from "@medusajs/types"
 
 type SummaryProps = {
-  cart: HttpTypes.StoreCart & {
-    promotions: HttpTypes.StorePromotion[]
-  }
+  cart: any
 }
 
 function getCheckoutStep(cart: HttpTypes.StoreCart) {
@@ -29,9 +28,9 @@ const Summary = ({ cart }: SummaryProps) => {
 
   return (
     <div className="flex flex-col gap-y-4">
-      <Heading level="h2" className="text-[2rem] leading-[2.75rem]">
+      <Text as="h2" weight="bold" className="text-[2rem] leading-[2.75rem]">
         Summary
-      </Heading>
+      </Text>
       <DiscountCode cart={cart} />
       <Divider />
       <CartTotals totals={cart} />

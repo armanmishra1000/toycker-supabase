@@ -1,12 +1,12 @@
 import repeat from "@lib/util/repeat"
 import { HttpTypes } from "@medusajs/types"
-import { Heading, Table } from "@medusajs/ui"
+import { Text } from "@modules/common/components/text"
 
 import Item from "@modules/cart/components/item"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 
 type ItemsTemplateProps = {
-  cart?: HttpTypes.StoreCart
+  cart?: any
 }
 
 const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
@@ -14,29 +14,27 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
   return (
     <div>
       <div className="pb-3 flex items-center">
-        <Heading className="text-[2rem] leading-[2.75rem]">Cart</Heading>
+        <Text as="h1" weight="bold" className="text-[2rem] leading-[2.75rem]">Cart</Text>
       </div>
-      <Table>
-        <Table.Header className="border-t-0">
-          <Table.Row className="text-ui-fg-subtle txt-medium-plus">
-            <Table.HeaderCell className="!pl-0">Item</Table.HeaderCell>
-            <Table.HeaderCell></Table.HeaderCell>
-            <Table.HeaderCell>Quantity</Table.HeaderCell>
-            <Table.HeaderCell className="hidden small:table-cell">
-              Price
-            </Table.HeaderCell>
-            <Table.HeaderCell className="!pr-0 text-right">
-              Total
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
+      <div className="w-full">
+        <div className="border-t-0 grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 py-2 text-gray-500 font-semibold text-sm">
+          <div className="!pl-0">Item</div>
+          <div></div>
+          <div>Quantity</div>
+          <div className="hidden small:block">
+            Price
+          </div>
+          <div className="!pr-0 text-right">
+            Total
+          </div>
+        </div>
+        <div>
           {items
             ? items
-                .sort((a, b) => {
+                .sort((a: any, b: any) => {
                   return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
                 })
-                .map((item) => {
+                .map((item: any) => {
                   return (
                     <Item
                       key={item.id}
@@ -48,8 +46,8 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
             : repeat(5).map((i) => {
                 return <SkeletonLineItem key={i} />
               })}
-        </Table.Body>
-      </Table>
+        </div>
+      </div>
     </div>
   )
 }

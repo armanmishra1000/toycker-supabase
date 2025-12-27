@@ -1,7 +1,6 @@
-"use client"
-
-import { Spinner, Trash } from "@medusajs/icons"
-import { Button, clx } from "@medusajs/ui"
+import { Loader2, Trash2 } from "lucide-react"
+import { Button } from "../button"
+import { cn } from "@lib/util/cn"
 import { ReactNode, useState } from "react"
 import { useCartSidebar } from "@modules/layout/context/cart-sidebar-context"
 
@@ -34,18 +33,18 @@ const DeleteButton = ({
 
   return (
     <div
-      className={clx(
-        "flex items-center justify-between text-small-regular",
+      className={cn(
+        "flex items-center justify-between text-sm",
         className
       )}
     >
       {!isConfirming ? (
         <button
-          className="flex gap-x-1 text-ui-fg-subtle hover:text-ui-fg-base cursor-pointer"
+          className="flex items-center gap-x-1 text-gray-500 hover:text-gray-900 cursor-pointer"
           onClick={() => setIsConfirming(true)}
           disabled={removing}
         >
-          {removing ? <Spinner className="animate-spin" /> : <Trash />}
+          {removing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
           <span>{removing ? "Removing product…" : label}</span>
         </button>
       ) : (
@@ -66,7 +65,7 @@ const DeleteButton = ({
           >
             Yes
           </Button>
-          {removing && <Spinner className="h-4 w-4 animate-spin" />}
+          {removing && <Loader2 className="h-4 w-4 animate-spin" />}
         </div>
       )}
     </div>

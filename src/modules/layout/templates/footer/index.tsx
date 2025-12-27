@@ -8,7 +8,7 @@ import {
   PrinterIcon,
 } from "@heroicons/react/24/outline"
 import { Facebook, Instagram, Linkedin, LucideIcon, Music2, Twitter, Youtube } from "lucide-react"
-import { Text } from "@medusajs/ui"
+import { Text } from "@modules/common/components/text"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import {

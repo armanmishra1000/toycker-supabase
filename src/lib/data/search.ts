@@ -1,11 +1,9 @@
 "use server"
 
-import { HttpTypes } from "@medusajs/types"
-
 import { listProducts } from "@lib/data/products"
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
-import { getProductPrice } from "@lib/util/get-product-price"
+import { Product, Category, Collection } from "@/lib/supabase/types"
 
 export type SearchProductSummary = {
   id: string
@@ -45,40 +43,34 @@ type SearchEntitiesArgs = {
   taxonomyLimit?: number
 }
 
-const SEARCH_PRODUCT_FIELDS = "id,title,handle,thumbnail,+variants.prices"
-
-const normalizeProduct = (product: HttpTypes.StoreProduct): SearchProductSummary => {
-  const priceData = getProductPrice({ product }).cheapestPrice
-
+const normalizeProduct = (product: Product): SearchProductSummary => {
   return {
     id: product.id,
-    title: product.title,
+    title: product.name,
     handle: product.handle,
-    thumbnail: product.thumbnail || product.images?.[0]?.url || null,
-    price: priceData
-      ? {
-          amount: priceData.calculated_price_number,
-          currencyCode: priceData.currency_code,
-          formatted: priceData.calculated_price,
-        }
-      : undefined,
+    thumbnail: product.image_url,
+    price: {
+      amount: product.price,
+      currencyCode: product.currency_code,
+      formatted: `₹${product.price}`,
+    },
   }
 }
 
 const normalizeCategory = (
-  category: HttpTypes.StoreProductCategory
+  category: Category
 ): SearchCategorySummary => ({
   id: category.id,
   name: category.name,
-  handle: category.handle ?? category.id,
+  handle: category.handle,
 })
 
 const normalizeCollection = (
-  collection: HttpTypes.StoreCollection
+  collection: Collection
 ): SearchCollectionSummary => ({
   id: collection.id,
   title: collection.title,
-  handle: collection.handle ?? collection.id,
+  handle: collection.handle,
 })
 
 export const searchEntities = async ({
@@ -93,33 +85,24 @@ export const searchEntities = async ({
     return { products: [], categories: [], collections: [], suggestions: [] }
   }
 
-  if (!countryCode) {
-    throw new Error("countryCode is required for search")
-  }
-
-  const [productResponse, categories, collectionsResponse] = await Promise.all([
-    listProducts({
-      pageParam: 1,
-      queryParams: {
-        limit: productLimit,
-        q: normalizedQuery,
-        fields: SEARCH_PRODUCT_FIELDS,
-      },
-      countryCode,
-    }, { skipCollectionExpansion: true }),
-    listCategories({
-      q: normalizedQuery,
-      limit: taxonomyLimit,
-    }),
-    listCollections({
-      q: normalizedQuery,
-      limit: String(taxonomyLimit ?? 5),
-    }),
+  const [allProducts, categories, collectionsResponse] = await Promise.all([
+    listProducts(),
+    listCategories(),
+    listCollections(),
   ])
 
-  const products = productResponse.response.products.map(normalizeProduct)
-  const trimmedCategories = categories.slice(0, taxonomyLimit).map(normalizeCategory)
+  const products = allProducts
+    .filter(p => p.name.toLowerCase().includes(normalizedQuery.toLowerCase()))
+    .slice(0, productLimit)
+    .map(normalizeProduct)
+    
+  const trimmedCategories = categories
+    .filter(c => c.name.toLowerCase().includes(normalizedQuery.toLowerCase()))
+    .slice(0, taxonomyLimit)
+    .map(normalizeCategory)
+    
   const trimmedCollections = collectionsResponse.collections
+    .filter(c => c.title.toLowerCase().includes(normalizedQuery.toLowerCase()))
     .slice(0, taxonomyLimit)
     .map(normalizeCollection)
 

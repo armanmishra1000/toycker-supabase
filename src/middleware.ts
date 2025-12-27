@@ -1,37 +1,51 @@
-import { DEFAULT_COUNTRY_CODE } from "./lib/constants/region"
-import { NextRequest, NextResponse } from "next/server"
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // refreshing the auth token
+  await supabase.auth.getUser()
+
+  return supabaseResponse
+}
 
 export async function middleware(request: NextRequest) {
-  const { pathname, search } = request.nextUrl
-
-  // Skip static assets
-  if (pathname.includes(".")) {
-    return NextResponse.next()
-  }
-
-  const pathSegments = pathname.split("/").filter(Boolean)
-  const countrySegment = pathSegments[0]
-  const normalizedDefault = DEFAULT_COUNTRY_CODE.toLowerCase()
-  const hasCountryPrefix = Boolean(countrySegment && countrySegment.length === 2)
-
-  const pathWithoutPrefix = hasCountryPrefix
-    ? `/${pathSegments.slice(1).join("/")}` || "/"
-    : pathname || "/"
-
-  // If a country prefix exists in the URL, strip it from the visible URL.
-  if (hasCountryPrefix) {
-    const cleanUrl = new URL(pathWithoutPrefix + search, request.url)
-    return NextResponse.redirect(cleanUrl, 307)
-  }
-
-  const internalPath = `/${normalizedDefault}${pathWithoutPrefix === "/" ? "" : pathWithoutPrefix}`
-  const rewrittenUrl = new URL(internalPath + search, request.url)
-
-  return NextResponse.rewrite(rewrittenUrl)
+  return await updateSession(request)
 }
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|images|assets|png|svg|jpg|jpeg|gif|webp).*)",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

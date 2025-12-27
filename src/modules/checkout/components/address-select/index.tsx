@@ -1,17 +1,16 @@
 import { Listbox, Transition } from "@headlessui/react"
-import { ChevronUpDown } from "@medusajs/icons"
-import { clx } from "@medusajs/ui"
+import { ChevronDown } from "lucide-react"
 import { Fragment, useMemo } from "react"
+import { cn } from "@lib/util/cn"
 
 import Radio from "@modules/common/components/radio"
 import compareAddresses from "@lib/util/compare-addresses"
-import { HttpTypes } from "@medusajs/types"
 
 type AddressSelectProps = {
-  addresses: HttpTypes.StoreCustomerAddress[]
-  addressInput: Partial<HttpTypes.StoreCartAddress> | null
+  addresses: any[]
+  addressInput: any | null
   onSelect: (
-    address: HttpTypes.StoreCartAddress | undefined,
+    address: any | undefined,
     email?: string
   ) => void
 }
@@ -36,18 +35,18 @@ const AddressSelect = ({
     <Listbox onChange={handleSelect} value={selectedAddress?.id}>
       <div className="relative">
         <Listbox.Button
-          className="relative w-full flex justify-between items-center px-4 py-[10px] text-left bg-white cursor-default focus:outline-none border rounded-rounded focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-gray-300 focus-visible:ring-offset-2 focus-visible:border-gray-300 text-base-regular"
+          className="relative w-full flex justify-between items-center px-4 py-[10px] text-left bg-white cursor-default focus:outline-none border border-gray-200 rounded-lg focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-gray-300 focus-visible:ring-offset-2 focus-visible:border-gray-300 text-sm"
           data-testid="shipping-address-select"
         >
           {({ open }) => (
             <>
-              <span className="block truncate">
+              <span className="block truncate text-gray-900">
                 {selectedAddress
                   ? selectedAddress.address_1
                   : "Choose an address"}
               </span>
-              <ChevronUpDown
-                className={clx("transition-rotate duration-200", {
+              <ChevronDown
+                className={cn("h-4 w-4 text-gray-500 transition-transform duration-200", {
                   "transform rotate-180": open,
                 })}
               />
@@ -78,15 +77,15 @@ const AddressSelect = ({
                       data-testid="shipping-address-radio"
                     />
                     <div className="flex flex-col">
-                      <span className="text-left text-base-semi">
+                      <span className="text-left text-sm font-semibold text-gray-900">
                         {address.first_name} {address.last_name}
                       </span>
                       {address.company && (
-                        <span className="text-small-regular text-ui-fg-base">
+                        <span className="text-xs text-gray-500">
                           {address.company}
                         </span>
                       )}
-                      <div className="flex flex-col text-left text-base-regular mt-2">
+                      <div className="flex flex-col text-left text-sm mt-2 text-gray-700">
                         <span>
                           {address.address_1}
                           {address.address_2 && (

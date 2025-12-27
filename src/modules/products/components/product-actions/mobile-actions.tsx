@@ -1,5 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react"
-import { Button, clx } from "@medusajs/ui"
+import { Button } from "@modules/common/components/button"
+import { cn } from "@lib/util/cn"
 import React, { Fragment, useMemo } from "react"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
@@ -9,12 +10,11 @@ import X from "@modules/common/icons/x"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { buildDisplayPrice } from "@lib/util/display-price"
 import OptionSelect from "./option-select"
-import { HttpTypes } from "@medusajs/types"
 import { isSimpleProduct } from "@lib/util/product"
 
 type MobileActionsProps = {
-  product: HttpTypes.StoreProduct
-  variant?: HttpTypes.StoreProductVariant
+  product: any
+  variant?: any
   options: Record<string, string | undefined>
   updateOptions: (title: string, value: string) => void
   inStock?: boolean
@@ -58,7 +58,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   return (
     <>
       <div
-        className={clx("lg:hidden inset-x-0 bottom-0 fixed z-50", {
+        className={cn("lg:hidden inset-x-0 bottom-0 fixed z-50", {
           "pointer-events-none": !show,
         })}
       >
@@ -80,26 +80,26 @@ const MobileActions: React.FC<MobileActionsProps> = ({
               <span data-testid="mobile-title">{product.title}</span>
               <span>—</span>
               {normalizedPrice ? (
-                <div className="flex items-end gap-x-2 text-ui-fg-base">
+                <div className="flex items-end gap-x-2 text-gray-900">
                   <span
-                    className={clx("text-lg font-semibold", {
+                    className={cn("text-lg font-semibold", {
                       "text-[#E7353A]": normalizedPrice.isDiscounted,
-                      "text-slate-900": !normalizedPrice.isDiscounted,
+                      "text-gray-900": !normalizedPrice.isDiscounted,
                     })}
                   >
                     {normalizedPrice.current.raw}
                   </span>
                   {normalizedPrice.original && (
-                    <span className="text-sm text-slate-500 line-through">
+                    <span className="text-sm text-gray-500 line-through">
                       {normalizedPrice.original.raw}
                     </span>
                   )}
                 </div>
               ) : (
-                <div className="h-4 w-20 rounded bg-slate-100" />
+                <div className="h-4 w-20 rounded bg-gray-100" />
               )}
             </div>
-            <div className={clx("grid grid-cols-2 w-full gap-x-4", {
+            <div className={cn("grid grid-cols-2 w-full gap-x-4", {
               "!grid-cols-1": isSimple
             })}>
               {!isSimple && <Button
@@ -166,7 +166,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                   <div className="w-full flex justify-end pr-6">
                     <button
                       onClick={close}
-                      className="bg-white w-12 h-12 rounded-full text-ui-fg-base flex justify-center items-center"
+                      className="bg-white w-12 h-12 rounded-full text-gray-900 flex justify-center items-center"
                       data-testid="close-modal-button"
                     >
                       <X />

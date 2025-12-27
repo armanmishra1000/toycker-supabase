@@ -1,4 +1,4 @@
-import { Container, clx } from "@medusajs/ui"
+import { cn } from "@lib/util/cn"
 import { HttpTypes } from "@medusajs/types"
 import Image from "next/image"
 import React from "react"
@@ -28,9 +28,9 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
   const hasHoverImage = Boolean(primaryImage && secondaryImage)
 
   return (
-    <Container
-      className={clx(
-        "group/thumbnail relative w-full overflow-hidden rounded-large bg-ui-bg-subtle p-4 shadow-elevation-card-rest transition-shadow ease-in-out duration-150 hover:shadow-elevation-card-hover",
+    <div
+      className={cn(
+        "group/thumbnail relative w-full overflow-hidden rounded-lg bg-gray-100 p-4 shadow-sm transition-shadow ease-in-out duration-150 hover:shadow-md",
         className,
         {
           "aspect-[11/14]": isFeatured,
@@ -54,7 +54,7 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
       ) : (
         <PlaceholderFallback size={size} />
       )}
-    </Container>
+    </div >
   )
 }
 
@@ -87,7 +87,7 @@ const MediaLayer = ({
   hasHoverImage: boolean
 }) => {
   const type = classifyMedia(url)
-  const baseClass = clx(
+  const baseClass = cn(
     "absolute inset-0 h-full w-full object-cover object-center transition-all duration-300 ease-out",
     hasHoverImage
       ? isPrimary

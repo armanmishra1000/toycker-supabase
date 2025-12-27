@@ -1,9 +1,9 @@
 "use client"
 
 import React from "react"
-import { clx } from "@medusajs/ui"
-import { ArrowRightOnRectangle } from "@medusajs/icons"
+import { LogOut } from "lucide-react"
 import { usePathname, useParams } from "next/navigation"
+import { cn } from "@lib/util/cn"
 
 import ChevronDown from "@modules/common/icons/chevron-down"
 import User from "@modules/common/icons/user"
@@ -16,7 +16,7 @@ import { signout } from "@lib/data/customer"
 const AccountNav = ({
   customer,
 }: {
-  customer: HttpTypes.StoreCustomer | null
+  customer: any
 }) => {
   const route = usePathname()
   const handleLogout = async () => {
@@ -38,9 +38,9 @@ const AccountNav = ({
             </>
           </LocalizedClientLink>
         ) : (
-          <div className="flex flex-col rounded-lg border border-ui-border bg-ui-bg-subtle">
-            <div className="text-xl-semi px-4 pt-4 pb-2">Hello {customer?.first_name}</div>
-            <div className="text-base-regular">
+          <div className="flex flex-col rounded-lg border border-gray-200 bg-gray-50">
+            <div className="text-xl font-semibold px-4 pt-4 pb-2">Hello {customer?.first_name}</div>
+            <div className="text-base">
               <ul>
                 <MobileLink
                   href="/account/profile"
@@ -63,12 +63,12 @@ const AccountNav = ({
                 <li>
                   <button
                     type="button"
-                    className="flex items-center justify-between py-4 border-t border-ui-border px-4 w-full"
+                    className="flex items-center justify-between py-4 border-t border-gray-200 px-4 w-full"
                     onClick={handleLogout}
                     data-testid="logout-button"
                   >
                     <div className="flex items-center gap-x-2">
-                      <ArrowRightOnRectangle />
+                      <LogOut className="h-4 w-4" />
                       <span>Log out</span>
                     </div>
                     <ChevronDown className="transform -rotate-90" />
@@ -82,11 +82,11 @@ const AccountNav = ({
       <div className="hidden small:block" data-testid="account-nav">
         <div className="space-y-4">
           <div className="pb-2">
-            <h3 className="text-base-semi text-ui-fg-subtle uppercase tracking-wide">
+            <h3 className="text-base font-semibold text-gray-500 uppercase tracking-wide">
               Manage
             </h3>
           </div>
-          <div className="text-base-regular">
+          <div className="text-base">
             <ul className="flex mb-0 justify-start items-start flex-col gap-y-2">
               <li>
                 <AccountNavLink
@@ -128,7 +128,7 @@ const AccountNav = ({
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="text-ui-fg-subtle hover:text-ui-fg-base transition-colors"
+                  className="text-gray-500 hover:text-gray-900 transition-colors"
                   data-testid="logout-button"
                 >
                   Log out
@@ -161,12 +161,12 @@ const AccountNavLink = ({
   return (
     <LocalizedClientLink
       href={href}
-      className={clx(
+      className={cn(
         "flex items-center gap-x-3 px-3 py-2 rounded-md transition-colors",
         {
-          "bg-ui-bg-subtle text-ui-fg-base font-semibold border border-ui-border":
+          "bg-gray-100 text-gray-900 font-semibold border border-gray-200":
             active,
-          "text-ui-fg-subtle hover:text-ui-fg-base": !active,
+          "text-gray-500 hover:text-gray-900": !active,
         }
       )}
       data-testid={dataTestId}
@@ -178,7 +178,7 @@ const AccountNavLink = ({
 
 const NavRow = ({ icon, label }: { icon: React.ReactNode; label: string }) => {
   return (
-    <span className="flex items-center gap-x-3 text-base-regular">
+    <span className="flex items-center gap-x-3 text-base">
       {icon}
       {label}
     </span>
@@ -199,7 +199,7 @@ const MobileLink = ({
   <li>
     <LocalizedClientLink
       href={href}
-      className="flex items-center justify-between py-4 border-t border-ui-border px-4"
+      className="flex items-center justify-between py-4 border-t border-gray-200 px-4"
       data-testid={dataTestId}
     >
       <div className="flex items-center gap-x-2">

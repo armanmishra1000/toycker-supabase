@@ -1,6 +1,5 @@
 import { retrieveCustomer } from "@lib/data/customer"
-import { listProducts } from "@lib/data/products"
-import { HttpTypes } from "@medusajs/types"
+import { getProductByHandle } from "@lib/data/products"
 import ProductActions from "@modules/products/components/product-actions"
 import { WishlistProvider } from "@modules/products/context/wishlist"
 
@@ -12,13 +11,10 @@ export default async function ProductActionsWrapper({
   region,
 }: {
   id: string
-  region: HttpTypes.StoreRegion
+  region: any
 }) {
   const customerPromise = retrieveCustomer()
-  const product = await listProducts({
-    queryParams: { id: [id] },
-    regionId: region.id,
-  }).then(({ response }) => response.products[0])
+  const product = await getProductByHandle(id) // Note: getProductByHandle is used for id/handle interchangeably in current implementation or we need getProductById
 
   const customer = await customerPromise
 

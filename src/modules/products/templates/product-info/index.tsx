@@ -1,11 +1,10 @@
-import { HttpTypes } from "@medusajs/types"
-import { Heading } from "@medusajs/ui"
+import { Text } from "@modules/common/components/text"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import SafeRichText from "@modules/common/components/safe-rich-text"
 import getShortDescription from "@modules/products/utils/get-short-description"
 
 type ProductInfoProps = {
-  product: HttpTypes.StoreProduct
+  product: any
 }
 
 const ProductInfo = ({ product }: ProductInfoProps) => {
@@ -17,21 +16,22 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
         {product.collection && (
           <LocalizedClientLink
             href={`/collections/${product.collection.handle}`}
-            className="text-medium text-ui-fg-muted hover:text-ui-fg-subtle"
+            className="text-sm text-gray-500 hover:text-gray-900"
           >
             {product.collection.title}
           </LocalizedClientLink>
         )}
-        <Heading
-          level="h2"
-          className="text-3xl leading-10 text-ui-fg-base"
+        <Text
+          as="h1"
+          weight="bold"
+          className="text-3xl leading-10 text-gray-900"
           data-testid="product-title"
         >
           {product.title}
-        </Heading>
+        </Text>
 
         {shortDescription ? ( 
-          <p className="text-medium text-ui-fg-subtle" data-testid="product-description">
+          <p className="text-sm text-gray-500" data-testid="product-description">
             {shortDescription}
           </p>
         ) : null}

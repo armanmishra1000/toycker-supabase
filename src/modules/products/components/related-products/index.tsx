@@ -1,9 +1,10 @@
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
-import type { HttpTypes } from "@medusajs/types"
-import Product from "../product-preview"
+import { Product as SupabaseProduct } from "@/lib/supabase/types"
+import ProductPreview from "../product-preview"
+
 type RelatedProductsProps = {
-  product: HttpTypes.StoreProduct
+  product: SupabaseProduct
   countryCode: string
 }
 
@@ -17,36 +18,8 @@ export default async function RelatedProducts({
     return null
   }
 
-  // edit this function to define your related products logic
-  const queryParams: HttpTypes.StoreProductListParams = {}
-  if (region?.id) {
-    queryParams.region_id = region.id
-  }
-  const collectionCandidates = [
-    ...(product.collection_id ? [product.collection_id] : []),
-    ...(((product as HttpTypes.StoreProduct & {
-      additional_collections?: Array<{ id: string }>
-    }).additional_collections || []).map((collection) => collection.id)),
-  ].filter(Boolean)
-
-  if (collectionCandidates.length) {
-    queryParams.collection_id = Array.from(new Set(collectionCandidates))
-  }
-  if (product.tags) {
-    queryParams.tag_id = product.tags
-      .map((t) => t.id)
-      .filter(Boolean) as string[]
-  }
-  queryParams.is_giftcard = false
-
-  const products = await listProducts({
-    queryParams,
-    countryCode,
-  }).then(({ response }) => {
-    return response.products.filter(
-      (responseProduct) => responseProduct.id !== product.id
-    )
-  })
+  const allProducts = await listProducts()
+  const products = allProducts.filter(p => p.id !== product.id).slice(0, 4)
 
   if (!products.length) {
     return null
@@ -64,9 +37,9 @@ export default async function RelatedProducts({
       </div>
 
       <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-        {products.map((product) => (
-          <li key={product.id}>
-            <Product product={product} />
+        {products.map((p) => (
+          <li key={p.id}>
+            <ProductPreview product={p} />
           </li>
         ))}
       </ul>

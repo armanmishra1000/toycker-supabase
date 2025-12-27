@@ -1,4 +1,5 @@
-import { Text, clx } from "@medusajs/ui"
+import { Text } from "@modules/common/components/text"
+import { cn } from "@lib/util/cn"
 import * as AccordionPrimitive from "@radix-ui/react-accordion"
 import React from "react"
 
@@ -46,7 +47,7 @@ const Item: React.FC<AccordionItemProps> = ({
   return (
     <AccordionPrimitive.Item
       {...props}
-      className={clx(
+      className={cn(
         "group border-t border-slate-200 last:mb-0 last:border-b",
         "py-4",
         className
@@ -71,7 +72,7 @@ const Item: React.FC<AccordionItemProps> = ({
       </AccordionPrimitive.Header>
       <AccordionPrimitive.Content
         forceMount={forceMountContent}
-        className={clx(
+        className={cn(
           "radix-state-closed:animate-accordion-close radix-state-open:animate-accordion-open radix-state-closed:pointer-events-none px-1"
         )}
       >

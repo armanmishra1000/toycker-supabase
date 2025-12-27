@@ -1,5 +1,6 @@
 import { Disclosure } from "@headlessui/react"
-import { Badge, Button, clx } from "@medusajs/ui"
+import { Button } from "@modules/common/components/button"
+import { cn } from "@lib/util/cn"
 import { useEffect } from "react"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
@@ -45,13 +46,13 @@ const AccountInfo = ({
 
   if (!editable) {
     return (
-      <div className="text-small-regular" data-testid={dataTestid}>
+      <div className="text-sm" data-testid={dataTestid}>
         <div className="flex items-end justify-between">
           <div className="flex flex-col">
-            <span className="uppercase text-ui-fg-base">{label}</span>
+            <span className="uppercase text-gray-500 text-xs font-semibold">{label}</span>
             <div className="flex items-center flex-1 basis-0 justify-end gap-x-4">
               {typeof currentInfo === "string" ? (
-                <span className="font-semibold" data-testid="current-info">
+                <span className="font-semibold text-gray-900" data-testid="current-info">
                   {currentInfo}
                 </span>
               ) : (
@@ -65,13 +66,13 @@ const AccountInfo = ({
   }
 
   return (
-    <div className="text-small-regular" data-testid={dataTestid}>
+    <div className="text-sm" data-testid={dataTestid}>
       <div className="flex items-end justify-between">
         <div className="flex flex-col">
-          <span className="uppercase text-ui-fg-base">{label}</span>
+          <span className="uppercase text-gray-500 text-xs font-semibold">{label}</span>
           <div className="flex items-center flex-1 basis-0 justify-end gap-x-4">
             {typeof currentInfo === "string" ? (
-              <span className="font-semibold" data-testid="current-info">{currentInfo}</span>
+              <span className="font-semibold text-gray-900" data-testid="current-info">{currentInfo}</span>
             ) : (
               currentInfo
             )}
@@ -95,7 +96,7 @@ const AccountInfo = ({
       <Disclosure>
         <Disclosure.Panel
           static
-          className={clx(
+          className={cn(
             "transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden",
             {
               "max-h-[1000px] opacity-100": isSuccess,
@@ -104,9 +105,9 @@ const AccountInfo = ({
           )}
           data-testid="success-message"
         >
-          <Badge className="p-2 my-4" color="green">
+          <div className="p-2 my-4 bg-green-100 text-green-700 rounded text-xs font-medium">
             <span>{label} updated succesfully</span>
-          </Badge>
+          </div>
         </Disclosure.Panel>
       </Disclosure>
 
@@ -114,7 +115,7 @@ const AccountInfo = ({
       <Disclosure>
         <Disclosure.Panel
           static
-          className={clx(
+          className={cn(
             "transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden",
             {
               "max-h-[1000px] opacity-100": isError,
@@ -123,16 +124,16 @@ const AccountInfo = ({
           )}
           data-testid="error-message"
         >
-          <Badge className="p-2 my-4" color="red">
+          <div className="p-2 my-4 bg-red-100 text-red-700 rounded text-xs font-medium">
             <span>{errorMessage}</span>
-          </Badge>
+          </div>
         </Disclosure.Panel>
       </Disclosure>
 
       <Disclosure>
         <Disclosure.Panel
           static
-          className={clx(
+          className={cn(
             "transition-[max-height,opacity] duration-300 ease-in-out overflow-visible",
             {
               "max-h-[1000px] opacity-100": state,

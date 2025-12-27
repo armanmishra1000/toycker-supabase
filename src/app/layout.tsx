@@ -2,7 +2,7 @@ import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import Providers from "./providers"
-import "styles/globals.css"
+import "@/styles/globals.css"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),

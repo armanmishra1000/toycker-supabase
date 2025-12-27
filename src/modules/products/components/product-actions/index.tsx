@@ -6,7 +6,7 @@ import { getProductPrice } from "@lib/util/get-product-price"
 import { buildDisplayPrice } from "@lib/util/display-price"
 import getShortDescription from "@modules/products/utils/get-short-description"
 import { HttpTypes } from "@medusajs/types"
-import { Button } from "@medusajs/ui"
+import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import { useOptionalWishlist } from "@modules/products/context/wishlist"
@@ -38,7 +38,7 @@ import { useCartStore } from "@modules/cart/context/cart-store-context"
 const GIFT_WRAP_FEE = 50
 
 type ProductActionsProps = {
-  product: HttpTypes.StoreProduct
+  product: any
   disabled?: boolean
   showSupportActions?: boolean
   onActionComplete?: () => void
@@ -46,9 +46,9 @@ type ProductActionsProps = {
 }
 
 const optionsAsKeymap = (
-  variantOptions: HttpTypes.StoreProductVariant["options"]
+  variantOptions: any[]
 ) => {
-  return variantOptions?.reduce((acc: Record<string, string>, varopt) => {
+  return variantOptions?.reduce((acc: Record<string, string>, varopt: any) => {
     if (varopt?.option_id && varopt?.value) {
       acc[varopt.option_id] = varopt.value
     }
@@ -84,7 +84,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
   const { optimisticAdd } = useCartStore()
   const giftWrapInputId = useId()
 
-  const isVariantAvailable = useCallback((variant: HttpTypes.StoreProductVariant) => {
+  const isVariantAvailable = useCallback((variant: any) => {
     if (!variant) return false
     if (!variant.manage_inventory) return true
     if (variant.allow_backorder) return true
@@ -104,7 +104,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
       return
     }
 
-    return product.variants.find((v) => {
+    return product.variants.find((v: any) => {
       const variantOptions = optionsAsKeymap(v.options)
       return isEqual(variantOptions, options)
     })
@@ -120,7 +120,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
       return
     }
 
-    const preferred = variants.find((variant) => isVariantAvailable(variant)) ?? variants[0]
+    const preferred = variants.find((variant: any) => isVariantAvailable(variant)) ?? variants[0]
     const variantOptions = optionsAsKeymap(preferred.options)
 
     setOptions((prev) => {
@@ -163,7 +163,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
   //check if the selected options produce a valid variant
   const isValidVariant = useMemo(() => {
-    return product.variants?.some((v) => {
+    return product.variants?.some((v: any) => {
       const variantOptions = optionsAsKeymap(v.options)
       return isEqual(variantOptions, options)
     })
@@ -547,7 +547,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
             type="button"
             onClick={handleWishlistClick}
             className={`flex h-14 w-14 items-center justify-center rounded-full border text-[#E7353A] transition ${
-              isWishlistActive ? "border-[#E7353A] bg-[#FFF5F5]" : "border-ui-border-base"
+              isWishlistActive ? "border-[#E7353A] bg-[#FFF5F5]" : "border-gray-200"
             }`}
             aria-label="Toggle wishlist"
             aria-pressed={isWishlistActive}
@@ -568,11 +568,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
       </div>
 
       {showSupportActions && (
-        <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-ui-fg-base">
+        <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-gray-900">
           <button
             type="button"
             onClick={() => setIsQuestionOpen(true)}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-ui-fg-base"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900"
           >
             <MessageCircleQuestion className="h-4 w-4" />
             Ask a question
@@ -580,7 +580,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
           <button
             type="button"
             onClick={handleShare}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-ui-fg-base"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900"
           >
             <Share2 className="h-4 w-4" />
             {shareCopied ? "Link copied" : "Share"}
@@ -626,7 +626,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
               required
             />
             <div className="space-y-2">
-              <label className="text-sm font-medium text-ui-fg-base">
+              <label className="text-sm font-medium text-gray-900">
                 Your message
               </label>
               <textarea
@@ -638,7 +638,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
                     message: event.target.value,
                   }))
                 }
-                className="min-h-[120px] w-full rounded-2xl border border-ui-border-base px-4 py-3 text-sm focus:border-ui-fg-interactive focus:outline-none"
+                className="min-h-[120px] w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:border-gray-900 focus:outline-none"
               />
             </div>
             <Modal.Footer>
@@ -671,13 +671,13 @@ const InputField = ({
 }) => {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-ui-fg-base">{label}</label>
+      <label className="text-sm font-medium text-gray-900">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required={required}
-        className="w-full rounded-2xl border border-ui-border-base px-4 py-3 text-sm focus:border-ui-fg-interactive focus:outline-none"
+        className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:border-gray-900 focus:outline-none"
       />
     </div>
   )

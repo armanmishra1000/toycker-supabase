@@ -1,7 +1,8 @@
 "use client"
 
-import { Plus } from "@medusajs/icons"
-import { Button, Heading } from "@medusajs/ui"
+import { Plus } from "lucide-react"
+import { Button } from "@modules/common/components/button"
+import { Text } from "@modules/common/components/text"
 import { useEffect, useState, useActionState } from "react"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
@@ -16,8 +17,8 @@ const AddAddress = ({
   region,
   addresses,
 }: {
-  region: HttpTypes.StoreRegion
-  addresses: HttpTypes.StoreCustomerAddress[]
+  region: any
+  addresses: any[]
 }) => {
   const [successState, setSuccessState] = useState(false)
   const { state, open, close: closeModal } = useToggleState(false)
@@ -49,17 +50,17 @@ const AddAddress = ({
   return (
     <>
       <button
-        className="border border-ui-border-base rounded-rounded p-5 min-h-[220px] h-full w-full flex flex-col justify-between"
+        className="border border-gray-200 rounded-lg p-5 min-h-[220px] h-full w-full flex flex-col justify-between hover:border-gray-300 transition-colors"
         onClick={open}
         data-testid="add-address-button"
       >
-        <span className="text-base-semi">New address</span>
-        <Plus />
+        <span className="text-base font-semibold">New address</span>
+        <Plus className="h-6 w-6" />
       </button>
 
       <Modal isOpen={state} close={close} data-testid="add-address-modal">
         <Modal.Title>
-          <Heading className="mb-2">Add address</Heading>
+          <Text weight="bold" className="text-xl mb-2">Add address</Text>
         </Modal.Title>
         <form action={formAction}>
           <Modal.Body>
@@ -137,7 +138,7 @@ const AddAddress = ({
             </div>
             {formState.error && (
               <div
-                className="text-rose-500 text-small-regular py-2"
+                className="text-red-500 text-sm py-2"
                 data-testid="address-error"
               >
                 {formState.error}

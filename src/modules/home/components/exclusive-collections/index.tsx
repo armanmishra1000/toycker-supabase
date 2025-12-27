@@ -13,7 +13,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { getProductPrice } from "@lib/util/get-product-price"
 import { buildDisplayPrice, type DisplayPrice } from "@lib/util/display-price"
 import type { ExclusiveCollectionEntry } from "@lib/data/exclusive-collections"
-import { clx } from "@medusajs/ui"
+import { cn } from "@lib/util/cn"
 
 type ExclusiveCollectionsProps = {
   items: ExclusiveCollectionEntry[]
@@ -63,7 +63,7 @@ const PriceStack = ({ price }: { price: DisplayPrice | null }) => {
   return (
     <div className="flex flex-col leading-tight">
       <p
-        className={clx("text-sm font-semibold", {
+        className={cn("text-sm font-semibold", {
           "text-[#E7353A]": price.isDiscounted,
           "text-[#4b2b1c]": !price.isDiscounted,
         })}
@@ -264,7 +264,7 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
             </Swiper>
             <button
               type="button"
-              className="exclusive-nav-button absolute left-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-ui-bg-base text-ui-fg-base shadow-sm transition hover:bg-ui-bg-subtle"
+              className="exclusive-nav-button absolute left-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition hover:bg-gray-50"
               aria-label="Previous video"
               onClick={() => swiperRef.current?.slidePrev()}
             >
@@ -272,7 +272,7 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
             </button>
             <button
               type="button"
-              className="exclusive-nav-button absolute right-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-ui-bg-base text-ui-fg-base shadow-sm transition hover:bg-ui-bg-subtle"
+              className="exclusive-nav-button absolute right-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition hover:bg-gray-50"
               aria-label="Next video"
               onClick={() => swiperRef.current?.slideNext()}
             >

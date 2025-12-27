@@ -1,38 +1,23 @@
 "use server"
 
-import { sdk } from "@lib/config"
-import { HttpTypes } from "@medusajs/types"
-
-import { getAuthHeaders, getCacheOptions } from "./cookies"
+import { createClient } from "@/lib/supabase/server"
+import { Product } from "@/lib/supabase/types"
 
 export const retrieveVariant = async (
   variant_id: string
-): Promise<HttpTypes.StoreProductVariant | null> => {
-  const authHeaders = await getAuthHeaders()
+): Promise<any | null> => {
+  const supabase = await createClient()
 
-  if (!authHeaders) return null
+  const { data, error } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("id", variant_id)
+    .single()
 
-  const headers = {
-    ...authHeaders,
+  if (error) {
+    console.error("Error fetching variant:", error)
+    return null
   }
 
-  const next = {
-    ...(await getCacheOptions("variants")),
-  }
-
-  return await sdk.client
-    .fetch<{ variant: HttpTypes.StoreProductVariant }>(
-      `/store/product-variants/${variant_id}`,
-      {
-        method: "GET",
-        query: {
-          fields: "*images",
-        },
-        headers,
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ variant }) => variant)
-    .catch(() => null)
+  return data
 }

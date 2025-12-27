@@ -1,7 +1,7 @@
 "use client"
 
 import { Component, type ErrorInfo, type ReactNode } from "react"
-import { Button } from "@medusajs/ui"
+import { Button } from "./button"
 
 type Props = {
   children: ReactNode

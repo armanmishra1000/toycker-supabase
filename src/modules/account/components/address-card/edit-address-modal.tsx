@@ -1,8 +1,10 @@
 "use client"
 
 import React, { useEffect, useState, useActionState } from "react"
-import { PencilSquare as Edit, Trash } from "@medusajs/icons"
-import { Button, Heading, Text, clx } from "@medusajs/ui"
+import { Pencil as Edit, Trash2 as Trash } from "lucide-react"
+import { Button } from "@modules/common/components/button"
+import { Text } from "@modules/common/components/text"
+import { cn } from "@lib/util/cn"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
 import CountrySelect from "@modules/checkout/components/country-select"
@@ -17,8 +19,8 @@ import {
 } from "@lib/data/customer"
 
 type EditAddressProps = {
-  region: HttpTypes.StoreRegion
-  address: HttpTypes.StoreCustomerAddress
+  region: any
+  address: any
   isActive?: boolean
 }
 
@@ -64,8 +66,8 @@ const EditAddress: React.FC<EditAddressProps> = ({
   return (
     <>
       <div
-        className={clx(
-          "border rounded-rounded p-5 min-h-[220px] h-full w-full flex flex-col justify-between transition-colors",
+        className={cn(
+          "border border-gray-200 rounded-lg p-5 min-h-[220px] h-full w-full flex flex-col justify-between transition-colors",
           {
             "border-gray-900": isActive,
           }
@@ -73,21 +75,22 @@ const EditAddress: React.FC<EditAddressProps> = ({
         data-testid="address-container"
       >
         <div className="flex flex-col">
-          <Heading
-            className="text-left text-base-semi"
+          <Text
+            weight="semibold"
+            className="text-left text-base"
             data-testid="address-name"
           >
             {address.first_name} {address.last_name}
-          </Heading>
+          </Text>
           {address.company && (
             <Text
-              className="txt-compact-small text-ui-fg-base"
+              className="text-sm text-gray-500"
               data-testid="address-company"
             >
               {address.company}
             </Text>
           )}
-          <Text className="flex flex-col text-left text-base-regular mt-2">
+          <Text className="flex flex-col text-left text-sm mt-2 text-gray-700">
             <span data-testid="address-address">
               {address.address_1}
               {address.address_2 && <span>, {address.address_2}</span>}
@@ -103,19 +106,19 @@ const EditAddress: React.FC<EditAddressProps> = ({
         </div>
         <div className="flex items-center gap-x-4">
           <button
-            className="text-small-regular text-ui-fg-base flex items-center gap-x-2"
+            className="text-sm text-gray-500 flex items-center gap-x-2 hover:text-gray-900"
             onClick={open}
             data-testid="address-edit-button"
           >
-            <Edit />
+            <Edit className="h-4 w-4" />
             Edit
           </button>
           <button
-            className="text-small-regular text-ui-fg-base flex items-center gap-x-2"
+            className="text-sm text-red-500 flex items-center gap-x-2 hover:text-red-700"
             onClick={removeAddress}
             data-testid="address-delete-button"
           >
-            {removing ? <Spinner /> : <Trash />}
+            {removing ? <Spinner /> : <Trash className="h-4 w-4" />}
             Remove
           </button>
         </div>
@@ -123,7 +126,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
 
       <Modal isOpen={state} close={close} data-testid="edit-address-modal">
         <Modal.Title>
-          <Heading className="mb-2">Edit address</Heading>
+          <Text weight="bold" className="text-xl mb-2">Edit address</Text>
         </Modal.Title>
         <form action={formAction}>
           <input type="hidden" name="addressId" value={address.id} />
@@ -211,7 +214,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
               />
             </div>
             {formState.error && (
-              <div className="text-rose-500 text-small-regular py-2">
+              <div className="text-red-500 text-sm py-2">
                 {formState.error}
               </div>
             )}

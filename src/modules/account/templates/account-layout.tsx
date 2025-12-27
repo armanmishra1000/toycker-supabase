@@ -1,12 +1,9 @@
 import React from "react"
-
 import UnderlineLink from "@modules/common/components/interactive-link"
-
 import AccountNav from "../components/account-nav"
-import { HttpTypes } from "@medusajs/types"
 
 interface AccountLayoutProps {
-  customer: HttpTypes.StoreCustomer | null
+  customer: any
   children: React.ReactNode
 }
 
@@ -23,22 +20,22 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
     <div className="flex-1" data-testid="account-page">
       <div className="flex-1 content-container h-full max-w-6xl mx-auto flex flex-col gap-y-8 small:py-12 py-8">
         {hasCustomer && (
-          <div className="rounded-lg border border-ui-border bg-ui-bg-base px-6 py-6 small:px-8 small:py-8 shadow-card">
+          <div className="rounded-lg border border-gray-200 bg-white px-6 py-6 small:px-8 small:py-8 shadow-sm">
             <div className="flex flex-col gap-y-2">
-              <p className="text-small-regular text-ui-fg-subtle uppercase tracking-wide">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
                 Account
               </p>
-              <h1 className="text-2xl-semi">Welcome back, {firstName}</h1>
-              <p className="text-base-regular text-ui-fg-subtle">
-                Signed in as <span className="font-semibold">{email}</span>
+              <h1 className="text-2xl font-semibold">Welcome back, {firstName}</h1>
+              <p className="text-sm text-gray-500">
+                Signed in as <span className="font-semibold text-gray-900">{email}</span>
               </p>
             </div>
           </div>
         )}
-        <div className="rounded-lg border border-ui-border bg-ui-bg-base shadow-card overflow-hidden">
+        <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
           {hasCustomer ? (
             <div className="grid grid-cols-1 small:grid-cols-[260px_1fr] gap-0">
-              <div className="border-b small:border-b-0 small:border-r border-ui-border p-6 small:p-8">
+              <div className="border-b small:border-b-0 small:border-r border-gray-200 p-6 small:p-8">
                 <AccountNav customer={customer} />
               </div>
               <div className="flex-1 p-6 small:p-8">{children}</div>
@@ -47,10 +44,10 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
             <div className="p-6 small:p-8">{children}</div>
           )}
         </div>
-        <div className="flex flex-col small:flex-row items-start small:items-center justify-between border border-ui-border rounded-lg bg-ui-bg-base px-6 py-6 small:px-8 small:py-8 gap-6 shadow-card">
+        <div className="flex flex-col small:flex-row items-start small:items-center justify-between border border-gray-200 rounded-lg bg-white px-6 py-6 small:px-8 small:py-8 gap-6 shadow-sm">
           <div className="space-y-2">
-            <h3 className="text-xl-semi">Got questions?</h3>
-            <span className="text-base-regular text-ui-fg-subtle">
+            <h3 className="text-xl font-semibold">Got questions?</h3>
+            <span className="text-sm text-gray-500">
               Find quick answers and common questions on our customer service page.
             </span>
           </div>

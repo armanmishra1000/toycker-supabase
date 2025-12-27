@@ -1,11 +1,11 @@
 "use client"
 
 import Accordion from "./accordion"
-import { HttpTypes } from "@medusajs/types"
+import { Product } from "@/lib/supabase/types"
 import SafeRichText from "@modules/common/components/safe-rich-text"
 
 type ProductTabsProps = {
-  product: HttpTypes.StoreProduct
+  product: Product
 }
 
 const ProductTabs = ({ product }: ProductTabsProps) => {

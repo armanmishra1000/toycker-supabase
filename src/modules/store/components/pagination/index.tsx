@@ -1,6 +1,6 @@
 "use client"
 
-import { clx } from "@medusajs/ui"
+import { cn } from "@lib/util/cn"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { useOptionalStorefrontFilters } from "@modules/store/context/storefront-filters"
@@ -45,11 +45,11 @@ export function Pagination({
   ) => (
     <button
       key={p}
-      className={clx(
+      className={cn(
         "h-10 min-w-[2.5rem] rounded-full px-3 text-sm font-semibold transition",
         isCurrent
-          ? "bg-ui-fg-base text-ui-fg-on-inverted shadow-sm"
-          : "bg-transparent text-ui-fg-muted hover:bg-ui-bg-base hover:text-ui-fg-base"
+          ? "bg-gray-900 text-white shadow-sm"
+          : "bg-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-900"
       )}
       disabled={isCurrent}
       aria-current={isCurrent ? "page" : undefined}
@@ -63,7 +63,7 @@ export function Pagination({
   const renderEllipsis = (key: string) => (
     <span
       key={key}
-      className="px-2 text-base font-semibold text-ui-fg-muted"
+      className="px-2 text-base font-semibold text-gray-500"
     >
       …
     </span>
@@ -137,17 +137,17 @@ export function Pagination({
 
   return (
     <div className="mt-12 flex w-full flex-col items-center gap-3" data-testid={dataTestid}>
-      <div className="flex items-center gap-2 text-sm text-ui-fg-subtle">
+      <div className="flex items-center gap-2 text-sm text-gray-500">
         <span>Page {currentPage}</span>
-        <span aria-hidden className="h-4 w-px bg-ui-border-subtle" />
+        <span aria-hidden className="h-4 w-px bg-gray-200" />
         <span>of {pagesCount}</span>
       </div>
-      <div className="flex items-center gap-2 rounded-full border border-ui-border-subtle bg-ui-bg-base px-2 py-1 shadow-sm">
+      <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1 shadow-sm">
         <button
           type="button"
           onClick={goToPrevious}
           disabled={isFirstPage}
-          className="h-9 rounded-full px-4 text-sm font-semibold text-ui-fg-base transition disabled:opacity-40"
+          className="h-9 rounded-full px-4 text-sm font-semibold text-gray-900 transition disabled:opacity-40"
         >
           Prev
         </button>
@@ -156,7 +156,7 @@ export function Pagination({
           type="button"
           onClick={goToNext}
           disabled={isLastPage}
-          className="h-9 rounded-full px-4 text-sm font-semibold text-ui-fg-base transition disabled:opacity-40"
+          className="h-9 rounded-full px-4 text-sm font-semibold text-gray-900 transition disabled:opacity-40"
         >
           Next
         </button>

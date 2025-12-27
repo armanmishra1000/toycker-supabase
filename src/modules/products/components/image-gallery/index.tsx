@@ -1,6 +1,5 @@
 "use client"
 
-import { HttpTypes } from "@medusajs/types"
 import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import { Swiper, SwiperSlide } from "swiper/react"
@@ -16,7 +15,7 @@ import "swiper/css/navigation"
 import "swiper/css/thumbs"
 
 type ImageGalleryProps = {
-  images: HttpTypes.StoreProductImage[]
+  images: { url: string; id?: string }[]
   variant?: "default" | "modal"
 }
 
@@ -307,7 +306,7 @@ const ImageThumb = ({
   image,
   index,
 }: {
-  image: HttpTypes.StoreProductImage
+  image: { url: string }
   index: number
 }) => {
   return (

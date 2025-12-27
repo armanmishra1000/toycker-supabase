@@ -1,7 +1,6 @@
 "use client"
 
-import { XMark } from "@medusajs/icons"
-import { HttpTypes } from "@medusajs/types"
+import { X } from "lucide-react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Help from "@modules/order/components/help"
 import Items from "@modules/order/components/items"
@@ -11,7 +10,7 @@ import ShippingDetails from "@modules/order/components/shipping-details"
 import React from "react"
 
 type OrderDetailsTemplateProps = {
-  order: HttpTypes.StoreOrder
+  order: any
 }
 
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
@@ -23,10 +22,10 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <h1 className="text-2xl-semi">Order details</h1>
         <LocalizedClientLink
           href="/account/orders"
-          className="flex gap-2 items-center text-ui-fg-subtle hover:text-ui-fg-base"
+          className="flex gap-2 items-center text-gray-500 hover:text-gray-900"
           data-testid="back-to-overview-button"
         >
-          <XMark /> Back to overview
+          <X className="h-4 w-4" /> Back to overview
         </LocalizedClientLink>
       </div>
       <div

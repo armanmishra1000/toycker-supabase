@@ -63,7 +63,16 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
     results,
     suggestions,
     isEmpty,
-  } = useSearchResults({ countryCode })
+  } = {
+    query: "",
+    setQuery: (q: string) => {},
+    clear: () => {},
+    status: "idle",
+    error: null,
+    results: null,
+    suggestions: [],
+    isEmpty: true,
+  } as any
 
   const {
     isSupported: isVoiceSupported,

@@ -1,5 +1,5 @@
 import { Dialog, Transition } from "@headlessui/react"
-import { clx } from "@medusajs/ui"
+import { cn } from "@lib/util/cn"
 import React, { Fragment } from "react"
 
 import { ModalProvider, useModal } from "@lib/context/modal-context"
@@ -63,7 +63,7 @@ const Modal = ({
 
         <div className="fixed inset-0 w-screen overflow-y-hidden">
           <div
-            className={clx(
+            className={cn(
               "flex min-h-full h-full justify-center p-0 text-center",
               {
                 "items-center": !search || fullScreen,
@@ -83,7 +83,7 @@ const Modal = ({
             >
               <Dialog.Panel
                 data-testid={dataTestId}
-                className={clx(
+                className={cn(
                   "flex flex-col justify-start w-full transform text-left align-middle transition-all h-fit",
                   {
                     "p-0": panelPadding === "none",
@@ -120,7 +120,7 @@ const Title: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <Dialog.Title className="flex items-center justify-between">
-      <div className="text-large-semi">{children}</div>
+      <div className="text-xl font-semibold">{children}</div>
       <div>
         <button onClick={close} data-testid="close-modal-button">
           <X size={20} />
@@ -132,7 +132,7 @@ const Title: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const Description: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <Dialog.Description className="flex text-small-regular text-ui-fg-base items-center justify-center pt-2 pb-4 h-full">
+    <Dialog.Description className="flex text-sm text-gray-500 items-center justify-center pt-2 pb-4 h-full">
       {children}
     </Dialog.Description>
   )

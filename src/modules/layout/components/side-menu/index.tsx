@@ -1,8 +1,8 @@
-"use client"
-
+import * as React from "react"
 import { Popover, PopoverPanel, Transition } from "@headlessui/react"
-import { ArrowRightMini, XMark } from "@medusajs/icons"
-import { Text, clx, useToggleState } from "@medusajs/ui"
+import { ArrowRight, X } from "lucide-react"
+import { Text } from "@modules/common/components/text"
+import { cn } from "@lib/util/cn"
 import { Fragment } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -17,7 +17,12 @@ const SideMenuItems = {
 }
 
 const SideMenu = ({ regions }: { regions: HttpTypes.StoreRegion[] | null }) => {
-  const toggleState = useToggleState()
+  const [isOpen, setIsOpen] = React.useState(false)
+  const toggleState = {
+    state: isOpen,
+    open: () => setIsOpen(true),
+    close: () => setIsOpen(false)
+  }
 
   return (
     <div className="h-full">
@@ -51,7 +56,7 @@ const SideMenu = ({ regions }: { regions: HttpTypes.StoreRegion[] | null }) => {
                   >
                     <div className="flex justify-end" id="xmark">
                       <button data-testid="close-menu-button" onClick={close}>
-                        <XMark />
+                        <X />
                       </button>
                     </div>
                     <ul className="flex flex-col gap-6 items-start justify-start">
@@ -82,14 +87,14 @@ const SideMenu = ({ regions }: { regions: HttpTypes.StoreRegion[] | null }) => {
                             regions={regions}
                           />
                         )}
-                        <ArrowRightMini
-                          className={clx(
-                            "transition-transform duration-150",
+                        <ArrowRight
+                          className={cn(
+                            "transition-transform duration-150 h-4 w-4",
                             toggleState.state ? "-rotate-90" : ""
                           )}
                         />
                       </div>
-                      <Text className="flex justify-between txt-compact-small">
+                      <Text className="flex justify-between text-xs">
                         © {new Date().getFullYear()} Toycker Store. All rights
                         reserved.
                       </Text>

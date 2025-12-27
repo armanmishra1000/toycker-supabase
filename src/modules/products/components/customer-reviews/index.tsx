@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@medusajs/ui"
+import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
 import { Star } from "lucide-react"
 
@@ -50,13 +50,13 @@ const CustomerReviews = () => {
         <Modal.Body>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <p className="text-sm font-medium text-ui-fg-base">Star rating</p>
+              <p className="text-sm font-medium text-gray-900">Star rating</p>
               <div className="mt-2 flex items-center gap-2">
                 {Array.from({ length: 5 }).map((_, index) => (
                   <button
                     key={index}
                     type="button"
-                    className={`rounded-full p-1 ${rating > index ? "text-amber-500" : "text-ui-border-base"}`}
+                    className={`rounded-full p-1 ${rating > index ? "text-amber-500" : "text-gray-200"}`}
                     onClick={() => setRating(index + 1)}
                     aria-label={`Rate ${index + 1} star`}
                   >
@@ -66,7 +66,7 @@ const CustomerReviews = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-ui-fg-base">
+              <label className="text-sm font-medium text-gray-900">
                 Review content
               </label>
               <textarea
@@ -75,7 +75,7 @@ const CustomerReviews = () => {
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, review: event.target.value }))
                 }
-                className="min-h-[140px] w-full rounded-2xl border border-ui-border-base px-4 py-3 text-sm focus:border-ui-fg-interactive focus:outline-none"
+                className="min-h-[140px] w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:border-gray-900 focus:outline-none"
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -98,14 +98,14 @@ const CustomerReviews = () => {
               value={formState.displayName}
               onChange={(value) => setFormState((prev) => ({ ...prev, displayName: value }))}
             />
-            <label className="flex items-center gap-2 text-sm text-ui-fg-base">
+            <label className="flex items-center gap-2 text-sm text-gray-900">
               <input
                 type="checkbox"
                 checked={formState.anonymous}
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, anonymous: event.target.checked }))
                 }
-                className="h-4 w-4 rounded border-ui-border-base text-ui-fg-interactive focus:ring-ui-fg-interactive"
+                className="h-4 w-4 rounded border-gray-200 text-gray-900 focus:ring-gray-900"
               />
               Post review as anonymous
             </label>
@@ -137,13 +137,13 @@ const InputControl = ({
 }) => {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-ui-fg-base">{label}</label>
+      <label className="text-sm font-medium text-gray-900">{label}</label>
       <input
         type={type}
         required={required}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-ui-border-base px-4 py-3 text-sm focus:border-ui-fg-interactive focus:outline-none"
+        className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:border-gray-900 focus:outline-none"
       />
     </div>
   )

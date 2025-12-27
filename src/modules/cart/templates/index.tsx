@@ -5,15 +5,14 @@ import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
 import SignInPrompt from "../components/sign-in-prompt"
 import Divider from "@modules/common/components/divider"
-import { HttpTypes } from "@medusajs/types"
 import { useCartStore } from "@modules/cart/context/cart-store-context"
 
 const CartTemplate = ({
   cart,
   customer,
 }: {
-  cart: HttpTypes.StoreCart | null
-  customer: HttpTypes.StoreCustomer | null
+  cart: any
+  customer: any
 }) => {
   const { cart: clientCart } = useCartStore()
   const activeCart = clientCart ?? cart

@@ -3,7 +3,7 @@
 import { Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { XMarkIcon, ShoppingBagIcon } from "@heroicons/react/24/outline"
-import { Button } from "@medusajs/ui"
+import { Button } from "@modules/common/components/button"
 import { convertToLocale } from "@lib/util/money"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Thumbnail from "@modules/products/components/thumbnail"

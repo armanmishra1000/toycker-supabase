@@ -2,14 +2,13 @@
 
 import { isManual, isStripeLike, isPayU } from "@lib/constants"
 import { placeOrder } from "@lib/data/cart"
-import { HttpTypes } from "@medusajs/types"
-import { Button } from "@medusajs/ui"
+import { Button } from "@modules/common/components/button"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
 import React, { useState } from "react"
 import ErrorMessage from "../error-message"
 
 type PaymentButtonProps = {
-  cart: HttpTypes.StoreCart
+  cart: any
   "data-testid": string
 }
 
@@ -56,7 +55,7 @@ const StripePaymentButton = ({
   notReady,
   "data-testid": dataTestId,
 }: {
-  cart: HttpTypes.StoreCart
+  cart: any
   notReady: boolean
   "data-testid"?: string
 }) => {
@@ -202,7 +201,7 @@ const PayUPaymentButton = ({
   notReady,
   "data-testid": dataTestId,
 }: {
-  cart: HttpTypes.StoreCart
+  cart: any
   notReady: boolean
   "data-testid"?: string
 }) => {

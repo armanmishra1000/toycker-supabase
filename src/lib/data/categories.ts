@@ -1,49 +1,44 @@
-import { sdk } from "@lib/config"
-import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
+"use server"
 
-export const listCategories = async (query?: Record<string, any>) => {
-  const next = {
-    ...(await getCacheOptions("categories")),
+import { createClient } from "@/lib/supabase/server"
+
+export interface Category {
+  id: string
+  name: string
+  handle: string
+  description: string | null
+  parent_category_id: string | null
+  created_at: string
+}
+
+export const listCategories = async () => {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+
+  if (error) {
+    console.error("Error fetching categories:", error)
+    return []
   }
 
-  const limit = query?.limit || 100
-
-  return sdk.client
-    .fetch<{ product_categories: HttpTypes.StoreProductCategory[] }>(
-      "/store/product-categories",
-      {
-        query: {
-          fields:
-            "id,name,handle,description,is_active,metadata,parent_category,*category_children",
-          limit,
-          ...query,
-        },
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ product_categories }) => product_categories)
+  return data as Category[]
 }
 
 export const getCategoryByHandle = async (categoryHandle: string[]) => {
-  const handle = `${categoryHandle.join("/")}`
+  const handle = categoryHandle[categoryHandle.length - 1]
+  const supabase = await createClient()
+  
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("handle", handle)
+    .single()
 
-  const next = {
-    ...(await getCacheOptions("categories")),
+  if (error) {
+    console.error("Error fetching category:", error)
+    return null
   }
 
-  return sdk.client
-    .fetch<HttpTypes.StoreProductCategoryListResponse>(
-      `/store/product-categories`,
-      {
-        query: {
-          fields: "*category_children, *products",
-          handle,
-        },
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ product_categories }) => product_categories[0])
+  return data as Category
 }

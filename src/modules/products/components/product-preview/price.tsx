@@ -1,11 +1,7 @@
 import { Text, clx } from "@medusajs/ui"
-import { VariantPrice } from "types/global"
-import { buildDisplayPrice } from "@lib/util/display-price"
 
-export default function PreviewPrice({ price }: { price: VariantPrice | null }) {
-  const displayPrice = buildDisplayPrice(price)
-
-  if (!displayPrice) {
+export default function PreviewPrice({ price }: { price: any | null }) {
+  if (!price) {
     return null
   }
 
@@ -13,19 +9,19 @@ export default function PreviewPrice({ price }: { price: VariantPrice | null }) 
     <div className="flex flex-col leading-tight">
       <Text
         className={clx("text-lg font-semibold", {
-          "text-[#E7353A]": displayPrice.isDiscounted,
-          "text-ui-fg-base": !displayPrice.isDiscounted,
+          "text-[#E7353A]": price.is_discounted,
+          "text-ui-fg-base": !price.is_discounted,
         })}
         data-testid="price"
       >
-        {displayPrice.current.raw}
+        {price.calculated_price}
       </Text>
-      {displayPrice.original && (
+      {price.original_price && (
         <Text
           className="text-sm text-ui-fg-muted line-through"
           data-testid="original-price"
         >
-          {displayPrice.original.raw}
+          {price.original_price}
         </Text>
       )}
     </div>

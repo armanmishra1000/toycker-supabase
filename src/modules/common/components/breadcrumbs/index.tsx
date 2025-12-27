@@ -1,7 +1,7 @@
 "use client"
 
 import { Home } from "lucide-react"
-import { clx } from "@medusajs/ui"
+import { cn } from "@lib/util/cn"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { ReactNode } from "react"
 
@@ -17,7 +17,7 @@ type BreadcrumbsProps = {
 }
 
 const Breadcrumbs = ({ items, className, homeLabel = "Home" }: BreadcrumbsProps) => (
-  <nav aria-label="Breadcrumb" className={clx("text-sm text-slate-500", className)}>
+  <nav aria-label="Breadcrumb" className={cn("text-sm text-slate-500", className)}>
     <ol className="flex flex-wrap items-center gap-1.5">
       <li className="inline-flex items-center gap-1">
         <LocalizedClientLink

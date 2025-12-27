@@ -7,7 +7,7 @@ import RelatedProducts from "@modules/products/components/related-products"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import Breadcrumbs from "@modules/common/components/breadcrumbs"
 import { notFound } from "next/navigation"
-import { HttpTypes } from "@medusajs/types"
+import { Product } from "@/lib/supabase/types"
 
 import ProductActionsWrapper from "./product-actions-wrapper"
 import CustomerReviews from "@modules/products/components/customer-reviews"
@@ -15,10 +15,10 @@ import OrderInformation from "@modules/products/components/order-information"
 import RecentlyViewedTracker from "@modules/products/components/recently-viewed-tracker"
 
 type ProductTemplateProps = {
-  product: HttpTypes.StoreProduct
-  region: HttpTypes.StoreRegion
+  product: Product
+  region: any
   countryCode: string
-  images: HttpTypes.StoreProductImage[]
+  images: { url: string }[]
 }
 
 const ProductTemplate: React.FC<ProductTemplateProps> = ({
@@ -40,7 +40,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         <Breadcrumbs className="mb-6" items={getProductBreadcrumbs(product)} />
         <div className="flex flex-col gap-10 xl:flex-row xl:items-start">
           <div className="w-full xl:w-3/5">
-            <ImageGallery images={images} />
+            <ImageGallery images={images as any} />
           </div>
           <div className="w-full xl:w-2/5">
             <Suspense
@@ -66,7 +66,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         data-testid="related-products-container"
       >
         <Suspense fallback={<SkeletonRelatedProducts />}>
-          <RelatedProducts product={product} countryCode={countryCode} />
+          <RelatedProducts product={product as any} countryCode={countryCode} />
         </Suspense>
       </div>
       <RecentlyViewedTracker productId={product.id} />
@@ -76,6 +76,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 
 export default ProductTemplate
 
-const getProductBreadcrumbs = (product: HttpTypes.StoreProduct) => {
-  return [{ label: product.title }]
+const getProductBreadcrumbs = (product: Product) => {
+  return [{ label: product.name }]
 }

@@ -1,9 +1,9 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { listProducts } from "@lib/data/products"
+import { getProductByHandle, listProducts } from "@lib/data/products"
 import { getRegion, listRegions } from "@lib/data/regions"
 import ProductTemplate from "@modules/products/templates"
-import { HttpTypes } from "@medusajs/types"
+import { Product } from "@/lib/supabase/types"
 
 type Props = {
   params: Promise<{ countryCode: string; handle: string }>
@@ -13,31 +13,19 @@ type Props = {
 export async function generateStaticParams() {
   try {
     const countryCodes = await listRegions().then((regions) =>
-      regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
+      regions?.map((r) => r.countries?.map((c) => c.id)).flat()
     )
 
     if (!countryCodes) {
       return []
     }
 
-    const promises = countryCodes.map(async (country) => {
-      const { response } = await listProducts({
-        countryCode: country,
-        queryParams: { limit: 100, fields: "handle" },
-      })
+    const products = await listProducts()
 
-      return {
-        country,
-        products: response.products,
-      }
-    })
-
-    const countryProducts = await Promise.all(promises)
-
-    return countryProducts
-      .flatMap((countryData) =>
-        countryData.products.map((product) => ({
-          countryCode: countryData.country,
+    return countryCodes
+      .flatMap((country) =>
+        products.map((product) => ({
+          countryCode: country,
           handle: product.handle,
         }))
       )
@@ -52,49 +40,12 @@ export async function generateStaticParams() {
   }
 }
 
-type VariantWithImages = HttpTypes.StoreProductVariant & {
-  images?: HttpTypes.StoreProductImage[] | null
-}
-
-function getImagesForVariant(
-  product?: HttpTypes.StoreProduct,
-  selectedVariantId?: string
-): HttpTypes.StoreProductImage[] {
-  if (!product) {
-    return []
-  }
-
-  const allImages: HttpTypes.StoreProductImage[] = product.images ?? []
-
-  if (!selectedVariantId || !product.variants?.length) {
-    return allImages
-  }
-
-  const variant = product.variants.find(
-    (v) => v.id === selectedVariantId
-  ) as VariantWithImages | undefined
-
-  const variantImages: HttpTypes.StoreProductImage[] = variant?.images ?? []
-
-  if (!variant || variantImages.length === 0) {
-    return allImages
-  }
-
-  const imageIdsMap = new Map(
-    variantImages.map((image) => [image.id, true] as const)
-  )
-  return allImages.filter((image) => imageIdsMap.has(image.id))
-}
-
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const { handle } = params
   const [region, product] = await Promise.all([
     getRegion(params.countryCode),
-    listProducts({
-      countryCode: params.countryCode,
-      queryParams: { handle },
-    }).then(({ response }) => response.products[0]),
+    getProductByHandle(handle),
   ])
 
   if (!region || !product) {
@@ -102,42 +53,35 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${product.title} | Toycker Store`,
-    description: `${product.title}`,
+    title: `${product.name} | Toycker Store`,
+    description: `${product.name}`,
     openGraph: {
-      title: `${product.title} | Toycker Store`,
-      description: `${product.title}`,
-      images: product.thumbnail ? [product.thumbnail] : [],
+      title: `${product.name} | Toycker Store`,
+      description: `${product.name}`,
+      images: product.image_url ? [product.image_url] : [],
     },
   }
 }
 
 export default async function ProductPage(props: Props) {
   const params = await props.params
-  const searchParams = await props.searchParams
-
-  const selectedVariantId = searchParams.v_id
-
-  const [region, pricedProduct] = await Promise.all([
+  const [region, product] = await Promise.all([
     getRegion(params.countryCode),
-    listProducts({
-      countryCode: params.countryCode,
-      queryParams: { handle: params.handle },
-    }).then(({ response }) => response.products[0]),
+    getProductByHandle(params.handle),
   ])
 
-  const images = getImagesForVariant(pricedProduct, selectedVariantId)
-
-  if (!region || !pricedProduct) {
+  if (!region || !product) {
     notFound()
   }
 
+  const images = product.images ? product.images.map(url => ({ url })) : []
+
   return (
     <ProductTemplate
-      product={pricedProduct}
+      product={product}
       region={region}
       countryCode={params.countryCode}
-      images={images ?? []}
+      images={images as any}
     />
   )
 }

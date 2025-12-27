@@ -1,5 +1,4 @@
-import { HttpTypes } from "@medusajs/types"
-import { clx } from "@medusajs/ui"
+import { cn } from "@lib/util/cn"
 import React from "react"
 
 const COLOR_SWATCH_MAP: Record<string, string> = {
@@ -19,7 +18,7 @@ const COLOR_SWATCH_MAP: Record<string, string> = {
 }
 
 type OptionSelectProps = {
-  option: HttpTypes.StoreProductOption
+  option: any
   current: string | undefined
   updateOption: (title: string, value: string) => void
   title: string
@@ -43,11 +42,11 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
   return (
     <div className="flex flex-col gap-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-ui-fg-base">
+        <span className="text-sm font-medium text-gray-900">
           {isSwatch ? `${title}` : `Select ${title}`}
         </span>
         {isSwatch && (
-          <span className="text-sm text-ui-fg-muted">
+          <span className="text-sm text-gray-500">
             Color: {current ?? "Choose"}
           </span>
         )}
@@ -56,7 +55,7 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
         className="flex flex-wrap gap-3"
         data-testid={dataTestId}
       >
-        {filteredOptions.map((optionValue) => {
+        {filteredOptions.map((optionValue: any) => {
           const value = optionValue.value
           const normalized = value ? value.toLowerCase().trim() : ""
           const colorToken =
@@ -67,16 +66,16 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
             <button
               onClick={() => updateOption(option.id, value)}
               key={optionValue.id ?? value}
-              className={clx(
-                "transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-fg-interactive",
+              className={cn(
+                "transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
                 isSwatch
                   ? `relative flex h-12 w-12 items-center justify-center rounded-full border ${
                       value === current
                         ? "border-[#E7353A] ring-2 ring-[#FDD5DB]"
                         : "border-transparent"
                     }`
-                  : `border-ui-border-base bg-ui-bg-subtle border text-sm font-medium rounded-full px-5 py-2 ${
-                      value === current ? "border-[#E7353A] text-ui-fg-base" : "text-ui-fg-muted"
+                  : `border-gray-200 bg-gray-50 border text-sm font-medium rounded-full px-5 py-2 ${
+                      value === current ? "border-[#E7353A] text-gray-900" : "text-gray-500"
                     }`
               )}
               disabled={disabled}
@@ -88,7 +87,7 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
                   style={{ backgroundColor: colorToken || "#f4f4f4" }}
                 >
                   {!colorToken && (
-                    <span className="text-xs font-semibold text-ui-fg-base">
+                    <span className="text-xs font-semibold text-gray-900">
                       {value}
                     </span>
                   )}

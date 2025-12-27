@@ -1,6 +1,5 @@
 "use client"
 
-import { HttpTypes, StoreCartShippingOption, StoreCustomer } from "@medusajs/types"
 import {
   ReactNode,
   createContext,
@@ -13,11 +12,11 @@ import {
 } from "react"
 
 type LayoutDataContextValue = {
-  cart: HttpTypes.StoreCart | null
-  setCart: (cart: HttpTypes.StoreCart | null) => void
-  customer: StoreCustomer | null
-  setCustomer: (customer: StoreCustomer | null) => void
-  shippingOptions: StoreCartShippingOption[]
+  cart: any
+  setCart: (cart: any) => void
+  customer: any
+  setCustomer: (customer: any) => void
+  shippingOptions: any[]
   loading: boolean
   refresh: () => Promise<void>
   loadShippingOptions: () => Promise<void>
@@ -36,8 +35,8 @@ const fetchLayoutState = async (signal?: AbortSignal) => {
   }
 
   return (await response.json()) as {
-    cart: HttpTypes.StoreCart | null
-    customer: StoreCustomer | null
+    cart: any
+    customer: any
   }
 }
 
@@ -53,7 +52,7 @@ const fetchShippingOptions = async (signal?: AbortSignal) => {
     }
 
     return (await response.json()) as {
-      shippingOptions: StoreCartShippingOption[]
+      shippingOptions: any[]
       regionId: string | null
     }
   } catch (error) {
@@ -68,9 +67,9 @@ const fetchShippingOptions = async (signal?: AbortSignal) => {
 }
 
 export const LayoutDataProvider = ({ children }: { children: ReactNode }) => {
-  const [cart, setCart] = useState<HttpTypes.StoreCart | null>(null)
-  const [customer, setCustomer] = useState<StoreCustomer | null>(null)
-  const [shippingOptions, setShippingOptions] = useState<StoreCartShippingOption[]>([])
+  const [cart, setCart] = useState<any>(null)
+  const [customer, setCustomer] = useState<any>(null)
+  const [shippingOptions, setShippingOptions] = useState<any[]>([])
   const [shippingOptionsRegion, setShippingOptionsRegion] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const abortController = useRef<AbortController | null>(null)

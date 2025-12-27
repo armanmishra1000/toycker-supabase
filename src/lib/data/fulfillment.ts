@@ -1,30 +1,13 @@
 "use server"
 
-import { sdk } from "@lib/config"
-import { HttpTypes } from "@medusajs/types"
-import { getAuthHeaders } from "./cookies"
-
 export const listCartShippingMethods = async (cartId: string) => {
-  const headers = {
-    ...(await getAuthHeaders()),
-  }
-
-  return sdk.client
-    .fetch<HttpTypes.StoreShippingOptionListResponse>(
-      `/store/shipping-options`,
-      {
-        method: "GET",
-        query: {
-          cart_id: cartId,
-        },
-        headers,
-        cache: "no-store",
-      }
-    )
-    .then(({ shipping_options }) => shipping_options)
-    .catch(() => {
-      return null
-    })
+  return [
+    {
+      id: "standard",
+      name: "Standard Shipping",
+      amount: 0,
+    }
+  ]
 }
 
 export const calculatePriceForShippingOption = async (
@@ -32,27 +15,8 @@ export const calculatePriceForShippingOption = async (
   cartId: string,
   data?: Record<string, unknown>
 ) => {
-  const headers = {
-    ...(await getAuthHeaders()),
+  return {
+    id: optionId,
+    price: 0
   }
-
-  const body = { cart_id: cartId, data }
-
-  if (data) {
-    body.data = data
-  }
-
-  return sdk.client
-    .fetch<{ shipping_option: HttpTypes.StoreCartShippingOption }>(
-      `/store/shipping-options/${optionId}/calculate`,
-      {
-        method: "POST",
-        body,
-        headers,
-      }
-    )
-    .then(({ shipping_option }) => shipping_option)
-    .catch((e) => {
-      return null
-    })
 }
