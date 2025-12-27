@@ -18,7 +18,7 @@ import { useSearchResults } from "@modules/layout/hooks/useSearchResults"
 import { useVoiceSearch } from "@modules/layout/hooks/useVoiceSearch"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
-import type { SearchResultsPayload } from "@lib/data/search"
+import type { SearchResultsPayload, SearchProductSummary, SearchCategorySummary, SearchCollectionSummary } from "@lib/data/search"
 
 type SearchDrawerProps = {
   isOpen: boolean
@@ -65,8 +65,8 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
     isEmpty,
   } = {
     query: "",
-    setQuery: (q: string) => {},
-    clear: () => {},
+    setQuery: (q: string) => { },
+    clear: () => { },
     status: "idle",
     error: null,
     results: null,
@@ -137,11 +137,11 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
 
   const isActiveEmpty = activeTab === "image"
     ? Boolean(
-        resultsForDisplay &&
-          resultsForDisplay.products.length === 0 &&
-          resultsForDisplay.categories.length === 0 &&
-          resultsForDisplay.collections.length === 0
-      )
+      resultsForDisplay &&
+      resultsForDisplay.products.length === 0 &&
+      resultsForDisplay.categories.length === 0 &&
+      resultsForDisplay.collections.length === 0
+    )
     : isEmpty
 
   useBodyScrollLock({ isLocked: isOpen })
@@ -257,11 +257,10 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                       key={tab}
                       type="button"
                       onClick={() => setActiveTab(tab as typeof activeTab)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                        activeTab === tab
-                          ? "bg-white shadow-sm text-slate-900"
-                          : "text-slate-500 hover:text-slate-900"
-                      }`}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === tab
+                        ? "bg-white shadow-sm text-slate-900"
+                        : "text-slate-500 hover:text-slate-900"
+                        }`}
                     >
                       {tab === "text" && "Text + Voice"}
                       {tab === "image" && "Image"}
@@ -295,11 +294,10 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                         <button
                           type="button"
                           onClick={isListening ? stopListening : startListening}
-                          className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
-                            isListening
-                              ? "border-red-500 bg-red-50 text-red-600"
-                              : "border-slate-200 text-slate-600 hover:border-primary hover:text-primary"
-                          }`}
+                          className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${isListening
+                            ? "border-red-500 bg-red-50 text-red-600"
+                            : "border-slate-200 text-slate-600 hover:border-primary hover:text-primary"
+                            }`}
                           aria-label={isListening ? "Stop voice search" : "Start voice search"}
                         >
                           {isListening ? (
@@ -324,9 +322,8 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                 {activeTab === "image" && (
                   <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4">
                     <label
-                      className={`flex flex-col items-center justify-center gap-3 ${
-                        isImageSearchAvailable ? "cursor-pointer" : "cursor-not-allowed opacity-70"
-                      }`}
+                      className={`flex flex-col items-center justify-center gap-3 ${isImageSearchAvailable ? "cursor-pointer" : "cursor-not-allowed opacity-70"
+                        }`}
                     >
                       <div className="flex items-center gap-2 text-slate-600">
                         <SparklesIcon className="h-5 w-5" />
@@ -351,11 +348,10 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                         We will find visually similar items. Supported: png, jpg, webp.
                       </p>
                       <span
-                        className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                          isImageSearchAvailable
-                            ? "bg-primary text-white"
-                            : "bg-slate-200 text-slate-500"
-                        }`}
+                        className={`px-4 py-2 rounded-full text-sm font-semibold ${isImageSearchAvailable
+                          ? "bg-primary text-white"
+                          : "bg-slate-200 text-slate-500"
+                          }`}
                       >
                         {isImageSearchAvailable ? "Choose image" : "Coming soon"}
                       </span>
@@ -372,7 +368,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                       Smart suggestions
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {(suggestions.length ? suggestions : fallbackSuggestions).map((suggestion) => (
+                      {(suggestions.length ? suggestions : fallbackSuggestions).map((suggestion: string) => (
                         <button
                           key={suggestion}
                           type="button"
@@ -427,7 +423,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                     {resultsForDisplay.products.length > 0 && (
                       <ResultSection title="Products" count={resultsForDisplay.products.length}>
                         <div className="space-y-3">
-                          {resultsForDisplay.products.map((product) => (
+                          {resultsForDisplay.products.map((product: SearchProductSummary) => (
                             <LocalizedClientLink
                               key={product.id}
                               href={`/products/${product.handle}`}
@@ -465,7 +461,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                     {resultsForDisplay.categories.length > 0 && (
                       <ResultSection title="Categories" count={resultsForDisplay.categories.length}>
                         <div className="flex flex-wrap gap-3">
-                          {resultsForDisplay.categories.map((category) => (
+                          {resultsForDisplay.categories.map((category: SearchCategorySummary) => (
                             <LocalizedClientLink
                               key={category.id}
                               href={`/categories/${category.handle}`}
@@ -483,7 +479,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                     {resultsForDisplay.collections.length > 0 && (
                       <ResultSection title="Collections" count={resultsForDisplay.collections.length}>
                         <div className="flex flex-wrap gap-3">
-                          {resultsForDisplay.collections.map((collection) => (
+                          {resultsForDisplay.collections.map((collection: SearchCollectionSummary) => (
                             <LocalizedClientLink
                               key={collection.id}
                               href={`/collections/${collection.handle}`}
@@ -506,11 +502,10 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
               <div className="border-t border-slate-200 bg-white px-6 py-4">
                 <LocalizedClientLink
                   href={canViewAll ? `/store?q=${encodeURIComponent(query.trim())}` : "#"}
-                  className={`flex h-12 items-center justify-center rounded-full text-sm font-semibold transition ${
-                    canViewAll
-                      ? "bg-primary text-white hover:bg-primary/90"
-                      : "bg-slate-100 text-slate-400 cursor-not-allowed pointer-events-none"
-                  }`}
+                  className={`flex h-12 items-center justify-center rounded-full text-sm font-semibold transition ${canViewAll
+                    ? "bg-primary text-white hover:bg-primary/90"
+                    : "bg-slate-100 text-slate-400 cursor-not-allowed pointer-events-none"
+                    }`}
                   aria-disabled={!canViewAll}
                   onClick={() => {
                     if (!canViewAll) {

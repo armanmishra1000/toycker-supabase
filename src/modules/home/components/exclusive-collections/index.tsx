@@ -14,6 +14,7 @@ import { getProductPrice } from "@lib/util/get-product-price"
 import { buildDisplayPrice, type DisplayPrice } from "@lib/util/display-price"
 import type { ExclusiveCollectionEntry } from "@lib/data/exclusive-collections"
 import { cn } from "@lib/util/cn"
+import { getImageUrl } from "@lib/util/get-image-url"
 
 type ExclusiveCollectionsProps = {
   items: ExclusiveCollectionEntry[]
@@ -22,17 +23,19 @@ type ExclusiveCollectionsProps = {
 const FALLBACK_POSTER = "/assets/images/slider_default.png"
 
 const resolvePosterSource = (entry: ExclusiveCollectionEntry) => {
+  const firstImage = entry.product?.images?.[0]
   return (
     entry.poster_url ??
     entry.product?.thumbnail ??
-    entry.product?.images?.[0]?.url ??
+    (firstImage ? getImageUrl(firstImage) : null) ??
     FALLBACK_POSTER
   )
 }
 
 const resolveProductImageSource = (entry: ExclusiveCollectionEntry) => {
+  const firstImage = entry.product?.images?.[0]
   return (
-    entry.product?.images?.[0]?.url ??
+    (firstImage ? getImageUrl(firstImage) : null) ??
     entry.product?.thumbnail ??
     entry.poster_url ??
     FALLBACK_POSTER
@@ -186,35 +189,35 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
                 const hasVideo = Boolean(item.video_url && item.video_url.trim().length > 0)
 
                 return (
-                <SwiperSlide
-                  key={item.id}
-                  role="group"
+                  <SwiperSlide
+                    key={item.id}
+                    role="group"
                     aria-label={`Video ${index + 1} of ${showcaseItems.length}`}
-                >
-                  <article className="flex h-full flex-col rounded-xl overflow-hidden bg-black">
-                    <div className="relative overflow-hidden rounded-xl h-[400px]">
-                      {hasVideo ? (
-                        <video
-                          className="h-full w-full object-cover d-block"
-                          src={item.video_url}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                          preload="metadata"
-                          poster={poster}
-                        >
-                          Your browser does not support the video tag.
-                        </video>
-                      ) : (
-                        <Image
-                          src={poster}
-                          alt={title}
-                          fill
-                          className="object-cover"
-                          sizes="(min-width: 1024px) 360px, 100vw"
-                        />
-                      )}
+                  >
+                    <article className="flex h-full flex-col rounded-xl overflow-hidden bg-black">
+                      <div className="relative overflow-hidden rounded-xl h-[400px]">
+                        {hasVideo ? (
+                          <video
+                            className="h-full w-full object-cover d-block"
+                            src={item.video_url}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            preload="metadata"
+                            poster={poster}
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <Image
+                            src={poster}
+                            alt={title}
+                            fill
+                            className="object-cover"
+                            sizes="(min-width: 1024px) 360px, 100vw"
+                          />
+                        )}
                         <LocalizedClientLink
                           href={`/products/${productHandle}`}
                           className="absolute bottom-0 left-0 right-0 flex items-center gap-3 bg-[#dbfca7] p-3 text-[#3a5017] z-10 transition-transform hover:-translate-y-1"
@@ -237,8 +240,8 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
                             <PriceStack price={displayPrice} />
                           </div>
                         </LocalizedClientLink>
-                    </div>
-                  </article>
+                      </div>
+                    </article>
                   </SwiperSlide>
                 )
               })}

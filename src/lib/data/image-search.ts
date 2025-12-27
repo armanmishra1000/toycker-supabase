@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer"
-
+import { getImageUrl } from "@lib/util/get-image-url"
 import type { SearchResultsPayload } from "@lib/data/search"
 import { listProducts } from "@lib/data/products"
 
@@ -29,44 +29,40 @@ export const searchByImage = async ({
   // When a provider is configured, plug in provider call here. For now, reuse products list as fast fallback.
   const { response } = await listProducts(
     {
-      pageParam: 1,
       queryParams: {
         limit,
-        fields: "id,title,handle,thumbnail,+variants.prices",
       },
-      countryCode,
-    },
-    { skipCollectionExpansion: true }
+    }
   )
 
   return {
     products: response.products.map((product) => {
       const firstVariant = Array.isArray(product.variants)
         ? (product.variants[0] as
-            | (typeof product.variants[number] & {
-                prices?: Array<{ amount: number; currency_code: string }>
-              })
-            | undefined)
+          | (typeof product.variants[number] & {
+            prices?: Array<{ amount: number; currency_code: string }>
+          })
+          | undefined)
         : undefined
 
       const firstPrice = firstVariant?.prices?.[0]
 
       const price = firstPrice
         ? {
-            amount: firstPrice.amount,
-            currencyCode: firstPrice.currency_code,
-            formatted: firstPrice.amount.toLocaleString(undefined, {
-              style: "currency",
-              currency: firstPrice.currency_code,
-            }),
-          }
+          amount: firstPrice.amount,
+          currencyCode: firstPrice.currency_code,
+          formatted: firstPrice.amount.toLocaleString(undefined, {
+            style: "currency",
+            currency: firstPrice.currency_code,
+          }),
+        }
         : undefined
 
       return {
         id: product.id,
         title: product.title,
         handle: product.handle,
-        thumbnail: product.thumbnail || product.images?.[0]?.url || null,
+        thumbnail: product.thumbnail || (product.images?.[0] ? getImageUrl(product.images[0]) : null) || null,
         price,
       }
     }),

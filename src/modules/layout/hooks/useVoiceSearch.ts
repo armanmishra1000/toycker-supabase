@@ -56,7 +56,7 @@ export const useVoiceSearch = ({
   const [transcript, setTranscript] = useState("")
   const [error, setError] = useState<string | null>(null)
   const recognitionRef = useRef<SpeechRecognitionShape | null>(null)
-  const onResultRef = useRef<(value: string) => void>()
+  const onResultRef = useRef<((value: string) => void) | undefined>(undefined)
   const inactivityTimeoutRef = useRef<number | null>(null)
 
   const clearInactivityTimer = () => {

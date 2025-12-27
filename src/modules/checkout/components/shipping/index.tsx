@@ -100,10 +100,10 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
         Promise.allSettled(promises).then((res) => {
           const pricesMap: Record<string, number> = {}
           res
-            .filter((r) => r.status === "fulfilled" && r.value?.amount != null)
+            .filter((r): r is PromiseFulfilledResult<{ id: string; price: number }> => r.status === "fulfilled" && r.value?.price != null)
             .forEach((p) => {
-              if (p.value?.id && typeof p.value.amount === "number") {
-                pricesMap[p.value.id] = p.value.amount
+              if (p.value.id && typeof p.value.price === "number") {
+                pricesMap[p.value.id] = p.value.price
               }
             })
 
@@ -137,7 +137,7 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
 
     try {
       await setShippingMethod({ cartId: cart.id, shippingMethodId: id })
-      
+
       const selectedOption = shippingOptions?.find((opt) => opt.id === id)
       if (selectedOption) {
         if (selectedOption.price_type === "flat" && selectedOption.amount) {
@@ -198,7 +198,7 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
                   }}
                   className="mb-4"
                 >
-                  <Radio
+                  <RadioGroup.Option
                     value={PICKUP_OPTION_ON}
                     className={cn(
                       "flex items-center justify-between text-sm cursor-pointer py-4 border rounded-lg px-8 hover:shadow-sm transition-all",
@@ -217,7 +217,7 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
                     <span className="justify-self-end text-gray-900 font-medium">
                       -
                     </span>
-                  </Radio>
+                  </RadioGroup.Option>
                 </RadioGroup>
               )}
 
@@ -227,8 +227,8 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
               >
                 {shippingMethods?.map((option) => {
                   const isCalculated = option.price_type === "calculated"
-                  const price = isCalculated 
-                    ? calculatedPricesMap[option.id] 
+                  const price = isCalculated
+                    ? calculatedPricesMap[option.id]
                     : option.amount
                   const isDisabled =
                     isCalculated && !isLoadingPrices && price === undefined

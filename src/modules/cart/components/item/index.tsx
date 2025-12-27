@@ -4,6 +4,7 @@ import { Text } from "@modules/common/components/text"
 import { cn } from "@lib/util/cn"
 import { updateLineItem } from "@lib/data/cart"
 import { CartItem } from "@/lib/supabase/types"
+import { getImageUrl } from "@lib/util/get-image-url"
 import CartItemSelect from "@modules/cart/components/cart-item-select"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import DeleteButton from "@modules/common/components/delete-button"
@@ -52,8 +53,8 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const maxQuantity = giftWrapLine
     ? 10
     : item.variant?.manage_inventory
-    ? 10
-    : maxQtyFromInventory
+      ? 10
+      : maxQtyFromInventory
 
   const thumbnailWrapperClass = cn("flex", {
     "w-16": type === "preview",
@@ -80,7 +81,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
     const thumb = (
       <Thumbnail
         thumbnail={item.thumbnail}
-        images={item.variant?.product?.images ? item.variant.product.images.map(url => ({ url })) : []}
+        images={item.variant?.product?.images ? item.variant.product.images.map(img => ({ url: getImageUrl(img) || '' })) : []}
         size="square"
       />
     )
@@ -186,7 +187,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           </span>
         </div>
       </div>
-      {error && <ErrorMessage error={error} data-testid="product-error-message" className="col-span-3" />}
+      {error && <div className="col-span-3"><ErrorMessage error={error} data-testid="product-error-message" /></div>}
     </div>
   )
 }

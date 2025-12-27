@@ -18,7 +18,7 @@ export const useAnimatedPlaceholder = ({
   const [currentText, setCurrentText] = useState("")
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
     if (!enabled || phrases.length === 0) {

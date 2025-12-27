@@ -105,7 +105,7 @@ const Addresses = ({
             <SubmitButton className="mt-6" data-testid="submit-address-button">
               Continue to Payment
             </SubmitButton>
-            <ErrorMessage error={message} data-testid="address-error-message" />
+            <ErrorMessage error={message?.message ?? null} data-testid="address-error-message" />
           </div>
         </form>
       ) : (

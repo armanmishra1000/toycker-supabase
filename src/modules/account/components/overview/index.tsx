@@ -113,7 +113,7 @@ const getProfileCompletion = (customer: any) => {
   }
 
   const billingAddress = customer.addresses?.find(
-    (addr) => addr.is_default_billing
+    (addr: any) => addr.is_default_billing
   )
 
   if (billingAddress) {

@@ -4,6 +4,7 @@ import { Text } from "@modules/common/components/text"
 import { cn } from "@lib/util/cn"
 import { Product } from "@/lib/supabase/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { getImageUrl } from "@lib/util/get-image-url"
 import { ViewMode } from "@modules/store/components/refinement-list/types"
 import WishlistButton from "@modules/products/components/wishlist-button"
 import { useOptionalCartSidebar } from "@modules/layout/context/cart-sidebar-context"
@@ -50,7 +51,7 @@ export default function ProductPreview({
       "flex flex-row gap-6": isListView,
     }
   )
-  
+
   const imageWrapperClassName = cn(
     "relative w-full overflow-hidden rounded-2xl bg-gray-100",
     {
@@ -64,13 +65,13 @@ export default function ProductPreview({
     "grid-5": "text-sm",
     list: "text-xl",
   }
-  
+
   const titleClassName = cn(
     "font-semibold tracking-tight text-slate-900 group-hover:text-primary transition-colors",
     isListView ? "line-clamp-2" : "line-clamp-1",
     titleSizeMap[viewMode] ?? "text-base"
   )
-  
+
   const descriptionPreview = isListView && product.description ? product.description : undefined
   const buttonLabel = status === "added" ? "Added!" : status === "error" ? "Try again" : "Add to cart"
 
@@ -93,7 +94,7 @@ export default function ProductPreview({
       try {
         await optimisticAdd({
           product,
-          variant: product.variants?.[0] || (product as any), 
+          variant: product.variants?.[0] || (product as any),
           quantity: 1,
           countryCode: "in",
         })
@@ -116,7 +117,7 @@ export default function ProductPreview({
           <div className={imageWrapperClassName}>
             <Thumbnail
               thumbnail={product.thumbnail || product.image_url}
-              images={product.images ? product.images.map(url => ({ url })) : []}
+              images={product.images ? product.images.map(img => ({ url: getImageUrl(img) || '' })) : []}
               size="full"
               isFeatured={isFeatured}
               className="h-full w-full rounded-2xl border-none bg-transparent p-0 shadow-none object-cover transition-transform duration-500 group-hover:scale-[1.04]"
@@ -136,7 +137,7 @@ export default function ProductPreview({
               <Text className={titleClassName} data-testid="product-title">
                 {product.name}
               </Text>
-              
+
               {descriptionPreview && (
                 <SafeRichText
                   html={descriptionPreview}
@@ -144,10 +145,10 @@ export default function ProductPreview({
                 />
               )}
             </div>
-            
+
             <div className="mt-auto flex items-center justify-between gap-4">
               <PreviewPrice price={cheapestPrice} />
-              
+
               <button
                 type="button"
                 onClick={handleAddToCart}

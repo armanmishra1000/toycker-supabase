@@ -73,7 +73,7 @@ export default async function PaginatedProducts({
     queryParams["q"] = searchQuery
   }
 
-  const region = await getRegion(countryCode)
+  const region = await getRegion()
 
   if (!region) {
     return null
@@ -86,7 +86,7 @@ export default async function PaginatedProducts({
   } = await listPaginatedProducts({
     page,
     limit: STORE_PRODUCT_PAGE_SIZE,
-    queryParams,
+    queryParams: (({ limit, ...rest }) => rest)(queryParams),
     sortBy,
     countryCode,
     availability: filters?.availability,

@@ -62,7 +62,7 @@ const StoreTemplate = async ({
   const inferredAgeCollectionId = ageFilter ? ageCollectionMap.get(ageFilter) : undefined
   const effectiveCollectionId = providedCollectionId ?? inferredAgeCollectionId
 
-  const productQueryParams: Record<string, unknown> = {}
+  const productQueryParams: Record<string, string | string[] | undefined> = {}
 
   if (resolvedCategoryId) {
     productQueryParams["category_id"] = [resolvedCategoryId]
@@ -76,7 +76,7 @@ const StoreTemplate = async ({
     productQueryParams["q"] = searchQuery
   }
 
-  const effectiveProductQueryParams: Record<string, unknown> | undefined =
+  const effectiveProductQueryParams: Record<string, string | string[] | undefined> | undefined =
     Object.keys(productQueryParams).length ? productQueryParams : undefined
 
   const [categories, productListing] = await Promise.all([

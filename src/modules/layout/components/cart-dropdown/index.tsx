@@ -9,6 +9,7 @@ import {
 import { convertToLocale } from "@lib/util/money"
 import { Cart } from "@/lib/supabase/types"
 import { Button } from "@modules/common/components/button"
+import { getImageUrl } from "@lib/util/get-image-url"
 import DeleteButton from "@modules/common/components/delete-button"
 import LineItemOptions from "@modules/common/components/line-item-options"
 import LineItemPrice from "@modules/common/components/line-item-price"
@@ -131,7 +132,7 @@ const CartDropdown = ({
                         >
                           <Thumbnail
                             thumbnail={item.thumbnail}
-                            images={item.product?.images ? item.product.images.map(url => ({ url })) : []}
+                            images={item.product?.images ? item.product.images.map(img => ({ url: getImageUrl(img) || '' })) : []}
                             size="square"
                           />
                         </LocalizedClientLink>
@@ -180,38 +181,38 @@ const CartDropdown = ({
                     ))}
                 </div>
                 <div className="p-4 flex flex-col gap-y-4 text-small-regular">
-                {(() => {
-                  const currencyCode = cart.currency_code || cart.region?.currency_code || "INR"
-                  return (
-                    <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-ui-fg-base font-semibold">
-                      Subtotal{" "}
-                      <span className="font-normal">(excl. taxes)</span>
-                    </span>
-                    <span
-                      className="text-large-semi"
-                      data-testid="cart-subtotal"
-                      data-value={subtotal}
-                    >
-                      {convertToLocale({
-                        amount: subtotal,
-                        currency_code: currencyCode,
-                      })}
-                    </span>
-                  </div>
-                  <LocalizedClientLink href="/cart" passHref>
-                    <Button
-                      className="w-full"
-                      size="large"
-                      data-testid="go-to-cart-button"
-                    >
-                      Go to cart
-                    </Button>
-                  </LocalizedClientLink>
-                    </>
-                  )
-                })()}
+                  {(() => {
+                    const currencyCode = cart.currency_code || cart.region?.currency_code || "INR"
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-ui-fg-base font-semibold">
+                            Subtotal{" "}
+                            <span className="font-normal">(excl. taxes)</span>
+                          </span>
+                          <span
+                            className="text-large-semi"
+                            data-testid="cart-subtotal"
+                            data-value={subtotal}
+                          >
+                            {convertToLocale({
+                              amount: subtotal,
+                              currency_code: currencyCode,
+                            })}
+                          </span>
+                        </div>
+                        <LocalizedClientLink href="/cart" passHref>
+                          <Button
+                            className="w-full"
+                            size="large"
+                            data-testid="go-to-cart-button"
+                          >
+                            Go to cart
+                          </Button>
+                        </LocalizedClientLink>
+                      </>
+                    )
+                  })()}
                 </div>
               </>
             ) : (

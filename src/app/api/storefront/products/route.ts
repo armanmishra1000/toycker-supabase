@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       typeof body.limit === "number" && body.limit > 0 ? Math.floor(body.limit) : STORE_PRODUCT_PAGE_SIZE
     const sortBy: SortOptions = body.sortBy || "featured"
 
-    const queryParams: Record<string, unknown> = {}
+    const queryParams: Record<string, string | string[] | undefined> = {}
     const resolvedCategoryId = await resolveCategoryIdentifier(body.categoryId)
 
     if (resolvedCategoryId) {

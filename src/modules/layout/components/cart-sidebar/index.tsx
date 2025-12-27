@@ -14,6 +14,7 @@ import { isGiftWrapLine } from "@modules/cart/utils/gift-wrap"
 import Image from "next/image"
 import { useBodyScrollLock } from "@modules/layout/hooks/useBodyScrollLock"
 import { useCartSidebar } from "@modules/layout/context/cart-sidebar-context"
+import { getImageUrl } from "@lib/util/get-image-url"
 
 type CartSidebarProps = {
   isOpen: boolean
@@ -99,7 +100,7 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                           const thumb = (
                             <Thumbnail
                               thumbnail={item.thumbnail}
-                              images={item.variant?.product?.images}
+                              images={item.variant?.product?.images?.map(img => ({ url: getImageUrl(img) || '' }))}
                               size="square"
                               className="rounded-xl"
                             />
@@ -205,34 +206,34 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                   const currencyCode = cart?.currency_code || cart?.region?.currency_code || "INR"
                   return (
                     <>
-                <div className="flex items-center justify-between text-sm text-slate-500">
-                  <span>Subtotal</span>
-                  <span className="text-lg font-semibold text-slate-900" data-testid="cart-sidebar-subtotal">
-                    {convertToLocale({
-                      amount: subtotal,
-                      currency_code: currencyCode,
-                    })}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Shipping</span>
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">Calculated at checkout</span>
-                </div>
-                <div className="grid gap-3 pt-1">
-                  <LocalizedClientLink href="/checkout?step=address" onClick={onClose} passHref>
-                    <Button className="w-full" size="large">
-                      Proceed to checkout
-                    </Button>
-                  </LocalizedClientLink>
-                  <LocalizedClientLink href="/cart" onClick={onClose} passHref>
-                    <Button className="w-full" size="large" variant="secondary">
-                      View full cart
-                    </Button>
-                  </LocalizedClientLink>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Secure checkout • Duties & import taxes included where applicable
-                </p>
+                      <div className="flex items-center justify-between text-sm text-slate-500">
+                        <span>Subtotal</span>
+                        <span className="text-lg font-semibold text-slate-900" data-testid="cart-sidebar-subtotal">
+                          {convertToLocale({
+                            amount: subtotal,
+                            currency_code: currencyCode,
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <span>Shipping</span>
+                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">Calculated at checkout</span>
+                      </div>
+                      <div className="grid gap-3 pt-1">
+                        <LocalizedClientLink href="/checkout?step=address" onClick={onClose} passHref>
+                          <Button className="w-full" size="large">
+                            Proceed to checkout
+                          </Button>
+                        </LocalizedClientLink>
+                        <LocalizedClientLink href="/cart" onClick={onClose} passHref>
+                          <Button className="w-full" size="large" variant="secondary">
+                            View full cart
+                          </Button>
+                        </LocalizedClientLink>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Secure checkout • Duties & import taxes included where applicable
+                      </p>
                     </>
                   )
                 })()}

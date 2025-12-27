@@ -20,11 +20,11 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   const countryCode = "in"
-  
+
   const [banners, exclusiveItems, region, customer] = await Promise.all([
     listHomeBanners(),
     listExclusiveCollections({ regionId: "reg_india" }),
-    getRegion(countryCode),
+    getRegion(),
     retrieveCustomer()
   ])
 
@@ -34,23 +34,23 @@ export default async function Home() {
     <>
       <Hero banners={banners} />
       <CategoryMarquee />
-      
-      <PopularToySet 
+
+      <PopularToySet
         regionId={region.id}
         countryCode={countryCode}
         isCustomerLoggedIn={isCustomerLoggedIn}
       />
-      
+
       <ShopByAge />
-      
+
       <ExclusiveCollections items={exclusiveItems} />
-      
-      <BestSelling 
+
+      <BestSelling
         regionId={region.id}
         countryCode={countryCode}
         isCustomerLoggedIn={isCustomerLoggedIn}
       />
-      
+
       <ReviewMediaHub />
       <WhyChooseUs />
     </>

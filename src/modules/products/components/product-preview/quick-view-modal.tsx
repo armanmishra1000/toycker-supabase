@@ -1,6 +1,7 @@
 "use client"
 
 import { Product } from "@/lib/supabase/types"
+import { getImageUrl } from "@lib/util/get-image-url"
 import { X } from "lucide-react"
 import Modal from "@modules/common/components/modal"
 import ImageGallery from "@modules/products/components/image-gallery"
@@ -74,10 +75,10 @@ const ProductQuickViewModal = ({
   const resolvedProduct = hydratedProduct ?? product
 
   const galleryImages = useMemo(() => {
-    // Assuming supabase product has images as string[]
-    const images = (resolvedProduct.images ?? []).map((url, index) => ({
+    // Assuming supabase product has images as string[] or object[]
+    const images = (resolvedProduct.images ?? []).map((img, index) => ({
       id: `${resolvedProduct.id}-image-${index}`,
-      url: url,
+      url: getImageUrl(img) || '',
     }))
 
     if (images.length) return images

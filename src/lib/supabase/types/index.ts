@@ -9,7 +9,7 @@ export interface Product {
   currency_code: string;
   image_url: string | null;
   thumbnail: string | null;
-  images: string[] | null;
+  images: (string | ProductImage)[] | null;
   stock_count: number;
   manage_inventory: boolean;
   metadata: Record<string, unknown> | null;
@@ -42,6 +42,12 @@ export interface ProductVariant {
     price_type: string;
   };
   prices?: Price[];
+  product?: Product;
+}
+
+export interface ProductImage {
+  url: string;
+  alt?: string;
 }
 
 export interface ProductOption {
@@ -122,6 +128,18 @@ export interface Cart {
 
 export interface PaymentCollection {
   payment_sessions: PaymentSession[];
+  payments?: Payment[];
+}
+
+export interface Payment {
+  id: string;
+  provider_id: string;
+  amount: number;
+  data?: {
+    card_last4?: string;
+    [key: string]: unknown;
+  };
+  created_at?: string;
 }
 
 export interface Promotion {
@@ -172,6 +190,7 @@ export interface Address {
 
 export interface Order {
   id: string;
+  user_id?: string | null;
   display_id: number;
   customer_email: string;
   email: string;

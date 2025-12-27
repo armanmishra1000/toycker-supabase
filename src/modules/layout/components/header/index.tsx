@@ -32,9 +32,9 @@ interface ContactInfoProps {
   showIcon?: boolean
 }
 
-const ContactInfo = ({ 
-  phone = "+91 9925819694", 
-  showIcon = true 
+const ContactInfo = ({
+  phone = "+91 9925819694",
+  showIcon = true
 }: ContactInfoProps) => {
   return (
     <div className="py-2 px-4 border border-white/30 rounded-full">
@@ -98,19 +98,19 @@ const Header = ({
   }, [pathname])
   const resolvedCart = sharedCart ?? cart
   const cartItemCount =
-    resolvedCart?.items?.reduce((total, item) => total + item.quantity, 0) || 0
+    resolvedCart?.items?.reduce((total: number, item: { quantity: number }) => total + item.quantity, 0) || 0
   const resolvedNavLinks = navLinks && navLinks.length ? navLinks : defaultNavLinks
   const resolvedAgeCategories = ageCategories && ageCategories.length ? ageCategories : defaultAgeCategories
   const fallbackSections = defaultShopMenuSections.map((section) =>
     section.id === "age"
       ? {
-          ...section,
-          items: resolvedAgeCategories.map((category) => ({
-            id: category.id,
-            label: category.label,
-            href: category.href,
-          })),
-        }
+        ...section,
+        items: resolvedAgeCategories.map((category) => ({
+          id: category.id,
+          label: category.label,
+          href: category.href,
+        })),
+      }
       : section,
   )
   const resolvedShopMenuSections = shopMenuSections && shopMenuSections.length ? shopMenuSections : fallbackSections
@@ -223,7 +223,7 @@ const Header = ({
               shopMenuSections={resolvedShopMenuSections}
               shopMenuPromo={resolvedShopMenuPromo}
             />
-            
+
             {/* Email Contact - Right Side */}
             <a
               href="mailto:customercare@toycker.com"
