@@ -250,3 +250,11 @@ export interface CustomerProfile {
   created_at: string;
   addresses: Address[];
 }
+
+export interface PaymentProvider {
+  id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+}

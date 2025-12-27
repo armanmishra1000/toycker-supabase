@@ -19,14 +19,17 @@ const CountrySelect = forwardRef<
   )
 
   const countryOptions = useMemo(() => {
-    if (!region) {
-      return []
-    }
-
-    return region.countries?.map((country) => ({
+    const options = region?.countries?.map((country) => ({
       value: country.iso_2,
       label: country.display_name,
-    }))
+    })) || []
+
+    // Ensure India is always present even if region data is loading
+    if (!options.some(o => o.value === 'in')) {
+      options.unshift({ value: 'in', label: 'India' })
+    }
+
+    return options
   }, [region])
 
   return (
