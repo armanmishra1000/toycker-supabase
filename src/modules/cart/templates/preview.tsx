@@ -1,14 +1,14 @@
 "use client"
 
 import repeat from "@lib/util/repeat"
-import { HttpTypes } from "@medusajs/types"
+import { Cart } from "@/lib/supabase/types"
 import { cn } from "@lib/util/cn"
 
 import Item from "@modules/cart/components/item"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 
 type ItemsTemplateProps = {
-  cart: any
+  cart: Cart
 }
 
 const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
@@ -26,10 +26,10 @@ const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
         <div data-testid="items-table">
           {items
             ? items
-                .sort((a: any, b: any) => {
+                .sort((a, b) => {
                   return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
                 })
-                .map((item: any) => {
+                .map((item) => {
                   return (
                     <Item
                       key={item.id}

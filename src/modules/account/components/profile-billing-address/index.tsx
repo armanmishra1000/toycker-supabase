@@ -6,12 +6,12 @@ import Input from "@modules/common/components/input"
 import NativeSelect from "@modules/common/components/native-select"
 
 import AccountInfo from "../account-info"
-import { HttpTypes } from "@medusajs/types"
+import { CustomerProfile, Region } from "@/lib/supabase/types"
 import { addCustomerAddress, updateCustomerAddress } from "@lib/data/customer"
 
 type MyInformationProps = {
-  customer: HttpTypes.StoreCustomer
-  regions: HttpTypes.StoreRegion[]
+  customer: CustomerProfile
+  regions: Region[]
 }
 
 const ProfileBillingAddress: React.FC<MyInformationProps> = ({
@@ -34,7 +34,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
   const [successState, setSuccessState] = React.useState(false)
 
   const billingAddress = customer.addresses?.find(
-    (addr) => addr.is_default_billing
+    (addr: any) => addr.is_default_billing
   )
 
   const initialState: Record<string, any> = {

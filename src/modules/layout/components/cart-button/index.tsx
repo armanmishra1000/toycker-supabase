@@ -1,12 +1,12 @@
 "use client"
 
-import { HttpTypes } from "@medusajs/types"
+import { Cart } from "@/lib/supabase/types"
 import CartDropdown from "../cart-dropdown"
 
 export default function CartButton({ 
   cart 
 }: { 
-  cart?: HttpTypes.StoreCart | null 
+  cart?: Cart | null 
 }) {
   return <CartDropdown cart={cart} />
 }

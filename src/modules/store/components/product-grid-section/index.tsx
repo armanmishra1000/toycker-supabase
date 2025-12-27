@@ -10,14 +10,14 @@ import {
   ViewMode,
 } from "@modules/store/components/refinement-list/types"
 import { useOptionalStorefrontFilters } from "@modules/store/context/storefront-filters"
-import type { HttpTypes } from "@medusajs/types"
+import { Product } from "@/lib/supabase/types"
 import { WishlistProvider } from "@modules/products/context/wishlist"
 import ProductGridSkeleton from "@modules/store/components/product-grid-section/product-grid-skeleton"
 import { getGridClassName } from "@modules/store/components/product-grid-section/utils"
 
 type ProductGridSectionProps = {
   title: string
-  products: HttpTypes.StoreProduct[]
+  products: Product[]
   totalCount: number
   page: number
   viewMode: ViewMode

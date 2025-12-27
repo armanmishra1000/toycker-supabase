@@ -12,15 +12,15 @@ import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
 import Spinner from "@modules/common/icons/spinner"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
-import { HttpTypes } from "@medusajs/types"
 import {
   deleteCustomerAddress,
   updateCustomerAddress,
 } from "@lib/data/customer"
+import { Address, Region } from "@/lib/supabase/types"
 
 type EditAddressProps = {
-  region: any
-  address: any
+  region: Region
+  address: Address
   isActive?: boolean
 }
 
@@ -58,6 +58,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
   }, [formState])
 
   const removeAddress = async () => {
+    if (!address.id) return
     setRemoving(true)
     await deleteCustomerAddress(address.id)
     setRemoving(false)

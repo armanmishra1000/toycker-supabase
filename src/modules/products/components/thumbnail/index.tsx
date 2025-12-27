@@ -1,5 +1,4 @@
 import { cn } from "@lib/util/cn"
-import { HttpTypes } from "@medusajs/types"
 import Image from "next/image"
 import React from "react"
 
@@ -7,7 +6,7 @@ import PlaceholderImage from "@modules/common/icons/placeholder-image"
 
 type ThumbnailProps = {
   thumbnail?: string | null
-  images?: HttpTypes.StoreProductImage[] | null
+  images?: { url: string }[] | null
   size?: "small" | "medium" | "large" | "full" | "square"
   isFeatured?: boolean
   className?: string
@@ -22,7 +21,7 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
   className,
   "data-testid": dataTestid,
 }) => {
-  const gallery = (images ?? []).filter((image): image is HttpTypes.StoreProductImage => Boolean(image?.url))
+  const gallery = (images ?? []).filter((image) => Boolean(image?.url))
   const primaryImage = thumbnail || gallery[0]?.url || null
   const secondaryImage = gallery.find((image) => image.url && image.url !== primaryImage)?.url || null
   const hasHoverImage = Boolean(primaryImage && secondaryImage)

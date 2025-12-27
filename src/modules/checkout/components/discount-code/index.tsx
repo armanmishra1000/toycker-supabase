@@ -5,13 +5,13 @@ import React from "react"
 
 import { applyPromotions } from "@lib/data/cart"
 import { convertToLocale } from "@lib/util/money"
-import { HttpTypes } from "@medusajs/types"
+import { Cart } from "@/lib/supabase/types"
 import Trash from "@modules/common/icons/trash"
 import ErrorMessage from "../error-message"
 import { SubmitButton } from "../submit-button"
 
 type DiscountCodeProps = {
-  cart: HttpTypes.StoreCart
+  cart: Cart
 }
 
 const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {

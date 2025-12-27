@@ -5,6 +5,7 @@ import { cn } from "@lib/util/cn"
 
 import Radio from "@modules/common/components/radio"
 import compareAddresses from "@lib/util/compare-addresses"
+import { Address } from "@/lib/supabase/types"
 
 type AddressSelectProps = {
   addresses: any[]
@@ -23,7 +24,7 @@ const AddressSelect = ({
   const handleSelect = (id: string) => {
     const savedAddress = addresses.find((a) => a.id === id)
     if (savedAddress) {
-      onSelect(savedAddress as HttpTypes.StoreCartAddress)
+      onSelect(savedAddress as Address)
     }
   }
 

@@ -3,7 +3,7 @@
 import { Text } from "@modules/common/components/text"
 import { cn } from "@lib/util/cn"
 import { updateLineItem } from "@lib/data/cart"
-import { HttpTypes } from "@medusajs/types"
+import { CartItem } from "@/lib/supabase/types"
 import CartItemSelect from "@modules/cart/components/cart-item-select"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import DeleteButton from "@modules/common/components/delete-button"
@@ -18,7 +18,7 @@ import { isGiftWrapLine } from "@modules/cart/utils/gift-wrap"
 import { useState } from "react"
 
 type ItemProps = {
-  item: any
+  item: CartItem
   type?: "full" | "preview"
   currencyCode: string
 }
@@ -80,7 +80,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
     const thumb = (
       <Thumbnail
         thumbnail={item.thumbnail}
-        images={item.variant?.product?.images}
+        images={item.variant?.product?.images ? item.variant.product.images.map(url => ({ url })) : []}
         size="square"
       />
     )

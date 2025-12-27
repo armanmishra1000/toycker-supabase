@@ -2,11 +2,11 @@ import React from "react"
 
 import AddAddress from "../address-card/add-address"
 import EditAddress from "../address-card/edit-address-modal"
-import { HttpTypes } from "@medusajs/types"
+import { CustomerProfile, Region } from "@/lib/supabase/types"
 
 type AddressBookProps = {
-  customer: HttpTypes.StoreCustomer
-  region: HttpTypes.StoreRegion
+  customer: CustomerProfile
+  region: Region
 }
 
 const AddressBook: React.FC<AddressBookProps> = ({ customer, region }) => {
@@ -15,7 +15,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ customer, region }) => {
     <div className="w-full">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 mt-4">
         <AddAddress region={region} addresses={addresses} />
-        {addresses.map((address) => {
+        {addresses.map((address: any) => {
           return (
             <EditAddress region={region} address={address} key={address.id} />
           )

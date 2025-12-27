@@ -3,10 +3,10 @@
 import React from "react"
 
 import AccountInfo from "../account-info"
-import { HttpTypes } from "@medusajs/types"
+import { CustomerProfile } from "@/lib/supabase/types"
 
 type MyInformationProps = {
-  customer: HttpTypes.StoreCustomer
+  customer: CustomerProfile
 }
 
 const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {

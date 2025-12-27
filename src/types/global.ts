@@ -1,4 +1,4 @@
-import { StorePrice } from "@medusajs/types"
+import { Price } from "@/lib/supabase/types"
 
 export type FeaturedProduct = {
   id: string
@@ -18,7 +18,7 @@ export type VariantPrice = {
   is_discounted: boolean
 }
 
-export type StoreFreeShippingPrice = StorePrice & {
+export type StoreFreeShippingPrice = Price & {
   target_reached: boolean
   target_remaining: number
   remaining_percentage: number

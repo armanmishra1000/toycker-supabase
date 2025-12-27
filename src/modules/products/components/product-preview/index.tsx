@@ -122,7 +122,7 @@ export default function ProductPreview({
         >
         <div className={imageWrapperClassName}>
           <Thumbnail
-            thumbnail={product.image_url}
+            thumbnail={product.thumbnail || product.image_url}
             images={product.images ? product.images.map(url => ({ url })) : []}
             size="full"
             isFeatured={isFeatured}

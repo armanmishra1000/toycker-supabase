@@ -7,8 +7,8 @@ import {
   Transition,
 } from "@headlessui/react"
 import { convertToLocale } from "@lib/util/money"
-import { HttpTypes } from "@medusajs/types"
-import { Button } from "@medusajs/ui"
+import { Cart } from "@/lib/supabase/types"
+import { Button } from "@modules/common/components/button"
 import DeleteButton from "@modules/common/components/delete-button"
 import LineItemOptions from "@modules/common/components/line-item-options"
 import LineItemPrice from "@modules/common/components/line-item-price"
@@ -21,7 +21,7 @@ import { useCartStore } from "@modules/cart/context/cart-store-context"
 const CartDropdown = ({
   cart: cartState,
 }: {
-  cart?: HttpTypes.StoreCart | null
+  cart?: Cart | null
 }) => {
   const { cart: storeCart } = useCartStore()
   const cart = cartState ?? storeCart
@@ -131,7 +131,7 @@ const CartDropdown = ({
                         >
                           <Thumbnail
                             thumbnail={item.thumbnail}
-                            images={item.variant?.product?.images}
+                            images={item.product?.images ? item.product.images.map(url => ({ url })) : []}
                             size="square"
                           />
                         </LocalizedClientLink>
@@ -196,7 +196,7 @@ const CartDropdown = ({
                     >
                       {convertToLocale({
                         amount: subtotal,
-                      currency_code: currencyCode,
+                        currency_code: currencyCode,
                       })}
                     </span>
                   </div>

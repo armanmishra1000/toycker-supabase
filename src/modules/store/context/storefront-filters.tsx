@@ -13,7 +13,7 @@ import {
 
 import type { ReactNode } from "react"
 
-import type { HttpTypes } from "@medusajs/types"
+import { Product } from "@/lib/supabase/types"
 
 import {
   AvailabilityFilter,
@@ -40,7 +40,7 @@ type StorefrontFiltersProviderProps = {
   children: ReactNode
   countryCode: string
   initialFilters: FilterState
-  initialProducts: HttpTypes.StoreProduct[]
+  initialProducts: Product[]
   initialCount: number
   pageSize?: number
   fixedCategoryId?: string
@@ -49,7 +49,7 @@ type StorefrontFiltersProviderProps = {
 
 type StorefrontFiltersContextValue = {
   filters: FilterState
-  products: HttpTypes.StoreProduct[]
+  products: Product[]
   totalCount: number
   pageSize: number
   totalPages: number
@@ -62,7 +62,6 @@ type StorefrontFiltersContextValue = {
   setAge: (value?: string) => void
   setCategory: (value?: string) => void
   setCollection: (value?: string) => void
-  /** @deprecated Use updateFilters instead */
   setFilters: (partial: Partial<FilterState>, options?: { resetPage?: boolean }) => void
   updateFilters: (partial: Partial<FilterState>, options?: { resetPage?: boolean }) => void
   setSort: (value: SortOptions) => void
@@ -75,9 +74,9 @@ type StorefrontFiltersContextValue = {
 
 const StorefrontFiltersContext = createContext<StorefrontFiltersContextValue | null>(null)
 
-const dedupeProducts = (items: HttpTypes.StoreProduct[]) => {
+const dedupeProducts = (items: Product[]) => {
   const seen = new Set<string>()
-  const result: HttpTypes.StoreProduct[] = []
+  const result: Product[] = []
 
   for (const item of items) {
     if (!item?.id || seen.has(item.id)) continue
@@ -123,7 +122,7 @@ export const StorefrontFiltersProvider = ({
 }: StorefrontFiltersProviderProps) => {
   const [filters, setFilterState] = useState<FilterState>(initialFilters)
   const filtersRef = useRef(initialFilters)
-  const [listing, setListing] = useState<{ products: HttpTypes.StoreProduct[]; count: number }>(() => ({
+  const [listing, setListing] = useState<{ products: Product[]; count: number }>(() => ({
     products: dedupeProducts(initialProducts),
     count: initialCount,
   }))
@@ -196,7 +195,7 @@ export const StorefrontFiltersProvider = ({
         }
 
         const payload = (await response.json()) as {
-          products: HttpTypes.StoreProduct[]
+          products: Product[]
           count: number
         }
 

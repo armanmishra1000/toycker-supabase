@@ -7,7 +7,7 @@ import { Fragment } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CountrySelect from "../country-select"
-import { HttpTypes } from "@medusajs/types"
+import { Region } from "@/lib/supabase/types"
 
 const SideMenuItems = {
   Home: "/",
@@ -16,7 +16,7 @@ const SideMenuItems = {
   Cart: "/cart",
 }
 
-const SideMenu = ({ regions }: { regions: HttpTypes.StoreRegion[] | null }) => {
+const SideMenu = ({ regions }: { regions: Region[] | null }) => {
   const [isOpen, setIsOpen] = React.useState(false)
   const toggleState = {
     state: isOpen,

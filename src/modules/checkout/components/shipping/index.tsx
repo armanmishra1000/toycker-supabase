@@ -14,6 +14,7 @@ import MedusaRadio from "@modules/common/components/radio"
 import { useShippingPrice } from "@modules/common/context/shipping-price-context"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { Address, ShippingOption } from "@/lib/supabase/types"
 
 const PICKUP_OPTION_ON = "__PICKUP_ON"
 const PICKUP_OPTION_OFF = "__PICKUP_OFF"
@@ -23,16 +24,16 @@ type ShippingProps = {
   availableShippingMethods: any[] | null
 }
 
-type ShippingOptionWithZone = HttpTypes.StoreCartShippingOption & {
+type ShippingOptionWithZone = ShippingOption & {
   service_zone?: {
     fulfillment_set?: {
       type?: string
-      location?: { address?: HttpTypes.StoreCartAddress }
+      location?: { address?: Address }
     }
   }
 }
 
-function formatAddress(address?: HttpTypes.StoreCartAddress) {
+function formatAddress(address?: Address) {
   if (!address) {
     return ""
   }
@@ -244,7 +245,7 @@ const Shipping: React.FC<ShippingProps> = ({
                     value={showPickupOptions}
                     onChange={(value: string) => {
                       const id = _pickupMethods?.find(
-                        (option) => !option.insufficient_inventory
+                        (option) => !(option as any).insufficient_inventory
                       )?.id
 
                       if (id) {
@@ -365,7 +366,7 @@ const Shipping: React.FC<ShippingProps> = ({
                         <Radio
                           key={option.id}
                           value={option.id}
-                          disabled={option.insufficient_inventory}
+                          disabled={(option as any).insufficient_inventory}
                           data-testid="delivery-option-radio"
                           className={cn(
                             "flex items-center justify-between text-sm cursor-pointer py-4 border rounded-lg px-8 mb-2 hover:shadow-sm",
@@ -373,7 +374,7 @@ const Shipping: React.FC<ShippingProps> = ({
                               "border-blue-600":
                                 option.id === shippingMethodId,
                               "cursor-not-allowed opacity-50":
-                                option.insufficient_inventory,
+                                (option as any).insufficient_inventory,
                             }
                           )}
                         >
@@ -438,12 +439,12 @@ const Shipping: React.FC<ShippingProps> = ({
                     const shippingMethod = cart.shipping_methods!.at(-1)!
 
                     // First priority: Try to use the shipping method's total field (includes tax)
-                    if (shippingMethod.total && shippingMethod.total > 0) {
+                    if ((shippingMethod.total ?? 0) > 0) {
                       return (
                         <>
                           {shippingMethod.name}{" "}
                           {convertToLocale({
-                            amount: shippingMethod.total,
+                            amount: shippingMethod.total ?? 0,
                             currency_code: currencyCode,
                           })}
                         </>
@@ -451,12 +452,12 @@ const Shipping: React.FC<ShippingProps> = ({
                     }
 
                     // Second priority: Try to use the shipping method's subtotal field (excludes tax)
-                    if (shippingMethod.subtotal && shippingMethod.subtotal > 0) {
+                    if ((shippingMethod.subtotal ?? 0) > 0) {
                       return (
                         <>
                           {shippingMethod.name}{" "}
                           {convertToLocale({
-                            amount: shippingMethod.subtotal,
+                            amount: shippingMethod.subtotal ?? 0,
                             currency_code: currencyCode,
                           })}
                         </>

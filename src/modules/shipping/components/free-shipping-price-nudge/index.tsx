@@ -2,26 +2,25 @@
 
 import { convertToLocale } from "@lib/util/money"
 import { CheckCircle, X } from "lucide-react"
-import { HttpTypes, StoreCart, StoreCartShippingOption, StorePrice } from "@medusajs/types"
+import { Cart, Price } from "@/lib/supabase/types"
 import { Button } from "@modules/common/components/button"
 import { cn } from "@lib/util/cn"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { useState } from "react"
-import { StoreFreeShippingPrice } from "types/global"
 
 import { useLayoutData } from "@modules/layout/context/layout-data-context"
 import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 
 const computeTarget = (
-  cart: HttpTypes.StoreCart,
-  price: HttpTypes.StorePrice
+  cart: Cart,
+  price: Price
 ) => {
   const priceRule = (price.price_rules || []).find(
-    (pr) => pr.attribute === "item_total"
+    (pr: any) => pr.attribute === "item_total"
   )!
 
-  const currentAmount = cart.item_total
+  const currentAmount = cart.item_total || 0
   const targetAmount = parseFloat(priceRule.value)
 
   if (priceRule.operator === "gt") {
@@ -107,14 +106,14 @@ export default function ShippingPriceNudge({ variant = "inline" }: { variant?: "
       // 1. Currency code is same as the cart's
       // 2. Have a rule that is set on item_total
       const validCurrencyPrices = shippingOption.prices.filter(
-        (price) =>
+        (price: any) =>
           price.currency_code === cart.currency_code &&
           (price.price_rules || []).some(
-            (priceRule) => priceRule.attribute === "item_total"
+            (priceRule: any) => priceRule.attribute === "item_total"
           )
       )
 
-      return validCurrencyPrices.map((price) => {
+      return validCurrencyPrices.map((price: any) => {
         return {
           ...price,
           shipping_option_id: shippingOption.id,
@@ -143,8 +142,8 @@ function FreeShippingInline({
   cart,
   price,
 }: {
-  cart: StoreCart
-  price: StorePrice & {
+  cart: Cart
+  price: Price & {
     target_reached: boolean
     target_remaining: number
     remaining_percentage: number
@@ -202,7 +201,7 @@ function FreeShippingPopup({
   cart,
   price,
 }: {
-  cart: StoreCart
+  cart: Cart
   price: any
 }) {
   const [isClosed, setIsClosed] = useState(false)

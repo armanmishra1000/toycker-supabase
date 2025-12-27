@@ -2,7 +2,7 @@
 
 import { addToCart, deleteLineItem } from "@lib/data/cart"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
-import { HttpTypes } from "@medusajs/types"
+import { Cart, Product, ProductVariant, CartItem } from "@/lib/supabase/types"
 import isEqual from "lodash/isEqual"
 import {
   createContext,
@@ -18,16 +18,16 @@ import { useLayoutData } from "@modules/layout/context/layout-data-context"
 import { useOptionalToast } from "@modules/common/context/toast-context"
 
 type OptimisticAddInput = {
-  product: HttpTypes.StoreProduct
-  variant: HttpTypes.StoreProductVariant
+  product: Product
+  variant: ProductVariant
   quantity: number
   countryCode?: string
   metadata?: Record<string, string | number | boolean | null>
 }
 
 type CartStoreContextValue = {
-  cart: HttpTypes.StoreCart | null
-  setFromServer: (cart: HttpTypes.StoreCart | null) => void
+  cart: Cart | null
+  setFromServer: (cart: Cart | null) => void
   optimisticAdd: (input: OptimisticAddInput) => Promise<void>
   optimisticRemove: (lineId: string) => Promise<void>
   reloadFromServer: () => Promise<void>
@@ -39,9 +39,9 @@ type CartStoreContextValue = {
 const CartStoreContext = createContext<CartStoreContextValue | undefined>(undefined)
 
 const mergeLineItems = (
-  current: HttpTypes.StoreCart,
-  nextItems: HttpTypes.StoreCartLineItem[],
-): HttpTypes.StoreCart => {
+  current: Cart,
+  nextItems: CartItem[],
+): Cart => {
   const itemSubtotal = nextItems.reduce((sum, item) => sum + (item.total ?? 0), 0)
   return {
     ...current,
@@ -53,15 +53,15 @@ const mergeLineItems = (
 }
 
 const buildOptimisticLineItem = (
-  product: HttpTypes.StoreProduct,
-  variant: HttpTypes.StoreProductVariant,
+  product: Product,
+  variant: ProductVariant,
   quantity: number,
   currencyCode: string,
-  cartRef: HttpTypes.StoreCart,
+  cartRef: Cart,
   metadata?: Record<string, string | number | boolean | null>,
-): HttpTypes.StoreCartLineItem => {
+): CartItem => {
   const tempId = `temp-${variant.id}-${Date.now()}`
-  const price = variant.calculated_price?.calculated_amount ?? 0
+  const price = variant.calculated_price?.calculated_amount ?? variant.price
   const original = variant.calculated_price?.original_amount ?? price
   const total = price * quantity
   const originalTotal = original * quantity
@@ -69,35 +69,22 @@ const buildOptimisticLineItem = (
   return {
     id: tempId,
     title: variant.title ?? product.title,
-    thumbnail: product.thumbnail ?? variant.product?.thumbnail ?? product.images?.[0]?.url ?? undefined,
+    thumbnail: product.thumbnail ?? product.image_url ?? undefined,
     quantity,
     variant_id: variant.id,
     product_id: product.id,
     cart_id: "temp",
-    cart: cartRef,
     metadata: metadata ?? {},
-    requires_shipping: true,
-    is_discountable: true,
-    is_tax_inclusive: false,
-    variant: {
-      ...variant,
-      product,
-    },
+    variant: variant,
+    product: product,
     product_title: product.title,
     product_handle: product.handle ?? undefined,
     unit_price: price,
     total,
     original_total: originalTotal,
     subtotal: total,
-    discount_total: 0,
-    tax_total: 0,
-    created_at: new Date(),
-    updated_at: new Date(),
-    tax_lines: [],
-    adjustments: [],
-    variant_sku: variant.sku ?? undefined,
-    variant_barcode: variant.barcode ?? undefined,
-    variant_title: variant.title ?? undefined,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   }
 }
 
@@ -105,47 +92,32 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
   const { cart: layoutCart } = useLayoutData()
   const toast = useOptionalToast()
   const showToast = toast?.showToast
-  const [cart, setCart] = useState<HttpTypes.StoreCart | null>(layoutCart ?? null)
+  const [cart, setCart] = useState<Cart | null>(layoutCart ?? null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastError, setLastError] = useState<string | null>(null)
-  const previousCartRef = useRef<HttpTypes.StoreCart | null>(layoutCart ?? null)
+  const previousCartRef = useRef<Cart | null>(layoutCart ?? null)
   const addQueueRef = useRef<Promise<void>>(Promise.resolve())
   const removeQueueRef = useRef<Promise<void>>(Promise.resolve())
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set())
 
   const buildEmptyCart = useCallback(
-    (currencyCode: string): HttpTypes.StoreCart => ({
+    (currencyCode: string): Cart => ({
       id: "temp-cart",
       items: [],
-      region_id: undefined,
+      user_id: null,
       currency_code: currencyCode,
       subtotal: 0,
       total: 0,
       original_total: 0,
-      original_subtotal: 0,
-      original_tax_total: 0,
-      original_item_total: 0,
-      original_item_subtotal: 0,
-      original_item_tax_total: 0,
       item_total: 0,
       item_subtotal: 0,
-      item_tax_total: 0,
       tax_total: 0,
       discount_total: 0,
-      discount_tax_total: 0,
       gift_card_total: 0,
-      gift_card_tax_total: 0,
       shipping_total: 0,
       shipping_subtotal: 0,
-      shipping_tax_total: 0,
-      original_shipping_total: 0,
-      original_shipping_subtotal: 0,
-      original_shipping_tax_total: 0,
-      metadata: {},
-      shipping_methods: [],
-      promotions: [],
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }),
     [],
   )
@@ -161,7 +133,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [layoutCart])
 
-  const setFromServer = useCallback((nextCart: HttpTypes.StoreCart | null) => {
+  const setFromServer = useCallback((nextCart: Cart | null) => {
     setCart(nextCart)
     previousCartRef.current = nextCart
   }, [])
@@ -191,7 +163,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           await deleteLineItem(lineId)
           const refreshed = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
           if (refreshed.ok) {
-            const payload = (await refreshed.json()) as { cart: HttpTypes.StoreCart | null }
+            const payload = (await refreshed.json()) as { cart: Cart | null }
             setFromServer(payload.cart)
             showToast?.("Item removed from cart", "success")
           }
@@ -228,7 +200,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         try {
         const response = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
           if (response.ok) {
-            const payload = (await response.json()) as { cart: HttpTypes.StoreCart | null }
+            const payload = (await response.json()) as { cart: Cart | null }
             if (payload.cart) {
               setFromServer(payload.cart)
             }
@@ -238,30 +210,30 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      const baseCart: HttpTypes.StoreCart =
+      const baseCart: Cart =
         cart ??
         buildEmptyCart(
           variant.calculated_price?.currency_code ?? layoutCart?.currency_code ?? "USD",
         )
 
       const areMetadataEqual = (
-        left?: Record<string, string | number | boolean | null>,
-        right?: Record<string, string | number | boolean | null>,
+        left?: Record<string, unknown>,
+        right?: Record<string, unknown>,
       ) => isEqual(left ?? {}, right ?? {})
 
       const existing = baseCart.items?.find(
         (item) => item.variant_id === variant.id && areMetadataEqual(item.metadata as any, metadata),
       )
-      let nextItems: HttpTypes.StoreCartLineItem[]
+      let nextItems: CartItem[]
 
       if (existing) {
-        const updatedItem: HttpTypes.StoreCartLineItem = {
+        const updatedItem: CartItem = {
           ...existing,
           quantity: existing.quantity + quantity,
           total: (existing.total ?? 0) + (existing.unit_price ?? 0) * quantity,
           original_total:
             (existing.original_total ?? existing.total ?? 0) + (existing.unit_price ?? 0) * quantity,
-          updated_at: new Date(),
+          updated_at: new Date().toISOString(),
         }
         nextItems = baseCart.items!.map((item) => (item.id === existing.id ? updatedItem : item))
       } else {
@@ -271,7 +243,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           quantity,
           baseCart.currency_code,
           baseCart,
-          metadata,
+          metadata as any,
         )
         nextItems = [...(baseCart.items ?? []), optimistic]
       }
@@ -281,17 +253,9 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
 
       const runServerAdd = async () => {
         try {
-          const idempotencyKey =
-            typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-              ? crypto.randomUUID()
-              : `cart-${Date.now()}-${Math.random()}`
-
           const serverCart = await addToCart({
-            variantId: variant.id,
+            productId: product.id, // Changed to match Supabase addToCart signature
             quantity,
-            countryCode: targetCountry,
-            metadata,
-            idempotencyKey,
           })
 
           if (serverCart) {
@@ -323,7 +287,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       if (!response.ok) {
         throw new Error("Failed to reload cart")
       }
-      const payload = (await response.json()) as { cart: HttpTypes.StoreCart | null }
+      const payload = (await response.json()) as { cart: Cart | null }
       setFromServer(payload.cart)
       showToast?.("Cart reloaded", "success")
     } catch (error) {

@@ -1,7 +1,8 @@
 "use client"
 
 import { acceptTransferRequest, declineTransferRequest } from "@lib/data/orders"
-import { Button, Text } from "@medusajs/ui"
+import { Button } from "@modules/common/components/button"
+import { Text } from "@modules/common/components/text"
 import { useState } from "react"
 
 type TransferStatus = "pending" | "success" | "error"

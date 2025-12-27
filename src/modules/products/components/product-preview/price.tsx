@@ -1,4 +1,5 @@
-import { Text, clx } from "@medusajs/ui"
+import { Text } from "@modules/common/components/text"
+import { cn } from "@lib/util/cn"
 
 export default function PreviewPrice({ price }: { price: any | null }) {
   if (!price) {
@@ -8,9 +9,9 @@ export default function PreviewPrice({ price }: { price: any | null }) {
   return (
     <div className="flex flex-col leading-tight">
       <Text
-        className={clx("text-lg font-semibold", {
+        className={cn("text-lg font-semibold", {
           "text-[#E7353A]": price.is_discounted,
-          "text-ui-fg-base": !price.is_discounted,
+          "text-gray-900": !price.is_discounted,
         })}
         data-testid="price"
       >
@@ -18,7 +19,7 @@ export default function PreviewPrice({ price }: { price: any | null }) {
       </Text>
       {price.original_price && (
         <Text
-          className="text-sm text-ui-fg-muted line-through"
+          className="text-sm text-gray-500 line-through"
           data-testid="original-price"
         >
           {price.original_price}

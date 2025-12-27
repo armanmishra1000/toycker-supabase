@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import { HttpTypes } from "@medusajs/types"
+import { Product } from "@/lib/supabase/types"
 
 import { useWishlist } from "@modules/products/context/wishlist"
 import ProductPreview from "@modules/products/components/product-preview"
@@ -153,7 +153,7 @@ const EmptyWishlistState = ({ countryCode }: { countryCode: string }) => (
 export default WishlistContent
 
 const useProductsByIds = (ids: string[], countryCode: string) => {
-  const [products, setProducts] = useState<HttpTypes.StoreProduct[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const controllerRef = useRef<AbortController | null>(null)
@@ -199,7 +199,7 @@ const useProductsByIds = (ids: string[], countryCode: string) => {
         }
 
         const payload = (await response.json()) as {
-          products: HttpTypes.StoreProduct[]
+          products: Product[]
         }
 
         setProducts(payload.products)

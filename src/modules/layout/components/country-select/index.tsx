@@ -13,7 +13,7 @@ import ReactCountryFlag from "react-country-flag"
 import { StateType } from "@lib/hooks/use-toggle-state"
 import { useParams, usePathname } from "next/navigation"
 import { updateRegion } from "@lib/data/cart"
-import { HttpTypes } from "@medusajs/types"
+import { Region } from "@/lib/supabase/types"
 
 type CountryOption = {
   country?: string
@@ -23,7 +23,7 @@ type CountryOption = {
 
 type CountrySelectProps = {
   toggleState: StateType
-  regions: HttpTypes.StoreRegion[]
+  regions: Region[]
 }
 
 const CountrySelect = ({ toggleState, regions }: CountrySelectProps) => {

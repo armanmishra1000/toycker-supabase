@@ -1,8 +1,8 @@
 import { convertToLocale } from "@lib/util/money"
-import { HttpTypes } from "@medusajs/types"
+import { Order } from "@/lib/supabase/types"
 
 type OrderSummaryProps = {
-  order: HttpTypes.StoreOrder
+  order: Order
 }
 
 const OrderSummary = ({ order }: OrderSummaryProps) => {
@@ -19,9 +19,9 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
 
   return (
     <div>
-      <h2 className="text-base-semi">Order Summary</h2>
-      <div className="text-small-regular text-ui-fg-base my-2">
-        <div className="flex items-center justify-between text-base-regular text-ui-fg-base mb-2">
+      <h2 className="text-base font-semibold">Order Summary</h2>
+      <div className="text-sm font-normal text-ui-fg-base my-2">
+        <div className="flex items-center justify-between text-base font-normal text-ui-fg-base mb-2">
           <span>Subtotal</span>
           <span>{getAmount(order.subtotal)}</span>
         </div>
@@ -48,7 +48,7 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
           </div>
         </div>
         <div className="h-px w-full border-b border-gray-200 border-dashed my-4" />
-        <div className="flex items-center justify-between text-base-regular text-ui-fg-base mb-2">
+        <div className="flex items-center justify-between text-base font-normal text-ui-fg-base mb-2">
           <span>Total</span>
           <span>{getAmount(order.total)}</span>
         </div>

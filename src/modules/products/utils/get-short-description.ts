@@ -1,11 +1,8 @@
-import { HttpTypes } from "@medusajs/types"
+import { Product } from "@/lib/supabase/types"
 import { extractPlainText } from "@lib/util/sanitize-html"
 
-type ShortDescriptionCarrier = HttpTypes.StoreProduct & {
-  short_description?: {
-    id: string
-    value: string | null
-  } | null
+type ShortDescriptionCarrier = Product & {
+  short_description?: string | null
 }
 
 export const getShortDescription = (
@@ -32,7 +29,7 @@ export const getShortDescription = (
     return metadataValue
   }
 
-  const fromShortDescription = product.short_description?.value?.trim()
+  const fromShortDescription = product.short_description?.trim()
   if (fromShortDescription) {
     return fromShortDescription
   }

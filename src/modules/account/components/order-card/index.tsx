@@ -4,10 +4,10 @@ import { useMemo } from "react"
 import Thumbnail from "@modules/products/components/thumbnail"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { convertToLocale } from "@lib/util/money"
-import { HttpTypes } from "@medusajs/types"
+import { Order } from "@/lib/supabase/types"
 
 type OrderCardProps = {
-  order: any
+  order: Order
 }
 
 const OrderCard = ({ order }: OrderCardProps) => {

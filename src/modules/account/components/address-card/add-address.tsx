@@ -10,14 +10,14 @@ import CountrySelect from "@modules/checkout/components/country-select"
 import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
-import { HttpTypes } from "@medusajs/types"
 import { addCustomerAddress } from "@lib/data/customer"
+import { Region } from "@/lib/supabase/types"
 
 const AddAddress = ({
   region,
   addresses,
 }: {
-  region: any
+  region: Region
   addresses: any[]
 }) => {
   const [successState, setSuccessState] = useState(false)

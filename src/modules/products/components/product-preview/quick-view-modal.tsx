@@ -1,6 +1,6 @@
 "use client"
 
-import { HttpTypes } from "@medusajs/types"
+import { Product } from "@/lib/supabase/types"
 import { X } from "lucide-react"
 import Modal from "@modules/common/components/modal"
 import ImageGallery from "@modules/products/components/image-gallery"
@@ -10,7 +10,7 @@ import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
 import { useEffect, useMemo, useState } from "react"
 
 type ProductQuickViewModalProps = {
-  product: HttpTypes.StoreProduct
+  product: Product
   isOpen: boolean
   onClose: () => void
 }
@@ -21,7 +21,7 @@ const ProductQuickViewModal = ({
   onClose,
 }: ProductQuickViewModalProps) => {
   const [hydratedProduct, setHydratedProduct] =
-    useState<HttpTypes.StoreProduct | null>(null)
+    useState<Product | null>(null)
 
   useEffect(() => {
     if (!isOpen) {
@@ -56,7 +56,7 @@ const ProductQuickViewModal = ({
         }
 
         const payload = (await response.json()) as {
-          products?: HttpTypes.StoreProduct[]
+          products?: Product[]
         }
 
         const nextProduct = payload.products?.[0]
@@ -73,25 +73,21 @@ const ProductQuickViewModal = ({
 
   const resolvedProduct = hydratedProduct ?? product
 
-  const galleryImages: HttpTypes.StoreProductImage[] = useMemo(() => {
-    const candidate = (resolvedProduct.images ?? []).map((image) => ({
-      ...image,
-      rank: image.rank ?? 0,
+  const galleryImages = useMemo(() => {
+    // Assuming supabase product has images as string[]
+    const images = (resolvedProduct.images ?? []).map((url, index) => ({
+      id: `${resolvedProduct.id}-image-${index}`,
+      url: url,
     }))
 
-    if (candidate.length) return candidate
+    if (images.length) return images
 
     if (resolvedProduct.thumbnail) {
       return [
         {
           id: `${resolvedProduct.id}-thumbnail`,
           url: resolvedProduct.thumbnail,
-          created_at: "",
-          updated_at: "",
-          deleted_at: null,
-          metadata: null,
-          rank: 0,
-        } satisfies HttpTypes.StoreProductImage,
+        },
       ]
     }
 

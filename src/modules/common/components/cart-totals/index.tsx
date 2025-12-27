@@ -1,7 +1,7 @@
 "use client"
 
 import { convertToLocale } from "@lib/util/money"
-import { HttpTypes } from "@medusajs/types"
+import { Cart } from "@/lib/supabase/types"
 import React from "react"
 import { useShippingPrice } from "@modules/common/context/shipping-price-context"
 
@@ -15,7 +15,7 @@ type CartTotalsProps = {
     shipping_subtotal?: number | null
     discount_subtotal?: number | null
   }
-  cart?: HttpTypes.StoreCart
+  cart?: Cart
 }
 
 const CartTotals: React.FC<CartTotalsProps> = ({
@@ -68,7 +68,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({
 
   return (
     <div>
-      <div className="flex flex-col gap-y-2 txt-medium text-ui-fg-subtle ">
+      <div className="flex flex-col gap-y-2 text-base font-medium text-ui-fg-subtle ">
         <div className="flex items-center justify-between">
           <span>Subtotal (excl. shipping and taxes)</span>
           <span data-testid="cart-subtotal" data-value={item_subtotal || 0}>
@@ -105,10 +105,10 @@ const CartTotals: React.FC<CartTotalsProps> = ({
         </div>
       </div>
       <div className="h-px w-full border-b border-gray-200 my-4" />
-      <div className="flex items-center justify-between text-ui-fg-base mb-2 txt-medium ">
+      <div className="flex items-center justify-between text-ui-fg-base mb-2 text-base font-medium ">
         <span>Total</span>
         <span
-          className="txt-xlarge-plus"
+          className="text-xl font-bold"
           data-testid="cart-total"
           data-value={total || 0}
         >

@@ -4,9 +4,9 @@ import { Button } from "@modules/common/components/button"
 
 import OrderCard from "../order-card"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { HttpTypes } from "@medusajs/types"
+import { Order } from "@/lib/supabase/types"
 
-const OrderOverview = ({ orders }: { orders: any[] }) => {
+const OrderOverview = ({ orders }: { orders: Order[] }) => {
   if (orders?.length) {
     return (
       <div className="flex flex-col gap-y-8 w-full">
