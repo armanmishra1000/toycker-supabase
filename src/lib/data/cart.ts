@@ -291,10 +291,19 @@ export async function initiatePaymentSession(cartInput: any, data: any) {
     const firstname = cart.shipping_address?.first_name || "Customer"
     const email = cart.email || "test@example.com"
     
-    // PayU Credentials
-    const key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
-    const salt = process.env.PAYU_MERCHANT_SALT || "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
-    const saltV2 = process.env.PAYU_MERCHANT_SALT_V2
+    // PayU Test Credentials
+    // Default to the salt from the error message as it seems to be what the environment expects
+    // If we are using the public test key 'gtKFFx', we FORCE the known test salt.
+    let key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
+    let salt = process.env.PAYU_MERCHANT_SALT || "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
+    let saltV2 = process.env.PAYU_MERCHANT_SALT_V2
+
+    // Force known test credentials if using public key, to avoid env var mismatches causing hash errors
+    if (key === "gtKFFx") {
+        salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
+        // Common V2 salt for this test key if available, otherwise undefined (user must provide if strictly required)
+        // saltV2 = "..." 
+    }
 
     const hashParams = {
       key,

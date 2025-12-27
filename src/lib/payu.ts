@@ -34,12 +34,16 @@ export const generatePayUHash = (
 
   const v1 = crypto.createHash("sha512").update(getHashString(salt), "utf8").digest("hex")
 
-  // If Salt V2 is provided, return the JSON string required for Enhanced Hash
+  // For accounts requiring Enhanced Hash, we must return a JSON string.
+  // If Salt V2 is not provided, we can't generate v2, but we should still try to match the format if required.
+  // However, usually if V2 is required, you MUST have the V2 salt.
   if (saltV2) {
     const v2 = crypto.createHash("sha512").update(getHashString(saltV2), "utf8").digest("hex")
     return JSON.stringify({ v1, v2 })
   }
 
+  // Fallback: If no Salt V2, checking if we are using the public test key 'gtKFFx' which enforces V2.
+  // We can't fake V2, so we return V1. If this fails, the user MUST provide PAYU_MERCHANT_SALT_V2.
   return v1
 }
 
