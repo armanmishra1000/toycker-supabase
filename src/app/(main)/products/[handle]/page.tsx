@@ -10,7 +10,7 @@ type Props = {
 
 export async function generateStaticParams() {
   try {
-    const products = await listProducts()
+    const { response: { products } } = await listProducts()
     return products.map((product) => ({
       handle: product.handle,
     }))

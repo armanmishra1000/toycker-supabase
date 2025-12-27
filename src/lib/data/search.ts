@@ -85,11 +85,13 @@ export const searchEntities = async ({
     return { products: [], categories: [], collections: [], suggestions: [] }
   }
 
-  const [allProducts, categories, collectionsResponse] = await Promise.all([
+  const [productsResponse, categories, collectionsResponse] = await Promise.all([
     listProducts(),
     listCategories(),
     listCollections(),
   ])
+
+  const allProducts = productsResponse.response.products
 
   const products = allProducts
     .filter(p => p.name.toLowerCase().includes(normalizedQuery.toLowerCase()))

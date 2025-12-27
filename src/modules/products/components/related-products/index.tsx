@@ -18,7 +18,7 @@ export default async function RelatedProducts({
     return null
   }
 
-  const allProducts = await listProducts()
+  const { response: { products: allProducts } } = await listProducts()
   const products = allProducts.filter(p => p.id !== product.id).slice(0, 4)
 
   if (!products.length) {

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 }
 
 export default async function Home() {
-  const [products, banners] = await Promise.all([
+  const [{ response: { products } }, banners] = await Promise.all([
     listProducts(),
     listHomeBanners()
   ])

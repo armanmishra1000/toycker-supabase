@@ -18,7 +18,7 @@ export const listExclusiveCollections = async ({
   regionId: string
 }): Promise<ExclusiveCollectionEntry[]> => {
   // Simplified for prototype
-  const products = await listProducts()
+  const { response: { products } } = await listProducts()
   return products.slice(0, 3).map((product, index) => ({
     id: `exclusive-${index}`,
     product_id: product.id,
