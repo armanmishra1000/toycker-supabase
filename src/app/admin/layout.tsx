@@ -7,7 +7,9 @@ import {
   UsersIcon, 
   ArrowLeftOnRectangleIcon,
   RectangleStackIcon,
-  ArrowTopRightOnSquareIcon
+  ArrowTopRightOnSquareIcon,
+  FolderIcon,
+  Cog6ToothIcon
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin } from "@/lib/data/admin"
@@ -22,6 +24,7 @@ const NAV_ITEMS = [
   { label: "Orders", href: "/admin/orders", icon: ShoppingBagIcon },
   { label: "Products", href: "/admin/products", icon: TagIcon },
   { label: "Collections", href: "/admin/collections", icon: RectangleStackIcon },
+  { label: "Categories", href: "/admin/categories", icon: FolderIcon },
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
 ]
 
@@ -52,7 +55,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
         <div className="p-4 border-t border-white/10 space-y-2">
           <Link
+            href="/admin/settings"
+            className="group flex items-center px-3 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors"
+          >
+            <Cog6ToothIcon className="mr-3 h-5 w-5" />
+            Settings
+          </Link>
+          <Link
             href="/"
+            target="_blank"
             className="group flex items-center px-3 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors"
           >
             <ArrowTopRightOnSquareIcon className="mr-3 h-5 w-5" />
