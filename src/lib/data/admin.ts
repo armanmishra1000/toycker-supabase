@@ -1,0 +1,148 @@
+"use server"
+
+import { createClient } from "@/lib/supabase/server"
+import { Product, Order, CustomerProfile } from "@/lib/supabase/types"
+import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
+
+// --- Auth Check ---
+export async function ensureAdmin() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) redirect("/account")
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
+  if (profile?.role !== "admin") {
+    // For prototype convenience, if the user email is 'admin@toycker.com', we treat them as admin temporarily
+    // or redirect away.
+    if (user.email !== "admin@toycker.com") {
+        redirect("/")
+    }
+  }
+}
+
+// --- Dashboard Stats ---
+export async function getAdminStats() {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { count: productsCount } = await supabase.from("products").select("*", { count: "exact", head: true })
+  const { count: ordersCount } = await supabase.from("orders").select("*", { count: "exact", head: true })
+  const { count: customersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true })
+  
+  // Calculate total revenue
+  const { data: orders } = await supabase.from("orders").select("total_amount")
+  const totalRevenue = orders?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
+
+  return {
+    products: productsCount || 0,
+    orders: ordersCount || 0,
+    customers: customersCount || 0,
+    revenue: totalRevenue
+  }
+}
+
+// --- Products ---
+export async function getAdminProducts() {
+  await ensureAdmin()
+  const supabase = await createClient()
+  
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+  return data as Product[]
+}
+
+export async function createProduct(formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const product = {
+    name: formData.get("name") as string,
+    handle: formData.get("handle") as string, // Should auto-generate if empty in real app
+    description: formData.get("description") as string,
+    price: parseFloat(formData.get("price") as string),
+    stock_count: parseInt(formData.get("stock_count") as string),
+    image_url: formData.get("image_url") as string,
+    currency_code: "inr", // Default
+  }
+
+  const { error } = await supabase.from("products").insert(product)
+  
+  if (error) throw new Error(error.message)
+  revalidatePath("/admin/products")
+  redirect("/admin/products")
+}
+
+export async function updateProduct(formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const id = formData.get("id") as string
+
+  const updates = {
+    name: formData.get("name") as string,
+    handle: formData.get("handle") as string,
+    description: formData.get("description") as string,
+    price: parseFloat(formData.get("price") as string),
+    stock_count: parseInt(formData.get("stock_count") as string),
+    image_url: formData.get("image_url") as string,
+  }
+
+  const { error } = await supabase.from("products").update(updates).eq("id", id)
+  
+  if (error) throw new Error(error.message)
+  revalidatePath("/admin/products")
+  redirect("/admin/products")
+}
+
+export async function deleteProduct(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  await supabase.from("products").delete().eq("id", id)
+  revalidatePath("/admin/products")
+}
+
+// --- Orders ---
+export async function getAdminOrders() {
+  await ensureAdmin()
+  const supabase = await createClient()
+  
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+  return data as Order[]
+}
+
+export async function updateOrderStatus(id: string, status: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  await supabase.from("orders").update({ status }).eq("id", id)
+  revalidatePath(`/admin/orders`)
+}
+
+// --- Customers ---
+export async function getAdminCustomers() {
+  await ensureAdmin()
+  const supabase = await createClient()
+  
+  // Note: accessing auth.users is restricted. We use public.profiles.
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+  return data as CustomerProfile[]
+}
