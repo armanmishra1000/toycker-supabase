@@ -14,15 +14,21 @@ export async function ensureAdmin() {
     redirect("/login?next=/admin")
   }
 
+  // HARDCODED ADMINS for immediate prototype access
+  const ADMIN_EMAILS = ["admin@toycker.com", "tutanymo@fxzig.com"]
+  const isHardcodedAdmin = ADMIN_EMAILS.includes(user.email || "")
+
+  if (isHardcodedAdmin) {
+    return
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single()
 
-  // HARDCODED ADMINS for prototype debugging
-  const ADMIN_EMAILS = ["admin@toycker.com", "tutanymo@fxzig.com"]
-  const isAdmin = profile?.role === "admin" || ADMIN_EMAILS.includes(user.email || "")
+  const isAdmin = profile?.role === "admin"
 
   if (!isAdmin) {
     console.error("Unauthorized admin access attempt:", user.email, "Role found:", profile?.role)
