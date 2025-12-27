@@ -279,12 +279,12 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
   let sessionData = data.data || {}
 
   if (data.provider_id === "pp_payu_payu") {
-    // Use a simplified unique transaction ID and sanitize strings for PayU
-    const txnid = `T${Date.now()}${Math.floor(Math.random() * 1000)}`
-    const amount = (cart.total || 0).toFixed(2)
-    const productinfo = "Order" // Simplest possible info
-    const firstname = (cart.shipping_address?.first_name || "Guest").trim()
-    const email = (cart.email || "guest@toycker.com").trim()
+    // PayU strictly requires amount with 2 decimal places and no spaces in strings
+    const txnid = `txn${Date.now()}`
+    const amount = Number(cart.total || 0).toFixed(2)
+    const productinfo = "Store_Order"
+    const firstname = (cart.shipping_address?.first_name || "Guest").trim().replace(/\s/g, "")
+    const email = (cart.email || "guest@toycker.in").trim()
     
     let key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
     let salt = process.env.PAYU_MERCHANT_SALT || "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
@@ -300,7 +300,11 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
       productinfo,
       firstname,
       email,
-      udf1: cart.id
+      udf1: cart.id,
+      udf2: "",
+      udf3: "",
+      udf4: "",
+      udf5: ""
     }
 
     const hash = generatePayUHash(hashParams, salt)
@@ -312,7 +316,7 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
         hash,
         surl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payu/callback`,
         furl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payu/callback`,
-        phone: cart.shipping_address?.phone || "9999999999",
+        phone: (cart.shipping_address?.phone || "9999999999").replace(/\D/g, ""),
         service_provider: "payu_paisa"
       }
     }
