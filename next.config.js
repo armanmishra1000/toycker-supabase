@@ -50,24 +50,19 @@ const nextConfig = {
         hostname: "*.cdn.toycker.in",
         pathname: "/**",
       },
-      {
-        protocol: "https",
-        hostname: "medusa-public-images.s3.eu-west-1.amazonaws.com",
-        pathname: "/**",
-      },
       ...(R2_HOSTNAME
         ? [
-            {
-              protocol: R2_PROTOCOL,
-              hostname: R2_HOSTNAME,
-              pathname: R2_PATHNAME,
-            },
-            {
-              protocol: R2_PROTOCOL,
-              hostname: `*.${R2_HOSTNAME}`,
-              pathname: R2_PATHNAME,
-            },
-          ]
+          {
+            protocol: R2_PROTOCOL,
+            hostname: R2_HOSTNAME,
+            pathname: R2_PATHNAME,
+          },
+          {
+            protocol: R2_PROTOCOL,
+            hostname: `*.${R2_HOSTNAME}`,
+            pathname: R2_PATHNAME,
+          },
+        ]
         : []),
     ],
     qualities: IMAGE_QUALITIES,

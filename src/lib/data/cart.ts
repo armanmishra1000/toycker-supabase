@@ -2,7 +2,7 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { Cart, CartItem, ShippingOption, Address } from "@/lib/supabase/types"
+import { Cart, CartItem, ShippingOption, Address, Product, ProductVariant, PaymentCollection } from "@/lib/supabase/types"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
 import { randomUUID } from "crypto"
@@ -10,7 +10,28 @@ import { redirect } from "next/navigation"
 import { generatePayUHash, PayUHashParams } from "@/lib/payu"
 import { getBaseURL } from "@/lib/util/env"
 
-const mapCartItems = (items: any[]): CartItem[] => {
+/** Raw cart item from database with nested product/variant objects */
+interface DatabaseCartItem {
+  id: string
+  cart_id: string
+  product_id: string
+  variant_id: string
+  quantity: number
+  created_at: string
+  updated_at: string
+  product: Product | null
+  variant: ProductVariant | null
+  metadata?: Record<string, unknown>
+}
+
+/** Shipping method stored in cart */
+interface CartShippingMethod {
+  shipping_option_id: string
+  name: string
+  amount: number
+}
+
+const mapCartItems = (items: DatabaseCartItem[]): CartItem[] => {
   return items.map((item) => {
     const product = item.product
     const variant = item.variant
@@ -18,7 +39,12 @@ const mapCartItems = (items: any[]): CartItem[] => {
     let thumbnail = product?.image_url
     if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
       const firstImg = product.images[0]
-      thumbnail = typeof firstImg === 'string' ? firstImg : firstImg?.url || thumbnail
+      // Handle both string and object image formats
+      if (typeof firstImg === 'string') {
+        thumbnail = firstImg
+      } else if (firstImg && typeof firstImg === 'object' && 'url' in firstImg) {
+        thumbnail = (firstImg as { url: string }).url || thumbnail
+      }
     }
 
     return {
@@ -30,8 +56,8 @@ const mapCartItems = (items: any[]): CartItem[] => {
       unit_price: Number(variant?.price || 0),
       total: Number(variant?.price || 0) * item.quantity,
       subtotal: Number(variant?.price || 0) * item.quantity,
-      product: product,
-      variant: variant
+      product: product ?? undefined,
+      variant: variant ?? undefined
     }
   })
 }
@@ -61,8 +87,9 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
   const items = mapCartItems(cartData.items || [])
   const item_subtotal = items.reduce((sum, item) => sum + item.total, 0)
 
-  const shipping_total = Array.isArray(cartData.shipping_methods) && cartData.shipping_methods.length > 0
-    ? Number((cartData.shipping_methods[0] as any).amount || 0)
+  const shippingMethods = cartData.shipping_methods as CartShippingMethod[] | null
+  const shipping_total = Array.isArray(shippingMethods) && shippingMethods.length > 0
+    ? Number(shippingMethods[0].amount || 0)
     : 0
 
   const tax_total = 0
@@ -156,9 +183,10 @@ export async function addToCart({
     .maybeSingle()
 
   if (existingItem) {
+    const currentQuantity = typeof existingItem.quantity === 'number' ? existingItem.quantity : 0
     await supabase
       .from("cart_items")
-      .update({ quantity: (existingItem as any).quantity + quantity })
+      .update({ quantity: currentQuantity + quantity })
       .eq("id", existingItem.id)
   } else {
     await supabase
@@ -272,7 +300,7 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
   revalidateTag("cart")
 }
 
-export async function initiatePaymentSession(cartInput: { id: string }, data: { provider_id: string, data?: any }) {
+export async function initiatePaymentSession(cartInput: { id: string }, data: { provider_id: string, data?: Record<string, unknown> }) {
   const supabase = await createClient()
   const cart = await retrieveCart(cartInput.id)
   if (!cart) throw new Error("Cart not found")
@@ -341,7 +369,7 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
   const { error } = await supabase
     .from("carts")
     .update({
-      payment_collection: paymentCollection as any
+      payment_collection: paymentCollection as PaymentCollection
     })
     .eq("id", cart.id)
 
@@ -368,8 +396,8 @@ export async function placeOrder() {
       fulfillment_status: "not_shipped",
       shipping_address: cart.shipping_address,
       billing_address: cart.billing_address,
-      items: cart.items as any,
-      shipping_methods: cart.shipping_methods as any,
+      items: JSON.parse(JSON.stringify(cart.items || [])),
+      shipping_methods: JSON.parse(JSON.stringify(cart.shipping_methods || [])),
       metadata: { cart_id: cart.id }
     })
     .select()
@@ -409,13 +437,13 @@ export async function createBuyNowCart({
 
   const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
 
-  if (variant) {
+  if (variant && variant.product_id) {
     await supabase.from("cart_items").insert({
       cart_id: newCartId,
-      product_id: (variant as any).product_id,
+      product_id: variant.product_id,
       variant_id: variantId,
       quantity: quantity,
-      metadata: metadata as any
+      metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null
     })
   }
 
@@ -424,7 +452,7 @@ export async function createBuyNowCart({
   return newCartId
 }
 
-export async function listCartOptions(): Promise<{ shipping_options: any[] }> {
+export async function listCartOptions(): Promise<{ shipping_options: ShippingOption[] }> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("shipping_options")

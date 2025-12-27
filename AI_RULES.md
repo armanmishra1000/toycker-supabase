@@ -5,7 +5,7 @@
 *   **Framework:** Next.js 15 (App Router)
 *   **Language:** TypeScript
 *   **Styling:** Tailwind CSS, Tailwind Merge, CLSX
-*   **UI Components:** Headless UI, Radix UI Primitives, Medusa UI
+*   **UI Components:** Headless UI, Radix UI Primitives
 *   **Icons:** Lucide React, Heroicons
 *   **Database & Auth:** Supabase (PostgreSQL)
 *   **Backend Logic:** Server Actions

@@ -10,7 +10,7 @@ const CatalogCardGrid = ({ items, viewMode = "grid-4" }: CatalogCardGridProps) =
   if (!items.length) {
     return (
       <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 px-6 py-16 text-center text-slate-500">
-        Nothing to show just yet. Try adding categories or collections in the Medusa Admin.
+        Nothing to show just yet. Try adding categories or collections in the admin panel.
       </div>
     )
   }

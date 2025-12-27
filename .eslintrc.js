@@ -6,6 +6,10 @@ module.exports = {
     },
   },
   rules: {
+    "no-unused-vars": ["warn", {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }],
     "@next/next/no-html-link-for-pages": "off",
     "@next/next/no-page-custom-font": "off",
     "@next/next/no-typos": "off",
