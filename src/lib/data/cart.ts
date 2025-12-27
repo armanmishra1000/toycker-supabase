@@ -3,7 +3,7 @@
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { Cart, CartItem, ShippingOption } from "@/lib/supabase/types"
-import { revalidateTag } from "next/cache"
+import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
 import { randomUUID } from "crypto"
 import { redirect } from "next/navigation"
@@ -273,19 +273,25 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
   revalidateTag("cart")
 }
 
-export async function initiatePaymentSession(cart: any, data: any) {
+export async function initiatePaymentSession(cartInput: any, data: any) {
   const supabase = await createClient()
+  
+  // 1. Fetch fresh cart from DB to ensure we have the latest totals and shipping info
+  const cart = await retrieveCart(cartInput.id)
+  if (!cart) throw new Error("Cart not found")
+
   let sessionData = data.data || {}
 
   // If the provider is PayU, generate the required payload for the prototype
   if (data.provider_id === "pp_payu_payu") {
     const txnid = `tx_${Date.now()}`
+    // Ensure amount is formatted correctly (2 decimal places)
     const amount = (cart.total || 0).toFixed(2)
     const productinfo = "Toycker Order"
     const firstname = cart.shipping_address?.first_name || "Customer"
     const email = cart.email || "test@example.com"
     
-    // PayU Test Credentials (common for prototype testing)
+    // PayU Test Credentials
     const key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
     const salt = process.env.PAYU_MERCHANT_SALT || "eCwWELxi"
 
@@ -330,6 +336,7 @@ export async function initiatePaymentSession(cart: any, data: any) {
     .eq("id", cart.id)
     
   revalidateTag("cart")
+  revalidatePath("/checkout")
 }
 
 export async function placeOrder() {
