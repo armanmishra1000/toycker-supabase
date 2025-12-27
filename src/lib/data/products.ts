@@ -6,45 +6,61 @@ import { SortOptions } from "@modules/store/components/refinement-list/types"
 
 const CDN_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || `https://${process.env.NEXT_PUBLIC_R2_MEDIA_HOSTNAME || "cdn.toycker.in"}`
 
-const normalizeProductImage = (product: Product): Product => {
+const normalizeProductImage = (product: any): Product => {
   const fixUrl = (url: string | null) => {
     if (!url) return null
     if (url.startsWith("http") || url.startsWith("/")) return url
     return `${CDN_URL}/${url}`
   }
 
-  // Handle images if they come from a relation or array column
-  let rawImages: any[] = []
+  // Collect all image sources
+  const rawImages: string[] = []
+
+  // 1. Check direct 'images' array (if array of strings)
   if (Array.isArray(product.images)) {
-    rawImages = product.images
-  }
-  
-  let imageList: string[] = rawImages.map((img: any) => {
-    if (typeof img === 'string') return img
-    if (typeof img === 'object' && img?.url) return img.url
-    if (typeof img === 'object' && img?.image?.url) return img.image.url
-    return null
-  }).filter((url): url is string => typeof url === 'string' && url.length > 0)
-
-  // If we have a main image_url but no images array, ensure it's in the list
-  if (imageList.length === 0 && product.image_url) {
-    imageList.push(product.image_url)
+    product.images.forEach((img: any) => {
+      if (typeof img === 'string') rawImages.push(img)
+      else if (typeof img === 'object' && img?.url) rawImages.push(img.url)
+    })
   }
 
-  // Ensure we have a main image reference
-  const mainImage = product.image_url || imageList[0] || null
+  // 2. Check 'product_images' relation (standard many-to-many)
+  if (Array.isArray(product.product_images)) {
+    product.product_images.forEach((rel: any) => {
+      if (rel.image?.url) rawImages.push(rel.image.url)
+    })
+  }
 
-  // Normalize base product images
+  // 3. Check 'image_url' (single column)
+  if (product.image_url) {
+    // Add to beginning if not present
+    if (!rawImages.includes(product.image_url)) {
+      rawImages.unshift(product.image_url)
+    }
+  }
+
+  // Clean and prefix URLs
+  const cleanedImages = rawImages
+    .map((url) => fixUrl(url))
+    .filter((url): url is string => !!url)
+
+  // Ensure unique
+  const uniqueImages = Array.from(new Set(cleanedImages))
+
+  // Determine main thumbnail
+  const mainImage = fixUrl(product.image_url) || uniqueImages[0] || null
+
+  // Normalize base product
   const normalizedProduct = {
     ...product,
-    image_url: fixUrl(mainImage),
-    thumbnail: fixUrl(product.thumbnail || mainImage),
-    images: imageList.map((img) => fixUrl(img)).filter((url): url is string => !!url),
+    image_url: mainImage,
+    thumbnail: fixUrl(product.thumbnail) || mainImage,
+    images: uniqueImages,
   }
 
-  // Normalize variant images
-  if (product.variants && Array.isArray(product.variants)) {
-    normalizedProduct.variants = product.variants.map((v) => ({
+  // Normalize variants
+  if (normalizedProduct.variants && Array.isArray(normalizedProduct.variants)) {
+    normalizedProduct.variants = normalizedProduct.variants.map((v: any) => ({
       ...v,
     }))
   }
@@ -52,11 +68,12 @@ const normalizeProductImage = (product: Product): Product => {
   return normalizedProduct
 }
 
-// Fetch products, variants, options, AND option values
+// Fetch products with variants, options, AND images (via junction table)
 const PRODUCT_SELECT = `
   *, 
   variants:product_variants(*), 
-  options:product_options(*, values:product_option_values(*))
+  options:product_options(*, values:product_option_values(*)),
+  product_images(image(*))
 `
 
 export async function listProducts({
@@ -90,7 +107,7 @@ export async function listProducts({
     return { response: { products: [], count: 0 } }
   }
 
-  const products = (data as Product[]).map(normalizeProductImage)
+  const products = (data as any[]).map(normalizeProductImage)
 
   return { response: { products, count: count || 0 } }
 }
@@ -108,7 +125,7 @@ export async function retrieveProduct(id: string): Promise<Product | null> {
     return null
   }
 
-  return normalizeProductImage(data as Product)
+  return normalizeProductImage(data)
 }
 
 export async function getProductByHandle(handle: string): Promise<Product | null> {
@@ -126,7 +143,7 @@ export async function getProductByHandle(handle: string): Promise<Product | null
     return null
   }
 
-  return normalizeProductImage(data as Product)
+  return normalizeProductImage(data)
 }
 
 export async function listPaginatedProducts({
@@ -203,16 +220,16 @@ export async function listPaginatedProducts({
     }
   }
 
-  let products = (data as Product[]).map(normalizeProductImage)
+  let products = (data as any[]).map(normalizeProductImage)
 
   if (availability === "in_stock") {
     products = products.filter(p => {
-      const hasVariantStock = p.variants?.some(v => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
+      const hasVariantStock = p.variants?.some((v: any) => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
       return p.stock_count > 0 || hasVariantStock
     })
   } else if (availability === "out_of_stock") {
     products = products.filter(p => {
-      const hasVariantStock = p.variants?.some(v => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
+      const hasVariantStock = p.variants?.some((v: any) => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
       return p.stock_count <= 0 && !hasVariantStock
     })
   }
