@@ -1,7 +1,7 @@
 import { getAdminProducts, deleteProduct } from "@/lib/data/admin"
 import Link from "next/link"
 import Image from "next/image"
-import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, PencilIcon, TrashIcon, TagIcon } from "@heroicons/react/24/outline"
 import { convertToLocale } from "@lib/util/money"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
