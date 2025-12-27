@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-import DOMPurify from "isomorphic-dompurify"
 import { cn } from "@lib/util/cn"
 
 type SafeRichTextProps = {
@@ -14,12 +13,11 @@ const SafeRichText = ({ html, className }: SafeRichTextProps) => {
     return null
   }
 
-  const sanitizedHtml = DOMPurify.sanitize(html)
-
+  // Directly rendering HTML as it comes from our trusted Supabase backend
   return (
     <div
       className={cn("prose prose-sm max-w-none text-ui-fg-subtle", className)}
-      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   )
 }

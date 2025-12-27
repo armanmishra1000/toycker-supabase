@@ -95,20 +95,6 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
     return null
   }
 
-  const toggleAutoplay = () => {
-    if (!swiperRef.current?.autoplay) {
-      return
-    }
-
-    if (isAutoplaying) {
-      swiperRef.current.autoplay.stop()
-      setIsAutoplaying(false)
-    } else {
-      swiperRef.current.autoplay.start()
-      setIsAutoplaying(true)
-    }
-  }
-
   return (
     <section className="w-full bg-[#eeffd2]">
       <div className="mx-auto max-w-screen-2xl px-4 py-12 md:py-16">
@@ -125,22 +111,6 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
               claim your next adventure set before the sparkly stock disappears.
             </p>
           </div>
-          {/* {isMounted && (
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 self-start rounded-full border border-[#d6b39c] bg-white px-4 py-2 text-sm font-semibold text-[#8b5e34] shadow-sm transition hover:bg-[#f8ede6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d6b39c]"
-              aria-pressed={!isAutoplaying}
-              aria-label={isAutoplaying ? "Pause autoplay" : "Play autoplay"}
-              onClick={toggleAutoplay}
-            >
-              {isAutoplaying ? (
-                <Pause className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Play className="h-4 w-4" aria-hidden="true" />
-              )}
-              {isAutoplaying ? "Pause autoplay" : "Resume autoplay"}
-            </button>
-          )} */}
         </header>
 
         {!isMounted ? (
@@ -213,6 +183,7 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
                 const title = item.product?.title ?? "Exclusive collectible"
                 const productHandle = item.product?.handle ?? item.product_id
                 const displayPrice = resolveDisplayPrice(item)
+                const hasVideo = Boolean(item.video_url && item.video_url.trim().length > 0)
 
                 return (
                 <SwiperSlide
@@ -220,25 +191,35 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
                   role="group"
                     aria-label={`Video ${index + 1} of ${showcaseItems.length}`}
                 >
-                  <article className="flex h-full flex-col rounded-xl overflow-hidden">
-                    <div className="relative overflow-hidden rounded-xl">
-                      <video
-                        className="h-full w-full object-cover d-block"
+                  <article className="flex h-full flex-col rounded-xl overflow-hidden bg-black">
+                    <div className="relative overflow-hidden rounded-xl h-[400px]">
+                      {hasVideo ? (
+                        <video
+                          className="h-full w-full object-cover d-block"
                           src={item.video_url}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="metadata"
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          preload="metadata"
                           poster={poster}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      ) : (
+                        <Image
+                          src={poster}
+                          alt={title}
+                          fill
+                          className="object-cover"
+                          sizes="(min-width: 1024px) 360px, 100vw"
+                        />
+                      )}
                         <LocalizedClientLink
                           href={`/products/${productHandle}`}
-                          className="flex items-center gap-3 bg-[#dbfca7] p-3 text-[#3a5017] z-10"
+                          className="absolute bottom-0 left-0 right-0 flex items-center gap-3 bg-[#dbfca7] p-3 text-[#3a5017] z-10 transition-transform hover:-translate-y-1"
                         >
-                          <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-white/60">
+                          <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-white/60 shrink-0">
                             {productImage ? (
                               <Image
                                 src={productImage}
@@ -251,8 +232,8 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
                               <div className="h-full w-full bg-white/40" aria-hidden="true" />
                             )}
                           </div>
-                          <div className="flex min-h-[3.5rem] flex-1 flex-col justify-center">
-                            <p className="text-sm font-semibold leading-tight">{title}</p>
+                          <div className="flex min-h-[3.5rem] flex-1 flex-col justify-center overflow-hidden">
+                            <p className="text-sm font-semibold leading-tight truncate">{title}</p>
                             <PriceStack price={displayPrice} />
                           </div>
                         </LocalizedClientLink>
@@ -278,9 +259,6 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
             >
               <ChevronRight className="h-5 w-5" aria-hidden="true" />
             </button>
-            <p className="sr-only" aria-live="polite">
-              Slide {activeIndex + 1} of {showcaseItems.length}
-            </p>
           </div>
         )}
       </div>
