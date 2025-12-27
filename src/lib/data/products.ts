@@ -4,6 +4,23 @@ import { createClient } from "@/lib/supabase/server"
 import { Product } from "@/lib/supabase/types"
 import { SortOptions } from "@modules/store/components/refinement-list/types"
 
+const CDN_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || `https://${process.env.NEXT_PUBLIC_R2_MEDIA_HOSTNAME || "cdn.toycker.in"}`
+
+const normalizeProductImage = (product: Product): Product => {
+  const fixUrl = (url: string | null) => {
+    if (!url) return null
+    if (url.startsWith("http") || url.startsWith("/")) return url
+    return `${CDN_URL}/${url}`
+  }
+
+  return {
+    ...product,
+    image_url: fixUrl(product.image_url),
+    thumbnail: fixUrl(product.thumbnail),
+    images: product.images?.map((img) => fixUrl(img) || "") || null,
+  }
+}
+
 export async function listProducts({
   regionId,
   queryParams
@@ -20,26 +37,22 @@ export async function listProducts({
   }
 
   if (queryParams?.collection_id) {
-    // Assuming collection_id is a single value filter for now or array
-    // Adjust based on your schema. If products have collection_id column:
     const collectionIds = Array.isArray(queryParams.collection_id) ? queryParams.collection_id : [queryParams.collection_id]
     if (collectionIds.length > 0) {
-        // If queryParams.collection_id is passed, we filter by it.
-        // Assuming products table has 'collection_id' column or M-to-M relation.
-        // For simplicity based on types: product has collection_id
         query = query.in("collection_id", collectionIds)
     }
   }
   
-  // Basic implementation of listing
   const { data, count, error } = await query.order("created_at", { ascending: false })
 
   if (error) {
-    console.error("Error fetching products:", error)
+    console.error("Error fetching products from Supabase:", error.message)
     return { response: { products: [], count: 0 } }
   }
 
-  return { response: { products: data as Product[], count: count || 0 } }
+  const products = (data as Product[]).map(normalizeProductImage)
+
+  return { response: { products, count: count || 0 } }
 }
 
 export async function retrieveProduct(id: string): Promise<Product | null> {
@@ -51,11 +64,11 @@ export async function retrieveProduct(id: string): Promise<Product | null> {
     .single()
 
   if (error) {
-    console.error(`Error fetching product by ID ${id}:`, error)
+    console.error(`Error fetching product by ID ${id}:`, error.message)
     return null
   }
 
-  return data as Product
+  return normalizeProductImage(data as Product)
 }
 
 export async function getProductByHandle(handle: string): Promise<Product | null> {
@@ -67,11 +80,11 @@ export async function getProductByHandle(handle: string): Promise<Product | null
     .single()
 
   if (error) {
-    console.error("Error fetching product:", error)
+    console.error("Error fetching product by handle:", error.message)
     return null
   }
 
-  return data as Product
+  return normalizeProductImage(data as Product)
 }
 
 export async function listPaginatedProducts({
@@ -144,14 +157,14 @@ export async function listPaginatedProducts({
     .range(offset, offset + limit - 1)
 
   if (error) {
-    console.error("Error fetching paginated products:", error)
+    console.error("Error fetching paginated products:", error.message)
     return {
       response: { products: [], count: 0 },
       pagination: { page, limit },
     }
   }
 
-  let products = data as Product[]
+  let products = (data as Product[]).map(normalizeProductImage)
 
   // In-memory filtering for properties not easily queryable if they are in JSONB or computed
   if (availability === "in_stock") {
