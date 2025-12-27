@@ -24,9 +24,7 @@ export const generatePayUHash = (
     udf1 = "", udf2 = "", udf3 = "", udf4 = "", udf5 = ""
   } = params
 
-  // PayU Formula: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT
-  // Note: We join the first 11 fields (key...udf5) with pipes.
-  // Then we append "||||||" which accounts for udf6-udf10 (5 empty fields) + the separator before salt.
+  // Formula: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT
   const getHashString = (s: string) => 
     [key, txnid, amount, productinfo, firstname, email, udf1, udf2, udf3, udf4, udf5].join("|") +
     "||||||" +
@@ -34,16 +32,11 @@ export const generatePayUHash = (
 
   const v1 = crypto.createHash("sha512").update(getHashString(salt), "utf8").digest("hex")
 
-  // For accounts requiring Enhanced Hash, we must return a JSON string.
-  // If Salt V2 is not provided, we can't generate v2, but we should still try to match the format if required.
-  // However, usually if V2 is required, you MUST have the V2 salt.
   if (saltV2) {
     const v2 = crypto.createHash("sha512").update(getHashString(saltV2), "utf8").digest("hex")
     return JSON.stringify({ v1, v2 })
   }
 
-  // Fallback: If no Salt V2, checking if we are using the public test key 'gtKFFx' which enforces V2.
-  // We can't fake V2, so we return V1. If this fails, the user MUST provide PAYU_MERCHANT_SALT_V2.
   return v1
 }
 
@@ -53,31 +46,42 @@ export const verifyPayUHash = (
 ): boolean => {
   const {
     status,
-    udf5,
-    udf4,
-    udf3,
-    udf2,
-    udf1,
-    email,
-    firstname,
-    productinfo,
-    amount,
-    txnid,
-    key,
-    hash,
-    additionalCharges,
+    udf10 = "",
+    udf9 = "",
+    udf8 = "",
+    udf7 = "",
+    udf6 = "",
+    udf5 = "",
+    udf4 = "",
+    udf3 = "",
+    udf2 = "",
+    udf1 = "",
+    email = "",
+    firstname = "",
+    productinfo = "",
+    amount = "",
+    txnid = "",
+    key = "",
+    hash = "",
+    additionalCharges = "",
   } = payload
 
-  // PayU Reverse Formula: SALT|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
-  const commonString = `${salt}|${status}||||||${udf5 || ""}|${udf4 || ""}|${udf3 || ""}|${udf2 || ""}|${udf1 || ""}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`
+  // Reverse Formula: salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
+  // Some implementations use 5 empty fields for udf6-10 if not present.
+  const hashSequence = [
+    udf10, udf9, udf8, udf7, udf6, udf5, udf4, udf3, udf2, udf1, 
+    email, firstname, productinfo, amount, txnid, key
+  ].join("|")
 
-  let hashString = ""
-  if (additionalCharges) {
-    hashString = `${additionalCharges}|${commonString}`
-  } else {
-    hashString = commonString
+  const hashString = `${salt}|${status}|${hashSequence}`
+  const generatedHash = crypto.createHash("sha512").update(hashString, "utf8").digest("hex")
+
+  // If standard verification fails, check with additionalCharges prefix (common for some gateway modes)
+  if (generatedHash !== hash && additionalCharges) {
+    const chargeHashString = `${additionalCharges}|${hashString}`
+    const generatedChargeHash = crypto.createHash("sha512").update(chargeHashString, "utf8").digest("hex")
+    return generatedChargeHash === hash
   }
 
-  const generatedHash = crypto.createHash("sha512").update(hashString, "utf8").digest("hex")
   return generatedHash === hash
 }
