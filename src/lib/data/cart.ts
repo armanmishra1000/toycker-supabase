@@ -290,10 +290,11 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
     let key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
     let salt = process.env.PAYU_MERCHANT_SALT
 
-    // Fallback to the known correct test salt if no env var is set
+    // Default to the known test salt if no env var is set and we are using the test key
     if (!salt && key === "gtKFFx") {
         salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
     } else if (!salt) {
+        // Fallback for custom keys if salt is forgotten (though likely to fail)
         salt = ""
     }
 
