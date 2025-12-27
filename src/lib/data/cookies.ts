@@ -2,18 +2,7 @@ import "server-only"
 import { cookies as nextCookies } from "next/headers"
 
 export const getCacheTag = async (tag: string): Promise<string> => {
-  try {
-    const cookies = await nextCookies()
-    const cacheId = cookies.get("_medusa_cache_id")?.value
-
-    if (!cacheId) {
-      return tag
-    }
-
-    return `${tag}-${cacheId}`
-  } catch (error) {
-    return tag
-  }
+  return tag
 }
 
 export const getCacheOptions = async (

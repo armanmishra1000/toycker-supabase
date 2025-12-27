@@ -1,8 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { getCollectionByHandle, listCollections } from "@lib/data/collections"
-import { StoreCollection } from "@medusajs/types"
+import { getCollectionByHandle, listCollections, Collection } from "@lib/data/collections"
 import CollectionTemplate from "@modules/collections/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/types"
 
@@ -24,7 +23,7 @@ export async function generateStaticParams() {
     return []
   }
 
-  return collections.map((collection: StoreCollection) => ({
+  return collections.map((collection: Collection) => ({
     handle: collection.handle,
   }))
 }

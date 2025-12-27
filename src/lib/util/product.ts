@@ -1,5 +1,5 @@
-import { HttpTypes } from "@medusajs/types";
+import { Product } from "@/lib/supabase/types"
 
-export const isSimpleProduct = (product: HttpTypes.StoreProduct): boolean => {
-    return product.options?.length === 1 && product.options[0].values?.length === 1;
+export const isSimpleProduct = (product: Product) => {
+  return (product.variants?.length || 0) <= 1 && (product.options?.length || 0) === 0
 }
