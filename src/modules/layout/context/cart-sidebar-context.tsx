@@ -1,6 +1,6 @@
 "use client"
 
-import { HttpTypes } from "@medusajs/types"
+import { Cart } from "@/lib/supabase/types"
 import { useRouter } from "next/navigation"
 import { ReactNode, createContext, useCallback, useContext, useMemo, useState } from "react"
 
@@ -10,8 +10,8 @@ type CartSidebarContextValue = {
   isOpen: boolean
   openCart: () => void
   closeCart: () => void
-  cart: HttpTypes.StoreCart | null
-  setCart: (cart: HttpTypes.StoreCart | null) => void
+  cart: Cart | null
+  setCart: (cart: Cart | null) => void
   refreshCart: () => Promise<void>
   removeLineItem: (lineItemId: string) => Promise<void>
   isRemoving: (lineItemId: string) => boolean

@@ -2,7 +2,6 @@ import { cookies } from "next/headers"
 
 import { listCategories } from "@lib/data/categories"
 import { listPaginatedProducts } from "@lib/data/products"
-import type { HttpTypes } from "@medusajs/types"
 import {
   AvailabilityFilter,
   PriceRangeFilter,
@@ -64,7 +63,7 @@ const StoreTemplate = async ({
   const inferredAgeCollectionId = ageFilter ? ageCollectionMap.get(ageFilter) : undefined
   const effectiveCollectionId = providedCollectionId ?? inferredAgeCollectionId
 
-  const productQueryParams: HttpTypes.FindParams & HttpTypes.StoreProductListParams = {}
+  const productQueryParams: Record<string, unknown> = {}
 
   if (resolvedCategoryId) {
     productQueryParams["category_id"] = [resolvedCategoryId]
@@ -78,11 +77,11 @@ const StoreTemplate = async ({
     productQueryParams["q"] = searchQuery
   }
 
-  const effectiveProductQueryParams: (HttpTypes.FindParams & HttpTypes.StoreProductListParams) | undefined =
+  const effectiveProductQueryParams: Record<string, unknown> | undefined =
     Object.keys(productQueryParams).length ? productQueryParams : undefined
 
   const [categories, productListing] = await Promise.all([
-    listCategories({ limit: 100, include_descendants_tree: true }),
+    listCategories(),
     listPaginatedProducts({
       page: pageNumber,
       limit: STORE_PRODUCT_PAGE_SIZE,
@@ -102,13 +101,7 @@ const StoreTemplate = async ({
   const prioritizedCategories = ["Merch", "Pants", "Shirts", "Sweatshirts"]
 
   const categoryOptions = categories
-    ?.filter((category) => {
-      if ("is_active" in category) {
-        return (category as { is_active?: boolean }).is_active !== false
-      }
-      return true
-    })
-    .map((category) => ({ value: category.id, label: category.name }))
+    ?.map((category) => ({ value: category.id, label: category.name }))
     .sort((a, b) => {
       const aIndex = prioritizedCategories.indexOf(a.label)
       const bIndex = prioritizedCategories.indexOf(b.label)

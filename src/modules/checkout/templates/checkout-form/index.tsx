@@ -1,6 +1,6 @@
 import { listCartOptions } from "@lib/data/cart"
 import { listCartPaymentMethods } from "@lib/data/payment"
-import { HttpTypes } from "@medusajs/types"
+import { Cart, CustomerProfile } from "@/lib/supabase/types"
 import Addresses from "@modules/checkout/components/addresses"
 import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
@@ -9,14 +9,15 @@ export default async function CheckoutForm({
   cart,
   customer,
 }: {
-  cart: HttpTypes.StoreCart | null
-  customer: HttpTypes.StoreCustomer | null
+  cart: Cart | null
+  customer: CustomerProfile | null
 }) {
   if (!cart) {
     return null
   }
 
-  const paymentMethods = await listCartPaymentMethods(cart.region?.id ?? "")
+  // Assuming region ID is available in cart
+  const paymentMethods = await listCartPaymentMethods(cart.region_id ?? "")
 
   if (!paymentMethods) {
     return null

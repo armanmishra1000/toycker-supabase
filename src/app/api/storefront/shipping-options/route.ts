@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server"
 
-import { HttpTypes } from "@medusajs/types"
-
 import { listCartOptions, retrieveCart } from "@lib/data/cart"
+import { ShippingOption } from "@/lib/supabase/types"
 
 const SHIPPING_OPTIONS_TTL = 1000 * 15 // 15 seconds cache window per cart snapshot
 
 type ShippingOptionsCacheEntry = {
-  data: HttpTypes.StoreCartShippingOption[]
+  data: ShippingOption[]
   expiresAt: number
 }
 
@@ -25,7 +24,7 @@ const buildCacheKey = (cartId: string, regionId?: string | null, updatedAt?: str
 
 const setCache = (
   key: string,
-  data: HttpTypes.StoreCartShippingOption[],
+  data: ShippingOption[],
 ) => {
   shippingOptionsCache.set(key, {
     data,
@@ -54,7 +53,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    const cart = await retrieveCart(undefined, "id,region_id,updated_at")
+    const cart = await retrieveCart()
 
     if (!cart) {
       return NextResponse.json({ shippingOptions: [], regionId: null })
@@ -71,7 +70,7 @@ export async function GET() {
 
     const { shipping_options } = await listCartOptions()
 
-    setCache(cacheKey, shipping_options)
+    setCache(cacheKey, shipping_options as ShippingOption[])
 
     return NextResponse.json({ shippingOptions: shipping_options, regionId: cart.region_id })
   } catch (error) {

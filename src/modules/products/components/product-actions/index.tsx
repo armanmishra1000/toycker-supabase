@@ -5,7 +5,6 @@ import { createBuyNowCart } from "@lib/data/cart"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { buildDisplayPrice } from "@lib/util/display-price"
 import getShortDescription from "@modules/products/utils/get-short-description"
-import { HttpTypes } from "@medusajs/types"
 import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
@@ -24,7 +23,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   Check,
   Gift,
-  GitCompare,
   Heart,
   Loader2,
   MessageCircleQuestion,
@@ -34,11 +32,12 @@ import {
 } from "lucide-react"
 import { useCartSidebar } from "@modules/layout/context/cart-sidebar-context"
 import { useCartStore } from "@modules/cart/context/cart-store-context"
+import { Product } from "@/lib/supabase/types"
 
 const GIFT_WRAP_FEE = 50
 
 type ProductActionsProps = {
-  product: any
+  product: Product
   disabled?: boolean
   showSupportActions?: boolean
   onActionComplete?: () => void

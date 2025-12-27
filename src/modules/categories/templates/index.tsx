@@ -2,9 +2,8 @@ import { notFound } from "next/navigation"
 import { cookies } from "next/headers"
 
 import { listPaginatedProducts } from "@lib/data/products"
-import { HttpTypes } from "@medusajs/types"
+import { Category } from "@/lib/supabase/types"
 import InteractiveLink from "@modules/common/components/interactive-link"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { SortOptions, ViewMode } from "@modules/store/components/refinement-list/types"
 import ProductGridSection from "@modules/store/components/product-grid-section"
 import { StorefrontFiltersProvider } from "@modules/store/context/storefront-filters"
@@ -18,7 +17,7 @@ export default async function CategoryTemplate({
   page,
   countryCode,
 }: {
-  category: HttpTypes.StoreProductCategory
+  category: Category
   sortBy?: SortOptions
   page?: string
   countryCode: string
@@ -49,9 +48,9 @@ export default async function CategoryTemplate({
     { value: "out_of_stock", label: "Out of stock" },
   ]
 
-  const parents = [] as HttpTypes.StoreProductCategory[]
+  const parents = [] as Category[]
 
-  const getParents = (category: HttpTypes.StoreProductCategory) => {
+  const getParents = (category: Category) => {
     if (category.parent_category) {
       parents.push(category.parent_category)
       getParents(category.parent_category)

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 
 import { listPaginatedProducts } from "@lib/data/products"
-import { HttpTypes } from "@medusajs/types"
+import { Collection } from "@/lib/supabase/types"
 import { SortOptions, ViewMode } from "@modules/store/components/refinement-list/types"
 import ProductGridSection from "@modules/store/components/product-grid-section"
 import { StorefrontFiltersProvider } from "@modules/store/context/storefront-filters"
@@ -16,7 +16,7 @@ export default async function CollectionTemplate({
   countryCode,
 }: {
   sortBy?: SortOptions
-  collection: HttpTypes.StoreCollection
+  collection: Collection
   page?: string
   countryCode: string
 }) {
