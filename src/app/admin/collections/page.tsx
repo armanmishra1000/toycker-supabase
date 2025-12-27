@@ -1,6 +1,6 @@
 import { getAdminCollections, deleteCollection } from "@/lib/data/admin"
 import Link from "next/link"
-import { PlusIcon, PencilIcon, TrashIcon, Square3Stack3DIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, PencilIcon, TrashIcon, RectangleStackIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 
@@ -10,61 +10,61 @@ export default async function AdminCollections() {
   const actions = (
     <Link 
       href="/admin/collections/new"
-      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg shadow-sm text-white bg-black hover:bg-gray-800 transition-colors"
+      className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-black hover:bg-gray-800 transition-all"
     >
-      <PlusIcon className="h-4 w-4 mr-2" />
+      <PlusIcon className="h-4 w-4 mr-2" strokeWidth={3} />
       Create collection
     </Link>
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AdminPageHeader title="Collections" actions={actions} />
 
-      <AdminCard className="p-0">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
+      <AdminCard className="p-0 border-none shadow-none bg-transparent">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Title</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Products</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Collection Info</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Availability</th>
                 <th className="relative px-6 py-4"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {collections.length > 0 ? collections.map((collection) => (
-                <tr key={collection.id} className="hover:bg-gray-50 transition-colors group">
+                <tr key={collection.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
-                        <Square3Stack3DIcon className="h-5 w-5" />
+                      <div className="h-12 w-12 flex-shrink-0 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 border border-gray-100 group-hover:border-black group-hover:text-black transition-all">
+                        <RectangleStackIcon className="h-6 w-6" />
                       </div>
                       <div className="ml-4">
-                        <div className="font-semibold text-gray-900">{collection.title}</div>
-                        <div className="text-xs text-gray-500 font-medium">/{collection.handle}</div>
+                        <div className="text-sm font-bold text-gray-900">{collection.title}</div>
+                        <div className="text-xs text-gray-400 font-bold tracking-tighter mt-0.5">handle: /{collection.handle}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-600 font-medium">
-                    {collection.products?.[0]?.count || 0} products
+                  <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-gray-600">
+                    {collection.products?.[0]?.count || 0} products listed
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <a 
                         href={`/collections/${collection.handle}`} 
                         target="_blank" 
                         rel="noreferrer"
-                        className="p-2 text-gray-400 hover:text-gray-900 rounded-md hover:bg-gray-100"
+                        className="p-2 text-gray-400 hover:text-black transition-colors"
                         title="View on store"
                       >
-                        <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+                        <ArrowTopRightOnSquareIcon className="h-4 w-4" />
                       </a>
-                      <Link href={`/admin/collections/${collection.id}`} className="p-2 text-gray-400 hover:text-gray-900 rounded-md hover:bg-gray-100">
-                        <PencilIcon className="h-5 w-5" />
+                      <Link href={`/admin/collections/${collection.id}`} className="p-2 text-gray-400 hover:text-black transition-colors">
+                        <PencilIcon className="h-4 w-4" />
                       </Link>
                       <form action={deleteCollection.bind(null, collection.id)}>
-                        <button className="p-2 text-gray-400 hover:text-rose-600 rounded-md hover:bg-rose-50">
-                          <TrashIcon className="h-5 w-5" />
+                        <button className="p-2 text-gray-400 hover:text-rose-600 transition-colors">
+                          <TrashIcon className="h-4 w-4" />
                         </button>
                       </form>
                     </div>
@@ -72,8 +72,8 @@ export default async function AdminCollections() {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-gray-500 font-medium">
-                    No collections found. Create one to organize your products.
+                  <td colSpan={3} className="px-6 py-12 text-center text-gray-400 text-sm font-medium">
+                    No collections found. Use groupings to organize your shop.
                   </td>
                 </tr>
               )}
