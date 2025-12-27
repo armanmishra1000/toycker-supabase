@@ -13,25 +13,40 @@ const normalizeProductImage = (product: Product): Product => {
     return `${CDN_URL}/${url}`
   }
 
+  // Handle images if they come from a relation (product_images table)
+  // Sometimes Supabase returns them as an array of objects if joined
+  let imageList: string[] = []
+  
+  if (Array.isArray(product.images)) {
+     // If it's already a string array (column) or object array (relation)
+     imageList = product.images.map((img: any) => {
+        if (typeof img === 'string') return img
+        if (typeof img === 'object' && img?.url) return img.url
+        if (typeof img === 'object' && img?.image?.url) return img.image.url // nested relation
+        return null
+     }).filter(Boolean)
+  }
+
   // Normalize base product images
   const normalizedProduct = {
     ...product,
-    image_url: fixUrl(product.image_url),
-    thumbnail: fixUrl(product.thumbnail),
-    images: product.images?.map((img) => fixUrl(img) || "") || null,
+    image_url: fixUrl(product.image_url || imageList[0] || null),
+    thumbnail: fixUrl(product.thumbnail || imageList[0] || null),
+    images: imageList.map((img) => fixUrl(img) || ""),
   }
 
   // Normalize variant images if they exist
   if (product.variants && Array.isArray(product.variants)) {
     normalizedProduct.variants = product.variants.map((v) => ({
       ...v,
-      // If variants have their own images/thumbnail fields in the DB, normalize them here.
-      // For now, we assume variants inherit structure or stick to basic fields.
     }))
   }
 
   return normalizedProduct
 }
+
+// Helper to construct the select string with all relations
+const PRODUCT_SELECT = "*, variants:product_variants(*), options:product_options(*)"
 
 export async function listProducts({
   regionId,
@@ -42,10 +57,9 @@ export async function listProducts({
 } = {}): Promise<{ response: { products: Product[]; count: number } }> {
   const supabase = await createClient()
   
-  // Select products AND their variants
   let query = supabase
     .from("products")
-    .select("*, variants:product_variants(*)", { count: "exact" })
+    .select(PRODUCT_SELECT, { count: "exact" })
 
   if (queryParams?.limit) {
     query = query.limit(Number(queryParams.limit))
@@ -61,7 +75,7 @@ export async function listProducts({
   const { data, count, error } = await query.order("created_at", { ascending: false })
 
   if (error) {
-    console.error("Error fetching products from Supabase:", error.message)
+    console.error("Error fetching products:", error.message)
     return { response: { products: [], count: 0 } }
   }
 
@@ -74,12 +88,12 @@ export async function retrieveProduct(id: string): Promise<Product | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
-    .select("*, variants:product_variants(*)")
+    .select(PRODUCT_SELECT)
     .eq("id", id)
     .single()
 
   if (error) {
-    console.error(`Error fetching product by ID ${id}:`, error.message)
+    console.error(`Error fetching product ${id}:`, error.message)
     return null
   }
 
@@ -90,12 +104,15 @@ export async function getProductByHandle(handle: string): Promise<Product | null
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
-    .select("*, variants:product_variants(*)")
+    .select(PRODUCT_SELECT)
     .eq("handle", handle)
     .single()
 
   if (error) {
-    console.error("Error fetching product by handle:", error.message)
+    // Don't log error for 404s to avoid noise
+    if (error.code !== 'PGRST116') {
+        console.error("Error fetching product by handle:", error.message)
+    }
     return null
   }
 
@@ -127,10 +144,9 @@ export async function listPaginatedProducts({
   const supabase = await createClient()
   const offset = (page - 1) * limit
 
-  // Fetch products with variants
   let query = supabase
     .from("products")
-    .select("*, variants:product_variants(*)", { count: "exact" })
+    .select(PRODUCT_SELECT, { count: "exact" })
 
   // Apply filters from queryParams
   if (queryParams?.category_id) {
@@ -185,7 +201,6 @@ export async function listPaginatedProducts({
   // In-memory filtering
   if (availability === "in_stock") {
     products = products.filter(p => {
-      // Check base stock or if any variant has stock
       const hasVariantStock = p.variants?.some(v => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
       return p.stock_count > 0 || hasVariantStock
     })

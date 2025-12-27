@@ -16,7 +16,7 @@ export const listCollections = async () => {
     .select("*")
 
   if (error) {
-    console.error("Error fetching collections:", error)
+    console.error("Error fetching collections:", error.message)
     return { collections: [], count: 0 }
   }
 
@@ -32,7 +32,10 @@ export const getCollectionByHandle = async (handle: string) => {
     .single()
 
   if (error) {
-    console.error("Error fetching collection:", error)
+    // If code is PGRST116, it means no rows found (404), which is expected behavior sometimes
+    if (error.code !== 'PGRST116') {
+        console.error("Error fetching collection:", error.message)
+    }
     return null
   }
 
