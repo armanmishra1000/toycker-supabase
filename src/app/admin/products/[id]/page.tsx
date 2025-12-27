@@ -1,20 +1,31 @@
-import { updateProduct } from "@/lib/data/admin"
+import { getAdminCollections, updateProduct } from "@/lib/data/admin"
 import Link from "next/link"
 import { retrieveProduct } from "@lib/data/products"
 import { notFound } from "next/navigation"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
-import { ChevronLeftIcon } from "@heroicons/react/24/outline"
+import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 
 export default async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const product = await retrieveProduct(id)
+  const [product, collections] = await Promise.all([
+    retrieveProduct(id),
+    getAdminCollections()
+  ])
 
   if (!product) notFound()
 
   const actions = (
     <div className="flex gap-2">
-      <Link href="/admin/products" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Discard</Link>
+      <a 
+        href={`/products/${product.handle}`} 
+        target="_blank" 
+        rel="noreferrer"
+        className="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg hover:bg-gray-50 flex items-center gap-2"
+      >
+        <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+        View Store
+      </a>
       <button form="product-form" type="submit" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all">
         Save Changes
       </button>
@@ -84,10 +95,20 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
           </AdminCard>
 
           <AdminCard title="Organization">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Handle (Slug)</label>
-              <input name="handle" type="text" defaultValue={product.handle} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
-              <p className="mt-1 text-xs text-gray-400">Used for product URL</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Collection</label>
+                <select name="collection_id" defaultValue={product.category_id || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0 bg-white">
+                  <option value="">No collection</option>
+                  {collections.map(c => (
+                    <option key={c.id} value={c.id}>{c.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Handle (Slug)</label>
+                <input name="handle" type="text" defaultValue={product.handle} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
+              </div>
             </div>
           </AdminCard>
         </div>

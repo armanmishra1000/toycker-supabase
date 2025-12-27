@@ -6,7 +6,8 @@ import {
   ShoppingBagIcon, 
   UsersIcon, 
   ArrowLeftOnRectangleIcon,
-  ShoppingBagIcon as LogoIcon
+  ShoppingBagIcon as LogoIcon,
+  RectangleStackIcon
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin } from "@/lib/data/admin"
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { label: "Home", href: "/admin", icon: HomeIcon },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBagIcon },
   { label: "Products", href: "/admin/products", icon: TagIcon },
+  { label: "Collections", href: "/admin/collections", icon: RectangleStackIcon },
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
 ]
 

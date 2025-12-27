@@ -1,7 +1,7 @@
 import { getAdminProducts, deleteProduct } from "@/lib/data/admin"
 import Link from "next/link"
 import Image from "next/image"
-import { PlusIcon, PencilIcon, TrashIcon, TagIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, PencilIcon, TrashIcon, TagIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 import { convertToLocale } from "@lib/util/money"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
@@ -73,6 +73,15 @@ export default async function AdminProducts() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <a 
+                        href={`/products/${product.handle}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="p-2 text-gray-400 hover:text-gray-900 rounded-md hover:bg-gray-100"
+                        title="View on store"
+                      >
+                        <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+                      </a>
                       <Link href={`/admin/products/${product.id}`} className="p-2 text-gray-400 hover:text-gray-900 rounded-md hover:bg-gray-100">
                         <PencilIcon className="h-5 w-5" />
                       </Link>

@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { Product, Order, CustomerProfile } from "@/lib/supabase/types"
+import { Product, Order, CustomerProfile, Collection } from "@/lib/supabase/types"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -71,6 +71,7 @@ export async function createProduct(formData: FormData) {
     price: parseFloat(formData.get("price") as string),
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
+    collection_id: formData.get("collection_id") as string || null,
     currency_code: "inr",
   }
   const { error } = await supabase.from("products").insert(product)
@@ -90,6 +91,7 @@ export async function updateProduct(formData: FormData) {
     price: parseFloat(formData.get("price") as string),
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
+    collection_id: formData.get("collection_id") as string || null,
   }
   const { error } = await supabase.from("products").update(updates).eq("id", id)
   if (error) throw new Error(error.message)
@@ -102,6 +104,61 @@ export async function deleteProduct(id: string) {
   const supabase = await createClient()
   await supabase.from("products").delete().eq("id", id)
   revalidatePath("/admin/products")
+}
+
+// --- Collections ---
+export async function getAdminCollections() {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("collections")
+    .select("*, products(count)")
+    .order("created_at", { ascending: false })
+  
+  if (error) throw error
+  return data as (Collection & { products: { count: number }[] })[]
+}
+
+export async function getAdminCollection(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase.from("collections").select("*").eq("id", id).single()
+  if (error) throw error
+  return data as Collection
+}
+
+export async function createCollection(formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const collection = {
+    title: formData.get("title") as string,
+    handle: formData.get("handle") as string,
+  }
+  const { error } = await supabase.from("collections").insert(collection)
+  if (error) throw new Error(error.message)
+  revalidatePath("/admin/collections")
+  redirect("/admin/collections")
+}
+
+export async function updateCollection(formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const id = formData.get("id") as string
+  const updates = {
+    title: formData.get("title") as string,
+    handle: formData.get("handle") as string,
+  }
+  const { error } = await supabase.from("collections").update(updates).eq("id", id)
+  if (error) throw new Error(error.message)
+  revalidatePath("/admin/collections")
+  redirect("/admin/collections")
+}
+
+export async function deleteCollection(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  await supabase.from("collections").delete().eq("id", id)
+  revalidatePath("/admin/collections")
 }
 
 // --- Orders ---
