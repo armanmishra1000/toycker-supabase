@@ -7,7 +7,7 @@ import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
 import { randomUUID } from "crypto"
 import { redirect } from "next/navigation"
-import { generatePayUHash } from "@/lib/payu"
+import { generatePayUHash, PayUHashParams } from "@/lib/payu"
 import { getBaseURL } from "@/lib/util/env"
 
 const mapCartItems = (items: any[]): CartItem[] => {
@@ -280,32 +280,34 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
   let sessionData = data.data || {}
 
   if (data.provider_id === "pp_payu_payu") {
-    // PayU strictly requires amount with 2 decimal places and no spaces in strings
-    const txnid = `txn${Date.now()}`
-    const amount = Number(cart.total || 0).toFixed(2)
-    const productinfo = "Store_Order"
-    const firstname = (cart.shipping_address?.first_name || "Guest").trim().replace(/\s/g, "")
-    const email = (cart.email || "guest@toycker.in").trim()
-    
-    let key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
-    let salt = process.env.PAYU_MERCHANT_SALT
+    // 1. Retrieve keys from Environment Variables (Vercel)
+    const key = process.env.PAYU_MERCHANT_KEY
+    const salt = process.env.PAYU_MERCHANT_SALT
+    const isTestMode = process.env.PAYU_ENVIRONMENT === "test"
 
-    // Default to the known test salt if no env var is set and we are using the test key
-    if (!salt && key === "gtKFFx") {
-        salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
-    } else if (!salt) {
-        // Fallback for custom keys if salt is forgotten (though likely to fail)
-        salt = ""
+    if (!key || !salt) {
+      throw new Error("PayU configuration missing: PAYU_MERCHANT_KEY or PAYU_MERCHANT_SALT not set.")
     }
 
-    const hashParams = {
+    // 2. Format Data for PayU
+    const txnid = `txn${Date.now()}`
+    const amount = Number(cart.total || 0).toFixed(2) // Strictly 2 decimal places
+    const productinfo = "Store_Order"
+    const firstname = (cart.shipping_address?.first_name || "Guest").trim().replace(/[^a-zA-Z0-9 ]/g, "")
+    const email = (cart.email || "guest@toycker.in").trim()
+    const phone = (cart.shipping_address?.phone || "9999999999").replace(/\D/g, "")
+
+    const baseUrl = getBaseURL()
+
+    // 3. Prepare Hash Parameters
+    const hashParams: PayUHashParams = {
       key,
       txnid,
       amount,
       productinfo,
       firstname,
       email,
-      udf1: cart.id,
+      udf1: cart.id, // Storing Cart ID in UDF1 for tracking
       udf2: "",
       udf3: "",
       udf4: "",
@@ -313,16 +315,16 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
     }
 
     const hash = generatePayUHash(hashParams, salt)
-    const baseUrl = getBaseURL()
 
+    // 4. Construct Payment Session Data
     sessionData = {
-      payment_url: "https://test.payu.in/_payment",
+      payment_url: isTestMode ? "https://test.payu.in/_payment" : "https://secure.payu.in/_payment",
       params: {
         ...hashParams,
         hash,
         surl: `${baseUrl}/api/payu/callback`,
         furl: `${baseUrl}/api/payu/callback`,
-        phone: (cart.shipping_address?.phone || "9999999999").replace(/\D/g, ""),
+        phone,
         service_provider: "payu_paisa"
       }
     }

@@ -7,6 +7,25 @@ import { retrieveCart } from "@/lib/data/cart"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
+// Define the shape of PayU Callback Data
+interface PayUCallbackBody {
+  status: string
+  txnid: string
+  amount: string
+  productinfo: string
+  firstname: string
+  email: string
+  key: string
+  hash: string
+  udf1?: string // We store cartId here
+  udf2?: string
+  udf3?: string
+  udf4?: string
+  udf5?: string
+  error_Message?: string
+  [key: string]: string | undefined
+}
+
 /**
  * Returns a standard HTML page that redirects via JavaScript.
  * This satisfies PayU's requirement for a valid "page" response.
@@ -28,43 +47,44 @@ function htmlRedirect(path: string) {
 export async function POST(request: NextRequest) {
   try {
     // PayU sends data as application/x-www-form-urlencoded
-    const body = await request.text()
-    const payload = Object.fromEntries(new URLSearchParams(body).entries()) as any
+    const bodyText = await request.text()
+    const params = new URLSearchParams(bodyText)
+    const payload = Object.fromEntries(params.entries()) as unknown as PayUCallbackBody
 
     console.log("[PAYU] Callback hit:", payload.status, payload.txnid)
 
-    const key = String(payload.key || "")
-    let salt = process.env.PAYU_MERCHANT_SALT
-    
-    // Fallback for public test key if env var is missing
-    if (!salt && key === "gtKFFx") {
-      salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW" 
+    // 1. Retrieve Salt from Environment
+    const salt = process.env.PAYU_MERCHANT_SALT
+
+    if (!salt) {
+      console.error("[PAYU] Configuration error: Missing Salt")
+      return htmlRedirect("/checkout?step=payment&error=configuration_error")
     }
 
-    if (!verifyPayUHash(payload, salt || "")) {
+    // 2. Verify Hash integrity
+    if (!verifyPayUHash(payload, salt)) {
       console.error("[PAYU] Hash verification failed")
       return htmlRedirect("/checkout?step=payment&error=invalid_hash")
     }
 
-    const status = String(payload.status || "")
-    const cartId = String(payload.udf1 || "")
-    const txnid = String(payload.txnid || "")
-    const amount = String(payload.amount || "")
-    const email = String(payload.email || "")
+    const status = payload.status
+    const cartId = payload.udf1 || ""
+    const txnid = payload.txnid
+    const amount = payload.amount
+    const email = payload.email
 
     if (status === "success") {
       const supabase = await createClient()
       
-      // Use cartId from UDF1 directly to bypass cookie issues
+      // Use cartId from UDF1 directly
       const cart = await retrieveCart(cartId)
       
       if (!cart) {
         console.error("[PAYU] Cart not found:", cartId)
-        // Even if cart not found, we redirect to failure/cart page rather than 500 error
         return htmlRedirect("/checkout?error=cart_not_found")
       }
 
-      // Create Order
+      // 3. Create Order in Database
       const { data: order, error } = await supabase
         .from("orders")
         .insert({
@@ -87,18 +107,18 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error("[PAYU] Order creation failed:", error.message)
-        // Redirect to a generic success page or cart with error if order creation failed but payment succeeded
-        // Ideally we should log this for manual reconciliation
         return htmlRedirect("/checkout?error=order_creation_failed_payment_success")
       }
 
-      // Success! Return HTML that deletes the cookie and redirects
+      // Success! Redirect to confirmation
       const response = htmlRedirect(`/order/confirmed/${order.id}`)
       response.cookies.delete("toycker_cart_id")
       return response
     }
 
-    return htmlRedirect(`/checkout?step=payment&error=payment_failed&status=${encodeURIComponent(status)}`)
+    // Handle Failure
+    const failureReason = payload.error_Message || "payment_failed"
+    return htmlRedirect(`/checkout?step=payment&error=${encodeURIComponent(failureReason)}&status=${encodeURIComponent(status)}`)
   } catch (error) {
     console.error("[PAYU] Callback fatal error:", error)
     return htmlRedirect("/checkout?error=callback_failed")
