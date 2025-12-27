@@ -10,7 +10,7 @@ import { Text } from "@modules/common/components/text"
 import { cn } from "@lib/util/cn"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import Divider from "@modules/common/components/divider"
-import MedusaRadio from "@modules/common/components/radio"
+import RadioComponent from "@modules/common/components/radio"
 import { useShippingPrice } from "@modules/common/context/shipping-price-context"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -265,7 +265,7 @@ const Shipping: React.FC<ShippingProps> = ({
                       )}
                     >
                       <div className="flex items-center gap-x-4">
-                        <MedusaRadio
+                        <RadioComponent
                           checked={showPickupOptions === PICKUP_OPTION_ON}
                         />
                         <span className="text-base">
@@ -309,7 +309,7 @@ const Shipping: React.FC<ShippingProps> = ({
                         )}
                       >
                         <div className="flex items-center gap-x-4">
-                          <MedusaRadio
+                          <RadioComponent
                             checked={option.id === shippingMethodId}
                           />
                           <span className="text-base">
@@ -379,7 +379,7 @@ const Shipping: React.FC<ShippingProps> = ({
                           )}
                         >
                           <div className="flex items-start gap-x-4">
-                            <MedusaRadio
+                            <RadioComponent
                               checked={option.id === shippingMethodId}
                             />
                             <div className="flex flex-col">

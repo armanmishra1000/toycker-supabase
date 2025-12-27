@@ -8,12 +8,44 @@ import { getCartId, setCartId, removeCartId } from "./cookies"
 import { randomUUID } from "crypto"
 import { redirect } from "next/navigation"
 
+// Helper to map raw DB cart items to application CartItem type
+const mapCartItems = (items: any[]): CartItem[] => {
+  return items.map((item) => {
+    const product = item.product
+    const variant = item.variant
+    
+    // Determine thumbnail
+    let thumbnail = product?.image_url
+    if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
+       // Handle case where images might be array of strings or objects depending on query
+       const firstImg = product.images[0]
+       thumbnail = typeof firstImg === 'string' ? firstImg : firstImg?.url || thumbnail
+    }
+
+    return {
+      ...item,
+      // Map relations to flat properties expected by UI components
+      title: variant?.title || product?.name || "Product",
+      product_title: product?.name || "Product",
+      product_handle: product?.handle,
+      thumbnail: thumbnail,
+      // Ensure prices are numbers
+      unit_price: Number(variant?.price || 0),
+      total: Number(variant?.price || 0) * item.quantity,
+      subtotal: Number(variant?.price || 0) * item.quantity,
+      // Preserve relations
+      product: product,
+      variant: variant
+    }
+  })
+}
+
 export const retrieveCart = cache(async (cartId?: string) => {
   const id = cartId || (await getCartId())
   if (!id) return null
 
   const supabase = await createClient()
-  const { data: cart, error } = await supabase
+  const { data: cartData, error } = await supabase
     .from("carts")
     .select(`
       *,
@@ -26,11 +58,33 @@ export const retrieveCart = cache(async (cartId?: string) => {
     .eq("id", id)
     .single()
 
-  if (error) {
+  if (error || !cartData) {
     return null
   }
 
-  return cart as Cart
+  // Calculate totals
+  const items = mapCartItems(cartData.items || [])
+  const item_subtotal = items.reduce((sum, item) => sum + item.total, 0)
+  
+  // Simple tax/shipping calculation for prototype
+  const tax_total = 0
+  const shipping_total = 0 // Will be calculated based on shipping method selection in real app
+  const total = item_subtotal + tax_total + shipping_total
+
+  const cart: Cart = {
+    ...cartData,
+    items,
+    item_subtotal,
+    subtotal: item_subtotal,
+    tax_total,
+    shipping_total,
+    total,
+    discount_total: 0,
+    gift_card_total: 0,
+    shipping_subtotal: 0
+  }
+
+  return cart
 })
 
 export async function getOrSetCart() {
@@ -200,17 +254,11 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
 export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: string, shippingMethodId: string }) {
   const supabase = await createClient()
   
-  // In a real app, calculate cost based on method ID
-  // For prototype, we just verify the method exists
-  
-  // Update cart with shipping method
-  // We are storing it in metadata or a specific column for simplicity if a dedicated table isn't set up yet
-  // Assuming a shipping_methods relation or column
-  
+  // For prototype: update cart with shipping method ID
   const { error } = await supabase
     .from("carts")
     .update({ 
-        shipping_method: shippingMethodId, // Store simplified ID
+        shipping_method: shippingMethodId,
         updated_at: new Date().toISOString()
     })
     .eq("id", cartId)
@@ -220,20 +268,22 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
 }
 
 export async function initiatePaymentSession(cart: any, data: any) {
-  // Prototype stub: Just acknowledge the intent
   const supabase = await createClient()
   
-  // Store the selected provider
+  // Store the selected provider in metadata or a designated column
+  // For prototype, we simulate a payment session
+  const paymentCollection = { 
+    payment_sessions: [{
+        provider_id: data.provider_id,
+        status: "pending",
+        data: data.data || {}
+    }]
+  }
+
   await supabase
     .from("carts")
     .update({ 
-        payment_collection: { 
-            payment_sessions: [{
-                provider_id: data.provider_id,
-                status: "pending",
-                data: data.data
-            }]
-        } 
+        payment_collection: paymentCollection
     })
     .eq("id", cart.id)
     
@@ -241,20 +291,11 @@ export async function initiatePaymentSession(cart: any, data: any) {
 }
 
 export async function placeOrder() {
-  const cartId = await getCartId()
-  if (!cartId) throw new Error("No cart found")
+  const cart = await retrieveCart()
+  if (!cart) throw new Error("No cart found")
 
   const supabase = await createClient()
   
-  // 1. Get Cart
-  const { data: cart } = await supabase
-    .from("carts")
-    .select("*, items:cart_items(*)")
-    .eq("id", cartId)
-    .single()
-
-  if (!cart) throw new Error("Cart not found")
-
   // 2. Create Order
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -267,7 +308,7 @@ export async function placeOrder() {
       fulfillment_status: "not_shipped",
       shipping_address: cart.shipping_address,
       billing_address: cart.billing_address,
-      items: cart.items, // Storing items as JSON for simplicity in this migration
+      items: cart.items, // Saving mapped items as JSONB
       metadata: { cart_id: cart.id }
     })
     .select()
@@ -301,12 +342,11 @@ export async function createBuyNowCart({
     await supabase.from("carts").insert({
         id: newCartId,
         user_id: user?.id || null,
-        currency_code: "inr", // default
+        currency_code: "inr",
         email: user?.email
     })
 
     // 2. Add item
-    // Find product ID from variant
     const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
     
     if (variant) {
@@ -349,14 +389,9 @@ export async function listCartOptions() {
 
 export async function updateRegion(countryCode: string, currentPath: string) {
     // Stub for region update
-    const cartId = await getCartId()
-    if (cartId) {
-        // update cart currency based on country mapping logic if needed
-    }
     redirect(currentPath)
 }
 
 export async function applyPromotions(codes: string[]) {
-    // Stub
     console.log("Applying promotions", codes)
 }

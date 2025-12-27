@@ -13,10 +13,7 @@ export async function listOrders() {
 
   const { data, error } = await supabase
     .from("orders")
-    .select(`
-      *,
-      items:order_items(*)
-    `)
+    .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
@@ -32,10 +29,7 @@ export async function retrieveOrder(id: string) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("orders")
-    .select(`
-      *,
-      items:order_items(*)
-    `)
+    .select("*")
     .eq("id", id)
     .single()
 

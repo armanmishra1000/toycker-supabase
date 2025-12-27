@@ -120,7 +120,7 @@ const EmptyState = ({ heading }: { heading: string }) => (
       {`We couldn't find any ${heading.toLowerCase()}.`}
     </p>
     <p className="mt-2 text-sm text-ui-fg-subtle">
-      Try adjusting your filters or add new products from the Medusa admin.
+      Try adjusting your filters to find what you are looking for.
     </p>
   </div>
 )
