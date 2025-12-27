@@ -42,15 +42,16 @@ export interface PayUCallbackPayload {
  * Generate PayU Hash for payment request
  * 
  * PayU Hash Formula:
- * sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT)
+ * sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|SALT)
  * 
- * Note: There are 6 empty pipes after udf5 (for udf6-udf10 + reserved) before SALT
+ * When udf2-udf10 are empty, this creates: key|...|udf1||||||||||SALT (10 empty pipes after udf1)
  */
 export const generatePayUHash = (
   params: PayUHashParams,
   salt: string
 ): string => {
-  // Build hash string with all parameters including empty UDFs
+  // Build hash string with all parameters
+  // PayU expects: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10|salt
   const hashString = [
     params.key,
     params.txnid,
@@ -68,7 +69,6 @@ export const generatePayUHash = (
     "", // udf8 - empty
     "", // udf9 - empty
     "", // udf10 - empty
-    "", // reserved field - empty
     salt
   ].join("|")
 
@@ -104,16 +104,15 @@ export const verifyPayUHash = (payload: PayUCallbackPayload, salt: string): bool
   const udf5 = String(payload.udf5 || "")
 
   const receivedHash = String(payload.hash || "").toLowerCase()
-  
+
   // PayU might send this as 'additional_charges' or 'additionalCharges'
   const additional = payload.additional_charges ?? payload.additionalCharges ?? ""
 
-  // Reverse Formula: salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
-  // Note: 6 empty pipes after status (for udf6-udf10 + reserved in reverse)
+  // Reverse Formula: salt|status|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
+  // When udf6-udf10 are empty: salt|status|||||udf5|udf4|udf3|udf2|udf1|email|...
   const base = [
     salt,
     status,
-    "", // reserved - empty
     "", // udf10 - empty
     "", // udf9 - empty
     "", // udf8 - empty
@@ -133,13 +132,13 @@ export const verifyPayUHash = (payload: PayUCallbackPayload, salt: string): bool
   ].join("|")
 
   const computed = crypto.createHash("sha512").update(base, "utf8").digest("hex").toLowerCase()
-  
+
   // Debug logging
   const debugBase = base.replace(salt, "***SALT***")
   console.log("[PAYU] Verify hash string (masked):", debugBase)
   console.log("[PAYU] Computed hash:", computed.substring(0, 20) + "...")
   console.log("[PAYU] Received hash:", receivedHash.substring(0, 20) + "...")
-  
+
   if (computed === receivedHash) {
     console.log("[PAYU] Hash verification: PASSED")
     return true
