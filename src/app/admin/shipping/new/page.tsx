@@ -7,8 +7,8 @@ import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 export default function NewShippingOption() {
   const actions = (
     <div className="flex gap-2">
-      <Link href="/admin/shipping" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Cancel</Link>
-      <button form="shipping-form" type="submit" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all">
+      <Link href="/admin/shipping" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">Cancel</Link>
+      <button form="shipping-form" type="submit" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all shadow-sm">
         Save Option
       </button>
     </div>
@@ -17,7 +17,7 @@ export default function NewShippingOption() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
-        <Link href="/admin/shipping" className="flex items-center hover:text-gray-900">
+        <Link href="/admin/shipping" className="flex items-center hover:text-gray-900 transition-colors">
           <ChevronLeftIcon className="h-4 w-4 mr-1" />
           Shipping
         </Link>
