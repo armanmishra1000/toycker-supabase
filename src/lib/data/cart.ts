@@ -8,6 +8,7 @@ import { getCartId, setCartId, removeCartId } from "./cookies"
 import { randomUUID } from "crypto"
 import { redirect } from "next/navigation"
 import { generatePayUHash } from "@/lib/payu"
+import { getBaseURL } from "@/lib/util/env"
 
 const mapCartItems = (items: any[]): CartItem[] => {
   return items.map((item) => {
@@ -308,14 +309,15 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
     }
 
     const hash = generatePayUHash(hashParams, salt)
+    const baseUrl = getBaseURL()
 
     sessionData = {
       payment_url: "https://test.payu.in/_payment",
       params: {
         ...hashParams,
         hash,
-        surl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payu/callback`,
-        furl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payu/callback`,
+        surl: `${baseUrl}/api/payu/callback`,
+        furl: `${baseUrl}/api/payu/callback`,
         phone: (cart.shipping_address?.phone || "9999999999").replace(/\D/g, ""),
         service_provider: "payu_paisa"
       }
