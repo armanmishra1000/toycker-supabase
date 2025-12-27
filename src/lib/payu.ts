@@ -52,6 +52,8 @@ export const verifyPayUHash = (payload: any, salt: string): boolean => {
   const udf5 = String(payload.udf5 || "")
 
   const receivedHash = String(payload.hash || "").toLowerCase()
+  
+  // PayU might send this as 'additional_charges' or 'additionalCharges'
   const additional = payload.additional_charges ?? payload.additionalCharges ?? ""
 
   // Reverse Formula: salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
