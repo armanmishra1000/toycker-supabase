@@ -37,16 +37,12 @@ const HERO_SWIPER_OPTIONS = {
       slidesPerView: 1,
     },
     1024: {
-      slidesPerView: 2,
+      slidesPerView: 2.25,
     },
     1440: {
-      slidesPerView: 2.5,
+      slidesPerView: 2.25,
     },
   },
-  // navigation: {
-  //   prevEl: ".hero-swiper-prev",
-  //   nextEl: ".hero-swiper-next",
-  // },
 }
 
 type HeroProps = {
@@ -123,7 +119,6 @@ const Hero = ({ banners }: HeroProps) => {
     <section className="w-full">
       <div className="w-full md:px-4 md:py-8">
         <div className="relative overflow-hidden">
-          {/** Swiper navigation buttons are controlled via refs to allow custom buttons */}
           <Swiper
             {...buildSwiperOptions(bannersToRender.length)}
             navigation={getNavConfig()}
