@@ -34,14 +34,14 @@ export async function POST(request: NextRequest) {
     console.log("[PAYU] Callback hit:", payload.status, payload.txnid)
 
     const key = String(payload.key || "")
-    let salt = process.env.PAYU_MERCHANT_SALT || ""
+    let salt = process.env.PAYU_MERCHANT_SALT
     
-    // Fallback for public test key
-    if (key === "gtKFFx" && !salt) {
-      salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW" 
+    // Fallback for public test key if env var is missing
+    if (!salt && key === "gtKFFx") {
+      salt = "eCwWELxi" 
     }
 
-    if (!verifyPayUHash(payload, salt)) {
+    if (!verifyPayUHash(payload, salt || "")) {
       console.error("[PAYU] Hash verification failed")
       return htmlRedirect("/checkout?step=payment&error=invalid_hash")
     }
@@ -54,10 +54,13 @@ export async function POST(request: NextRequest) {
 
     if (status === "success") {
       const supabase = await createClient()
+      
+      // Use cartId from UDF1 directly to bypass cookie issues
       const cart = await retrieveCart(cartId)
       
       if (!cart) {
         console.error("[PAYU] Cart not found:", cartId)
+        // Even if cart not found, we redirect to failure/cart page rather than 500 error
         return htmlRedirect("/checkout?error=cart_not_found")
       }
 
@@ -84,7 +87,9 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error("[PAYU] Order creation failed:", error.message)
-        return htmlRedirect("/checkout?error=order_creation_failed")
+        // Redirect to a generic success page or cart with error if order creation failed but payment succeeded
+        // Ideally we should log this for manual reconciliation
+        return htmlRedirect("/checkout?error=order_creation_failed_payment_success")
       }
 
       // Success! Return HTML that deletes the cookie and redirects
