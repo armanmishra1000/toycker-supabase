@@ -14,17 +14,17 @@ export async function ensureAdmin() {
     redirect("/login?next=/admin")
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single()
 
-  if (profile?.role !== "admin") {
-    // Fallback for development if the email matches
-    if (user.email === "admin@toycker.com") {
-        return
-    }
+  // During development, we allow admin@toycker.com or explicitly set 'admin' role
+  const isAdmin = profile?.role === "admin" || user.email === "admin@toycker.com"
+
+  if (!isAdmin) {
+    console.error("Unauthorized admin access attempt:", user.email, "Role:", profile?.role)
     redirect("/")
   }
 }
@@ -124,13 +124,6 @@ export async function getAdminOrders() {
 
   if (error) throw error
   return data as Order[]
-}
-
-export async function updateOrderStatus(id: string, status: string) {
-  await ensureAdmin()
-  const supabase = await createClient()
-  await supabase.from("orders").update({ status }).eq("id", id)
-  revalidatePath(`/admin/orders`)
 }
 
 // --- Customers ---
