@@ -14,17 +14,15 @@ const normalizeProductImage = (product: Product): Product => {
   }
 
   // Handle images if they come from a relation (product_images table)
-  // Sometimes Supabase returns them as an array of objects if joined
   let imageList: string[] = []
   
   if (Array.isArray(product.images)) {
-     // If it's already a string array (column) or object array (relation)
      imageList = product.images.map((img: any) => {
         if (typeof img === 'string') return img
         if (typeof img === 'object' && img?.url) return img.url
-        if (typeof img === 'object' && img?.image?.url) return img.image.url // nested relation
+        if (typeof img === 'object' && img?.image?.url) return img.image.url
         return null
-     }).filter(Boolean)
+     }).filter((url): url is string => typeof url === 'string' && url.length > 0)
   }
 
   // Normalize base product images
@@ -35,7 +33,7 @@ const normalizeProductImage = (product: Product): Product => {
     images: imageList.map((img) => fixUrl(img) || ""),
   }
 
-  // Normalize variant images if they exist
+  // Normalize variant images
   if (product.variants && Array.isArray(product.variants)) {
     normalizedProduct.variants = product.variants.map((v) => ({
       ...v,
@@ -45,8 +43,12 @@ const normalizeProductImage = (product: Product): Product => {
   return normalizedProduct
 }
 
-// Helper to construct the select string with all relations
-const PRODUCT_SELECT = "*, variants:product_variants(*), options:product_options(*)"
+// Fetch products, variants, options, AND option values
+const PRODUCT_SELECT = `
+  *, 
+  variants:product_variants(*), 
+  options:product_options(*, values:product_option_values(*))
+`
 
 export async function listProducts({
   regionId,
@@ -109,7 +111,6 @@ export async function getProductByHandle(handle: string): Promise<Product | null
     .single()
 
   if (error) {
-    // Don't log error for 404s to avoid noise
     if (error.code !== 'PGRST116') {
         console.error("Error fetching product by handle:", error.message)
     }
@@ -148,7 +149,6 @@ export async function listPaginatedProducts({
     .from("products")
     .select(PRODUCT_SELECT, { count: "exact" })
 
-  // Apply filters from queryParams
   if (queryParams?.category_id) {
     query = query.in("category_id", Array.isArray(queryParams.category_id) ? queryParams.category_id : [queryParams.category_id])
   }
@@ -172,7 +172,6 @@ export async function listPaginatedProducts({
     query = query.lte("price", priceFilter.max)
   }
 
-  // Sorting
   if (sortBy === "price_asc") {
     query = query.order("price", { ascending: true })
   } else if (sortBy === "price_desc") {
@@ -185,8 +184,7 @@ export async function listPaginatedProducts({
     query = query.order("created_at", { ascending: false })
   }
 
-  const { data, count, error } = await query
-    .range(offset, offset + limit - 1)
+  const { data, count, error } = await query.range(offset, offset + limit - 1)
 
   if (error) {
     console.error("Error fetching paginated products:", error.message)
@@ -198,7 +196,6 @@ export async function listPaginatedProducts({
 
   let products = (data as Product[]).map(normalizeProductImage)
 
-  // In-memory filtering
   if (availability === "in_stock") {
     products = products.filter(p => {
       const hasVariantStock = p.variants?.some(v => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
