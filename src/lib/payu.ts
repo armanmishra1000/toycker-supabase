@@ -36,10 +36,7 @@ export const generatePayUHash = (
   return crypto.createHash("sha512").update(hashString, "utf8").digest("hex")
 }
 
-export const verifyPayUHash = (
-  payload: any,
-  salt: string
-): boolean => {
+export const verifyPayUHash = (payload: any, salt: string): boolean => {
   const status = String(payload.status || "")
   const key = String(payload.key || "")
   const txnid = String(payload.txnid || "")
