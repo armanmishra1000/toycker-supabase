@@ -88,36 +88,39 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
 })
 
 export async function getOrSetCart(): Promise<Cart> {
-  let cart = await retrieveCart()
+  const existingCart = await retrieveCart()
+  if (existingCart) return existingCart
 
-  if (!cart) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    const newCartId = randomUUID()
-    
-    const { data: newCart, error } = await supabase
-      .from("carts")
-      .insert({ 
-        id: newCartId, 
-        user_id: user?.id || null,
-        currency_code: "inr",
-        email: user?.email
-      })
-      .select()
-      .single()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  const newCartId = randomUUID()
+  
+  const { data: newCart, error } = await supabase
+    .from("carts")
+    .insert({ 
+      id: newCartId, 
+      user_id: user?.id || null,
+      currency_code: "inr",
+      email: user?.email
+    })
+    .select()
+    .single()
 
-    if (error || !newCart) {
-      console.error("Error creating cart:", error)
-      throw new Error("Could not create cart")
-    }
-
-    cart = { ...newCart, items: [] }
-    await setCartId(newCart.id)
-    revalidateTag("cart")
+  if (error || !newCart) {
+    console.error("Error creating cart:", error)
+    throw new Error("Could not create cart")
   }
 
-  return cart
+  await setCartId(newCart.id)
+  revalidateTag("cart")
+
+  const freshCart = await retrieveCart(newCart.id)
+  if (!freshCart) {
+    throw new Error("Could not retrieve newly created cart")
+  }
+
+  return freshCart
 }
 
 export async function addToCart({
@@ -205,8 +208,8 @@ export async function deleteLineItem(lineId: string) {
 }
 
 export async function setAddresses(currentState: unknown, formData: FormData) {
-  const cartId = await getCartId()
-  if (!cartId) return { message: "No cart found" }
+  const cart = await retrieveCart()
+  if (!cart) return { message: "No cart found" }
 
   const supabase = await createClient()
   
@@ -239,7 +242,7 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
   const { error } = await supabase
     .from("carts")
     .update(data)
-    .eq("id", cartId)
+    .eq("id", cart.id)
 
   if (error) {
     return { message: error.message }
