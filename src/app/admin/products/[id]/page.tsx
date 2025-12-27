@@ -4,6 +4,7 @@ import { retrieveProduct } from "@lib/data/products"
 import { notFound } from "next/navigation"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
+import AdminBadge from "@modules/admin/components/admin-badge"
 import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 
 export default async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
@@ -21,55 +22,61 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
         href={`/products/${product.handle}`} 
         target="_blank" 
         rel="noreferrer"
-        className="px-4 py-2 border border-gray-300 text-sm font-semibold rounded-lg hover:bg-gray-50 flex items-center gap-2"
+        className="px-4 py-2 border border-gray-300 text-sm font-bold rounded-lg hover:bg-white transition-all flex items-center gap-2"
       >
         <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-        View Store
+        View in store
       </a>
-      <button form="product-form" type="submit" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all">
-        Save Changes
+      <button form="product-form" type="submit" className="px-5 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-all shadow-sm">
+        Save Product
       </button>
     </div>
   )
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
-        <Link href="/admin/products" className="flex items-center hover:text-gray-900">
-          <ChevronLeftIcon className="h-4 w-4 mr-1" />
+    <div className="max-w-5xl mx-auto space-y-6">
+      <nav className="flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+        <Link href="/admin/products" className="flex items-center hover:text-black transition-colors">
+          <ChevronLeftIcon className="h-3 w-3 mr-1" strokeWidth={3} />
           Products
         </Link>
       </nav>
 
-      <AdminPageHeader title={product.name} actions={actions} />
+      <div className="flex items-center justify-between">
+         <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">{product.name}</h1>
+            <AdminBadge variant={product.status === 'active' ? 'success' : 'warning'}>{product.status}</AdminBadge>
+         </div>
+         {actions}
+      </div>
 
       <form id="product-form" action={updateProduct} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <input type="hidden" name="id" value={product.id} />
         
         <div className="lg:col-span-2 space-y-6">
-          <AdminCard title="General Information">
-            <div className="space-y-4">
+          <AdminCard title="Product Details">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Title</label>
-                <input name="name" type="text" defaultValue={product.name} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Product Title</label>
+                <input name="name" type="text" defaultValue={product.name} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
-                <textarea name="description" rows={6} defaultValue={product.description || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
+                <textarea name="description" rows={10} defaultValue={product.description || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0 leading-relaxed transition-all" />
               </div>
             </div>
           </AdminCard>
 
-          <AdminCard title="Media">
+          <AdminCard title="Media Assets">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Primary Image URL</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Primary Image URL</label>
                 <input name="image_url" type="url" defaultValue={product.image_url || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
               </div>
               {product.image_url && (
-                <div className="aspect-square w-32 relative rounded-lg overflow-hidden border border-gray-200">
+                <div className="aspect-square w-48 relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-inner group">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                   <img src={product.image_url} alt="Preview" className="object-cover w-full h-full" />
+                   <img src={product.image_url} alt="Preview" className="object-cover w-full h-full transition-transform group-hover:scale-105" />
                 </div>
               )}
             </div>
@@ -77,37 +84,59 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="space-y-6">
-          <AdminCard title="Pricing">
-             <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Price (INR)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-gray-500 text-sm">₹</span>
-                  <input name="price" type="number" step="0.01" defaultValue={product.price} required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm focus:border-black focus:ring-0" />
-                </div>
-              </div>
+          <AdminCard title="Status & Visibility">
+            <div className="space-y-4">
+              <p className="text-xs text-gray-500 font-medium leading-relaxed">This product is currently <span className="font-bold text-black uppercase">{product.status}</span> on your storefront.</p>
+              <select name="status" defaultValue={product.status || "active"} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-bold focus:border-black focus:ring-0 bg-white">
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
           </AdminCard>
 
-          <AdminCard title="Inventory">
+          <AdminCard title="Pricing">
+             <div className="space-y-4">
+                <div>
+                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Price (INR)</label>
+                   <div className="relative">
+                     <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                     <input name="price" type="number" step="0.01" defaultValue={product.price} required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
+                   </div>
+                </div>
+                <div className="pt-2">
+                   <div className="flex items-center gap-2">
+                      <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black" />
+                      <span className="text-xs text-gray-600 font-medium">Charge tax on this product</span>
+                   </div>
+                </div>
+             </div>
+          </AdminCard>
+
+          <AdminCard title="Inventory Management">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Quantity Available</label>
-              <input name="stock_count" type="number" defaultValue={product.stock_count} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Quantity Available</label>
+              <input name="stock_count" type="number" defaultValue={product.stock_count} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-bold focus:border-black focus:ring-0" />
             </div>
           </AdminCard>
 
           <AdminCard title="Organization">
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Collection</label>
-                <select name="collection_id" defaultValue={product.category_id || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0 bg-white">
-                  <option value="">No collection</option>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Storefront Collection</label>
+                <select name="collection_id" defaultValue={product.collection_id || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 bg-white">
+                  <option value="">None</option>
                   {collections.map(c => (
                     <option key={c.id} value={c.id}>{c.title}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Handle (Slug)</label>
-                <input name="handle" type="text" defaultValue={product.handle} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">URL Handle (Slug)</label>
+                <div className="relative">
+                   <span className="absolute left-3 top-2.5 text-gray-400 text-xs font-medium">/</span>
+                   <input name="handle" type="text" defaultValue={product.handle} required className="w-full rounded-lg border border-gray-300 pl-6 pr-4 py-2.5 text-xs font-bold text-gray-600 focus:border-black focus:ring-0 bg-gray-50/50" />
+                </div>
               </div>
             </div>
           </AdminCard>

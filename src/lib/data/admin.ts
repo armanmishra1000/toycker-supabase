@@ -83,10 +83,16 @@ export async function deleteCategory(id: string) {
 }
 
 // --- Products ---
-export async function getAdminProducts() {
+export async function getAdminProducts(status?: string) {
   await ensureAdmin()
   const supabase = await createClient()
-  const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false })
+  let query = supabase.from("products").select("*").order("created_at", { ascending: false })
+  
+  if (status && status !== 'all') {
+    query = query.eq('status', status)
+  }
+
+  const { data, error } = await query
   if (error) throw error
   return data as Product[]
 }
@@ -102,6 +108,7 @@ export async function createProduct(formData: FormData) {
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
     collection_id: formData.get("collection_id") as string || null,
+    status: (formData.get("status") as string) || 'active',
     currency_code: "inr",
   }
   const { error } = await supabase.from("products").insert(product)
@@ -122,6 +129,7 @@ export async function updateProduct(formData: FormData) {
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
     collection_id: formData.get("collection_id") as string || null,
+    status: formData.get("status") as string,
   }
   const { error } = await supabase.from("products").update(updates).eq("id", id)
   if (error) throw new Error(error.message)

@@ -14,9 +14,11 @@ export interface Product {
   manage_inventory: boolean;
   metadata: Record<string, unknown> | null;
   category_id: string | null;
+  collection_id: string | null;
   created_at: string;
   updated_at: string;
   subtitle?: string | null;
+  status: 'active' | 'draft' | 'archived';
   variants?: ProductVariant[];
   options?: ProductOption[];
   collection?: Collection | null;
