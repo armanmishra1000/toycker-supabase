@@ -75,7 +75,6 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
               </div>
               {product.image_url && (
                 <div className="aspect-square w-48 relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-inner group">
-                   {/* eslint-disable-next-line @next/next/no-img-element */}
                    <img src={product.image_url} alt="Preview" className="object-cover w-full h-full transition-transform group-hover:scale-105" />
                 </div>
               )}
@@ -97,26 +96,37 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
 
           <AdminCard title="Pricing">
              <div className="space-y-4">
-                <div>
-                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Price (INR)</label>
-                   <div className="relative">
-                     <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
-                     <input name="price" type="number" step="0.01" defaultValue={product.price} required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
-                   </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Price</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                      <input name="price" type="number" step="0.01" defaultValue={product.price} required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Compare at</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                      <input name="compare_at_price" type="number" step="0.01" defaultValue={product.metadata?.compare_at_price as number || ""} className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0" />
+                    </div>
+                  </div>
                 </div>
-                <div className="pt-2">
-                   <div className="flex items-center gap-2">
-                      <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black" />
-                      <span className="text-xs text-gray-600 font-medium">Charge tax on this product</span>
-                   </div>
-                </div>
+                <p className="text-[10px] text-gray-400 font-medium italic">To show a reduced price, move the original price into "Compare at price".</p>
              </div>
+          </AdminCard>
+
+          <AdminCard title="Inventory">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Quantity</label>
+              <input name="stock_count" type="number" defaultValue={product.stock_count} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-bold focus:border-black focus:ring-0" />
+            </div>
           </AdminCard>
 
           <AdminCard title="Organization">
             <div className="space-y-5">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Storefront Collection</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Collection</label>
                 <select name="collection_id" defaultValue={product.collection_id || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 bg-white">
                   <option value="">None</option>
                   {collections.map(c => (
@@ -125,12 +135,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Tags</label>
-                <input name="tags" type="text" placeholder="e.g. plastic, safe, summer" className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all" />
-                <p className="mt-2 text-[10px] text-gray-400 italic">Separate tags with commas.</p>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">URL Handle (Slug)</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">URL Handle</label>
                 <div className="relative">
                    <span className="absolute left-3 top-2.5 text-gray-400 text-xs font-medium">/</span>
                    <input name="handle" type="text" defaultValue={product.handle} required className="w-full rounded-lg border border-gray-300 pl-6 pr-4 py-2.5 text-xs font-bold text-gray-600 focus:border-black focus:ring-0 bg-gray-50/50" />
