@@ -10,13 +10,13 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { Cart } from "@/lib/supabase/types"
 
 type SummaryProps = {
-  cart: any
+  cart: Cart
 }
 
 function getCheckoutStep(cart: Cart) {
   if (!cart?.shipping_address?.address_1 || !cart.email) {
     return "address"
-  } else if ((cart?.shipping_methods?.length ?? 0) === 0) {
+  } else if (!cart.shipping_method) {
     return "delivery"
   } else {
     return "payment"

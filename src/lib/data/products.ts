@@ -13,10 +13,7 @@ const normalizeProductImage = (product: any): Product => {
     return `${CDN_URL}/${url}`
   }
 
-  // Collect all image sources
   const rawImages: string[] = []
-
-  // 1. Check direct 'images' array (if array of strings)
   if (Array.isArray(product.images)) {
     product.images.forEach((img: any) => {
       if (typeof img === 'string') rawImages.push(img)
@@ -24,64 +21,37 @@ const normalizeProductImage = (product: any): Product => {
     })
   }
 
-  // 2. Check 'product_images' relation (standard many-to-many)
-  if (Array.isArray(product.product_images)) {
-    product.product_images.forEach((rel: any) => {
-      if (rel.image?.url) rawImages.push(rel.image.url)
-    })
+  if (product.image_url && !rawImages.includes(product.image_url)) {
+    rawImages.unshift(product.image_url)
   }
 
-  // 3. Check 'image_url' (single column)
-  if (product.image_url) {
-    // Add to beginning if not present
-    if (!rawImages.includes(product.image_url)) {
-      rawImages.unshift(product.image_url)
-    }
-  }
-
-  // Clean and prefix URLs
   const cleanedImages = rawImages
     .map((url) => fixUrl(url))
     .filter((url): url is string => !!url)
 
-  // Ensure unique
   const uniqueImages = Array.from(new Set(cleanedImages))
-
-  // Determine main thumbnail
   const mainImage = fixUrl(product.image_url) || uniqueImages[0] || null
 
-  // Normalize base product
-  const normalizedProduct = {
+  return {
     ...product,
     image_url: mainImage,
     thumbnail: fixUrl(product.thumbnail) || mainImage,
     images: uniqueImages,
   }
-
-  // Normalize variants
-  if (normalizedProduct.variants && Array.isArray(normalizedProduct.variants)) {
-    normalizedProduct.variants = normalizedProduct.variants.map((v: any) => ({
-      ...v,
-    }))
-  }
-
-  return normalizedProduct
 }
 
-// Fetch products with variants, options, AND images (via junction table)
 const PRODUCT_SELECT = `
   *, 
   variants:product_variants(*), 
-  options:product_options(*, values:product_option_values(*)),
-  product_images(image(*))
+  options:product_options(*, values:product_option_values(*))
 `
 
-export async function listProducts({
-  regionId,
-  queryParams
-}: {
+export async function listProducts(options: {
   regionId?: string
-  queryParams?: Record<string, unknown>
+  queryParams?: {
+    limit?: number
+    collection_id?: string[]
+  }
 } = {}): Promise<{ response: { products: Product[]; count: number } }> {
   const supabase = await createClient()
   
@@ -89,26 +59,22 @@ export async function listProducts({
     .from("products")
     .select(PRODUCT_SELECT, { count: "exact" })
 
-  if (queryParams?.limit) {
-    query = query.limit(Number(queryParams.limit))
+  if (options.queryParams?.limit) {
+    query = query.limit(options.queryParams.limit)
   }
 
-  if (queryParams?.collection_id) {
-    const collectionIds = Array.isArray(queryParams.collection_id) ? queryParams.collection_id : [queryParams.collection_id]
-    if (collectionIds.length > 0) {
-        query = query.in("collection_id", collectionIds)
-    }
+  if (options.queryParams?.collection_id?.length) {
+    query = query.in("collection_id", options.queryParams.collection_id)
   }
   
   const { data, count, error } = await query.order("created_at", { ascending: false })
 
   if (error) {
-    console.error("Error fetching products:", error.message)
+    console.error("Error listing products:", error.message)
     return { response: { products: [], count: 0 } }
   }
 
-  const products = (data as any[]).map(normalizeProductImage)
-
+  const products = (data || []).map(normalizeProductImage)
   return { response: { products, count: count || 0 } }
 }
 
@@ -120,11 +86,7 @@ export async function retrieveProduct(id: string): Promise<Product | null> {
     .eq("id", id)
     .single()
 
-  if (error) {
-    console.error(`Error fetching product ${id}:`, error.message)
-    return null
-  }
-
+  if (error) return null
   return normalizeProductImage(data)
 }
 
@@ -136,13 +98,7 @@ export async function getProductByHandle(handle: string): Promise<Product | null
     .eq("handle", handle)
     .single()
 
-  if (error) {
-    if (error.code !== 'PGRST116') {
-        console.error("Error fetching product by handle:", error.message)
-    }
-    return null
-  }
-
+  if (error) return null
   return normalizeProductImage(data)
 }
 
@@ -150,24 +106,18 @@ export async function listPaginatedProducts({
   page = 1,
   limit = 12,
   sortBy = "featured",
-  countryCode,
   queryParams,
-  availability,
   priceFilter,
-  ageFilter,
 }: {
   page?: number
   limit?: number
   sortBy?: SortOptions
   countryCode?: string
-  queryParams?: Record<string, unknown>
-  availability?: "in_stock" | "out_of_stock"
+  queryParams?: Record<string, any>
+  availability?: string
   priceFilter?: { min?: number; max?: number }
   ageFilter?: string
-}): Promise<{
-  response: { products: Product[]; count: number }
-  pagination: { page: number; limit: number }
-}> {
+}) {
   const supabase = await createClient()
   const offset = (page - 1) * limit
 
@@ -175,73 +125,35 @@ export async function listPaginatedProducts({
     .from("products")
     .select(PRODUCT_SELECT, { count: "exact" })
 
-  if (queryParams?.category_id) {
-    query = query.in("category_id", Array.isArray(queryParams.category_id) ? queryParams.category_id : [queryParams.category_id])
-  }
-  
-  if (queryParams?.collection_id) {
-    query = query.in("collection_id", Array.isArray(queryParams.collection_id) ? queryParams.collection_id : [queryParams.collection_id])
+  if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id)
+  if (queryParams?.collection_id) query = query.in("collection_id", queryParams.collection_id)
+  if (queryParams?.q) query = query.ilike("name", `%${queryParams.q}%`)
+
+  if (priceFilter?.min !== undefined) query = query.gte("price", priceFilter.min)
+  if (priceFilter?.max !== undefined) query = query.lte("price", priceFilter.max)
+
+  const sortConfigs: Record<string, { col: string; asc: boolean }> = {
+    price_asc: { col: "price", asc: true },
+    price_desc: { col: "price", asc: false },
+    alpha_asc: { col: "name", asc: true },
+    alpha_desc: { col: "name", asc: false },
+    featured: { col: "created_at", asc: false },
   }
 
-  if (queryParams?.id) {
-    query = query.in("id", Array.isArray(queryParams.id) ? queryParams.id : [queryParams.id])
-  }
-
-  if (queryParams?.q) {
-    query = query.ilike("name", `%${queryParams.q}%`)
-  }
-
-  if (priceFilter?.min !== undefined) {
-    query = query.gte("price", priceFilter.min)
-  }
-  if (priceFilter?.max !== undefined) {
-    query = query.lte("price", priceFilter.max)
-  }
-
-  if (sortBy === "price_asc") {
-    query = query.order("price", { ascending: true })
-  } else if (sortBy === "price_desc") {
-    query = query.order("price", { ascending: false })
-  } else if (sortBy === "alpha_asc") {
-    query = query.order("name", { ascending: true })
-  } else if (sortBy === "alpha_desc") {
-    query = query.order("name", { ascending: false })
-  } else {
-    query = query.order("created_at", { ascending: false })
-  }
+  const sort = sortConfigs[sortBy] || sortConfigs.featured
+  query = query.order(sort.col, { ascending: sort.asc })
 
   const { data, count, error } = await query.range(offset, offset + limit - 1)
 
   if (error) {
-    console.error("Error fetching paginated products:", error.message)
-    return {
-      response: { products: [], count: 0 },
-      pagination: { page, limit },
-    }
-  }
-
-  let products = (data as any[]).map(normalizeProductImage)
-
-  if (availability === "in_stock") {
-    products = products.filter(p => {
-      const hasVariantStock = p.variants?.some((v: any) => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
-      return p.stock_count > 0 || hasVariantStock
-    })
-  } else if (availability === "out_of_stock") {
-    products = products.filter(p => {
-      const hasVariantStock = p.variants?.some((v: any) => (v.inventory_quantity > 0 || v.allow_backorder || !v.manage_inventory))
-      return p.stock_count <= 0 && !hasVariantStock
-    })
+    return { response: { products: [], count: 0 }, pagination: { page, limit } }
   }
 
   return {
     response: {
-      products: products,
+      products: (data || []).map(normalizeProductImage),
       count: count || 0,
     },
-    pagination: {
-      page,
-      limit,
-    },
+    pagination: { page, limit },
   }
 }
