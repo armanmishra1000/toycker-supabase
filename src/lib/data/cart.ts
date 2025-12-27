@@ -291,10 +291,10 @@ export async function initiatePaymentSession(cartInput: any, data: any) {
     const firstname = cart.shipping_address?.first_name || "Customer"
     const email = cart.email || "test@example.com"
     
-    // PayU Test Credentials
-    // Default to the salt from the error message as it seems to be what the environment expects
+    // PayU Credentials
     const key = process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "gtKFFx"
     const salt = process.env.PAYU_MERCHANT_SALT || "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW"
+    const saltV2 = process.env.PAYU_MERCHANT_SALT_V2
 
     const hashParams = {
       key,
@@ -306,7 +306,7 @@ export async function initiatePaymentSession(cartInput: any, data: any) {
       udf1: cart.id // Carry cart ID in user defined field
     }
 
-    const hash = generatePayUHash(hashParams, salt)
+    const hash = generatePayUHash(hashParams, salt, saltV2)
 
     sessionData = {
       payment_url: "https://test.payu.in/_payment",
