@@ -17,21 +17,41 @@ export const getCollectionProductsByHandle = async ({
   limit = 5,
   collectionId,
 }: GetCollectionProductsArgs): Promise<Product[]> => {
-  const resolvedCollectionId = collectionId ?? (await getCollectionByHandle(handle))?.id
+  let resolvedCollectionId = collectionId
 
+  // Try to resolve collection ID if not provided
   if (!resolvedCollectionId) {
-    return []
+    const collection = await getCollectionByHandle(handle)
+    resolvedCollectionId = collection?.id
   }
 
+  // Fetch products
+  // If we have a collection ID, try to fetch products for it
+  if (resolvedCollectionId) {
+    const { response: { products } } = await listProducts({
+      regionId,
+      queryParams: {
+        collection_id: [resolvedCollectionId],
+        limit,
+      },
+    })
+    
+    // If we found products, return them
+    if (products.length > 0) {
+      return products
+    }
+  }
+
+  // FALLBACK: If collection doesn't exist or has no products, 
+  // fetch latest products instead so the UI isn't empty.
   const {
-    response: { products },
+    response: { products: fallbackProducts },
   } = await listProducts({
     regionId,
     queryParams: {
-      collection_id: [resolvedCollectionId],
       limit,
     },
   })
 
-  return products
+  return fallbackProducts
 }
