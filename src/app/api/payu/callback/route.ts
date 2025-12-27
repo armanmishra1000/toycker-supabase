@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     
     // Fallback for public test key if env var is missing
     if (!salt && key === "gtKFFx") {
-      salt = "eCwWELxi" 
+      salt = "4R38IvwiV57FwVpsgOvTXBdLE4tHUXFW" 
     }
 
     if (!verifyPayUHash(payload, salt || "")) {
