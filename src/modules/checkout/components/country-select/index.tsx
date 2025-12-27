@@ -33,7 +33,7 @@ const CountrySelect = forwardRef<
     <NativeSelect
       ref={innerRef}
       placeholder={placeholder}
-      defaultValue={defaultValue}
+      defaultValue={defaultValue || "in"}
       {...props}
     >
       {countryOptions?.map(({ value, label }, index) => (

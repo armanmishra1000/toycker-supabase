@@ -1,6 +1,8 @@
 "use server"
 
-export const getRegion = async (countryCode?: string) => {
+import { Region } from "@/lib/supabase/types"
+
+export const getRegion = async (countryCode?: string): Promise<Region> => {
   return {
     id: "reg_india",
     name: "India",
@@ -9,18 +11,16 @@ export const getRegion = async (countryCode?: string) => {
       {
         id: "in",
         iso_2: "in",
-        iso_3: "ind",
-        name: "India",
         display_name: "India",
       },
     ],
   }
 }
 
-export const listRegions = async () => {
+export const listRegions = async (): Promise<Region[]> => {
   return [await getRegion()]
 }
 
-export const retrieveRegion = async (id: string) => {
+export const retrieveRegion = async (id: string): Promise<Region> => {
   return await getRegion()
 }
