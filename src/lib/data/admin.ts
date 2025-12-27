@@ -14,7 +14,6 @@ export async function ensureAdmin() {
     redirect("/login?next=/admin")
   }
 
-  // HARDCODED ADMINS for immediate prototype access
   const ADMIN_EMAILS = ["admin@toycker.com", "tutanymo@fxzig.com"]
   const isHardcodedAdmin = ADMIN_EMAILS.includes(user.email || "")
 
@@ -28,10 +27,7 @@ export async function ensureAdmin() {
     .eq("id", user.id)
     .single()
 
-  const isAdmin = profile?.role === "admin"
-
-  if (!isAdmin) {
-    console.error("Unauthorized admin access attempt:", user.email, "Role found:", profile?.role)
+  if (profile?.role !== "admin") {
     redirect("/")
   }
 }
@@ -60,12 +56,7 @@ export async function getAdminStats() {
 export async function getAdminProducts() {
   await ensureAdmin()
   const supabase = await createClient()
-  
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .order("created_at", { ascending: false })
-
+  const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false })
   if (error) throw error
   return data as Product[]
 }
@@ -73,7 +64,6 @@ export async function getAdminProducts() {
 export async function createProduct(formData: FormData) {
   await ensureAdmin()
   const supabase = await createClient()
-
   const product = {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
@@ -83,9 +73,7 @@ export async function createProduct(formData: FormData) {
     image_url: formData.get("image_url") as string,
     currency_code: "inr",
   }
-
   const { error } = await supabase.from("products").insert(product)
-  
   if (error) throw new Error(error.message)
   revalidatePath("/admin/products")
   redirect("/admin/products")
@@ -95,7 +83,6 @@ export async function updateProduct(formData: FormData) {
   await ensureAdmin()
   const supabase = await createClient()
   const id = formData.get("id") as string
-
   const updates = {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
@@ -104,9 +91,7 @@ export async function updateProduct(formData: FormData) {
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
   }
-
   const { error } = await supabase.from("products").update(updates).eq("id", id)
-  
   if (error) throw new Error(error.message)
   revalidatePath("/admin/products")
   redirect("/admin/products")
@@ -123,26 +108,47 @@ export async function deleteProduct(id: string) {
 export async function getAdminOrders() {
   await ensureAdmin()
   const supabase = await createClient()
-  
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*")
-    .order("created_at", { ascending: false })
-
+  const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false })
   if (error) throw error
   return data as Order[]
+}
+
+export async function getAdminOrder(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase.from("orders").select("*").eq("id", id).single()
+  if (error) throw error
+  return data as Order
+}
+
+export async function updateOrderStatus(id: string, status: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { error } = await supabase.from("orders").update({ status }).eq("id", id)
+  if (error) throw error
+  revalidatePath(`/admin/orders/${id}`)
+  revalidatePath("/admin/orders")
 }
 
 // --- Customers ---
 export async function getAdminCustomers() {
   await ensureAdmin()
   const supabase = await createClient()
-  
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false })
-
+  const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false })
   if (error) throw error
   return data as CustomerProfile[]
+}
+
+export async function getAdminCustomer(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", id).single()
+  if (profileError) throw profileError
+  
+  const { data: orders } = await supabase.from("orders").select("*").eq("user_id", id).order("created_at", { ascending: false })
+  
+  return {
+    ...profile,
+    orders: orders || []
+  }
 }
