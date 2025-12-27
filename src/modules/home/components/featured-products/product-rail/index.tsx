@@ -1,6 +1,6 @@
 import { listProducts } from "@lib/data/products"
 import { Collection, Region } from "@/lib/supabase/types"
-import { Text } from "@medusajs/ui"
+import { Text } from "@modules/common/components/text"
 
 import InteractiveLink from "@modules/common/components/interactive-link"
 import ProductPreview from "@modules/products/components/product-preview"

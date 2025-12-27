@@ -1,7 +1,7 @@
 "use client"
 
 import { LayoutGrid, PanelsTopLeft } from "lucide-react"
-import { clx } from "@medusajs/ui"
+import { cn } from "@lib/util/cn"
 import type { ComponentType } from "react"
 import type { CatalogViewMode } from "@modules/catalog/types"
 
@@ -27,7 +27,7 @@ const CatalogViewToggle = ({ value, onChange }: CatalogViewToggleProps) => {
             key={mode.value}
             aria-pressed={isActive}
             onClick={() => onChange(mode.value)}
-            className={clx(
+            className={cn(
               "flex items-center gap-2 rounded-3xl px-3 py-1.5 transition",
               isActive ? "bg-slate-900 text-white shadow-sm" : "text-slate-500 hover:text-slate-900"
             )}

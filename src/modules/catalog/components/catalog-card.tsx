@@ -1,7 +1,7 @@
 "use client"
 
 import { ArrowUpRight } from "lucide-react"
-import { clx } from "@medusajs/ui"
+import { cn } from "@lib/util/cn"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { CatalogCardItem, CatalogViewMode } from "@modules/catalog/types"
 import { buildPlaceholderStyles } from "@modules/catalog/utils/catalog-items"
@@ -21,7 +21,7 @@ const CatalogCard = ({ item, viewMode = "grid-4" }: CatalogCardProps) => {
       href={item.href}
       className="group flex h-full flex-col overflow-hidden rounded-[32px]  bg-white/80 shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-lg"
     >
-      <div className={clx("relative w-full overflow-hidden", aspectClass)}>
+      <div className={cn("relative w-full overflow-hidden", aspectClass)}>
         {hasImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -32,7 +32,7 @@ const CatalogCard = ({ item, viewMode = "grid-4" }: CatalogCardProps) => {
           />
         ) : (
           <div
-            className={clx(
+            className={cn(
               "h-full w-full transition duration-500 group-hover:scale-[1.02]",
               buildPlaceholderStyles(item.id)
             )}
