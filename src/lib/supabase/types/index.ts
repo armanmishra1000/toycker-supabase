@@ -124,6 +124,10 @@ export interface Cart {
   original_item_total?: number;
   region?: Region;
   promotions?: Promotion[];
+  // Club membership
+  club_savings?: number;
+  is_club_member?: boolean;
+  club_discount_percentage?: number;
 }
 
 export interface PaymentCollection {
@@ -171,6 +175,8 @@ export interface CartItem {
   total: number;
   subtotal?: number;
   original_total?: number;
+  original_unit_price?: number;
+  has_club_discount?: boolean;
   metadata?: Record<string, unknown>;
 }
 

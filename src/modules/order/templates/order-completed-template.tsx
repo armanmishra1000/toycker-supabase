@@ -7,37 +7,22 @@ import OrderDetails from "@modules/order/components/order-details"
 import ShippingDetails from "@modules/order/components/shipping-details"
 import PaymentDetails from "@modules/order/components/payment-details"
 import { Order } from "@/lib/supabase/types"
+import ClubWelcomeBanner from "@modules/order/components/club-welcome-banner"
 
 type OrderCompletedTemplateProps = {
   order: Order
 }
 
-import { checkAndActivateMembership } from "@lib/data/club"
-import ClubWelcomeBanner from "@modules/order/components/club-welcome-banner"
-import { getClubSettings } from "@lib/data/club"
-
-// ... imports
-
 export default async function OrderCompletedTemplate({
   order,
 }: OrderCompletedTemplateProps) {
-  // Check and activate membership
-  // Note: This runs on the server when the page is rendered.
-  // Ideally this should be done in a webhook or the checkout completion handler, 
-  // but for this prototype we do it here to ensure the user gets feedback immediately 
-  // upon viewing the valid order confirmation.
-  // We should pass the user ID if available. 
-
-  let newlyActivated = false
-  let discountPercentage = 10
-
-  // Assuming 'user_id' is on the order object, or we use the current auth session
-  // order.user_id is usually available for logged in users
-  if (order.user_id) {
-    const settings = await getClubSettings()
-    discountPercentage = settings.discount_percentage
-    newlyActivated = await checkAndActivateMembership(order.user_id, order.total)
-  }
+  // Membership activation now happens in placeOrder server action (cart.ts)
+  // We just read the result from order metadata here
+  const metadata = order.metadata as Record<string, unknown> | null
+  const newlyActivated = metadata?.newly_activated_club_member === true
+  const discountPercentage = typeof metadata?.club_discount_percentage === 'number'
+    ? metadata.club_discount_percentage
+    : 10
 
   return (
     <div className="py-6 min-h-[calc(100vh-64px)]">

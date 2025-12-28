@@ -38,7 +38,7 @@ export default function AccountClubTemplate({ customer, clubSettings }: AccountC
                             <p className="text-gray-600">
                                 {isMember
                                     ? `You are enjoying ${discountPercentage}% off on all orders!`
-                                    : `Join the club by making a purchase over ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(clubSettings.min_purchase_amount)}.`}
+                                    : `Join the club by making a purchase over ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(clubSettings.min_purchase_amount ?? 999)}.`}
                             </p>
                             {isMember && (
                                 <p className="text-sm text-gray-500 mt-2">

@@ -51,6 +51,9 @@ export const convertToLocale = ({
   maximumFractionDigits,
   locale,
 }: ConvertToLocaleParams) => {
+  // Defensive check for undefined/null/NaN amount
+  const safeAmount = typeof amount === 'number' && !Number.isNaN(amount) ? amount : 0
+
   const normalizedCurrency = currency_code && !isEmpty(currency_code)
     ? currency_code.toUpperCase()
     : DEFAULT_CURRENCY_CODE
@@ -73,7 +76,7 @@ export const convertToLocale = ({
       currencyDisplay: "symbol",
       minimumFractionDigits,
       maximumFractionDigits,
-    }).format(amount)
+    }).format(safeAmount)
 
   // Primary formatting
   let formatted = format()

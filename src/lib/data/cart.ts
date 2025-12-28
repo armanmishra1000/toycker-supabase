@@ -31,7 +31,7 @@ interface CartShippingMethod {
   amount: number
 }
 
-const mapCartItems = (items: DatabaseCartItem[]): CartItem[] => {
+const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): CartItem[] => {
   return items.map((item) => {
     const product = item.product
     const variant = item.variant
@@ -47,15 +47,24 @@ const mapCartItems = (items: DatabaseCartItem[]): CartItem[] => {
       }
     }
 
+    const originalPrice = Number(variant?.price || 0)
+    const hasClubDiscount = clubDiscountPercentage > 0
+    const discountedPrice = hasClubDiscount
+      ? Math.round(originalPrice * (1 - clubDiscountPercentage / 100))
+      : originalPrice
+
     return {
       ...item,
       title: variant?.title || product?.name || "Product",
       product_title: product?.name || "Product",
       product_handle: product?.handle,
       thumbnail: thumbnail ?? undefined,
-      unit_price: Number(variant?.price || 0),
-      total: Number(variant?.price || 0) * item.quantity,
-      subtotal: Number(variant?.price || 0) * item.quantity,
+      unit_price: discountedPrice,
+      original_unit_price: originalPrice,
+      total: discountedPrice * item.quantity,
+      original_total: originalPrice * item.quantity,
+      subtotal: discountedPrice * item.quantity,
+      has_club_discount: hasClubDiscount,
       product: product ?? undefined,
       variant: variant ?? undefined
     }
@@ -84,8 +93,25 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
     return null
   }
 
-  const items = mapCartItems(cartData.items || [])
+  // Check if user is a club member and get discount percentage
+  let isClubMember = false
+  let clubDiscountPercentage = 0
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    isClubMember = user.user_metadata?.is_club_member === true
+    if (isClubMember) {
+      // Dynamically import to avoid circular dependency
+      const { getClubSettings } = await import("@lib/data/club")
+      const settings = await getClubSettings()
+      clubDiscountPercentage = settings.discount_percentage
+    }
+  }
+
+  const items = mapCartItems(cartData.items || [], clubDiscountPercentage)
   const item_subtotal = items.reduce((sum, item) => sum + item.total, 0)
+  const original_subtotal = items.reduce((sum, item) => sum + (item.original_total || item.total), 0)
+  const club_savings = original_subtotal - item_subtotal
 
   const shippingMethods = cartData.shipping_methods as CartShippingMethod[] | null
   const shipping_total = Array.isArray(shippingMethods) && shippingMethods.length > 0
@@ -105,11 +131,16 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
     total,
     discount_total: 0,
     gift_card_total: 0,
-    shipping_subtotal: shipping_total
+    shipping_subtotal: shipping_total,
+    // Club membership info
+    club_savings,
+    is_club_member: isClubMember,
+    club_discount_percentage: clubDiscountPercentage
   }
 
   return cart
 })
+
 
 export async function getOrSetCart(): Promise<Cart> {
   const existingCart = await retrieveCart()
@@ -385,11 +416,27 @@ export async function placeOrder() {
 
   const supabase = await createClient()
 
+  // Calculate proper totals from cart
+  const item_subtotal = cart.item_subtotal ?? cart.subtotal ?? 0
+  const shipping_total = cart.shipping_total ?? 0
+  const tax_total = cart.tax_total ?? 0
+  const discount_total = cart.discount_total ?? 0
+  const gift_card_total = cart.gift_card_total ?? 0
+  const total = cart.total ?? (item_subtotal + shipping_total + tax_total - discount_total - gift_card_total)
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
+      user_id: cart.user_id,
       customer_email: cart.email || "guest@toycker.in",
-      total_amount: cart.total ?? 0,
+      email: cart.email || "guest@toycker.in",
+      total_amount: total,
+      total: total,
+      subtotal: item_subtotal,
+      tax_total: tax_total,
+      shipping_total: shipping_total,
+      discount_total: discount_total,
+      gift_card_total: gift_card_total,
       currency_code: cart.currency_code,
       status: "paid",
       payment_status: "captured",
@@ -404,6 +451,22 @@ export async function placeOrder() {
     .single()
 
   if (orderError) throw new Error(orderError.message)
+
+  // Activate club membership if eligible (must happen here where revalidateTag is allowed)
+  if (order.user_id) {
+    const { checkAndActivateMembership, getClubSettings } = await import("@lib/data/club")
+    const settings = await getClubSettings()
+    const activated = await checkAndActivateMembership(order.user_id, total)
+    if (activated) {
+      revalidateTag("customers") // Now allowed - we're in a server action
+    }
+    // Store activation status in order metadata for display on confirmation page
+    if (activated) {
+      await supabase.from("orders").update({
+        metadata: { ...order.metadata, newly_activated_club_member: true, club_discount_percentage: settings.discount_percentage }
+      }).eq("id", order.id)
+    }
+  }
 
   await removeCartId()
   revalidateTag("cart")

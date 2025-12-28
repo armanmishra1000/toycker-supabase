@@ -50,9 +50,6 @@ export async function updateClubSettings(settings: Partial<ClubSettings>) {
     revalidateTag("products") // Revalidate products as prices might change
 }
 
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
-
 // ... existing imports
 
 export async function checkAndActivateMembership(userId: string, orderTotal: number) {
@@ -62,48 +59,36 @@ export async function checkAndActivateMembership(userId: string, orderTotal: num
 
     // Check if eligible
     if (orderTotal >= settings.min_purchase_amount) {
-        // We need admin access to update user metadata for another user (or even current user securely)
-        // Create a service role client
-        const cookieStore = await cookies()
+        // Use regular client for current user operations
+        const supabase = await createClient()
 
-        // Fallback to anon key if service role is missing (will fail for admin ops but prevents crash if env is missing)
-        // Ideally user MUST have SUPABASE_SERVICE_ROLE_KEY in .env
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        // Get current user (works with regular anon key)
+        const { data: { user }, error } = await supabase.auth.getUser()
 
-        const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            supabaseKey,
-            {
-                cookies: {
-                    getAll() {
-                        return cookieStore.getAll()
-                    },
-                    setAll(cookiesToSet) {
-                        // No-op for admin client usually, but good to have signature
-                    },
-                },
-            }
-        )
-
-        // Check if already a member
-        const { data: { user }, error } = await supabase.auth.admin.getUserById(userId)
-
-        if (error || !user) {
-            console.error("Failed to fetch user for membership check:", error)
+        if (error || !user || user.id !== userId) {
+            // User not logged in or mismatch - skip silently
             return false
         }
 
         const isMember = user?.user_metadata?.is_club_member
 
         if (!isMember) {
-            await supabase.auth.admin.updateUserById(userId, {
-                user_metadata: {
-                    ...user.user_metadata,
+            // Update current user's metadata (works with regular client)
+            const { error: updateError } = await supabase.auth.updateUser({
+                data: {
                     is_club_member: true,
                     club_member_since: new Date().toISOString(),
-                    total_club_savings: 0 // Initialize savings
+                    total_club_savings: 0
                 }
             })
+
+            if (updateError) {
+                console.error("Failed to activate membership:", updateError)
+                return false
+            }
+
+            // Note: revalidateTag must be called by the caller (e.g., placeOrder)
+            // since it cannot be called during render
             return true // Activated
         }
     }

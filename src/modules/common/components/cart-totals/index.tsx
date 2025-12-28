@@ -66,9 +66,30 @@ const CartTotals: React.FC<CartTotalsProps> = ({
 
   const displayShippingSubtotal = getDisplayShippingSubtotal()
 
+  // Get club savings from cart
+  const club_savings = cart?.club_savings ?? 0
+  const is_club_member = cart?.is_club_member ?? false
+
   return (
     <div>
+      {/* Club Member Savings Banner */}
+      {is_club_member && club_savings > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+          <div className="flex items-center gap-2 text-green-700">
+            <span className="text-lg">🎉</span>
+            <span className="font-semibold">Toycker Club Savings!</span>
+          </div>
+          <div className="text-green-600 font-bold text-lg">
+            You saved {convertToLocale({ amount: club_savings, currency_code: normalizedCurrency })}
+          </div>
+          <div className="text-green-600 text-xs mt-1">
+            Thank you for being a valued club member
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-y-2 text-base font-medium text-ui-fg-subtle ">
+
         <div className="flex items-center justify-between">
           <span>Subtotal (excl. shipping and taxes)</span>
           <span data-testid="cart-subtotal" data-value={item_subtotal || 0}>
