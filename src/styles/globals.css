@@ -59,6 +59,14 @@ body {
     touch-action: none;
     -webkit-overflow-scrolling: none;
   }
+
+  /* Click feedback for interactive elements - provides instant visual response */
+  .click-feedback {
+    @apply transition-transform duration-75 ease-out cursor-pointer;
+  }
+  .click-feedback:active {
+    @apply scale-[0.97] opacity-90;
+  }
 }
 
 @layer components {

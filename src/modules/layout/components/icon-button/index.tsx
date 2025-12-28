@@ -25,7 +25,7 @@ const IconButton = ({
 }: IconButtonProps) => {
   const content = (
     <div
-      className="w-10 h-10 bg-foreground rounded-full transition-colors relative flex justify-center items-center"
+      className="w-10 h-10 bg-foreground rounded-full transition-colors relative flex justify-center items-center click-feedback"
       aria-hidden="true"
     >
       <Icon className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />

@@ -2,10 +2,11 @@
 
 import Link, { type LinkProps } from "next/link"
 import React from "react"
+import { cn } from "@lib/util/cn"
 
 /**
  * Simplified link component for single-region store.
- * Wraps Next.js Link directly.
+ * Wraps Next.js Link directly with click feedback.
  */
 type LocalizedClientLinkProps = Omit<LinkProps, "href"> & {
   children?: React.ReactNode
@@ -20,6 +21,7 @@ const LocalizedClientLink = ({
   children,
   href,
   prefetchIntent,
+  className,
   ...props
 }: LocalizedClientLinkProps) => {
   const resolvedHref = href.startsWith("/") ? href : `/${href}`
@@ -28,6 +30,7 @@ const LocalizedClientLink = ({
     <Link
       {...props}
       href={resolvedHref}
+      className={cn("click-feedback", className)}
     >
       {children}
     </Link>

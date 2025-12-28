@@ -58,7 +58,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link
               key={item.href}
               href={item.href}
-              className="group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg transition-all text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100"
+              className="group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg transition-all text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 active:scale-[0.98] active:opacity-90"
             >
               <item.icon className="mr-3 h-5 w-5 text-[#8c9196] group-hover:text-gray-100 transition-colors" />
               {item.label}
@@ -69,7 +69,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link
             href="/"
             target="_blank"
-            className="group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg transition-all text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100"
+            className="group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg transition-all text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 active:scale-[0.98] active:opacity-90"
           >
             <div className="mr-3 h-5 w-5 flex items-center justify-center">
               <div className="h-2 w-2 rounded-full border border-[#8c9196] group-hover:border-gray-100" />
@@ -82,13 +82,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="p-2 border-t border-white/[0.08] space-y-1">
           <Link
             href="/admin/settings"
-            className="group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 transition-colors"
+            className="group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 transition-colors active:scale-[0.98] active:opacity-90"
           >
             <Cog6ToothIcon className="mr-3 h-5 w-5 text-[#8c9196] group-hover:text-gray-100" />
             Settings
           </Link>
           <form action={signout}>
-            <button className="flex items-center w-full px-3 py-2 text-[14px] font-medium rounded-lg text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 transition-all">
+            <button className="flex items-center w-full px-3 py-2 text-[14px] font-medium rounded-lg text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 transition-all active:scale-[0.98] active:opacity-90">
               <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5 text-[#8c9196] group-hover:text-gray-100" />
               Log out
             </button>
