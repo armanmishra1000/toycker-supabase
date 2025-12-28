@@ -8,6 +8,8 @@ type Props = {
   params: Promise<{ handle: string }>
 }
 
+export const revalidate = 60
+
 export async function generateStaticParams() {
   try {
     const { response: { products } } = await listProducts()
@@ -16,8 +18,7 @@ export async function generateStaticParams() {
     }))
   } catch (error) {
     console.error(
-      `Failed to generate static paths for product pages: ${
-        error instanceof Error ? error.message : "Unknown error"
+      `Failed to generate static paths for product pages: ${error instanceof Error ? error.message : "Unknown error"
       }.`
     )
     return []

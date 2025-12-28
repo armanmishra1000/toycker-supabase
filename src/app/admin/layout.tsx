@@ -23,6 +23,8 @@ export const metadata = {
   description: "Store Management",
 }
 
+export const revalidate = 30
+
 const NAV_ITEMS = [
   { label: "Home", href: "/admin", icon: HomeIcon },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBagIcon },

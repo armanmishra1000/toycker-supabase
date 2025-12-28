@@ -13,6 +13,8 @@ type Props = {
   }>
 }
 
+export const revalidate = 60
+
 export async function generateStaticParams() {
   const product_categories = await listCategories()
 

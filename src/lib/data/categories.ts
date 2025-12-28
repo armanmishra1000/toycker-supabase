@@ -1,9 +1,10 @@
 "use server"
 
+import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { Category } from "@/lib/supabase/types"
 
-export const listCategories = async (): Promise<Category[]> => {
+export const listCategories = cache(async (): Promise<Category[]> => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("categories")
@@ -15,12 +16,12 @@ export const listCategories = async (): Promise<Category[]> => {
   }
 
   return data as Category[]
-}
+})
 
-export const getCategoryByHandle = async (categoryHandle: string[]): Promise<Category | null> => {
+export const getCategoryByHandle = cache(async (categoryHandle: string[]): Promise<Category | null> => {
   const handle = categoryHandle[categoryHandle.length - 1]
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from("categories")
     .select("*")
@@ -36,4 +37,4 @@ export const getCategoryByHandle = async (categoryHandle: string[]): Promise<Cat
   }
 
   return data as Category
-}
+})

@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: "Discover a wide range of premium toys for kids of all ages.",
 }
 
+export const revalidate = 60
+
 export default async function Home() {
   const countryCode = "in"
 

@@ -1,5 +1,6 @@
 "use server"
 
+import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { Product } from "@/lib/supabase/types"
 import { SortOptions } from "@modules/store/components/refinement-list/types"
@@ -47,7 +48,7 @@ const PRODUCT_SELECT = `
   options:product_options(*, values:product_option_values(*))
 `
 
-export async function listProducts(options: {
+export const listProducts = cache(async function listProducts(options: {
   regionId?: string
   queryParams?: {
     limit?: number
@@ -55,7 +56,7 @@ export async function listProducts(options: {
   }
 } = {}): Promise<{ response: { products: Product[]; count: number } }> {
   const supabase = await createClient()
-  
+
   let query = supabase
     .from("products")
     .select(PRODUCT_SELECT, { count: "exact" })
@@ -67,7 +68,7 @@ export async function listProducts(options: {
   if (options.queryParams?.collection_id?.length) {
     query = query.in("collection_id", options.queryParams.collection_id)
   }
-  
+
   const { data, count, error } = await query.order("created_at", { ascending: false })
 
   if (error) {
@@ -77,9 +78,9 @@ export async function listProducts(options: {
 
   const products = (data || []).map((p) => normalizeProductImage(p as Product))
   return { response: { products, count: count || 0 } }
-}
+})
 
-export async function retrieveProduct(id: string): Promise<Product | null> {
+export const retrieveProduct = cache(async function retrieveProduct(id: string): Promise<Product | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
@@ -89,9 +90,9 @@ export async function retrieveProduct(id: string): Promise<Product | null> {
 
   if (error || !data) return null
   return normalizeProductImage(data as Product)
-}
+})
 
-export async function getProductByHandle(handle: string): Promise<Product | null> {
+export const getProductByHandle = cache(async function getProductByHandle(handle: string): Promise<Product | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
@@ -101,9 +102,9 @@ export async function getProductByHandle(handle: string): Promise<Product | null
 
   if (error || !data) return null
   return normalizeProductImage(data as Product)
-}
+})
 
-export async function listPaginatedProducts({
+export const listPaginatedProducts = cache(async function listPaginatedProducts({
   page = 1,
   limit = 12,
   sortBy = "featured",
@@ -157,4 +158,4 @@ export async function listPaginatedProducts({
     },
     pagination: { page, limit },
   }
-}
+})
