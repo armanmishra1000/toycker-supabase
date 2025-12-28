@@ -13,7 +13,9 @@ import {
   ArchiveBoxIcon,
   MagnifyingGlassIcon,
   CreditCardIcon,
-  TruckIcon
+  TruckIcon,
+  SparklesIcon,
+  ReceiptPercentIcon
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin } from "@/lib/data/admin"
@@ -35,6 +37,8 @@ const NAV_ITEMS = [
   { label: "Shipping", href: "/admin/shipping", icon: TruckIcon },
   { label: "Payments", href: "/admin/payments", icon: CreditCardIcon },
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
+  { label: "Club", href: "/admin/club", icon: SparklesIcon },
+  { label: "Discounts", href: "/admin/discounts", icon: ReceiptPercentIcon },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

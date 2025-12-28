@@ -30,9 +30,13 @@ type Params = {
   }>
 }
 
+import { getClubSettings } from "@lib/data/club"
+
 export default async function StorePage(props: Params) {
   const searchParams = await props.searchParams
   const { sortBy, page, q, availability, price_min, price_max, age, category, collection, view } = searchParams
+
+  const clubSettings = await getClubSettings()
 
   const parsedPriceRange = sanitizePriceRange({
     min: price_min !== undefined ? Number(price_min) : undefined,
@@ -51,6 +55,7 @@ export default async function StorePage(props: Params) {
       categoryId={category}
       collectionId={collection}
       viewMode={view}
+      clubDiscountPercentage={clubSettings?.discount_percentage}
     />
   )
 }

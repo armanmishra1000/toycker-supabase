@@ -7,6 +7,7 @@ type WishlistPageTemplateProps = {
   customerName: string
   loginPath: string
   isCustomerLoggedIn: boolean
+  clubDiscountPercentage?: number
 }
 
 const WishlistPageTemplate = ({
@@ -14,6 +15,7 @@ const WishlistPageTemplate = ({
   customerName,
   loginPath,
   isCustomerLoggedIn,
+  clubDiscountPercentage,
 }: WishlistPageTemplateProps) => {
   return (
     <div className="content-container py-6 lg:py-10" data-testid="wishlist-page">
@@ -44,6 +46,7 @@ const WishlistPageTemplate = ({
           countryCode={countryCode}
           loginPath={loginPath}
           isCustomerLoggedIn={isCustomerLoggedIn}
+          clubDiscountPercentage={clubDiscountPercentage}
         />
       </div>
     </div>

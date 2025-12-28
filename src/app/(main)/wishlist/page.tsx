@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { retrieveCustomer } from "@lib/data/customer"
 import WishlistPageTemplate from "@modules/wishlist/templates/wishlist-page"
+import { getClubSettings } from "@lib/data/club"
 
 export const metadata: Metadata = {
   title: "Wishlist",
@@ -14,11 +15,15 @@ const buildLoginRedirect = () => {
 }
 
 export default async function WishlistPage() {
-  const customer = await retrieveCustomer()
+  const [customer, clubSettings] = await Promise.all([
+    retrieveCustomer(),
+    getClubSettings()
+  ])
 
   const isCustomerLoggedIn = Boolean(customer)
   const customerName = customer?.first_name ?? customer?.email ?? "Friend"
   const loginPath = buildLoginRedirect()
+  const clubDiscountPercentage = clubSettings?.discount_percentage
 
   return (
     <WishlistPageTemplate
@@ -26,6 +31,7 @@ export default async function WishlistPage() {
       customerName={customerName}
       loginPath={loginPath}
       isCustomerLoggedIn={isCustomerLoggedIn}
+      clubDiscountPercentage={clubDiscountPercentage}
     />
   )
 }

@@ -11,9 +11,10 @@ type BestSellingProps = {
   countryCode: string
   isCustomerLoggedIn: boolean
   collectionId?: string
+  clubDiscountPercentage?: number
 }
 
-const BestSelling = async ({ regionId, countryCode, isCustomerLoggedIn, collectionId }: BestSellingProps) => {
+const BestSelling = async ({ regionId, countryCode, isCustomerLoggedIn, collectionId, clubDiscountPercentage }: BestSellingProps) => {
   const products = await getCollectionProductsByHandle({
     handle: BEST_SELLING_COLLECTION_HANDLE,
     regionId,
@@ -54,7 +55,11 @@ const BestSelling = async ({ regionId, countryCode, isCustomerLoggedIn, collecti
           <ul className="mt-10 grid gap-6 grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 lg:[&>li:nth-last-child(-n+2)]:hidden xl:[&>li:nth-last-child(-n+2)]:block">
             {products.map((product) => (
               <li key={product.id}>
-                <ProductPreview product={product} viewMode="grid-5" />
+                <ProductPreview
+                  product={product}
+                  viewMode="grid-5"
+                  clubDiscountPercentage={clubDiscountPercentage}
+                />
               </li>
             ))}
           </ul>

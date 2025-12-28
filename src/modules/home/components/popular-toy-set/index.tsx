@@ -11,9 +11,10 @@ type PopularToySetProps = {
   countryCode: string
   isCustomerLoggedIn: boolean
   collectionId?: string
+  clubDiscountPercentage?: number
 }
 
-const PopularToySet = async ({ regionId, countryCode, isCustomerLoggedIn, collectionId }: PopularToySetProps) => {
+const PopularToySet = async ({ regionId, countryCode, isCustomerLoggedIn, collectionId, clubDiscountPercentage }: PopularToySetProps) => {
   const products = await getCollectionProductsByHandle({
     handle: POPULAR_COLLECTION_HANDLE,
     regionId,
@@ -55,7 +56,11 @@ const PopularToySet = async ({ regionId, countryCode, isCustomerLoggedIn, collec
             <ul className="mt-10 grid gap-6 grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 lg:[&>li:nth-last-child(-n+2)]:hidden xl:[&>li:nth-last-child(-n+2)]:block">
               {products.map((product) => (
                 <li key={product.id}>
-                  <ProductPreview product={product} viewMode="grid-4" />
+                  <ProductPreview
+                    product={product}
+                    viewMode="grid-4"
+                    clubDiscountPercentage={clubDiscountPercentage}
+                  />
                 </li>
               ))}
             </ul>

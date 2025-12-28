@@ -45,11 +45,14 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 }
 
+import { getClubSettings } from "@lib/data/club"
+
 export default async function ProductPage(props: Props) {
   const params = await props.params
-  const [region, product] = await Promise.all([
+  const [region, product, clubSettings] = await Promise.all([
     getRegion(),
     getProductByHandle(params.handle),
+    getClubSettings(),
   ])
 
   if (!region || !product) {
@@ -64,6 +67,7 @@ export default async function ProductPage(props: Props) {
       region={region}
       countryCode="in"
       images={images as any}
+      clubDiscountPercentage={clubSettings?.discount_percentage}
     />
   )
 }

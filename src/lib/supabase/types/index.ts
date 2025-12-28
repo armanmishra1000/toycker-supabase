@@ -270,6 +270,9 @@ export interface CustomerProfile {
   phone: string | null;
   created_at: string;
   addresses: Address[];
+  is_club_member?: boolean;
+  club_member_since?: string | null;
+  total_club_savings?: number;
 }
 
 export interface PaymentProvider {
@@ -278,4 +281,12 @@ export interface PaymentProvider {
   description: string | null;
   is_active: boolean;
   created_at: string;
+}
+
+export interface ClubSettings {
+  id: string;
+  min_purchase_amount: number;
+  discount_percentage: number;
+  is_active: boolean;
+  updated_at: string;
 }

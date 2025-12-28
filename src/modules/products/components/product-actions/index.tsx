@@ -43,6 +43,7 @@ type ProductActionsProps = {
   showSupportActions?: boolean
   onActionComplete?: () => void
   syncVariantParam?: boolean
+  clubDiscountPercentage?: number
 }
 
 const optionsAsKeymap = (
@@ -56,7 +57,7 @@ const optionsAsKeymap = (
   }, {})
 }
 
-export default function ProductActions({ product, disabled, showSupportActions = true, syncVariantParam = true, onActionComplete }: ProductActionsProps) {
+export default function ProductActions({ product, disabled, showSupportActions = true, syncVariantParam = true, onActionComplete, clubDiscountPercentage }: ProductActionsProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -171,7 +172,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
   //check if the selected options produce a valid variant
   const isValidVariant = useMemo(() => {
     if (isSimple) return true
-    
+
     return product.variants?.some((v: any) => {
       const variantOptions = optionsAsKeymap(v.options)
       return isEqual(variantOptions, options)
@@ -370,12 +371,12 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
   const priceMeta = useMemo(() => {
     try {
-      return getProductPrice({ product, variantId: selectedVariant?.id })
+      return getProductPrice({ product, variantId: selectedVariant?.id, clubDiscountPercentage })
     } catch (error) {
       console.error(error)
       return { cheapestPrice: null, variantPrice: null }
     }
-  }, [product, selectedVariant?.id])
+  }, [product, selectedVariant?.id, clubDiscountPercentage])
 
   const normalizedPrice = buildDisplayPrice(
     selectedVariant ? priceMeta.variantPrice : priceMeta.cheapestPrice
@@ -394,10 +395,10 @@ export default function ProductActions({ product, disabled, showSupportActions =
   const addToCartLabel = requiresSelection
     ? "Select options"
     : !isValidVariant
-    ? "Select options"
-    : !inStock
-    ? "Out of stock"
-    : "Add to Cart"
+      ? "Select options"
+      : !inStock
+        ? "Out of stock"
+        : "Add to Cart"
 
   const disableAddButton = !canTransactBase || isAdding
   const disableBuyNowButton = !canTransactBase || isBuying
@@ -422,25 +423,33 @@ export default function ProductActions({ product, disabled, showSupportActions =
           })()}
         </div>
 
-        <div className="flex flex-wrap items-baseline gap-3">
-          {normalizedPrice ? (
-            <>
-              <span className="text-3xl font-bold text-[#E7353A]">
-                {normalizedPrice.current.raw}
-              </span>
-              {normalizedPrice.original && (
-                <span className="text-lg text-slate-400 line-through">
-                  {normalizedPrice.original.raw}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-baseline gap-3">
+            {normalizedPrice ? (
+              <>
+                <span className="text-3xl font-bold text-[#E7353A]">
+                  {normalizedPrice.current.raw}
                 </span>
-              )}
-              {normalizedPrice.percentageText && (
-                <span className="text-sm font-semibold text-[#E7353A]">
-                  {normalizedPrice.percentageText}
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="h-9 w-32 animate-pulse rounded-full bg-slate-100" />
+                {normalizedPrice.original && (
+                  <span className="text-lg text-slate-400 line-through">
+                    {normalizedPrice.original.raw}
+                  </span>
+                )}
+                {normalizedPrice.percentageText && (
+                  <span className="text-sm font-semibold text-[#E7353A]">
+                    {normalizedPrice.percentageText}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="h-9 w-32 animate-pulse rounded-full bg-slate-100" />
+            )}
+          </div>
+
+          {(selectedVariant ? priceMeta.variantPrice : priceMeta.cheapestPrice)?.club_price && (
+            <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg w-fit border border-emerald-100">
+              <span className="font-semibold text-sm">Club Price: {(selectedVariant ? priceMeta.variantPrice : priceMeta.cheapestPrice)?.club_price}</span>
+            </div>
           )}
         </div>
         <p className="text-sm text-slate-500">Inclusive of all taxes</p>
@@ -472,9 +481,8 @@ export default function ProductActions({ product, disabled, showSupportActions =
         <span className="text-sm font-medium text-slate-700">Add-ons</span>
         <label
           htmlFor={giftWrapInputId}
-          className={`flex w-full cursor-pointer items-center justify-between rounded-2xl border bg-white px-4 py-3 text-sm shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition ${
-            giftWrap ? "border-[#FF6B6B] shadow-[0_4px_12px_rgba(255,107,107,0.15)]" : "border-slate-200"
-          }`}
+          className={`flex w-full cursor-pointer items-center justify-between rounded-2xl border bg-white px-4 py-3 text-sm shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition ${giftWrap ? "border-[#FF6B6B] shadow-[0_4px_12px_rgba(255,107,107,0.15)]" : "border-slate-200"
+            }`}
         >
           <input
             id={giftWrapInputId}
@@ -485,9 +493,8 @@ export default function ProductActions({ product, disabled, showSupportActions =
           />
           <span className="flex items-center gap-3">
             <span
-              className={`flex h-5 w-5 items-center justify-center rounded border text-white transition ${
-                giftWrap ? "border-[#FF6B6B] bg-[#FF6B6B]" : "border-slate-300 bg-white"
-              }`}
+              className={`flex h-5 w-5 items-center justify-center rounded border text-white transition ${giftWrap ? "border-[#FF6B6B] bg-[#FF6B6B]" : "border-slate-300 bg-white"
+                }`}
               aria-hidden
             >
               <Check className={`h-3 w-3 ${giftWrap ? "opacity-100" : "opacity-0"}`} />
@@ -540,11 +547,10 @@ export default function ProductActions({ product, disabled, showSupportActions =
             type="button"
             onClick={handleAddToCartClick}
             disabled={disableAddButton}
-            className={`relative h-14 flex-1 rounded-full px-10 text-base font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E7353A] ${
-              !disableAddButton
-                ? "bg-[#F6E36C] text-slate-900 hover:brightness-95"
-                : "cursor-not-allowed bg-slate-200 text-slate-500"
-            }`}
+            className={`relative h-14 flex-1 rounded-full px-10 text-base font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E7353A] ${!disableAddButton
+              ? "bg-[#F6E36C] text-slate-900 hover:brightness-95"
+              : "cursor-not-allowed bg-slate-200 text-slate-500"
+              }`}
             data-testid="add-product-button"
           >
             {isAdding && (
@@ -555,9 +561,8 @@ export default function ProductActions({ product, disabled, showSupportActions =
           <button
             type="button"
             onClick={handleWishlistClick}
-            className={`flex h-14 w-14 items-center justify-center rounded-full border text-[#E7353A] transition ${
-              isWishlistActive ? "border-[#E7353A] bg-[#FFF5F5]" : "border-gray-200"
-            }`}
+            className={`flex h-14 w-14 items-center justify-center rounded-full border text-[#E7353A] transition ${isWishlistActive ? "border-[#E7353A] bg-[#FFF5F5]" : "border-gray-200"
+              }`}
             aria-label="Toggle wishlist"
             aria-pressed={isWishlistActive}
           >
@@ -568,9 +573,8 @@ export default function ProductActions({ product, disabled, showSupportActions =
           type="button"
           onClick={handleBuyNowClick}
           disabled={disableBuyNowButton}
-          className={`h-14 w-full rounded-full text-base font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E7353A] ${
-            !disableBuyNowButton ? "bg-[#E7353A] hover:bg-[#d52c34]" : "cursor-not-allowed bg-slate-300"
-          }`}
+          className={`h-14 w-full rounded-full text-base font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E7353A] ${!disableBuyNowButton ? "bg-[#E7353A] hover:bg-[#d52c34]" : "cursor-not-allowed bg-slate-300"
+            }`}
         >
           {isBuying ? "Processing..." : "Buy It Now"}
         </button>

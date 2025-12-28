@@ -16,6 +16,8 @@ export type VariantPrice = {
   price_type: string
   percentage_diff: string
   is_discounted: boolean
+  club_price_number?: number
+  club_price?: string
 }
 
 export type StoreFreeShippingPrice = Price & {

@@ -19,6 +19,7 @@ type ProductTemplateProps = {
   region: Region
   countryCode: string
   images: { url: string }[]
+  clubDiscountPercentage?: number
 }
 
 const ProductTemplate: React.FC<ProductTemplateProps> = ({
@@ -26,6 +27,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   region,
   countryCode,
   images,
+  clubDiscountPercentage,
 }) => {
   if (!product || !product.id) {
     return notFound()
@@ -55,24 +57,29 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
               <ProductActionsWrapper
                 id={product.id}
                 region={region}
+                clubDiscountPercentage={clubDiscountPercentage}
               />
             </Suspense>
             <div className="mt-6">
               <OrderInformation />
             </div>
           </div>
-        </div>
+        </div >
         <div className="mt-8 space-y-5">
           <ProductTabs product={product} />
           <CustomerReviews />
         </div>
-      </div>
+      </div >
       <div
         className="content-container my-16"
         data-testid="related-products-container"
       >
         <Suspense fallback={<SkeletonRelatedProducts />}>
-          <RelatedProducts product={product} countryCode={countryCode} />
+          <RelatedProducts
+            product={product}
+            countryCode={countryCode}
+            clubDiscountPercentage={clubDiscountPercentage}
+          />
         </Suspense>
       </div>
       <RecentlyViewedTracker productId={product.id} />

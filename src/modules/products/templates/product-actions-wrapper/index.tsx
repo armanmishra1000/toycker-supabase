@@ -11,9 +11,11 @@ import { WishlistProvider } from "@modules/products/context/wishlist"
 export default async function ProductActionsWrapper({
   id,
   region,
+  clubDiscountPercentage,
 }: {
   id: string
   region: any
+  clubDiscountPercentage?: number
 }) {
   const customerPromise = retrieveCustomer()
   const product = await retrieveProduct(id)
@@ -29,7 +31,7 @@ export default async function ProductActionsWrapper({
   return (
     <WishlistProvider isAuthenticated={Boolean(customer)} loginPath={accountPath}>
       <Suspense fallback={<div className="h-64 w-full animate-pulse bg-gray-100 rounded-xl" />}>
-        <ProductActions product={product} />
+        <ProductActions product={product} clubDiscountPercentage={clubDiscountPercentage} />
       </Suspense>
     </WishlistProvider>
   )

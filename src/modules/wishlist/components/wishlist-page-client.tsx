@@ -7,15 +7,19 @@ type WishlistPageClientProps = {
   countryCode: string
   loginPath: string
   isCustomerLoggedIn: boolean
+  clubDiscountPercentage?: number
 }
 
-const WishlistPageClient = ({ countryCode, loginPath, isCustomerLoggedIn }: WishlistPageClientProps) => {
+const WishlistPageClient = ({ countryCode, loginPath, isCustomerLoggedIn, clubDiscountPercentage }: WishlistPageClientProps) => {
   return (
     <WishlistProvider
       isAuthenticated={isCustomerLoggedIn}
       loginPath={loginPath}
     >
-      <WishlistContent countryCode={countryCode} />
+      <WishlistContent
+        countryCode={countryCode}
+        clubDiscountPercentage={clubDiscountPercentage}
+      />
     </WishlistProvider>
   )
 }

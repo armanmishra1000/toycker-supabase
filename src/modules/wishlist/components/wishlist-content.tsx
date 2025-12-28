@@ -14,9 +14,10 @@ import {
 
 type WishlistContentProps = {
   countryCode: string
+  clubDiscountPercentage?: number
 }
 
-const WishlistContent = ({ countryCode }: WishlistContentProps) => {
+const WishlistContent = ({ countryCode, clubDiscountPercentage }: WishlistContentProps) => {
   const { items, toggleWishlist } = useWishlist()
   const [recentIds, setRecentIds] = useState<string[]>([])
 
@@ -77,7 +78,11 @@ const WishlistContent = ({ countryCode }: WishlistContentProps) => {
               <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" data-testid="wishlist-grid">
                 {wishlistState.products.map((product) => (
                   <li key={product.id}>
-                    <ProductPreview product={product} viewMode="grid-4" />
+                    <ProductPreview
+                      product={product}
+                      viewMode="grid-4"
+                      clubDiscountPercentage={clubDiscountPercentage}
+                    />
                   </li>
                 ))}
               </ul>
@@ -112,7 +117,11 @@ const WishlistContent = ({ countryCode }: WishlistContentProps) => {
             <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" data-testid="recently-viewed-grid">
               {recentState.products.map((product) => (
                 <li key={product.id}>
-                  <ProductPreview product={product} viewMode="grid-4" />
+                  <ProductPreview
+                    product={product}
+                    viewMode="grid-4"
+                    clubDiscountPercentage={clubDiscountPercentage}
+                  />
                 </li>
               ))}
             </ul>

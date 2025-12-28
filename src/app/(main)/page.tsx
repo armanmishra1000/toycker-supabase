@@ -12,6 +12,7 @@ import { listHomeBanners } from "@lib/data/home-banners"
 import { listExclusiveCollections } from "@lib/data/exclusive-collections"
 import { getRegion } from "@lib/data/regions"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getClubSettings } from "@lib/data/club"
 
 export const metadata: Metadata = {
   title: "Toycker | Premium Toys for Kids",
@@ -23,14 +24,16 @@ export const revalidate = 60
 export default async function Home() {
   const countryCode = "in"
 
-  const [banners, exclusiveItems, region, customer] = await Promise.all([
+  const [banners, exclusiveItems, region, customer, clubSettings] = await Promise.all([
     listHomeBanners(),
     listExclusiveCollections({ regionId: "reg_india" }),
     getRegion(),
-    retrieveCustomer()
+    retrieveCustomer(),
+    getClubSettings()
   ])
 
   const isCustomerLoggedIn = Boolean(customer)
+  const clubDiscountPercentage = clubSettings?.discount_percentage
 
   return (
     <>
@@ -41,16 +44,21 @@ export default async function Home() {
         regionId={region.id}
         countryCode={countryCode}
         isCustomerLoggedIn={isCustomerLoggedIn}
+        clubDiscountPercentage={clubDiscountPercentage}
       />
 
       <ShopByAge />
 
-      <ExclusiveCollections items={exclusiveItems} />
+      <ExclusiveCollections
+        items={exclusiveItems}
+        clubDiscountPercentage={clubDiscountPercentage}
+      />
 
       <BestSelling
         regionId={region.id}
         countryCode={countryCode}
         isCustomerLoggedIn={isCustomerLoggedIn}
+        clubDiscountPercentage={clubDiscountPercentage}
       />
 
       <ReviewMediaHub />

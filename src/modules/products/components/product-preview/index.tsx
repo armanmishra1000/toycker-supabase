@@ -23,12 +23,14 @@ type ProductPreviewProps = {
   product: Product
   isFeatured?: boolean
   viewMode?: ViewMode
+  clubDiscountPercentage?: number
 }
 
 export default function ProductPreview({
   product,
   isFeatured,
   viewMode = "grid-4",
+  clubDiscountPercentage,
 }: ProductPreviewProps) {
   const isListView = viewMode === "list"
   const [isPending, startTransition] = useTransition()
@@ -42,8 +44,8 @@ export default function ProductPreview({
 
   // Use the central utility to calculate display price
   const { cheapestPrice } = useMemo(() => {
-    return getProductPrice({ product })
-  }, [product])
+    return getProductPrice({ product, clubDiscountPercentage })
+  }, [product, clubDiscountPercentage])
 
   const cardClassName = cn(
     "group relative block overflow-hidden transition-all duration-300 h-full",

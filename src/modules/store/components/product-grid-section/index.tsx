@@ -26,6 +26,7 @@ type ProductGridSectionProps = {
   totalCountHint?: number
   isCustomerLoggedIn?: boolean
   loginPath?: string
+  clubDiscountPercentage?: number
 }
 
 const ProductGridSection = ({
@@ -39,30 +40,31 @@ const ProductGridSection = ({
   totalCountHint,
   isCustomerLoggedIn = false,
   loginPath = "/account",
+  clubDiscountPercentage,
 }: ProductGridSectionProps) => {
   const context = useOptionalStorefrontFilters()
 
   const derived = context
     ? {
-        products: context.products,
-        totalCount: context.totalCount,
-        page: context.filters.page,
-        viewMode: context.filters.viewMode,
-        sortBy: context.filters.sortBy,
-        pageSize: context.pageSize,
-        isLoading: context.isFetching || context.isPending,
-        error: context.error,
-      }
+      products: context.products,
+      totalCount: context.totalCount,
+      page: context.filters.page,
+      viewMode: context.filters.viewMode,
+      sortBy: context.filters.sortBy,
+      pageSize: context.pageSize,
+      isLoading: context.isFetching || context.isPending,
+      error: context.error,
+    }
     : {
-        products,
-        totalCount,
-        page,
-        viewMode,
-        sortBy,
-        pageSize,
-        isLoading: false,
-        error: undefined,
-      }
+      products,
+      totalCount,
+      page,
+      viewMode,
+      sortBy,
+      pageSize,
+      isLoading: false,
+      error: undefined,
+    }
 
   const effectiveCount = typeof derived.totalCount === "number" ? derived.totalCount : totalCountHint ?? 0
   const totalPages = Math.max(1, Math.ceil(effectiveCount / derived.pageSize))
@@ -90,14 +92,23 @@ const ProductGridSection = ({
           derived.viewMode === "list" ? (
             <div className={gridClassName} data-testid="products-list">
               {derived.products.map((product) => (
-                <ProductPreview key={product.id} product={product} viewMode={derived.viewMode} />
+                <ProductPreview
+                  key={product.id}
+                  product={product}
+                  viewMode={derived.viewMode}
+                  clubDiscountPercentage={clubDiscountPercentage}
+                />
               ))}
             </div>
           ) : (
             <ul className={gridClassName} data-testid="products-list">
               {derived.products.map((product) => (
                 <li key={product.id}>
-                  <ProductPreview product={product} viewMode={derived.viewMode} />
+                  <ProductPreview
+                    product={product}
+                    viewMode={derived.viewMode}
+                    clubDiscountPercentage={clubDiscountPercentage}
+                  />
                 </li>
               ))}
             </ul>

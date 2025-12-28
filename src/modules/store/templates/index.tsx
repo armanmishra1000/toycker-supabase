@@ -28,6 +28,7 @@ const StoreTemplate = async ({
   categoryId,
   collectionId,
   viewMode,
+  clubDiscountPercentage,
 }: {
   sortBy?: SortOptions
   page?: string
@@ -39,6 +40,7 @@ const StoreTemplate = async ({
   categoryId?: string
   collectionId?: string
   viewMode?: ViewMode
+  clubDiscountPercentage?: number
 }) => {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "featured"
@@ -193,6 +195,7 @@ const StoreTemplate = async ({
             totalCountHint={initialCount}
             isCustomerLoggedIn={isCustomerLoggedIn}
             loginPath={accountPath}
+            clubDiscountPercentage={clubDiscountPercentage}
           />
         </div>
       </FilterDrawer>

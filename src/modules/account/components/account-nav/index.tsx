@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { LogOut } from "lucide-react"
+import { LogOut, Sparkles } from "lucide-react"
 import { usePathname, useParams } from "next/navigation"
 import { cn } from "@lib/util/cn"
 
@@ -52,6 +52,12 @@ const AccountNav = ({
                   icon={<MapPin size={20} />}
                   label="Addresses"
                   data-testid="addresses-link"
+                />
+                <MobileLink
+                  href="/account/club"
+                  icon={<Sparkles size={20} />}
+                  label="Club"
+                  data-testid="club-link"
                 />
                 <MobileLink
                   href="/account/orders"
@@ -112,6 +118,15 @@ const AccountNav = ({
                   data-testid="addresses-link"
                 >
                   <NavRow icon={<MapPin size={18} />} label="Addresses" />
+                </AccountNavLink>
+              </li>
+              <li>
+                <AccountNavLink
+                  href="/account/club"
+                  route={route!}
+                  data-testid="club-link"
+                >
+                  <NavRow icon={<Sparkles size={18} />} label="Club Membership" />
                 </AccountNavLink>
               </li>
               <li>

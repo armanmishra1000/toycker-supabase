@@ -18,6 +18,7 @@ import { getImageUrl } from "@lib/util/get-image-url"
 
 type ExclusiveCollectionsProps = {
   items: ExclusiveCollectionEntry[]
+  clubDiscountPercentage?: number
 }
 
 const FALLBACK_POSTER = "/assets/images/slider_default.png"
@@ -42,23 +43,33 @@ const resolveProductImageSource = (entry: ExclusiveCollectionEntry) => {
   )
 }
 
-const resolveDisplayPrice = (entry: ExclusiveCollectionEntry): DisplayPrice | null => {
+const resolveDisplayPrice = (entry: ExclusiveCollectionEntry, clubDiscountPercentage?: number): { displayPrice: DisplayPrice | null, clubPrice: string | null } => {
   if (!entry.product) {
-    return null
+    return { displayPrice: null, clubPrice: null }
   }
 
   try {
-    const { cheapestPrice } = getProductPrice({ product: entry.product })
-    return buildDisplayPrice(cheapestPrice)
+    const { cheapestPrice, variantPrice } = getProductPrice({
+      product: entry.product,
+      clubDiscountPercentage
+    })
+
+    // Choose the price object that has the club price if available
+    const priceObj = variantPrice || cheapestPrice
+
+    return {
+      displayPrice: buildDisplayPrice(cheapestPrice),
+      clubPrice: priceObj?.club_price ?? null
+    }
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       console.warn("Unable to compute price for exclusive entry", error)
     }
-    return null
+    return { displayPrice: null, clubPrice: null }
   }
 }
 
-const PriceStack = ({ price }: { price: DisplayPrice | null }) => {
+const PriceStack = ({ price, clubPrice }: { price: DisplayPrice | null, clubPrice: string | null }) => {
   if (!price) {
     return null
   }
@@ -67,20 +78,27 @@ const PriceStack = ({ price }: { price: DisplayPrice | null }) => {
     <div className="flex flex-col leading-tight">
       <p
         className={cn("text-sm font-semibold", {
-          "text-[#E7353A]": price.isDiscounted,
-          "text-[#4b2b1c]": !price.isDiscounted,
+          "text-[#E7353A]": price.isDiscounted || clubPrice, // Red if discounted or club price available
+          "text-[#4b2b1c]": !price.isDiscounted && !clubPrice,
         })}
       >
-        {price.current.raw}
+        {clubPrice ? (
+          <span className="text-emerald-600">Club: {clubPrice}</span>
+        ) : (
+          price.current.raw
+        )}
       </p>
-      {price.original && (
-        <p className="text-xs text-[#9c7e6f] line-through">{price.original.raw}</p>
+      {/* Show original if discounted AND no club price, or if club price is shown then show regular as crossed out */}
+      {(price.original || clubPrice) && (
+        <p className="text-xs text-[#9c7e6f] line-through">
+          {clubPrice ? price.current.raw : price.original?.raw}
+        </p>
       )}
     </div>
   )
 }
 
-const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
+const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollectionsProps) => {
   const [isMounted, setIsMounted] = useState(false)
   const swiperRef = useRef<SwiperInstance | null>(null)
   const [isAutoplaying, setIsAutoplaying] = useState(true)
@@ -121,7 +139,7 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
             {showcaseItems.slice(0, 3).map((item) => {
               const title = item.product?.title ?? "Featured collectible"
               const productImage = resolveProductImageSource(item)
-              const displayPrice = resolveDisplayPrice(item)
+              const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
 
               return (
                 <article key={item.id} className="flex flex-col rounded-xl bg-white/80 p-4 shadow-sm">
@@ -139,7 +157,7 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
                     )}
                   </div>
                   <p className="text-base font-semibold text-[#4b2b1c]">{title}</p>
-                  <PriceStack price={displayPrice} />
+                  <PriceStack price={displayPrice} clubPrice={clubPrice} />
                 </article>
               )
             })}
@@ -185,7 +203,7 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
                 const productImage = resolveProductImageSource(item)
                 const title = item.product?.title ?? "Exclusive collectible"
                 const productHandle = item.product?.handle ?? item.product_id
-                const displayPrice = resolveDisplayPrice(item)
+                const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
                 const hasVideo = Boolean(item.video_url && item.video_url.trim().length > 0)
 
                 return (
@@ -237,7 +255,7 @@ const ExclusiveCollections = ({ items }: ExclusiveCollectionsProps) => {
                           </div>
                           <div className="flex min-h-[3.5rem] flex-1 flex-col justify-center overflow-hidden">
                             <p className="text-sm font-semibold leading-tight truncate">{title}</p>
-                            <PriceStack price={displayPrice} />
+                            <PriceStack price={displayPrice} clubPrice={clubPrice} />
                           </div>
                         </LocalizedClientLink>
                       </div>

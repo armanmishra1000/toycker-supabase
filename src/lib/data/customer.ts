@@ -27,6 +27,9 @@ export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> 
     phone: user.phone || "",
     created_at: user.created_at,
     addresses: (addresses as Address[]) || [],
+    is_club_member: user.user_metadata?.is_club_member || false,
+    club_member_since: user.user_metadata?.club_member_since || null,
+    total_club_savings: user.user_metadata?.total_club_savings || 0,
   }
 })
 

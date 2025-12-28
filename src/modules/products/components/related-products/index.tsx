@@ -6,11 +6,13 @@ import ProductPreview from "../product-preview"
 type RelatedProductsProps = {
   product: SupabaseProduct
   countryCode: string
+  clubDiscountPercentage?: number
 }
 
 export default async function RelatedProducts({
   product,
   countryCode,
+  clubDiscountPercentage,
 }: RelatedProductsProps) {
   const region = await getRegion()
 
@@ -39,7 +41,10 @@ export default async function RelatedProducts({
       <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
         {products.map((p) => (
           <li key={p.id}>
-            <ProductPreview product={p} />
+            <ProductPreview
+              product={p}
+              clubDiscountPercentage={clubDiscountPercentage}
+            />
           </li>
         ))}
       </ul>

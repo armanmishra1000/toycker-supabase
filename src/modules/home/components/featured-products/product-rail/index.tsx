@@ -8,9 +8,11 @@ import ProductPreview from "@modules/products/components/product-preview"
 export default async function ProductRail({
   collection,
   region,
+  clubDiscountPercentage,
 }: {
   collection: Collection
   region: Region
+  clubDiscountPercentage?: number
 }) {
   const {
     response: { products: pricedProducts },
@@ -37,7 +39,11 @@ export default async function ProductRail({
         {pricedProducts &&
           pricedProducts.map((product) => (
             <li key={product.id}>
-              <ProductPreview product={product} isFeatured />
+              <ProductPreview
+                product={product}
+                isFeatured
+                clubDiscountPercentage={clubDiscountPercentage}
+              />
             </li>
           ))}
       </ul>

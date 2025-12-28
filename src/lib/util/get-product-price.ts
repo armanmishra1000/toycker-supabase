@@ -4,6 +4,7 @@ import { VariantPrice } from "@/types/global"
 type GetProductPriceArgs = {
   product: Product
   variantId?: string
+  clubDiscountPercentage?: number
 }
 
 type ProductPriceResult = {
@@ -28,6 +29,7 @@ const getPercentageDiff = (original: number, calculated: number) => {
 export const getProductPrice = ({
   product,
   variantId,
+  clubDiscountPercentage = 0,
 }: GetProductPriceArgs): ProductPriceResult => {
   if (!product) {
     throw new Error("No product provided")
@@ -38,6 +40,19 @@ export const getProductPrice = ({
   // Helper to build price object
   const buildPrice = (price: number, originalPrice?: number): VariantPrice => {
     const original = originalPrice || price
+
+    // Calculate Club Price
+    // Club price is applied on the PAYABLE price (calculated_price_number)
+    // If the product is already on sale (compare_at_price), club discount is usually on top of that 
+    // OR on the sale price? 
+    // Plan said: "Club members get discounted 'Club Price' on all products (percentage set in admin)"
+    // Usually club discount is on the current selling price.
+
+    let clubPriceNum: number | undefined = undefined
+    if (clubDiscountPercentage > 0) {
+      clubPriceNum = Math.floor(price * (1 - clubDiscountPercentage / 100))
+    }
+
     return {
       calculated_price_number: price,
       calculated_price: formatAmount(price, currencyCode),
@@ -47,6 +62,8 @@ export const getProductPrice = ({
       price_type: "default",
       percentage_diff: getPercentageDiff(original, price),
       is_discounted: original > price,
+      club_price_number: clubPriceNum,
+      club_price: clubPriceNum ? formatAmount(clubPriceNum, currencyCode) : undefined,
     }
   }
 

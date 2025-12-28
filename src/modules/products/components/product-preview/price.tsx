@@ -25,6 +25,14 @@ export default function PreviewPrice({ price }: { price: any | null }) {
           {price.original_price}
         </Text>
       )}
+      {price.club_price && (
+        <Text
+          className="text-xs text-emerald-600 font-medium mt-0.5"
+          data-testid="club-price"
+        >
+          Club: {price.club_price}
+        </Text>
+      )}
     </div>
   )
 }
