@@ -1,3 +1,5 @@
+"use client"
+
 import { Cart } from "@/lib/supabase/types"
 import { Text } from "@modules/common/components/text"
 
@@ -5,25 +7,47 @@ import ItemsPreviewTemplate from "@modules/cart/templates/preview"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
+import Payment from "@modules/checkout/components/payment"
+import Review from "@modules/checkout/components/review"
 
-const CheckoutSummary = ({ cart }: { cart: Cart }) => {
+type PaymentMethod = { id: string; name: string }
+
+const CheckoutSummary = ({
+  cart,
+  paymentMethods
+}: {
+  cart: Cart
+  paymentMethods: PaymentMethod[]
+}) => {
   return (
-    <div className="sticky top-0 flex flex-col-reverse small:flex-col gap-y-8 py-8 small:py-0 ">
-      <div className="w-full bg-white flex flex-col checkout-card">
-        <Divider className="my-6 small:hidden" />
+    <div className="sticky top-4 flex flex-col gap-4">
+      {/* Cart Summary Card */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
         <Text
           as="h2"
           weight="bold"
-          className="flex flex-row text-3xl items-baseline"
+          className="flex flex-row text-xl items-baseline mb-4"
         >
-          In your Cart
+          Order Summary
         </Text>
-        <Divider className="my-6" />
         <CartTotals totals={cart} cart={cart} />
+        <Divider className="my-4" />
         <ItemsPreviewTemplate cart={cart} />
-        <div className="my-6">
-          <DiscountCode cart={cart} />
-        </div>
+        <Divider className="my-4" />
+        <DiscountCode cart={cart} />
+      </div>
+
+      {/* Payment Method Card */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <Payment
+          cart={cart}
+          availablePaymentMethods={paymentMethods}
+        />
+      </div>
+
+      {/* Place Order Card */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <Review cart={cart} />
       </div>
     </div>
   )

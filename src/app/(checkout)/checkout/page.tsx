@@ -1,7 +1,7 @@
+import { listCartPaymentMethods } from "@lib/data/payment"
 import { retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
-import CheckoutSteps from "@modules/checkout/components/checkout-steps"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
 import { Metadata } from "next"
@@ -20,14 +20,26 @@ export default async function Checkout() {
 
   const customer = await retrieveCustomer()
 
+  // Fetch payment methods at page level for right column
+  const paymentMethods = await listCartPaymentMethods(cart.region_id ?? "")
+
   return (
-    <div className="content-container py-12">
-      <CheckoutSteps />
-      <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] gap-x-40">
-        <PaymentWrapper cart={cart}>
+    <div className="content-container py-8">
+      <div className="grid grid-cols-1 small:grid-cols-[1fr_380px] gap-6">
+        {/* Left Column: Address + Shipping */}
+        <div className="w-full">
           <CheckoutForm cart={cart} customer={customer} />
-        </PaymentWrapper>
-        <CheckoutSummary cart={cart} />
+        </div>
+
+        {/* Right Column: Cart Summary + Payment + Place Order */}
+        <div className="w-full">
+          <PaymentWrapper cart={cart}>
+            <CheckoutSummary
+              cart={cart}
+              paymentMethods={paymentMethods ?? []}
+            />
+          </PaymentWrapper>
+        </div>
       </div>
     </div>
   )

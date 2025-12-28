@@ -3,16 +3,12 @@
 import { RadioGroup } from "@headlessui/react"
 import { setShippingMethod } from "@lib/data/cart"
 import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
-import { Button } from "@modules/common/components/button"
 import ErrorMessage from "@modules/checkout/components/error-message"
-import Divider from "@modules/common/components/divider"
+import { Text } from "@modules/common/components/text"
 import { useShippingPrice } from "@modules/common/context/shipping-price-context"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState, useMemo, useTransition } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Address, Cart, ShippingOption } from "@/lib/supabase/types"
 
-import ShippingHeader from "./shipping-header"
-import ShippingSummary from "./shipping-summary"
 import ShippingMethodOption from "./shipping-method-option"
 import { cn } from "@lib/util/cn"
 import RadioComponent from "@modules/common/components/radio"
@@ -50,7 +46,6 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
     availableShippingMethods as ShippingOptionWithZone[] | null
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrices, setIsLoadingPrices] = useState(true)
-  const [isNavigating, startTransition] = useTransition()
   const [showPickupOptions, setShowPickupOptions] =
     useState<string>(PICKUP_OPTION_OFF)
   const [calculatedPricesMap, setCalculatedPricesMap] = useState<
@@ -61,19 +56,9 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
     cart.shipping_methods?.at(-1)?.shipping_option_id || null
   )
 
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
   const { setSelectedShippingPrice } = useShippingPrice()
 
   const currencyCode = cart.currency_code || cart.region?.currency_code || "INR"
-  const isOpen = searchParams.get("step") === "delivery"
-
-  useEffect(() => {
-    if (isOpen) {
-      window.scrollTo({ top: 0, behavior: "smooth" })
-    }
-  }, [isOpen])
 
   const { shippingMethods, pickupMethods } = useMemo(() => {
     return {
@@ -123,6 +108,16 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
     }
   }, [shippingMethods, pickupMethods, shippingMethodId, cart.id])
 
+  // Auto-select first shipping method if none selected
+  useEffect(() => {
+    if (!shippingMethodId && shippingMethods?.length && !isLoadingPrices) {
+      const firstMethod = shippingMethods[0]
+      if (firstMethod) {
+        handleSetShippingMethod(firstMethod.id, "shipping")
+      }
+    }
+  }, [shippingMethods, shippingMethodId, isLoadingPrices])
+
   const handleSetShippingMethod = async (
     id: string,
     variant: "shipping" | "pickup"
@@ -150,164 +145,135 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
           }
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setShippingMethodId(prevId)
-      setError(err.message)
+      const message = err instanceof Error ? err.message : "Failed to set shipping method"
+      setError(message)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleSubmit = () => {
-    startTransition(() => {
-      router.push(pathname + "?step=payment")
-    })
-  }
-
-  useEffect(() => {
-    setError(null)
-  }, [isOpen])
-
   return (
     <div className="bg-white">
-      <ShippingHeader
-        isOpen={isOpen}
-        hasMethods={(cart.shipping_methods?.length ?? 0) > 0}
-        cart={cart}
-        onEdit={() => router.push(pathname + "?step=delivery")}
-      />
+      <div className="flex flex-row items-center justify-between mb-6">
+        <Text
+          as="h2"
+          weight="bold"
+          className="flex flex-row text-3xl gap-x-2 items-baseline"
+        >
+          Delivery Method
+        </Text>
+      </div>
 
-      {isOpen ? (
-        <div data-testid="delivery-options-container">
-          <div className="grid gap-6">
+      <div data-testid="delivery-options-container">
+        <div className="grid gap-6">
+          <div>
+            <div className="flex flex-col mb-4">
+              <span className="text-gray-500 text-sm">
+                How would you like your order delivered?
+              </span>
+            </div>
+
+            {hasPickupOptions && (
+              <RadioGroup
+                value={showPickupOptions}
+                onChange={() => {
+                  const id = pickupMethods?.find(
+                    (option) => !option.insufficient_inventory
+                  )?.id
+                  if (id) handleSetShippingMethod(id, "pickup")
+                }}
+                className="mb-4"
+              >
+                <RadioGroup.Option
+                  value={PICKUP_OPTION_ON}
+                  className={cn(
+                    "flex items-center justify-between text-sm cursor-pointer py-4 border rounded-lg px-8 hover:shadow-sm transition-all",
+                    {
+                      "border-blue-600 ring-1 ring-blue-600":
+                        showPickupOptions === PICKUP_OPTION_ON,
+                    }
+                  )}
+                >
+                  <div className="flex items-center gap-x-4">
+                    <RadioComponent
+                      checked={showPickupOptions === PICKUP_OPTION_ON}
+                    />
+                    <span className="text-base font-medium">Pick up your order</span>
+                  </div>
+                  <span className="justify-self-end text-gray-900 font-medium">
+                    -
+                  </span>
+                </RadioGroup.Option>
+              </RadioGroup>
+            )}
+
+            <RadioGroup
+              value={shippingMethodId}
+              onChange={(v) => v && handleSetShippingMethod(v, "shipping")}
+            >
+              {shippingMethods?.map((option) => {
+                const isCalculated = option.price_type === "calculated"
+                const price = isCalculated
+                  ? calculatedPricesMap[option.id]
+                  : option.amount
+                const isDisabled =
+                  isCalculated && !isLoadingPrices && price === undefined
+
+                return (
+                  <ShippingMethodOption
+                    key={option.id}
+                    option={option}
+                    selectedId={shippingMethodId}
+                    currencyCode={currencyCode}
+                    price={price}
+                    isLoadingPrice={isLoadingPrices && isCalculated}
+                    disabled={isDisabled || isLoading}
+                  />
+                )
+              })}
+            </RadioGroup>
+          </div>
+
+          {showPickupOptions === PICKUP_OPTION_ON && (
             <div>
               <div className="flex flex-col mb-4">
                 <span className="font-medium text-sm text-gray-900">
-                  Shipping method
+                  Store
                 </span>
                 <span className="text-gray-500 text-sm">
-                  How would you like your order delivered?
+                  Choose a store near you
                 </span>
               </div>
-
-              {hasPickupOptions && (
-                <RadioGroup
-                  value={showPickupOptions}
-                  onChange={(value) => {
-                    const id = pickupMethods?.find(
-                      (option) => !option.insufficient_inventory
-                    )?.id
-                    if (id) handleSetShippingMethod(id, "pickup")
-                  }}
-                  className="mb-4"
-                >
-                  <RadioGroup.Option
-                    value={PICKUP_OPTION_ON}
-                    className={cn(
-                      "flex items-center justify-between text-sm cursor-pointer py-4 border rounded-lg px-8 hover:shadow-sm transition-all",
-                      {
-                        "border-blue-600 ring-1 ring-blue-600":
-                          showPickupOptions === PICKUP_OPTION_ON,
-                      }
-                    )}
-                  >
-                    <div className="flex items-center gap-x-4">
-                      <RadioComponent
-                        checked={showPickupOptions === PICKUP_OPTION_ON}
-                      />
-                      <span className="text-base font-medium">Pick up your order</span>
-                    </div>
-                    <span className="justify-self-end text-gray-900 font-medium">
-                      -
-                    </span>
-                  </RadioGroup.Option>
-                </RadioGroup>
-              )}
-
               <RadioGroup
                 value={shippingMethodId}
-                onChange={(v) => v && handleSetShippingMethod(v, "shipping")}
+                onChange={(v) => v && handleSetShippingMethod(v, "pickup")}
               >
-                {shippingMethods?.map((option) => {
-                  const isCalculated = option.price_type === "calculated"
-                  const price = isCalculated
-                    ? calculatedPricesMap[option.id]
-                    : option.amount
-                  const isDisabled =
-                    isCalculated && !isLoadingPrices && price === undefined
-
-                  return (
-                    <ShippingMethodOption
-                      key={option.id}
-                      option={option}
-                      selectedId={shippingMethodId}
-                      currencyCode={currencyCode}
-                      price={price}
-                      isLoadingPrice={isLoadingPrices && isCalculated}
-                      disabled={isDisabled}
-                    />
-                  )
-                })}
+                {pickupMethods?.map((option) => (
+                  <ShippingMethodOption
+                    key={option.id}
+                    option={option}
+                    selectedId={shippingMethodId}
+                    currencyCode={currencyCode}
+                    price={option.amount}
+                    addressDisplay={formatAddress(
+                      option.service_zone?.fulfillment_set?.location?.address
+                    )}
+                    disabled={option.insufficient_inventory || isLoading}
+                    isPickup
+                  />
+                ))}
               </RadioGroup>
             </div>
-
-            {showPickupOptions === PICKUP_OPTION_ON && (
-              <div>
-                <div className="flex flex-col mb-4">
-                  <span className="font-medium text-sm text-gray-900">
-                    Store
-                  </span>
-                  <span className="text-gray-500 text-sm">
-                    Choose a store near you
-                  </span>
-                </div>
-                <RadioGroup
-                  value={shippingMethodId}
-                  onChange={(v) => v && handleSetShippingMethod(v, "pickup")}
-                >
-                  {pickupMethods?.map((option) => (
-                    <ShippingMethodOption
-                      key={option.id}
-                      option={option}
-                      selectedId={shippingMethodId}
-                      currencyCode={currencyCode}
-                      price={option.amount}
-                      addressDisplay={formatAddress(
-                        option.service_zone?.fulfillment_set?.location?.address
-                      )}
-                      disabled={option.insufficient_inventory}
-                      isPickup
-                    />
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6">
-            <ErrorMessage
-              error={error}
-              data-testid="delivery-option-error-message"
-            />
-            <Button
-              size="large"
-              onClick={handleSubmit}
-              isLoading={isLoading || isNavigating}
-              disabled={!cart.shipping_methods?.[0]}
-              data-testid="submit-delivery-option-button"
-            >
-              Continue to payment
-            </Button>
-          </div>
+          )}
         </div>
-      ) : (
-        <ShippingSummary
-          cart={cart}
-          availableShippingMethods={availableShippingMethods}
-          calculatedPricesMap={calculatedPricesMap}
+
+        <ErrorMessage
+          error={error}
+          data-testid="delivery-option-error-message"
         />
-      )}
-      <Divider className="mt-8" />
+      </div>
     </div>
   )
 }
