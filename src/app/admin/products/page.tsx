@@ -6,6 +6,8 @@ import { convertToLocale } from "@lib/util/money"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
+import ProductCsvImport from "@modules/admin/components/product-csv-import"
+import MedusaSyncButton from "@modules/admin/components/medusa-sync-button"
 import { cn } from "@lib/util/cn"
 
 export default async function AdminProducts({
@@ -28,10 +30,14 @@ export default async function AdminProducts({
       <AdminPageHeader
         title="Products"
         actions={
-          <Link href="/admin/products/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add product
-          </Link>
+          <div className="flex items-center gap-3">
+            <MedusaSyncButton />
+            <ProductCsvImport />
+            <Link href="/admin/products/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add product
+            </Link>
+          </div>
         }
       />
 
