@@ -17,13 +17,13 @@ export const listExclusiveCollections = async ({
 }: {
   regionId: string
 }): Promise<ExclusiveCollectionEntry[]> => {
-  // Simplified for prototype
+  // Fetch products and assign local video files
   const { response: { products } } = await listProducts()
-  return products.slice(0, 3).map((product, index) => ({
+  return products.slice(0, 6).map((product, index) => ({
     id: `exclusive-${index}`,
     product_id: product.id,
-    video_url: "",
-    poster_url: null,
+    video_url: `/assets/videos/exclusive-${index + 1}.mp4`,
+    poster_url: product.thumbnail ?? product.image_url ?? null,
     sort_order: index,
     product,
   }))
