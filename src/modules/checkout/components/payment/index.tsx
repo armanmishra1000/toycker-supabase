@@ -13,7 +13,7 @@ import PaymentContainer, {
 } from "@modules/checkout/components/payment-container"
 import Divider from "@modules/common/components/divider"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useTransition } from "react"
 import { Cart } from "@/lib/supabase/types"
 
 const Payment = ({
@@ -34,6 +34,7 @@ const Payment = ({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
     activeSession?.provider_id ?? ""
   )
+  const [isNavigating, startTransition] = useTransition()
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -86,7 +87,9 @@ const Payment = ({
   )
 
   const handleEdit = () => {
-    router.push(pathname + "?" + createQueryString("step", "payment"))
+    startTransition(() => {
+      router.push(pathname + "?" + createQueryString("step", "payment"))
+    })
   }
 
   const handleSubmit = async () => {
@@ -116,9 +119,10 @@ const Payment = ({
       }
 
       if (!shouldInputCard) {
-        return router.push(
-          pathname + "?" + createQueryString("step", "review")
-        )
+        startTransition(() => {
+          router.push(pathname + "?" + createQueryString("step", "review"))
+        })
+        return
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unexpected error"

@@ -8,8 +8,8 @@ import ErrorMessage from "@modules/checkout/components/error-message"
 import Divider from "@modules/common/components/divider"
 import { useShippingPrice } from "@modules/common/context/shipping-price-context"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState, useMemo } from "react"
-import { Address, ShippingOption } from "@/lib/supabase/types"
+import { useEffect, useState, useMemo, useTransition } from "react"
+import { Address, Cart, ShippingOption } from "@/lib/supabase/types"
 
 import ShippingHeader from "./shipping-header"
 import ShippingSummary from "./shipping-summary"
@@ -21,8 +21,8 @@ const PICKUP_OPTION_ON = "__PICKUP_ON"
 const PICKUP_OPTION_OFF = "__PICKUP_OFF"
 
 type ShippingProps = {
-  cart: any
-  availableShippingMethods: any[] | null
+  cart: Cart
+  availableShippingMethods: ShippingOption[] | null
 }
 
 type ShippingOptionWithZone = ShippingOption & {
@@ -50,6 +50,7 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
     availableShippingMethods as ShippingOptionWithZone[] | null
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrices, setIsLoadingPrices] = useState(true)
+  const [isNavigating, startTransition] = useTransition()
   const [showPickupOptions, setShowPickupOptions] =
     useState<string>(PICKUP_OPTION_OFF)
   const [calculatedPricesMap, setCalculatedPricesMap] = useState<
@@ -158,7 +159,9 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
   }
 
   const handleSubmit = () => {
-    router.push(pathname + "?step=payment")
+    startTransition(() => {
+      router.push(pathname + "?step=payment")
+    })
   }
 
   useEffect(() => {
@@ -192,7 +195,7 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
                   value={showPickupOptions}
                   onChange={(value) => {
                     const id = pickupMethods?.find(
-                      (option) => !(option as any).insufficient_inventory
+                      (option) => !option.insufficient_inventory
                     )?.id
                     if (id) handleSetShippingMethod(id, "pickup")
                   }}
@@ -272,7 +275,7 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
                       addressDisplay={formatAddress(
                         option.service_zone?.fulfillment_set?.location?.address
                       )}
-                      disabled={(option as any).insufficient_inventory}
+                      disabled={option.insufficient_inventory}
                       isPickup
                     />
                   ))}
@@ -289,7 +292,7 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
             <Button
               size="large"
               onClick={handleSubmit}
-              isLoading={isLoading}
+              isLoading={isLoading || isNavigating}
               disabled={!cart.shipping_methods?.[0]}
               data-testid="submit-delivery-option-button"
             >

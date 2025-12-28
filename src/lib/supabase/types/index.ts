@@ -251,6 +251,7 @@ export interface ShippingOption {
     };
   };
   is_active?: boolean;
+  insufficient_inventory?: boolean;
 }
 
 export interface PaymentSession {

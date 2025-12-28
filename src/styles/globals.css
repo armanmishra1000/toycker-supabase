@@ -67,6 +67,14 @@ body {
   .click-feedback:active {
     @apply scale-[0.97] opacity-90;
   }
+
+  /* Checkout page premium styling */
+  .checkout-card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-shadow hover:shadow-md;
+  }
+  .checkout-section {
+    @apply bg-white rounded-lg border border-gray-100 p-6 mb-4;
+  }
 }
 
 @layer components {

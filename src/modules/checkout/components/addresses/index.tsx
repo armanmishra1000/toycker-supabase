@@ -6,6 +6,7 @@ import React from "react"
 import { CheckCircle } from "lucide-react"
 import { Text } from "@modules/common/components/text"
 import { cn } from "@lib/util/cn"
+import { Cart, CustomerProfile, ShippingOption } from "@/lib/supabase/types"
 import Divider from "@modules/common/components/divider"
 import Spinner from "@modules/common/icons/spinner"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -21,9 +22,9 @@ const Addresses = ({
   customer,
   availableShippingMethods,
 }: {
-  cart: any
-  customer: any
-  availableShippingMethods: any[] | null
+  cart: Cart
+  customer: CustomerProfile | null
+  availableShippingMethods: ShippingOption[] | null
 }) => {
   const searchParams = useSearchParams()
   const router = useRouter()
