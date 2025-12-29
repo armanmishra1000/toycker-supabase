@@ -1,51 +1,65 @@
 import repeat from "@lib/util/repeat"
 import { Text } from "@modules/common/components/text"
-
 import Item from "@modules/cart/components/item"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
+import { Cart, CartItem } from "@/lib/supabase/types"
+import { ShoppingBag } from "lucide-react"
 
 type ItemsTemplateProps = {
-  cart?: any
+  cart: Cart | null
 }
 
 const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
   const items = cart?.items
+  const itemCount = items?.length || 0
+  const currencyCode = cart?.currency_code || "INR"
+
   return (
     <div>
-      <div className="pb-3 flex items-center">
-        <Text as="h1" weight="bold" className="text-[2rem] leading-[2.75rem]">Cart</Text>
+      {/* Header with item count */}
+      <div className="pb-4 flex items-center justify-between border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+            <ShoppingBag className="w-5 h-5 text-slate-600" />
+          </div>
+          <div>
+            <Text as="h1" weight="bold" className="text-xl lg:text-2xl text-slate-900">
+              Your Cart
+            </Text>
+            <p className="text-sm text-slate-500">
+              {itemCount} {itemCount === 1 ? "item" : "items"} in your cart
+            </p>
+          </div>
+        </div>
       </div>
-      <div className="w-full">
-        <div className="border-t-0 grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 py-2 text-gray-500 font-semibold text-sm">
-          <div className="!pl-0">Item</div>
-          <div></div>
-          <div>Quantity</div>
-          <div className="hidden small:block">
-            Price
-          </div>
-          <div className="!pr-0 text-right">
-            Total
-          </div>
-        </div>
-        <div>
-          {items
-            ? items
-                .sort((a: any, b: any) => {
-                  return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
-                })
-                .map((item: any) => {
-                  return (
-                    <Item
-                      key={item.id}
-                      item={item}
-                      currencyCode={cart?.currency_code}
-                    />
-                  )
-                })
-            : repeat(5).map((i) => {
-                return <SkeletonLineItem key={i} />
-              })}
-        </div>
+
+      {/* Table Header - Desktop Only */}
+      <div className="hidden lg:grid grid-cols-[1fr_100px_120px_100px] gap-4 py-3 mt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+        <div>Product</div>
+        <div className="text-center">Quantity</div>
+        <div className="text-right">Price</div>
+        <div className="text-right">Total</div>
+      </div>
+
+      {/* Cart Items */}
+      <div className="divide-y divide-slate-100">
+        {items
+          ? items
+            .sort((a: CartItem, b: CartItem) => {
+              return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
+            })
+            .map((item: CartItem) => {
+              return (
+                <Item
+                  key={item.id}
+                  item={item}
+                  currencyCode={currencyCode}
+                />
+              )
+            })
+          : repeat(3).map((i) => {
+            return <SkeletonLineItem key={i} />
+          })}
       </div>
     </div>
   )
