@@ -47,22 +47,22 @@ const Payment = ({
     setSelectedPaymentMethod(method)
 
     try {
-      if (isStripeLike(method) || isPayU(method)) {
-        const paymentData = {
-          provider_id: method,
-          data: {} as Record<string, unknown>
-        }
-
-        if (isPayU(method)) {
-          paymentData.data = {
-            email: cart.email,
-            phone: cart.shipping_address?.phone,
-            first_name: cart.shipping_address?.first_name,
-          }
-        }
-
-        await initiatePaymentSession(cart, paymentData)
+      // Save ALL payment methods to database (including COD)
+      const paymentData: { provider_id: string; data: Record<string, unknown> } = {
+        provider_id: method,
+        data: {}
       }
+
+      // Add extra data for PayU
+      if (isPayU(method)) {
+        paymentData.data = {
+          email: cart.email,
+          phone: cart.shipping_address?.phone,
+          first_name: cart.shipping_address?.first_name,
+        }
+      }
+
+      await initiatePaymentSession(cart, paymentData)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to set payment method"
       setError(message)
