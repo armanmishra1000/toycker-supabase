@@ -1,7 +1,7 @@
 import { listCartOptions } from "@lib/data/cart"
 import { Cart, CustomerProfile } from "@/lib/supabase/types"
 import Addresses from "@modules/checkout/components/addresses"
-import Shipping from "@modules/checkout/components/shipping"
+import ShippingInfo from "@modules/checkout/components/shipping-info"
 
 export default async function CheckoutForm({
   cart,
@@ -28,12 +28,10 @@ export default async function CheckoutForm({
         />
       </div>
 
-      {/* Delivery Method Section */}
+
+      {/* Delivery Method Section - Display Only */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <Shipping
-          cart={cart}
-          availableShippingMethods={shippingOptions?.shipping_options ?? null}
-        />
+        <ShippingInfo cart={cart} />
       </div>
     </div>
   )

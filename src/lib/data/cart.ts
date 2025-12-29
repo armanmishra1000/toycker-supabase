@@ -10,6 +10,13 @@ import { redirect } from "next/navigation"
 import { generatePayUHash, PayUHashParams } from "@/lib/payu"
 import { getBaseURL } from "@/lib/util/env"
 
+// Addresses interface for type safety
+interface AddressFormData {
+  email: string
+  shipping_address: Address
+  billing_address: Address
+}
+
 /** Raw cart item from database with nested product/variant objects */
 interface DatabaseCartItem {
   id: string
@@ -328,6 +335,82 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
 
   revalidateTag("cart")
   redirect("/checkout?step=delivery")
+}
+
+// Background auto-save (no redirect) - Fixes blank page issue
+export async function saveAddressesBackground(_currentState: unknown, formData: FormData) {
+  const cart = await retrieveCart()
+  if (!cart) return { message: "No cart found", success: false }
+
+  const supabase = await createClient()
+
+  const data = {
+    email: formData.get("email") as string,
+    shipping_address: {
+      first_name: formData.get("shipping_address.first_name"),
+      last_name: formData.get("shipping_address.last_name"),
+      address_1: formData.get("shipping_address.address_1"),
+      company: formData.get("shipping_address.company"),
+      postal_code: formData.get("shipping_address.postal_code"),
+      city: formData.get("shipping_address.city"),
+      country_code: formData.get("shipping_address.country_code"),
+      province: formData.get("shipping_address.province"),
+      phone: formData.get("shipping_address.phone"),
+    },
+    billing_address: {
+      first_name: formData.get("billing_address.first_name") || formData.get("shipping_address.first_name"),
+      last_name: formData.get("billing_address.last_name") || formData.get("shipping_address.last_name"),
+      address_1: formData.get("billing_address.address_1") || formData.get("shipping_address.address_1"),
+      company: formData.get("billing_address.company") || formData.get("shipping_address.company"),
+      postal_code: formData.get("billing_address.postal_code") || formData.get("shipping_address.postal_code"),
+      city: formData.get("billing_address.city") || formData.get("shipping_address.city"),
+      country_code: formData.get("billing_address.country_code") || formData.get("shipping_address.country_code"),
+      province: formData.get("billing_address.province") || formData.get("shipping_address.province"),
+      phone: formData.get("billing_address.phone") || formData.get("shipping_address.phone"),
+    }
+  }
+
+  const { error } = await supabase
+    .from("carts")
+    .update(data)
+    .eq("id", cart.id)
+
+  if (error) {
+    return { message: error.message, success: false }
+  }
+
+  revalidateTag("cart")
+  return { message: "Saved", success: true }
+}
+
+export async function autoSelectStandardShipping(cartId: string) {
+  const { shipping_options } = await listCartOptions()
+  // Auto-select first option if available (Standard Shipping)
+  if (shipping_options.length > 0) {
+    await setShippingMethod({ cartId, shippingMethodId: shipping_options[0].id })
+  }
+}
+
+// Explicit submit with redirect - Skips delivery step as we auto-select
+export async function submitAddresses(formData: FormData) {
+  // Pass null as state since saveAddressesBackground expects it
+  const result = await saveAddressesBackground(null, formData)
+
+  if (!result.success) {
+    // If save fails, we return the result. In a server action used in formAction, 
+    // we can't easily return data to the client without useActionState.
+    // However, since we are redirecting on success, if we don't redirect, 
+    // it means failure. We might want to throw or handle error better, 
+    // but for now let's just match the signature.
+    throw new Error(result.message)
+  }
+
+  const cart = await retrieveCart()
+  if (cart) {
+    await autoSelectStandardShipping(cart.id)
+  }
+
+  redirect("/checkout?step=payment")
 }
 
 export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: string, shippingMethodId: string }) {

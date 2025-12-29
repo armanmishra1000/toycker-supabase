@@ -1,6 +1,6 @@
 "use client"
 
-import { setAddresses } from "@lib/data/cart"
+import { saveAddressesBackground, submitAddresses } from "@lib/data/cart"
 import compareAddresses from "@lib/util/compare-addresses"
 import React, { useCallback, useRef } from "react"
 import { Text } from "@modules/common/components/text"
@@ -30,7 +30,7 @@ const Addresses = ({
   )
   const toggleSameAsBilling = () => setSameAsBilling(!sameAsBilling)
 
-  const [message, formAction] = useActionState(setAddresses, null)
+  const [message, formAction] = useActionState(saveAddressesBackground, null)
 
   // Check if address is already saved
   const addressSaved = Boolean(cart?.shipping_address?.address_1)
@@ -100,6 +100,25 @@ const Addresses = ({
         <input type="hidden" name="auto_save" value="true" />
 
         <ErrorMessage error={message?.message ?? null} data-testid="address-error-message" />
+
+        <div className="mt-6">
+          <button
+            type="submit"
+            formAction={submitAddresses}
+            className="w-full bg-black text-white py-3 px-4 rounded-md font-medium hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="submit-address-button"
+            disabled={isPending}
+          >
+            {isPending ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </span>
+            ) : (
+              "Continue to Payment"
+            )}
+          </button>
+        </div>
       </form>
     </div>
   )
