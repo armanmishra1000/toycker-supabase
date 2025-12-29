@@ -69,6 +69,7 @@ const CartTotals: React.FC<CartTotalsProps> = ({
   // Get club savings from cart
   const club_savings = cart?.club_savings ?? 0
   const is_club_member = cart?.is_club_member ?? false
+  const rewards_discount = cart?.rewards_discount ?? 0
 
   return (
     <div>
@@ -113,6 +114,25 @@ const CartTotals: React.FC<CartTotalsProps> = ({
               -{" "}
               {convertToLocale({
                 amount: discount_subtotal ?? 0,
+                currency_code: normalizedCurrency,
+              })}
+            </span>
+          </div>
+        )}
+        {rewards_discount > 0 && (
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <span>🎁</span>
+              <span>Rewards Applied</span>
+            </span>
+            <span
+              className="text-purple-600 font-semibold"
+              data-testid="cart-rewards-discount"
+              data-value={rewards_discount}
+            >
+              -{" "}
+              {convertToLocale({
+                amount: rewards_discount,
                 currency_code: normalizedCurrency,
               })}
             </span>

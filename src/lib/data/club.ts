@@ -22,6 +22,7 @@ export const getClubSettings = cache(async (): Promise<ClubSettings> => {
             id: "default",
             min_purchase_amount: 999,
             discount_percentage: 10,
+            rewards_percentage: 5,
             is_active: true,
             updated_at: new Date().toISOString()
         }

@@ -96,6 +96,7 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
   // Check if user is a club member and get discount percentage
   let isClubMember = false
   let clubDiscountPercentage = 0
+  let availableRewards = 0
 
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
@@ -105,6 +106,15 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
       const { getClubSettings } = await import("@lib/data/club")
       const settings = await getClubSettings()
       clubDiscountPercentage = settings.discount_percentage
+
+      // Get reward wallet balance
+      const { data: wallet } = await supabase
+        .from("reward_wallets")
+        .select("balance")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      availableRewards = wallet?.balance ?? 0
     }
   }
 
@@ -118,8 +128,17 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
     ? Number(shippingMethods[0].amount || 0)
     : 0
 
+  // Get rewards to apply from cart metadata
+  const cartMetadata = (cartData.metadata || {}) as Record<string, unknown>
+  const rewards_to_apply = Math.min(
+    Number(cartMetadata.rewards_to_apply || 0),
+    availableRewards,
+    item_subtotal + shipping_total // Can't exceed order total
+  )
+  const rewards_discount = rewards_to_apply // 1 point = ₹1
+
   const tax_total = 0
-  const total = item_subtotal + tax_total + shipping_total
+  const total = Math.max(0, item_subtotal + tax_total + shipping_total - rewards_discount)
 
   const cart: Cart = {
     ...cartData,
@@ -135,7 +154,11 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
     // Club membership info
     club_savings,
     is_club_member: isClubMember,
-    club_discount_percentage: clubDiscountPercentage
+    club_discount_percentage: clubDiscountPercentage,
+    // Rewards
+    rewards_to_apply,
+    rewards_discount,
+    available_rewards: availableRewards
   }
 
   return cart
@@ -422,7 +445,8 @@ export async function placeOrder() {
   const tax_total = cart.tax_total ?? 0
   const discount_total = cart.discount_total ?? 0
   const gift_card_total = cart.gift_card_total ?? 0
-  const total = cart.total ?? (item_subtotal + shipping_total + tax_total - discount_total - gift_card_total)
+  const rewards_discount = cart.rewards_discount ?? 0
+  const total = cart.total ?? (item_subtotal + shipping_total + tax_total - discount_total - gift_card_total - rewards_discount)
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -435,7 +459,7 @@ export async function placeOrder() {
       subtotal: item_subtotal,
       tax_total: tax_total,
       shipping_total: shipping_total,
-      discount_total: discount_total,
+      discount_total: discount_total + rewards_discount,
       gift_card_total: gift_card_total,
       currency_code: cart.currency_code,
       status: "paid",
@@ -445,27 +469,62 @@ export async function placeOrder() {
       billing_address: cart.billing_address,
       items: JSON.parse(JSON.stringify(cart.items || [])),
       shipping_methods: JSON.parse(JSON.stringify(cart.shipping_methods || [])),
-      metadata: { cart_id: cart.id }
+      metadata: {
+        cart_id: cart.id,
+        rewards_used: rewards_discount
+      }
     })
     .select()
     .single()
 
   if (orderError) throw new Error(orderError.message)
 
-  // Activate club membership if eligible (must happen here where revalidateTag is allowed)
+  // Handle rewards for club members
   if (order.user_id) {
     const { checkAndActivateMembership, getClubSettings } = await import("@lib/data/club")
+    const { creditRewards, deductRewards } = await import("@lib/data/rewards")
     const settings = await getClubSettings()
+
+    // First, deduct any rewards used
+    if (rewards_discount > 0) {
+      await deductRewards(order.user_id, order.id, rewards_discount)
+    }
+
+    // Check for club membership activation
     const activated = await checkAndActivateMembership(order.user_id, total)
     if (activated) {
-      revalidateTag("customers") // Now allowed - we're in a server action
+      revalidateTag("customers")
     }
-    // Store activation status in order metadata for display on confirmation page
-    if (activated) {
+
+    // Credit new rewards for club members (check membership status after potential activation)
+    const { data: { user } } = await supabase.auth.getUser()
+    const isClubMember = user?.user_metadata?.is_club_member === true || activated
+
+    if (isClubMember && settings.rewards_percentage > 0) {
+      const pointsEarned = await creditRewards(
+        order.user_id,
+        order.id,
+        item_subtotal, // Points based on subtotal, not including shipping
+        settings.rewards_percentage
+      )
+
+      // Update order metadata with rewards info
+      await supabase.from("orders").update({
+        metadata: {
+          ...order.metadata,
+          newly_activated_club_member: activated,
+          club_discount_percentage: settings.discount_percentage,
+          rewards_earned: pointsEarned,
+          rewards_used: rewards_discount
+        }
+      }).eq("id", order.id)
+    } else if (activated) {
       await supabase.from("orders").update({
         metadata: { ...order.metadata, newly_activated_club_member: true, club_discount_percentage: settings.discount_percentage }
       }).eq("id", order.id)
     }
+
+    revalidateTag("rewards")
   }
 
   await removeCartId()

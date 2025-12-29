@@ -9,6 +9,7 @@ import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
 import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
+import RewardsRedemption from "@modules/checkout/components/rewards-redemption"
 
 type PaymentMethod = { id: string; name: string }
 
@@ -34,6 +35,7 @@ const CheckoutSummary = ({
         <Divider className="my-4" />
         <ItemsPreviewTemplate cart={cart} />
         <Divider className="my-4" />
+        <RewardsRedemption cart={cart} />
         <DiscountCode cart={cart} />
       </div>
 

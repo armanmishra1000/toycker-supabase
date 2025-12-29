@@ -128,6 +128,10 @@ export interface Cart {
   club_savings?: number;
   is_club_member?: boolean;
   club_discount_percentage?: number;
+  // Rewards
+  rewards_to_apply?: number;
+  rewards_discount?: number;
+  available_rewards?: number;
 }
 
 export interface PaymentCollection {
@@ -293,6 +297,25 @@ export interface ClubSettings {
   id: string;
   min_purchase_amount: number;
   discount_percentage: number;
+  rewards_percentage: number;
   is_active: boolean;
   updated_at: string;
+}
+
+export interface RewardWallet {
+  id: string;
+  user_id: string;
+  balance: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RewardTransaction {
+  id: string;
+  wallet_id: string;
+  amount: number;
+  type: 'earned' | 'spent';
+  description: string;
+  order_id: string | null;
+  created_at: string;
 }

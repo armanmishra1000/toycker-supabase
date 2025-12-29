@@ -9,6 +9,7 @@ import Input from "@modules/common/components/input"
 export default function ClubSettingsForm({ settings }: { settings: ClubSettings }) {
     const [minPurchase, setMinPurchase] = useState(settings.min_purchase_amount)
     const [discount, setDiscount] = useState(settings.discount_percentage)
+    const [rewardsPercentage, setRewardsPercentage] = useState(settings.rewards_percentage ?? 5)
     const [isActive, setIsActive] = useState(settings.is_active)
     const [saving, setSaving] = useState(false)
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null)
@@ -22,6 +23,7 @@ export default function ClubSettingsForm({ settings }: { settings: ClubSettings 
             await updateClubSettings({
                 min_purchase_amount: Number(minPurchase),
                 discount_percentage: Number(discount),
+                rewards_percentage: Number(rewardsPercentage),
                 is_active: isActive
             })
             setMessage({ text: "Settings updated successfully", type: "success" })
@@ -90,6 +92,23 @@ export default function ClubSettingsForm({ settings }: { settings: ClubSettings 
                 />
                 <p className="mt-1 text-xs text-gray-500">
                     The percentage discount club members receive on all products.
+                </p>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reward Cashback Percentage (%)
+                </label>
+                <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={rewardsPercentage}
+                    onChange={(e) => setRewardsPercentage(Number(e.target.value))}
+                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                    Percentage of order subtotal credited as reward points. 1 point = ₹1 discount at checkout.
                 </p>
             </div>
 
