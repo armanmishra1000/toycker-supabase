@@ -30,6 +30,7 @@ export interface ProductVariant {
   sku?: string;
   barcode?: string;
   price: number;
+  original_price?: number;
   inventory_quantity: number;
   manage_inventory: boolean;
   allow_backorder: boolean;
@@ -43,6 +44,14 @@ export interface ProductVariant {
   };
   prices?: Price[];
   product?: Product;
+}
+
+export interface VariantFormData {
+  id?: string;
+  title: string;
+  sku: string;
+  price: number;
+  inventory_quantity: number;
 }
 
 export interface ProductImage {

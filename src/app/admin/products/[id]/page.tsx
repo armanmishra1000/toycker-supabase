@@ -1,17 +1,19 @@
-import { getAdminCollections, updateProduct } from "@/lib/data/admin"
+import { getAdminCollections, updateProduct, getProductVariants } from "@/lib/data/admin"
 import Link from "next/link"
 import { retrieveProduct } from "@lib/data/products"
 import { notFound } from "next/navigation"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminBadge from "@modules/admin/components/admin-badge"
+import ProductVariantEditor from "@modules/admin/components/product-variant-editor"
 import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 
 export default async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [product, collections] = await Promise.all([
+  const [product, collections, variants] = await Promise.all([
     retrieveProduct(id),
-    getAdminCollections()
+    getAdminCollections(),
+    getProductVariants(id)
   ])
 
   if (!product) notFound()
@@ -110,6 +112,8 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
               ) : null}
             </div>
           </AdminCard>
+
+          <ProductVariantEditor productId={product.id} initialVariants={variants} />
         </div>
 
         <div className="space-y-6">

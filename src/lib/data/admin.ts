@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType } from "@/lib/supabase/types"
+import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData } from "@/lib/supabase/types"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -142,6 +142,55 @@ export async function deleteProduct(id: string) {
   const supabase = await createClient()
   await supabase.from("products").delete().eq("id", id)
   revalidatePath("/admin/products")
+}
+
+// --- Product Variants ---
+export async function getProductVariants(productId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", productId)
+    .order("created_at")
+
+  if (error) throw error
+  return data as ProductVariant[]
+}
+
+export async function saveProductVariants(
+  productId: string,
+  variants: VariantFormData[]
+) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Prepare variants for upsert
+  const variantsToSave = variants.map(v => ({
+    id: v.id || undefined, // Let DB generate if new
+    product_id: productId,
+    title: v.title,
+    sku: v.sku || null,
+    price: v.price,
+    inventory_quantity: v.inventory_quantity,
+    manage_inventory: true,
+    allow_backorder: false,
+  }))
+
+  // Upsert all variants
+  const { error } = await supabase
+    .from("product_variants")
+    .upsert(variantsToSave, { onConflict: "id" })
+
+  if (error) throw new Error(error.message)
+  revalidatePath(`/admin/products/${productId}`)
+  revalidatePath("/admin/products")
+}
+
+export async function deleteVariant(variantId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  await supabase.from("product_variants").delete().eq("id", variantId)
 }
 
 // --- Collections ---
