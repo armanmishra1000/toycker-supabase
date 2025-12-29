@@ -13,6 +13,7 @@ import ProductActionsWrapper from "./product-actions-wrapper"
 import CustomerReviews from "@modules/products/components/customer-reviews"
 import OrderInformation from "@modules/products/components/order-information"
 import RecentlyViewedTracker from "@modules/products/components/recently-viewed-tracker"
+import { getProductReviews } from "@/lib/actions/reviews"
 
 type ProductTemplateProps = {
   product: Product
@@ -22,16 +23,18 @@ type ProductTemplateProps = {
   clubDiscountPercentage?: number
 }
 
-const ProductTemplate: React.FC<ProductTemplateProps> = ({
+const ProductTemplate = async ({
   product,
   region,
   countryCode,
   images,
   clubDiscountPercentage,
-}) => {
+}: ProductTemplateProps) => {
   if (!product || !product.id) {
     return notFound()
   }
+
+  const reviews = await getProductReviews(product.id)
 
   return (
     <>
@@ -67,7 +70,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         </div >
         <div className="mt-8 space-y-5">
           <ProductTabs product={product} />
-          <CustomerReviews />
+          <CustomerReviews productId={product.id} reviews={reviews} />
         </div>
       </div >
       <div

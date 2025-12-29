@@ -15,6 +15,7 @@ import {
   CreditCardIcon,
   TruckIcon,
   SparklesIcon,
+  StarIcon,
   ReceiptPercentIcon
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
@@ -39,6 +40,7 @@ const NAV_ITEMS = [
   { label: "Payments", href: "/admin/payments", icon: CreditCardIcon },
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
   { label: "Club", href: "/admin/club", icon: SparklesIcon },
+  { label: "Reviews", href: "/admin/reviews", icon: StarIcon },
   { label: "Discounts", href: "/admin/discounts", icon: ReceiptPercentIcon },
 ]
 
