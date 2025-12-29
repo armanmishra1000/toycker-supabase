@@ -15,6 +15,8 @@ import OrderInformation from "@modules/products/components/order-information"
 import RecentlyViewedTracker from "@modules/products/components/recently-viewed-tracker"
 import { getProductReviews } from "@/lib/actions/reviews"
 
+import { retrieveCustomer } from "@lib/data/customer"
+
 type ProductTemplateProps = {
   product: Product
   region: Region
@@ -34,6 +36,7 @@ const ProductTemplate = async ({
     return notFound()
   }
 
+  const customer = await retrieveCustomer()
   const reviews = await getProductReviews(product.id)
 
   return (
@@ -70,7 +73,7 @@ const ProductTemplate = async ({
         </div >
         <div className="mt-8 space-y-5">
           <ProductTabs product={product} />
-          <CustomerReviews productId={product.id} reviews={reviews} />
+          <CustomerReviews productId={product.id} reviews={reviews} customer={customer} />
         </div>
       </div >
       <div

@@ -6,6 +6,13 @@ export const metadata: Metadata = {
   description: "Sign in to your account.",
 }
 
-export default function LoginPage() {
-  return <LoginTemplate />
+type Props = {
+  searchParams: Promise<{
+    returnUrl?: string
+  }>
+}
+
+export default async function Login(props: Props) {
+  const searchParams = await props.searchParams
+  return <LoginTemplate returnUrl={searchParams.returnUrl} />
 }

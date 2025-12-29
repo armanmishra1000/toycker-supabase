@@ -67,6 +67,8 @@ export async function login(_currentState: unknown, formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
+  const returnUrl = formData.get("returnUrl") as string
+
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -79,7 +81,7 @@ export async function login(_currentState: unknown, formData: FormData) {
   }
 
   revalidateTag("customers")
-  redirect("/account")
+  redirect(returnUrl || "/account")
 }
 
 export async function signout() {

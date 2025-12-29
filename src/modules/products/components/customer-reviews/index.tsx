@@ -7,13 +7,17 @@ import { Star, Image as ImageIcon, Video, Mic, Trash2 } from "lucide-react"
 import { getPresignedUploadUrl } from "@/lib/actions/storage"
 import { submitReview, type ReviewData, type ReviewWithMedia } from "@/lib/actions/reviews"
 import Image from "next/image"
+import { CustomerProfile } from "@/lib/supabase/types"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 const CustomerReviews = ({
   productId,
   reviews = [],
+  customer,
 }: {
   productId: string
   reviews?: ReviewWithMedia[]
+  customer: CustomerProfile | null
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [rating, setRating] = useState(0)
@@ -123,13 +127,22 @@ const CustomerReviews = ({
           <span className="ml-2 text-sm text-slate-500">({reviews.length} reviews)</span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="mt-5 inline-flex items-center justify-center rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-slate-500 hover:bg-slate-50"
-        >
-          Write A Review
-        </button>
+        {customer ? (
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="mt-5 inline-flex items-center justify-center rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-slate-500 hover:bg-slate-50"
+          >
+            Write A Review
+          </button>
+        ) : (
+          <LocalizedClientLink
+            href={`/login?returnUrl=${encodeURIComponent(`/products/${productId}`)}`}
+            className="mt-5 inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+          >
+            Login to Write a Review
+          </LocalizedClientLink>
+        )}
 
         <Modal isOpen={isModalOpen} close={() => setIsModalOpen(false)} size="large">
           <Modal.Title>Write a Review</Modal.Title>

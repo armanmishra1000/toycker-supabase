@@ -7,14 +7,16 @@ import { useActionState } from "react"
 
 type Props = {
   setCurrentView: (view: LOGIN_VIEW) => void
+  returnUrl?: string
 }
 
-const Login = ({ setCurrentView }: Props) => {
+const Login = ({ setCurrentView, returnUrl }: Props) => {
   const [message, formAction] = useActionState(login, null)
 
   return (
     <div className="w-full flex flex-col gap-y-6" data-testid="login-page">
       <form className="w-full flex flex-col" action={formAction}>
+        <input type="hidden" name="returnUrl" value={returnUrl || ""} />
         <div className="flex flex-col w-full gap-y-3">
           <Input
             label="Email"

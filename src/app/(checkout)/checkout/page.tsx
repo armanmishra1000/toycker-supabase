@@ -5,7 +5,7 @@ import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -19,6 +19,11 @@ export default async function Checkout() {
   }
 
   const customer = await retrieveCustomer()
+
+  // Require login for checkout
+  if (!customer) {
+    redirect(`/login?returnUrl=${encodeURIComponent('/checkout?step=address')}`)
+  }
 
   // Fetch payment methods at page level for right column
   const paymentMethods = await listCartPaymentMethods(cart.region_id ?? "")
