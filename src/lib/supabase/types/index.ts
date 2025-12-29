@@ -214,6 +214,10 @@ export interface Order {
   billing_address: Address | null;
   shipping_method: string | null;
   shipping_methods?: ShippingMethod[];
+  shipping_partner_id?: string | null;
+  shipping_partner?: ShippingPartner | null;
+  tracking_number?: string | null;
+  payment_method?: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -283,6 +287,7 @@ export interface CustomerProfile {
   is_club_member?: boolean;
   club_member_since?: string | null;
   total_club_savings?: number;
+  customer_display_id?: number | null;
 }
 
 export interface PaymentProvider {
@@ -318,4 +323,36 @@ export interface RewardTransaction {
   description: string;
   order_id: string | null;
   created_at: string;
+}
+
+export type OrderEventType =
+  | 'order_placed'
+  | 'payment_pending'
+  | 'payment_captured'
+  | 'payment_failed'
+  | 'processing'
+  | 'shipped'
+  | 'out_for_delivery'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded'
+  | 'note_added';
+
+export interface OrderTimeline {
+  id: string;
+  order_id: string;
+  event_type: OrderEventType;
+  title: string;
+  description: string | null;
+  actor: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface ShippingPartner {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }

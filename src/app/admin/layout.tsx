@@ -35,6 +35,7 @@ const NAV_ITEMS = [
   { label: "Collections", href: "/admin/collections", icon: RectangleStackIcon },
   { label: "Categories", href: "/admin/categories", icon: FolderIcon },
   { label: "Shipping", href: "/admin/shipping", icon: TruckIcon },
+  { label: "Shipping Partners", href: "/admin/shipping-partners", icon: TruckIcon },
   { label: "Payments", href: "/admin/payments", icon: CreditCardIcon },
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
   { label: "Club", href: "/admin/club", icon: SparklesIcon },

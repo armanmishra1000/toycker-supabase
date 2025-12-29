@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption } from "@/lib/supabase/types"
+import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType } from "@/lib/supabase/types"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -40,7 +40,7 @@ export async function getAdminStats() {
   const { count: productsCount } = await supabase.from("products").select("*", { count: "exact", head: true })
   const { count: ordersCount } = await supabase.from("orders").select("*", { count: "exact", head: true })
   const { count: customersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true })
-  
+
   const { data: orders } = await supabase.from("orders").select("total_amount")
   const totalRevenue = orders?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
 
@@ -87,7 +87,7 @@ export async function getAdminProducts(status?: string) {
   await ensureAdmin()
   const supabase = await createClient()
   let query = supabase.from("products").select("*").order("created_at", { ascending: false })
-  
+
   if (status && status !== 'all') {
     query = query.eq('status', status)
   }
@@ -152,7 +152,7 @@ export async function getAdminCollections() {
     .from("collections")
     .select("*, products(count)")
     .order("created_at", { ascending: false })
-  
+
   if (error) throw error
   return data as (Collection & { products: { count: number }[] })[]
 }
@@ -239,9 +239,9 @@ export async function getAdminCustomer(id: string) {
   const supabase = await createClient()
   const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", id).single()
   if (profileError) throw profileError
-  
+
   const { data: orders } = await supabase.from("orders").select("*").eq("user_id", id).order("created_at", { ascending: false })
-  
+
   return {
     ...profile,
     orders: orders || []
@@ -256,7 +256,7 @@ export async function getAdminPaymentMethods() {
     .from("payment_providers")
     .select("*")
     .order("created_at", { ascending: false })
-  
+
   if (error) throw error
   return data as PaymentProvider[]
 }
@@ -270,10 +270,10 @@ export async function createPaymentMethod(formData: FormData) {
     description: formData.get("description") as string || null,
     is_active: true,
   }
-  
+
   const { error } = await supabase.from("payment_providers").insert(method)
   if (error) throw new Error(error.message)
-  
+
   revalidatePath("/admin/payments")
   redirect("/admin/payments")
 }
@@ -293,7 +293,7 @@ export async function getAdminShippingOptions() {
     .from("shipping_options")
     .select("*")
     .order("created_at", { ascending: false })
-  
+
   if (error) throw error
   return data as ShippingOption[]
 }
@@ -306,10 +306,10 @@ export async function createShippingOption(formData: FormData) {
     amount: parseFloat(formData.get("amount") as string),
     is_active: true,
   }
-  
+
   const { error } = await supabase.from("shipping_options").insert(option)
   if (error) throw new Error(error.message)
-  
+
   revalidatePath("/admin/shipping")
   redirect("/admin/shipping")
 }
@@ -319,4 +319,151 @@ export async function deleteShippingOption(id: string) {
   const supabase = await createClient()
   await supabase.from("shipping_options").delete().eq("id", id)
   revalidatePath("/admin/shipping")
+}
+
+// --- Shipping Partners ---
+export async function getShippingPartners() {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("shipping_partners")
+    .select("*")
+    .order("name")
+
+  if (error) throw error
+  return data as ShippingPartner[]
+}
+
+export async function getActiveShippingPartners() {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("shipping_partners")
+    .select("*")
+    .eq("is_active", true)
+    .order("name")
+
+  if (error) throw error
+  return data as ShippingPartner[]
+}
+
+export async function createShippingPartner(formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const partner = {
+    name: formData.get("name") as string,
+    is_active: true,
+  }
+
+  const { error } = await supabase.from("shipping_partners").insert(partner)
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/admin/shipping-partners")
+  redirect("/admin/shipping-partners")
+}
+
+export async function deleteShippingPartner(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  await supabase.from("shipping_partners").delete().eq("id", id)
+  revalidatePath("/admin/shipping-partners")
+}
+
+// --- Order Timeline ---
+export async function getOrderTimeline(orderId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("order_timeline")
+    .select("*")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+  return data as OrderTimeline[]
+}
+
+export async function logOrderEvent(
+  orderId: string,
+  eventType: OrderEventType,
+  title: string,
+  description: string,
+  actor: string = "admin",
+  metadata: Record<string, unknown> = {}
+) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("order_timeline").insert({
+    order_id: orderId,
+    event_type: eventType,
+    title,
+    description,
+    actor,
+    metadata,
+  })
+
+  if (error) {
+    console.error("Error logging order event:", error)
+  }
+}
+
+// --- Order Fulfillment ---
+export async function fulfillOrder(orderId: string, formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const shippingPartnerId = formData.get("shipping_partner_id") as string
+  const trackingNumber = formData.get("tracking_number") as string | null
+
+  // Get shipping partner name for timeline
+  let partnerName = "Unknown"
+  if (shippingPartnerId) {
+    const { data: partner } = await supabase
+      .from("shipping_partners")
+      .select("name")
+      .eq("id", shippingPartnerId)
+      .single()
+    partnerName = partner?.name || "Unknown"
+  }
+
+  // Update order
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      fulfillment_status: "shipped",
+      shipping_partner_id: shippingPartnerId,
+      tracking_number: trackingNumber || null,
+    })
+    .eq("id", orderId)
+
+  if (error) throw new Error(error.message)
+
+  // Log timeline event
+  const description = trackingNumber
+    ? `Order shipped via ${partnerName}. Tracking: ${trackingNumber}`
+    : `Order shipped via ${partnerName}.`
+
+  await logOrderEvent(
+    orderId,
+    "shipped",
+    "Order Shipped",
+    description,
+    "admin",
+    { shipping_partner: partnerName, tracking_number: trackingNumber }
+  )
+
+  revalidatePath(`/admin/orders/${orderId}`)
+  revalidatePath("/admin/orders")
+}
+
+// --- Get Customer Display ID ---
+export async function getCustomerDisplayId(userId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("customer_display_id")
+    .eq("id", userId)
+    .single()
+
+  if (error || !data?.customer_display_id) return null
+  return data.customer_display_id
 }
