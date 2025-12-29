@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData } from "@/lib/supabase/types"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
@@ -286,15 +287,39 @@ export async function getAdminCustomers() {
 export async function getAdminCustomer(id: string) {
   await ensureAdmin()
   const supabase = await createClient()
+
+  // Club membership data is now synced to profiles table
   const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", id).single()
   if (profileError) throw profileError
 
   const { data: orders } = await supabase.from("orders").select("*").eq("user_id", id).order("created_at", { ascending: false })
+  const { data: addresses } = await supabase.from("addresses").select("*").eq("user_id", id)
+  const { data: wallet } = await supabase.from("reward_wallets").select("*").eq("user_id", id).maybeSingle()
 
   return {
     ...profile,
-    orders: orders || []
+    orders: orders || [],
+    addresses: addresses || [],
+    reward_wallet: wallet || null,
+    // Use fallback values if profile columns are null (though migration should handle this)
+    is_club_member: profile.is_club_member || false,
+    club_member_since: profile.club_member_since || null,
+    total_club_savings: profile.total_club_savings || 0
   }
+}
+
+export async function deleteCustomer(id: string) {
+  await ensureAdmin()
+  const supabase = await createAdminClient()
+
+  const { error } = await supabase.auth.admin.deleteUser(id)
+
+  if (error) {
+    throw error
+  }
+
+  revalidatePath("/admin/customers")
+  redirect("/admin/customers")
 }
 
 // --- Payment Methods ---
