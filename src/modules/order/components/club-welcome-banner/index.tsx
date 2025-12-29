@@ -15,10 +15,10 @@ export default function ClubWelcomeBanner({ discountPercentage }: { discountPerc
 
             <div className="flex-1 text-center md:text-left relative z-10">
                 <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-2">
-                    Congratulations! You've joined the Toycker Club 🎉
+                    Congratulations! You&apos;ve joined the Toycker Club 🎉
                 </h3>
                 <p className="text-slate-600 mb-4 md:mb-0">
-                    Your purchase has unlocked a lifetime membership. You'll now get a flat <strong>{discountPercentage}% discount</strong> on all future orders!
+                    Your purchase has unlocked a lifetime membership. You&apos;ll now get a flat <strong>{discountPercentage}% discount</strong> on all future orders!
                 </p>
             </div>
 

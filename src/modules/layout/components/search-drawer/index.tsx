@@ -63,16 +63,11 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
     results,
     suggestions,
     isEmpty,
-  } = {
-    query: "",
-    setQuery: (q: string) => { },
-    clear: () => { },
-    status: "idle",
-    error: null,
-    results: null,
-    suggestions: [],
-    isEmpty: true,
-  } as any
+  } = useSearchResults({
+    countryCode,
+    productLimit: 6,
+    taxonomyLimit: 5,
+  })
 
   const {
     isSupported: isVoiceSupported,
