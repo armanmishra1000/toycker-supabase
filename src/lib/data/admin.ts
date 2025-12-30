@@ -378,6 +378,9 @@ export async function createShippingOption(formData: FormData) {
   const option = {
     name: formData.get("name") as string,
     amount: parseFloat(formData.get("amount") as string),
+    min_order_free_shipping: formData.get("min_order_free_shipping")
+      ? parseFloat(formData.get("min_order_free_shipping") as string)
+      : null,
     is_active: true,
   }
 

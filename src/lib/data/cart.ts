@@ -36,6 +36,7 @@ interface CartShippingMethod {
   shipping_option_id: string
   name: string
   amount: number
+  min_order_free_shipping?: number | null
 }
 
 const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): CartItem[] => {
@@ -131,9 +132,19 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
   const club_savings = original_subtotal - item_subtotal
 
   const shippingMethods = cartData.shipping_methods as CartShippingMethod[] | null
-  const shipping_total = Array.isArray(shippingMethods) && shippingMethods.length > 0
-    ? Number(shippingMethods[0].amount || 0)
-    : 0
+  // Calculate shipping total dynamically based on threshold
+  let shipping_total = 0
+  if (Array.isArray(shippingMethods) && shippingMethods.length > 0) {
+    const method = shippingMethods[0]
+    const baseAmount = Number(method.amount || 0)
+    const threshold = method.min_order_free_shipping
+
+    if (threshold !== null && threshold !== undefined && item_subtotal >= threshold) {
+      shipping_total = 0
+    } else {
+      shipping_total = baseAmount
+    }
+  }
 
   // Get rewards to apply from cart metadata
   const cartMetadata = (cartData.metadata || {}) as Record<string, unknown>
@@ -382,7 +393,8 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
   const methodData = {
     shipping_option_id: shippingMethodId,
     name: option?.name || "Standard Shipping",
-    amount: option?.amount || 0
+    amount: option?.amount || 0,
+    min_order_free_shipping: option?.min_order_free_shipping ?? null
   }
 
   const { error } = await supabase
@@ -634,6 +646,7 @@ export async function listCartOptions(): Promise<{ shipping_options: ShippingOpt
       id: opt.id,
       name: opt.name,
       amount: opt.amount,
+      min_order_free_shipping: opt.min_order_free_shipping,
       price_type: "flat",
       prices: [{ amount: opt.amount, currency_code: "inr" }]
     }))

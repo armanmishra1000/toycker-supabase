@@ -275,6 +275,7 @@ export interface ShippingOption {
   };
   is_active?: boolean;
   insufficient_inventory?: boolean;
+  min_order_free_shipping?: number | null;
 }
 
 export interface PaymentSession {

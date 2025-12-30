@@ -39,6 +39,7 @@ export default async function AdminShipping() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Free Above</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
               </tr>
@@ -58,6 +59,11 @@ export default async function AdminShipping() {
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
                     {convertToLocale({ amount: option.amount, currency_code: "inr" })}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    {option.min_order_free_shipping
+                      ? convertToLocale({ amount: option.min_order_free_shipping, currency_code: "inr" })
+                      : <span className="text-gray-400">—</span>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <AdminBadge variant={option.is_active ? "success" : "neutral"}>
