@@ -41,6 +41,7 @@ const NAV_ITEMS = [
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
   { label: "Club", href: "/admin/club", icon: SparklesIcon },
   { label: "Reviews", href: "/admin/reviews", icon: StarIcon },
+  { label: "Team", href: "/admin/team", icon: UsersIcon },
   { label: "Discounts", href: "/admin/discounts", icon: ReceiptPercentIcon },
 ]
 

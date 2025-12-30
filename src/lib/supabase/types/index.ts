@@ -366,3 +366,21 @@ export interface ShippingPartner {
   created_at: string;
   updated_at: string;
 }
+
+export interface AdminRole {
+  id: string;
+  name: string;
+  permissions: string[];
+  is_system: boolean;
+  created_at: string;
+}
+
+export interface StaffMember {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  admin_role_id: string | null;
+  admin_role?: AdminRole[] | AdminRole | null;
+  created_at: string;
+}

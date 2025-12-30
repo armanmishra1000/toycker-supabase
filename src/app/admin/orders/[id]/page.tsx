@@ -135,7 +135,11 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900">{paymentMethod}</p>
-                  <p className="text-xs text-gray-500">{order.payment_status === 'captured' || order.payment_status === 'paid' ? 'Paid' : order.payment_status}</p>
+                  <p className="text-xs text-gray-500">
+                    {paymentMethod === 'Cash on Delivery' || paymentMethod === 'Manual'
+                      ? (order.payment_status === 'paid' || order.payment_status === 'captured' ? 'COD - Collected' : 'COD - Pending')
+                      : (order.payment_status === 'paid' || order.payment_status === 'captured' ? 'Paid' : order.payment_status)}
+                  </p>
                 </div>
               </div>
               {order.payu_txn_id && (

@@ -29,8 +29,6 @@ export default async function AdminInventory() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[80px]">Image</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Unavailable</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Committed</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
               </tr>
             </thead>
@@ -61,8 +59,6 @@ export default async function AdminInventory() {
                   <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-mono">
                     {product.variants?.[0]?.sku || '---'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">0</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">0</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <input
                       type="number"
