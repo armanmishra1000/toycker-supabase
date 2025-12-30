@@ -46,7 +46,7 @@ const LineItemUnitPrice = ({
         </>
       )}
       <span
-        className={cn("text-base", {
+        className={cn("text-sm sm:text-base", {
           "text-blue-600": hasReducedPrice,
         })}
         data-testid="product-unit-price"

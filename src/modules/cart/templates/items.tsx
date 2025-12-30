@@ -17,16 +17,16 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
   return (
     <div>
       {/* Header with item count */}
-      <div className="pb-4 flex items-center justify-between border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-            <ShoppingBag className="w-5 h-5 text-slate-600" />
+      <div className="pb-3 sm:pb-4 flex items-center justify-between border-b border-slate-100">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+            <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
           </div>
           <div>
-            <Text as="h1" weight="bold" className="text-xl lg:text-2xl text-slate-900">
+            <Text as="h1" weight="bold" className="text-lg sm:text-xl lg:text-2xl text-slate-900">
               Your Cart
             </Text>
-            <p className="text-sm text-slate-500">
+            <p className="text-xs sm:text-sm text-slate-500">
               {itemCount} {itemCount === 1 ? "item" : "items"} in your cart
             </p>
           </div>
@@ -34,7 +34,8 @@ const ItemsTemplate = ({ cart }: ItemsTemplateProps) => {
       </div>
 
       {/* Table Header - Desktop Only */}
-      <div className="hidden lg:grid grid-cols-[1fr_100px_120px_100px] gap-4 py-3 mt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+      <div className="hidden lg:grid grid-cols-[auto_1fr_100px_120px_100px] gap-4 py-3 mt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+        <div></div>
         <div>Product</div>
         <div className="text-center">Quantity</div>
         <div className="text-right">Price</div>

@@ -212,8 +212,8 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
                     role="group"
                     aria-label={`Video ${index + 1} of ${showcaseItems.length}`}
                   >
-                    <article className="flex h-full flex-col rounded-xl overflow-hidden bg-black">
-                      <div className="relative overflow-hidden rounded-xl h-[400px]">
+                    <article className="flex h-full flex-col rounded-xl overflow-hidden">
+                      <div className="relative overflow-hidden rounded-xl">
                         {hasVideo ? (
                           <video
                             className="h-full w-full object-cover d-block"
@@ -238,7 +238,7 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
                         )}
                         <LocalizedClientLink
                           href={`/products/${productHandle}`}
-                          className="absolute bottom-0 left-0 right-0 flex items-center gap-3 bg-[#dbfca7] p-3 text-[#3a5017] z-10 transition-transform hover:-translate-y-1"
+                          className="flex items-center gap-3 bg-[#dbfca7] p-3 text-[#3a5017] z-10"
                         >
                           <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-white/60 shrink-0">
                             {productImage ? (

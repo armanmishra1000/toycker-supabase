@@ -34,7 +34,7 @@ const PopularToySet = async ({ regionId, countryCode, isCustomerLoggedIn, collec
       aria-labelledby="popular-toy-set-heading"
       data-testid="popular-toy-set"
     >
-      <div className="mx-auto max-w-screen-2xl px-4 py-16 md:py-20">
+      <div className="mx-auto max-w-screen-2xl px-4 pb-16 pt-10 md:pb-20 md:pt-10">
         <header className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#c5996f]">
             Explore

@@ -1,14 +1,16 @@
 import { listCartOptions } from "@lib/data/cart"
 import { Cart, CustomerProfile } from "@/lib/supabase/types"
 import Addresses from "@modules/checkout/components/addresses"
-import Shipping from "@modules/checkout/components/shipping"
+import Payment from "@modules/checkout/components/payment"
 
 export default async function CheckoutForm({
   cart,
   customer,
+  paymentMethods,
 }: {
   cart: Cart | null
   customer: CustomerProfile | null
+  paymentMethods: { id: string; name: string }[]
 }) {
   if (!cart) {
     return null
@@ -18,9 +20,9 @@ export default async function CheckoutForm({
   const shippingOptions = await listCartOptions()
 
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="w-full flex flex-col gap-4 sm:gap-6">
       {/* Shipping Address Section */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
         <Addresses
           cart={cart}
           customer={customer}
@@ -28,11 +30,11 @@ export default async function CheckoutForm({
         />
       </div>
 
-      {/* Delivery Method Section */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <Shipping
+      {/* Payment Method Section */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
+        <Payment
           cart={cart}
-          availableShippingMethods={shippingOptions?.shipping_options ?? null}
+          availablePaymentMethods={paymentMethods}
         />
       </div>
     </div>

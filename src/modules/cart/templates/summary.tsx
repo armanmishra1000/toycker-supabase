@@ -8,7 +8,7 @@ import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Cart } from "@/lib/supabase/types"
 import { convertToLocale } from "@lib/util/money"
-import { Package, ArrowRight } from "lucide-react"
+import { Package, ArrowRight, ShoppingBag } from "lucide-react"
 
 type SummaryProps = {
   cart: Cart
@@ -40,27 +40,34 @@ const Summary = ({ cart }: SummaryProps) => {
   const isClubMember = cart.is_club_member || false
 
   return (
-    <div className="flex flex-col gap-y-5">
+    <div className="flex flex-col gap-4 sm:gap-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <Text as="h2" weight="bold" className="text-xl lg:text-2xl text-slate-900">
-          Order Summary
-        </Text>
-        <span className="text-sm text-slate-500">
-          {itemCount} {itemCount === 1 ? "item" : "items"}
-        </span>
+      <div className="flex items-start justify-between gap-3 pb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+            <ShoppingBag className="w-5 h-5 text-slate-600" />
+          </div>
+          <div>
+            <Text as="h2" weight="bold" className="text-lg sm:text-xl text-slate-900">
+              Order Summary
+            </Text>
+            <span className="text-xs sm:text-sm text-slate-500">
+              {itemCount} {itemCount === 1 ? "item" : "items"}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Free Shipping Progress */}
-      <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 sm:p-5 border border-blue-100 shadow-sm">
         <div className="flex items-center gap-3 mb-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${hasFreeShipping ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
-            <Package className="w-4 h-4" />
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${hasFreeShipping ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+            <Package className="w-5 h-5" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {hasFreeShipping ? (
-              <p className="text-sm font-semibold text-green-700">
-                🎉 You've unlocked FREE shipping!
+              <p className="text-sm font-bold text-green-700">
+                🎉 You&apos;ve unlocked FREE shipping!
               </p>
             ) : (
               <p className="text-sm text-slate-700">
@@ -69,9 +76,9 @@ const Summary = ({ cart }: SummaryProps) => {
             )}
           </div>
         </div>
-        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+        <div className="h-2 bg-slate-200/80 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${hasFreeShipping ? 'bg-green-500' : 'bg-blue-500'}`}
+            className={`h-full rounded-full transition-all duration-500 ease-out ${hasFreeShipping ? 'bg-gradient-to-r from-green-400 to-green-500' : 'bg-gradient-to-r from-blue-400 to-blue-500'}`}
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -79,16 +86,16 @@ const Summary = ({ cart }: SummaryProps) => {
 
       {/* Rewards Available Banner (Club Members) */}
       {isClubMember && availableRewards > 0 && (
-        <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🎁</span>
-              <span className="text-sm font-medium text-purple-800">
-                You have <strong>{availableRewards}</strong> reward points
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-4 sm:p-5 border border-purple-100 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-xl">🎁</span>
+              <span className="text-sm font-medium text-purple-900 truncate">
+                <strong>{availableRewards}</strong> reward points available
               </span>
             </div>
-            <span className="text-xs text-purple-600">
-              Use at checkout
+            <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2.5 py-1 rounded-full shrink-0">
+              Apply at checkout
             </span>
           </div>
         </div>
@@ -97,7 +104,7 @@ const Summary = ({ cart }: SummaryProps) => {
       {/* Discount Code */}
       <DiscountCode cart={cart} />
 
-      <Divider />
+      <Divider className="my-1" />
 
       {/* Totals */}
       <CartTotals totals={cart} cart={cart} />
@@ -106,12 +113,12 @@ const Summary = ({ cart }: SummaryProps) => {
       <LocalizedClientLink
         href={"/checkout?step=" + step}
         data-testid="checkout-button"
-        className="block"
+        className="block mt-2"
       >
-        <Button className="w-full h-14 text-base font-semibold rounded-xl bg-slate-900 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 hover:shadow-xl hover:shadow-slate-900/30 group">
-          <span className="flex items-center justify-center gap-2">
+        <Button className="w-full h-12 sm:h-13 text-sm sm:text-base font-semibold rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-lg shadow-slate-900/20 hover:shadow-xl hover:shadow-slate-900/30 hover:-translate-y-0.5 active:translate-y-0 group">
+          <span className="flex items-center justify-center gap-2.5">
             Proceed to Checkout
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4.5 h-4.5 sm:w-5 sm:h-5 group-hover:translate-x-0.5 transition-transform" />
           </span>
         </Button>
       </LocalizedClientLink>
@@ -119,7 +126,7 @@ const Summary = ({ cart }: SummaryProps) => {
       {/* Continue Shopping Link */}
       <LocalizedClientLink
         href="/store"
-        className="text-center text-sm text-slate-500 hover:text-slate-700 underline underline-offset-4"
+        className="text-center text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors"
       >
         Continue Shopping
       </LocalizedClientLink>

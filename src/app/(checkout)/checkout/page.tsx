@@ -4,6 +4,7 @@ import { retrieveCustomer } from "@lib/data/customer"
 import PaymentWrapper from "@modules/checkout/components/payment-wrapper"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
+import Breadcrumbs from "@modules/common/components/breadcrumbs"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
@@ -20,24 +21,37 @@ export default async function Checkout() {
 
   const customer = await retrieveCustomer()
 
-  // Fetch payment methods at page level for right column
+  // Fetch payment methods at page level
   const paymentMethods = await listCartPaymentMethods(cart.region_id ?? "")
 
   return (
-    <div className="content-container py-8">
-      <div className="grid grid-cols-1 small:grid-cols-[1fr_380px] gap-6">
-        {/* Left Column: Address + Shipping */}
+    <div className="content-container px-4 py-6 sm:px-6 sm:py-8">
+      {/* Heading */}
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4 sm:mb-6">Checkout</h1>
+
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        items={[
+          { label: "Cart", href: "/cart" },
+          { label: "Checkout" },
+        ]}
+        className="mb-6 sm:mb-8"
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_420px] gap-4 sm:gap-6">
+        {/* Left Column: Shipping Address + Payment Method */}
         <div className="w-full">
-          <CheckoutForm cart={cart} customer={customer} />
+          <CheckoutForm
+            cart={cart}
+            customer={customer}
+            paymentMethods={paymentMethods ?? []}
+          />
         </div>
 
-        {/* Right Column: Cart Summary + Payment + Place Order */}
+        {/* Right Column: Order Summary + Complete Order */}
         <div className="w-full">
           <PaymentWrapper cart={cart}>
-            <CheckoutSummary
-              cart={cart}
-              paymentMethods={paymentMethods ?? []}
-            />
+            <CheckoutSummary cart={cart} />
           </PaymentWrapper>
         </div>
       </div>

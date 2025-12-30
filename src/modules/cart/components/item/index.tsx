@@ -56,24 +56,24 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
       ? 10
       : maxQtyFromInventory
 
-  const thumbnailWrapperClass = cn("flex", {
-    "w-16": type === "preview",
-    "small:w-24 w-12": type === "full",
+  const thumbnailWrapperClass = cn("flex flex-shrink-0 rounded-xl overflow-hidden shadow-sm", {
+    "w-14 h-14 sm:w-16 sm:h-16": type === "preview",
+    "w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24": type === "full",
   })
 
   const renderThumbnail = () => {
     if (giftWrapLine) {
       return (
-        <div
-          className={`${thumbnailWrapperClass} items-center justify-center rounded-xl bg-slate-50 border border-slate-200  p-4`}
-        >
-          <Image
-            src="/assets/images/gift-wrap.png"
-            alt="Gift wrap"
-            width={200}
-            height={200}
-            className="h-16 w-16 object-contain"
-          />
+        <div className={thumbnailWrapperClass}>
+          <div className="w-full h-full items-center justify-center bg-slate-50 border border-slate-200">
+            <Image
+              src="/assets/images/gift-wrap.png"
+              alt="Gift wrap"
+              width={200}
+              height={200}
+              className="w-full h-full object-contain p-2"
+            />
+          </div>
         </div>
       )
     }
@@ -101,10 +101,14 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   }
 
   return (
-    <div className="grid grid-cols-[auto_1fr_auto] gap-4 w-full py-4 border-b border-gray-100 last:border-0" data-testid="product-row">
-      <div className="!pl-0 w-24">{renderThumbnail()}</div>
+    <div className="grid grid-cols-[auto_1fr_auto] md:grid-cols-[auto_1fr_auto] lg:grid-cols-[auto_1fr_100px_120px_100px] gap-x-4 gap-y-3 w-full py-5 sm:py-6 border-b border-slate-100 last:border-0" data-testid="product-row">
+      {/* Thumbnail Column */}
+      <div className="!pl-0 !pr-0">
+        {renderThumbnail()}
+      </div>
 
-      <div className="text-left flex flex-col justify-center">
+      {/* Product Info Column */}
+      <div className="flex flex-col justify-center min-w-0 pr-2">
         {canNavigate ? (
           <LocalizedClientLink
             href={`/products/${item.product_handle}`}
@@ -112,7 +116,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           >
             <Text
               weight="semibold"
-              className="text-sm text-gray-900 hover:underline"
+              className="text-sm sm:text-base text-slate-900 hover:text-slate-700 hover:underline break-words leading-tight transition-colors"
               data-testid="product-title"
             >
               {displayTitle}
@@ -121,73 +125,91 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         ) : (
           <Text
             weight="semibold"
-            className="text-sm text-gray-900"
+            className="text-sm sm:text-base text-slate-900 break-words leading-tight"
             data-testid="product-title"
           >
             {displayTitle}
           </Text>
         )}
+
         {!giftWrapLine && (
-          <LineItemOptions variant={item.variant} data-testid="product-variant" />
+          <div className="mt-1">
+            <LineItemOptions variant={item.variant} data-testid="product-variant" />
+          </div>
         )}
-      </div>
 
-      <div className="flex items-center gap-4">
+        {/* Desktop: Remove button below title */}
         {type === "full" && (
-          <div className="flex gap-2 items-center w-28">
+          <div className="hidden lg:block mt-3">
             <DeleteButton id={item.id} data-testid="product-delete-button" />
-            <CartItemSelect
-              value={item.quantity}
-              onChange={(value: any) => changeQuantity(parseInt(value.target.value))}
-              className="w-14 h-10 p-2 text-sm border border-gray-200 rounded"
-              data-testid="product-select-button"
-            >
-              {/* TODO: Update this with the v2 way of managing inventory */}
-              {Array.from({ length: Math.min(maxQuantity, 10) }, (_, i) => (
-                <option value={i + 1} key={i + 1}>
-                  {i + 1}
-                </option>
-              ))}
-            </CartItemSelect>
-            {updating && <Spinner />}
           </div>
         )}
 
+        {/* Mobile-only: Quantity and Remove buttons below title */}
         {type === "full" && (
-          <div className="hidden small:block min-w-[80px]">
-            <LineItemUnitPrice
-              item={item}
-              style="tight"
-              currencyCode={currencyCode}
-            />
+          <div className="flex md:hidden items-center gap-2 mt-3">
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-xs text-slate-500">Qty:</span>
+              <CartItemSelect
+                value={item.quantity}
+                onChange={(value: any) => changeQuantity(parseInt(value.target.value))}
+                className="w-14 h-8 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-200"
+                data-testid="product-select-button"
+              >
+                {Array.from({ length: Math.min(maxQuantity, 10) }, (_, i) => (
+                  <option value={i + 1} key={i + 1}>
+                    {i + 1}
+                  </option>
+                ))}
+              </CartItemSelect>
+              {updating && <Spinner />}
+            </div>
+            <div className="flex-shrink-0 ml-auto">
+              <DeleteButton id={item.id} data-testid="product-delete-button" />
+            </div>
           </div>
         )}
-
-        <div className="min-w-[80px] text-right flex flex-col items-end justify-center">
-          <span
-            className={cn({
-              "flex flex-col items-end h-full justify-center": type === "preview",
-            })}
-          >
-            {type === "preview" && (
-              <span className="flex gap-x-1 ">
-                <Text className="text-gray-500 text-xs">{item.quantity}x </Text>
-                <LineItemUnitPrice
-                  item={item}
-                  style="tight"
-                  currencyCode={currencyCode}
-                />
-              </span>
-            )}
-            <LineItemPrice
-              item={item}
-              style="tight"
-              currencyCode={currencyCode}
-            />
-          </span>
-        </div>
       </div>
-      {error && <div className="col-span-3"><ErrorMessage error={error} data-testid="product-error-message" /></div>}
+
+      {/* Quantity Column - Desktop only */}
+      {type === "full" && (
+        <div className="hidden lg:flex items-center justify-center">
+          <CartItemSelect
+            value={item.quantity}
+            onChange={(value: any) => changeQuantity(parseInt(value.target.value))}
+            className="w-18 h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-200"
+            data-testid="product-select-button"
+          >
+            {Array.from({ length: Math.min(maxQuantity, 10) }, (_, i) => (
+              <option value={i + 1} key={i + 1}>
+                {i + 1}
+              </option>
+            ))}
+          </CartItemSelect>
+        </div>
+      )}
+
+      {/* Unit Price Column - Desktop only */}
+      {type === "full" && (
+        <div className="hidden lg:flex items-center justify-end">
+          <LineItemUnitPrice
+            item={item}
+            style="tight"
+            currencyCode={currencyCode}
+          />
+        </div>
+      )}
+
+      {/* Total Price Column - All views */}
+      <div className="flex items-center justify-end min-w-[90px]">
+        <LineItemPrice
+          item={item}
+          style="tight"
+          currencyCode={currencyCode}
+        />
+      </div>
+
+      {error && <div className="col-span-full lg:col-span-5 mt-2"><ErrorMessage error={error} data-testid="product-error-message" /></div>}
     </div>
   )
 }

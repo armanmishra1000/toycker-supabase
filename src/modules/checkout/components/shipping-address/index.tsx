@@ -107,8 +107,8 @@ const ShippingAddress = ({
   return (
     <>
       {customer && (addressesInRegion?.length || 0) > 0 && (
-        <div className="mb-6 flex flex-col gap-y-4 p-5 border border-gray-200 rounded-lg">
-          <p className="text-sm">
+        <div className="mb-4 sm:mb-6 flex flex-col gap-y-3 sm:gap-y-4 p-3 sm:p-5 border border-gray-200 rounded-lg">
+          <p className="text-xs sm:text-sm">
             {`Hi ${customer.first_name}, do you want to use one of your saved addresses?`}
           </p>
           <AddressSelect
@@ -118,7 +118,7 @@ const ShippingAddress = ({
           />
         </div>
       )}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <Input
           label="First name"
           name="shipping_address.first_name"
@@ -190,7 +190,7 @@ const ShippingAddress = ({
           data-testid="shipping-province-input"
         />
       </div>
-      <div className="my-8">
+      <div className="my-6 sm:my-8">
         <Checkbox
           label="Billing address same as shipping address"
           name="same_as_billing"
@@ -199,7 +199,7 @@ const ShippingAddress = ({
           data-testid="billing-address-checkbox"
         />
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
         <Input
           label="Email"
           name="email"
