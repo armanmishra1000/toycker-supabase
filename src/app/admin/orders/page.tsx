@@ -6,7 +6,17 @@ import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import Link from "next/link"
 
 // Helper to format payment status for display
-function getPaymentBadge(paymentStatus: string) {
+function getPaymentBadge(paymentStatus: string, paymentMethod?: string | null) {
+  // COD orders should show "COD" status, not "Paid"
+  const isCOD = paymentMethod === 'manual' || paymentMethod === 'cod' || paymentMethod === 'Cash on Delivery';
+
+  if (isCOD) {
+    if (paymentStatus === 'captured' || paymentStatus === 'paid') {
+      return { variant: "success" as const, label: "COD Collected" }
+    }
+    return { variant: "warning" as const, label: "COD Pending" }
+  }
+
   switch (paymentStatus) {
     case "captured":
     case "paid":
@@ -56,14 +66,20 @@ export default async function AdminOrders() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fulfillment</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {orders.length > 0 ? orders.map((order) => {
-                const paymentBadge = getPaymentBadge(order.payment_status)
+                // Determine actual payment method (same logic as order detail page)
+                const actualPaymentMethod = order.payment_method || (order.payu_txn_id ? 'payu' : 'manual')
+                const isCOD = actualPaymentMethod === 'manual' || actualPaymentMethod === 'cod' || actualPaymentMethod === 'Cash on Delivery'
+
+                const paymentBadge = getPaymentBadge(order.payment_status, actualPaymentMethod)
                 const fulfillmentBadge = getFulfillmentBadge(order.fulfillment_status)
+                const paymentMethodDisplay = isCOD ? 'COD' : (order.payu_txn_id ? 'PayU' : order.payment_method || '—')
 
                 return (
                   <tr key={order.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
@@ -82,6 +98,9 @@ export default async function AdminOrders() {
                       <AdminBadge variant={paymentBadge.variant}>
                         {paymentBadge.label}
                       </AdminBadge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-600 font-medium">{paymentMethodDisplay}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <AdminBadge variant={fulfillmentBadge.variant}>

@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData } from "@/lib/supabase/types"
+import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData, AdminRole, StaffMember } from "@/lib/supabase/types"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -378,6 +378,9 @@ export async function createShippingOption(formData: FormData) {
   const option = {
     name: formData.get("name") as string,
     amount: parseFloat(formData.get("amount") as string),
+    min_order_free_shipping: formData.get("min_order_free_shipping")
+      ? parseFloat(formData.get("min_order_free_shipping") as string)
+      : null,
     is_active: true,
   }
 
@@ -540,4 +543,130 @@ export async function getCustomerDisplayId(userId: string) {
 
   if (error || !data?.customer_display_id) return null
   return data.customer_display_id
+}
+
+// --- Admin Roles ---
+export async function getAdminRoles() {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("admin_roles")
+    .select("*")
+    .order("created_at")
+
+  if (error) throw error
+  return data as AdminRole[]
+}
+
+export async function createRole(formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const name = formData.get("name") as string
+  const permissionsStr = formData.get("permissions") as string
+  const permissions = permissionsStr ? JSON.parse(permissionsStr) as string[] : []
+
+  const { error } = await supabase.from("admin_roles").insert({
+    name,
+    permissions,
+    is_system: false,
+  })
+
+  if (error) throw new Error(error.message)
+  revalidatePath("/admin/team/roles")
+  redirect("/admin/team/roles")
+}
+
+export async function deleteRole(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Check if role is system role
+  const { data: role } = await supabase
+    .from("admin_roles")
+    .select("is_system")
+    .eq("id", id)
+    .single()
+
+  if (role?.is_system) {
+    throw new Error("Cannot delete system roles")
+  }
+
+  await supabase.from("admin_roles").delete().eq("id", id)
+  revalidatePath("/admin/team/roles")
+}
+
+// --- Staff Management ---
+export async function getStaffMembers() {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(`
+      id,
+      email,
+      first_name,
+      last_name,
+      admin_role_id,
+      created_at,
+      admin_role:admin_roles(*)
+    `)
+    .not("admin_role_id", "is", null)
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+  return data as StaffMember[]
+}
+
+export async function inviteStaffMember(email: string, roleId: string) {
+  await ensureAdmin()
+  const supabaseAdmin = await createAdminClient()
+
+  // Invite user via Supabase Auth Admin
+  const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/admin`,
+    data: {
+      admin_role_id: roleId,
+    }
+  })
+
+  if (inviteError) throw new Error(inviteError.message)
+
+  // Update the profile with role
+  if (inviteData?.user) {
+    await supabaseAdmin
+      .from("profiles")
+      .update({ admin_role_id: roleId })
+      .eq("id", inviteData.user.id)
+  }
+
+  revalidatePath("/admin/team")
+  return { success: true }
+}
+
+export async function updateStaffRole(userId: string, roleId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ admin_role_id: roleId })
+    .eq("id", userId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath("/admin/team")
+}
+
+export async function removeStaffAccess(userId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ admin_role_id: null })
+    .eq("id", userId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath("/admin/team")
 }

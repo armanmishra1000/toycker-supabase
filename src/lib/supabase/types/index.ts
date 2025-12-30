@@ -275,6 +275,7 @@ export interface ShippingOption {
   };
   is_active?: boolean;
   insufficient_inventory?: boolean;
+  min_order_free_shipping?: number | null;
 }
 
 export interface PaymentSession {
@@ -364,4 +365,22 @@ export interface ShippingPartner {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface AdminRole {
+  id: string;
+  name: string;
+  permissions: string[];
+  is_system: boolean;
+  created_at: string;
+}
+
+export interface StaffMember {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  admin_role_id: string | null;
+  admin_role?: AdminRole[] | AdminRole | null;
+  created_at: string;
 }

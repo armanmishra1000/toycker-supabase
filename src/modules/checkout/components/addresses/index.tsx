@@ -1,6 +1,6 @@
 "use client"
 
-import { setAddresses } from "@lib/data/cart"
+import { saveAddressesBackground } from "@lib/data/cart"
 import compareAddresses from "@lib/util/compare-addresses"
 import React, { useCallback, useRef } from "react"
 import { Text } from "@modules/common/components/text"
@@ -30,7 +30,7 @@ const Addresses = ({
   )
   const toggleSameAsBilling = () => setSameAsBilling(!sameAsBilling)
 
-  const [message, formAction] = useActionState(setAddresses, null)
+  const [message, formAction] = useActionState(saveAddressesBackground, null)
 
   // Check if address is already saved
   const addressSaved = Boolean(cart?.shipping_address?.address_1)
@@ -100,6 +100,7 @@ const Addresses = ({
         <input type="hidden" name="auto_save" value="true" />
 
         <ErrorMessage error={message?.message ?? null} data-testid="address-error-message" />
+
       </form>
     </div>
   )

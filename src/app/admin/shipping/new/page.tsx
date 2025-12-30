@@ -39,6 +39,15 @@ export default function NewShippingOption() {
                 <input name="amount" type="number" step="0.01" placeholder="0.00" required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
               </div>
             </div>
+
+            <div className="pt-2 border-t border-gray-100 mt-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Free Shipping Threshold (Optional)</label>
+              <p className="text-xs text-gray-500 mb-2">Orders above this amount will qualify for free shipping.</p>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                <input name="min_order_free_shipping" type="number" step="0.01" placeholder="Leave empty for always charge" className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0" />
+              </div>
+            </div>
           </div>
         </AdminCard>
       </form>

@@ -14,9 +14,13 @@ import { Cart } from "@/lib/supabase/types"
 const Payment = ({
   cart,
   availablePaymentMethods,
+  selectedPaymentMethod,
+  onPaymentMethodChange,
 }: {
   cart: Cart
   availablePaymentMethods: { id: string; name: string }[]
+  selectedPaymentMethod?: string
+  onPaymentMethodChange?: (method: string) => void
 }) => {
   const activeSession = cart.payment_collection?.payment_sessions?.find(
     (paymentSession) => paymentSession.status === "pending"
@@ -25,25 +29,35 @@ const Payment = ({
   const [error, setError] = useState<string | null>(null)
   const [cardBrand, setCardBrand] = useState<string | null>(null)
   const [cardComplete, setCardComplete] = useState(false)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
+
+  // Use prop if available, otherwise local state (though with prop control, local state is redundant for selection)
+  // We'll use local state to track what to display if parent doesn't maximize control, 
+  // but better to rely on parent prop for the "instant" feeling if checking across components.
+  // Actually, let's keep local state for RadioGroup but sync with parent.
+  const [internalSelection, setInternalSelection] = useState(
     activeSession?.provider_id ?? ""
   )
+
+  const currentSelection = selectedPaymentMethod ?? internalSelection
 
   const paidByGiftcard = (cart.gift_card_total ?? 0) > 0 && cart.total === 0
 
   // Auto-select first payment method if none selected
   useEffect(() => {
-    if (!selectedPaymentMethod && availablePaymentMethods?.length && !paidByGiftcard) {
+    if (!currentSelection && availablePaymentMethods?.length && !paidByGiftcard) {
       const firstMethod = availablePaymentMethods[0]
       if (firstMethod) {
         setPaymentMethod(firstMethod.id)
       }
     }
-  }, [availablePaymentMethods, selectedPaymentMethod, paidByGiftcard])
+  }, [availablePaymentMethods, currentSelection, paidByGiftcard])
 
   const setPaymentMethod = async (method: string) => {
     setError(null)
-    setSelectedPaymentMethod(method)
+    setInternalSelection(method)
+    if (onPaymentMethodChange) {
+      onPaymentMethodChange(method)
+    }
 
     try {
       // Save ALL payment methods to database (including COD)
@@ -83,7 +97,7 @@ const Payment = ({
       <div>
         {!paidByGiftcard && availablePaymentMethods?.length ? (
           <RadioGroup
-            value={selectedPaymentMethod}
+            value={currentSelection}
             onChange={(value: string) => setPaymentMethod(value)}
           >
             {availablePaymentMethods.map((paymentMethod) => (
@@ -91,7 +105,7 @@ const Payment = ({
                 {isStripeLike(paymentMethod.id) ? (
                   <StripeCardContainer
                     paymentProviderId={paymentMethod.id}
-                    selectedPaymentOptionId={selectedPaymentMethod}
+                    selectedPaymentOptionId={currentSelection}
                     paymentInfoMap={paymentInfoMap}
                     setCardBrand={setCardBrand}
                     setError={setError}
@@ -101,7 +115,7 @@ const Payment = ({
                   <PaymentContainer
                     paymentInfoMap={paymentInfoMap}
                     paymentProviderId={paymentMethod.id}
-                    selectedPaymentOptionId={selectedPaymentMethod}
+                    selectedPaymentOptionId={currentSelection}
                   />
                 )}
               </div>

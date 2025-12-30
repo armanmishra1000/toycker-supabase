@@ -78,7 +78,7 @@ export default async function ClubPage() {
                                 <div className="flex-1">
                                     <h3 className="text-2xl font-bold text-slate-900 mb-2">You are a Club Member!</h3>
                                     <p className="text-slate-600 mb-1">
-                                        You're enjoying <strong>{discountPercentage}% off</strong> on all products.
+                                        You&apos;re enjoying <strong>{discountPercentage}% off</strong> on all products.
                                     </p>
                                     {(customer.total_club_savings || 0) > 0 && (
                                         <p className="text-emerald-700 font-medium">
@@ -119,7 +119,7 @@ export default async function ClubPage() {
             <div className="py-20 bg-white">
                 <div className="content-container">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Why you'll love it</h2>
+                        <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">Why you&apos;ll love it</h2>
                         <p className="text-slate-500 text-lg">More than just a discount.</p>
                     </div>
 

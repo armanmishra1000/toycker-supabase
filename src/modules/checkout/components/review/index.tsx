@@ -57,7 +57,6 @@ const Review = ({ cart }: { cart: CartWithGiftCards }) => {
         </div>
       )}
 
-      {/* Payment Button */}
       <PaymentButton cart={cart} data-testid="submit-order-button" />
     </div>
   )

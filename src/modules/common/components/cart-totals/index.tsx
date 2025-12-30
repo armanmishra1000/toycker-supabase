@@ -1,7 +1,7 @@
 "use client"
 
 import { convertToLocale } from "@lib/util/money"
-import { Cart } from "@/lib/supabase/types"
+import { Cart, Order } from "@/lib/supabase/types"
 import React from "react"
 import { useShippingPrice } from "@modules/common/context/shipping-price-context"
 
@@ -16,26 +16,33 @@ type CartTotalsProps = {
     discount_subtotal?: number | null
   }
   cart?: Cart
+  order?: Order
 }
 
 const CartTotals: React.FC<CartTotalsProps> = ({
   totals,
-  cart
+  cart,
+  order,
 }) => {
   const {
     currency_code,
     total,
     tax_total,
-    item_subtotal,
-    shipping_subtotal,
-    discount_subtotal,
   } = totals
   const normalizedCurrency = currency_code?.trim() || "INR"
   const { selectedShippingPrice } = useShippingPrice()
 
-  // Calculate shipping subtotal from various sources
+  // Handle both Cart and Order types for subtotal
+  const itemSubtotal = totals.item_subtotal ?? (order?.subtotal ?? null) ?? cart?.item_subtotal ?? cart?.subtotal ?? 0
+
+  // Handle shipping from multiple sources
   const getDisplayShippingSubtotal = (): number => {
-    // First priority: If cart has shipping methods, try to get the total from the last shipping method
+    // First priority: Order's shipping_total
+    if (order?.shipping_total !== undefined) {
+      return order.shipping_total
+    }
+
+    // Second priority: If cart has shipping methods, try to get the total from the last shipping method
     if (cart?.shipping_methods && cart.shipping_methods.length > 0) {
       const lastShippingMethod = cart.shipping_methods[cart.shipping_methods.length - 1]
 
@@ -50,23 +57,26 @@ const CartTotals: React.FC<CartTotalsProps> = ({
       }
     }
 
-    // Second priority: If shipping_subtotal is already set and non-zero, use it
-    if (shipping_subtotal && shipping_subtotal > 0) {
-      return shipping_subtotal
+    // Third priority: shipping_subtotal from totals
+    if (totals.shipping_subtotal && totals.shipping_subtotal > 0) {
+      return totals.shipping_subtotal
     }
 
-    // Third priority: Use the selected shipping price from context (for newly selected methods)
+    // Fourth priority: Use the selected shipping price from context (for newly selected methods)
     if (selectedShippingPrice && selectedShippingPrice > 0) {
       return selectedShippingPrice
     }
 
     // Default to the provided shipping_subtotal (might be 0)
-    return shipping_subtotal ?? 0
+    return totals.shipping_subtotal ?? 0
   }
 
   const displayShippingSubtotal = getDisplayShippingSubtotal()
 
-  // Get club savings from cart
+  // Handle discount from multiple sources
+  const discountSubtotal = totals.discount_subtotal ?? order?.discount_total ?? cart?.discount_subtotal ?? 0
+
+  // Get club savings from cart or order
   const club_savings = cart?.club_savings ?? 0
   const is_club_member = cart?.is_club_member ?? false
   const rewards_discount = cart?.rewards_discount ?? 0
@@ -96,33 +106,33 @@ const CartTotals: React.FC<CartTotalsProps> = ({
       <div className="space-y-3 text-sm text-slate-600">
         <div className="flex items-center justify-between">
           <span className="font-medium text-slate-600">Subtotal</span>
-          <span className="font-semibold text-slate-900" data-testid="cart-subtotal" data-value={item_subtotal || 0}>
-            {convertToLocale({ amount: item_subtotal ?? 0, currency_code: normalizedCurrency })}
+          <span className="font-semibold text-slate-900" data-testid="cart-subtotal" data-value={itemSubtotal}>
+            {convertToLocale({ amount: itemSubtotal, currency_code: normalizedCurrency })}
           </span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="font-medium text-slate-600">Shipping</span>
-          <span className="font-semibold text-slate-900" data-testid="cart-shipping" data-value={displayShippingSubtotal}>
-            {isFreeShipping ? (
-              <span className="text-green-600 font-semibold">Free</span>
+          <span>Shipping</span>
+          <span data-testid="cart-shipping" data-value={displayShippingSubtotal}>
+            {displayShippingSubtotal === 0 && ((cart?.shipping_methods?.length ?? 0) > 0 || order?.shipping_total === 0) ? (
+              <span className="text-green-600 font-semibold">Free Shipping</span>
             ) : (
               convertToLocale({ amount: displayShippingSubtotal, currency_code: normalizedCurrency })
             )}
           </span>
         </div>
 
-        {!!discount_subtotal && (
+        {discountSubtotal > 0 && (
           <div className="flex items-center justify-between">
             <span className="font-medium text-slate-600">Discount</span>
             <span
               className="font-semibold text-green-600"
               data-testid="cart-discount"
-              data-value={discount_subtotal || 0}
+              data-value={discountSubtotal}
             >
               -{" "}
               {convertToLocale({
-                amount: discount_subtotal ?? 0,
+                amount: discountSubtotal,
                 currency_code: normalizedCurrency,
               })}
             </span>

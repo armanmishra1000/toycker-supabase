@@ -10,6 +10,13 @@ import { redirect } from "next/navigation"
 import { generatePayUHash, PayUHashParams } from "@/lib/payu"
 import { getBaseURL } from "@/lib/util/env"
 
+// Addresses interface for type safety
+interface AddressFormData {
+  email: string
+  shipping_address: Address
+  billing_address: Address
+}
+
 /** Raw cart item from database with nested product/variant objects */
 interface DatabaseCartItem {
   id: string
@@ -29,6 +36,7 @@ interface CartShippingMethod {
   shipping_option_id: string
   name: string
   amount: number
+  min_order_free_shipping?: number | null
 }
 
 const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): CartItem[] => {
@@ -124,9 +132,19 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
   const club_savings = original_subtotal - item_subtotal
 
   const shippingMethods = cartData.shipping_methods as CartShippingMethod[] | null
-  const shipping_total = Array.isArray(shippingMethods) && shippingMethods.length > 0
-    ? Number(shippingMethods[0].amount || 0)
-    : 0
+  // Calculate shipping total dynamically based on threshold
+  let shipping_total = 0
+  if (Array.isArray(shippingMethods) && shippingMethods.length > 0) {
+    const method = shippingMethods[0]
+    const baseAmount = Number(method.amount || 0)
+    const threshold = method.min_order_free_shipping
+
+    if (threshold !== null && threshold !== undefined && item_subtotal >= threshold) {
+      shipping_total = 0
+    } else {
+      shipping_total = baseAmount
+    }
+  }
 
   // Get rewards to apply from cart metadata
   const cartMetadata = (cartData.metadata || {}) as Record<string, unknown>
@@ -285,9 +303,12 @@ export async function deleteLineItem(lineId: string) {
   return retrieveCart()
 }
 
-export async function setAddresses(_currentState: unknown, formData: FormData) {
+
+
+// Background auto-save (no redirect) - Fixes blank page issue
+export async function saveAddressesBackground(_currentState: unknown, formData: FormData) {
   const cart = await retrieveCart()
-  if (!cart) return { message: "No cart found" }
+  if (!cart) return { message: "No cart found", success: false }
 
   const supabase = await createClient()
 
@@ -323,11 +344,44 @@ export async function setAddresses(_currentState: unknown, formData: FormData) {
     .eq("id", cart.id)
 
   if (error) {
-    return { message: error.message }
+    return { message: error.message, success: false }
   }
 
+  // Update shipping method automatically
+  await autoSelectStandardShipping(cart.id)
+
   revalidateTag("cart")
-  redirect("/checkout?step=delivery")
+  return { message: "Saved", success: true }
+}
+
+export async function autoSelectStandardShipping(cartId: string) {
+  const { shipping_options } = await listCartOptions()
+  // Auto-select first option if available (Standard Shipping)
+  if (shipping_options.length > 0) {
+    await setShippingMethod({ cartId, shippingMethodId: shipping_options[0].id })
+  }
+}
+
+// Explicit submit with redirect - Skips delivery step as we auto-select
+export async function submitAddresses(formData: FormData) {
+  // Pass null as state since saveAddressesBackground expects it
+  const result = await saveAddressesBackground(null, formData)
+
+  if (!result.success) {
+    // If save fails, we return the result. In a server action used in formAction, 
+    // we can't easily return data to the client without useActionState.
+    // However, since we are redirecting on success, if we don't redirect, 
+    // it means failure. We might want to throw or handle error better, 
+    // but for now let's just match the signature.
+    throw new Error(result.message)
+  }
+
+  const cart = await retrieveCart()
+  if (cart) {
+    await autoSelectStandardShipping(cart.id)
+  }
+
+  redirect("/checkout?step=payment")
 }
 
 export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: string, shippingMethodId: string }) {
@@ -339,7 +393,8 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
   const methodData = {
     shipping_option_id: shippingMethodId,
     name: option?.name || "Standard Shipping",
-    amount: option?.amount || 0
+    amount: option?.amount || 0,
+    min_order_free_shipping: option?.min_order_free_shipping ?? null
   }
 
   const { error } = await supabase
@@ -591,6 +646,7 @@ export async function listCartOptions(): Promise<{ shipping_options: ShippingOpt
       id: opt.id,
       name: opt.name,
       amount: opt.amount,
+      min_order_free_shipping: opt.min_order_free_shipping,
       price_type: "flat",
       prices: [{ amount: opt.amount, currency_code: "inr" }]
     }))

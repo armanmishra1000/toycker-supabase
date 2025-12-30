@@ -128,7 +128,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
               <div className="flex flex-col items-center justify-center py-12 text-center text-gray-500">
                 <ShoppingBagIcon className="w-12 h-12 text-gray-200 mb-3" />
                 <p className="font-medium">No orders yet</p>
-                <p className="text-sm">This customer hasn't placed any orders.</p>
+                <p className="text-sm">This customer hasn&apos;t placed any orders.</p>
               </div>
             )}
           </AdminCard>

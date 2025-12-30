@@ -8,6 +8,7 @@ import ShippingDetails from "@modules/order/components/shipping-details"
 import PaymentDetails from "@modules/order/components/payment-details"
 import { Order } from "@/lib/supabase/types"
 import ClubWelcomeBanner from "@modules/order/components/club-welcome-banner"
+import { CheckCircle } from "lucide-react"
 
 type OrderCompletedTemplateProps = {
   order: Order
@@ -25,31 +26,52 @@ export default async function OrderCompletedTemplate({
     : 10
 
   return (
-    <div className="py-6 min-h-[calc(100vh-64px)]">
-      <div className="content-container flex flex-col justify-center items-center gap-y-10 max-w-4xl h-full w-full">
+    <div className="py-6 min-h-[calc(100vh-64px)] bg-gray-50">
+      <div className="content-container flex flex-col justify-center items-center gap-y-6 max-w-4xl h-full w-full">
+        {/* Success Header Card */}
+        <div className="w-full bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-6 sm:p-8 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0">
+              <div className="h-14 w-14 sm:h-16 sm:w-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                <CheckCircle className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <Text
+                as="h1"
+                weight="bold"
+                className="text-2xl sm:text-3xl text-gray-900"
+              >
+                Thank you! Your order was placed successfully.
+              </Text>
+              <Text className="text-sm sm:text-base text-gray-600 mt-1">
+                We've sent a confirmation to <span className="font-semibold text-gray-900">{order.customer_email || order.email}</span>
+              </Text>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Details Card */}
         <div
-          className="flex flex-col gap-4 max-w-4xl h-full bg-white w-full py-10"
+          className="flex flex-col gap-6 w-full bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8"
           data-testid="order-complete-container"
         >
           {newlyActivated && (
             <ClubWelcomeBanner discountPercentage={discountPercentage} />
           )}
-          <Text
-            as="h1"
-            weight="bold"
-            className="flex flex-col gap-y-3 text-gray-900 text-3xl mb-4"
-          >
-            <span>Thank you!</span>
-            <span>Your order was placed successfully.</span>
-          </Text>
+
           <OrderDetails order={order} />
-          <Text as="h2" weight="bold" className="flex flex-row text-3xl">
-            Summary
+
+          <Text as="h2" weight="bold" className="text-2xl text-gray-900">
+            Order Summary
           </Text>
+
           <Items order={order} />
-          <CartTotals totals={order} />
+          <CartTotals totals={order} order={order} />
+
           <ShippingDetails order={order} />
           <PaymentDetails order={order} />
+
           <Help />
         </div>
       </div>

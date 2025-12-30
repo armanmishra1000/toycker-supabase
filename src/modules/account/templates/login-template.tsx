@@ -11,22 +11,22 @@ export enum LOGIN_VIEW {
   REGISTER = "register",
 }
 
-const LoginTemplate = () => {
+const LoginTemplate = ({ returnUrl }: { returnUrl?: string }) => {
   const [currentView, setCurrentView] = useState("sign-in")
 
   const copy = useMemo(
     () =>
       currentView === LOGIN_VIEW.SIGN_IN
         ? {
-            title: "Welcome back",
-            subtitle:
-              "Sign in to access your saved addresses, order history, and a smoother checkout.",
-          }
+          title: "Welcome back",
+          subtitle:
+            "Sign in to access your saved addresses, order history, and a smoother checkout.",
+        }
         : {
-            title: "Join Toycker",
-            subtitle:
-              "Create your account to track orders, save addresses, and speed through checkout.",
-          },
+          title: "Join Toycker",
+          subtitle:
+            "Create your account to track orders, save addresses, and speed through checkout.",
+        },
     [currentView]
   )
 
@@ -36,9 +36,9 @@ const LoginTemplate = () => {
       subtitle={copy.subtitle}
     >
       {currentView === "sign-in" ? (
-        <Login setCurrentView={setCurrentView} />
+        <Login setCurrentView={setCurrentView} returnUrl={returnUrl} />
       ) : (
-        <Register setCurrentView={setCurrentView} />
+        <Register setCurrentView={setCurrentView} /> // Todo: Register might also need returnUrl
       )}
     </AuthShell>
   )
