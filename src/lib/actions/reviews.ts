@@ -67,7 +67,11 @@ export async function submitReview(data: ReviewData) {
 
     if (reviewError) {
         console.error("Error creating review:", reviewError)
-        return { error: "Failed to submit review." }
+        // Check for specific error codes if needed, e.g. FK violation
+        if (reviewError.code === "23503") { // foreign_key_violation
+            return { error: "Product not found. Please refresh and try again." }
+        }
+        return { error: "Failed to save review details. Please try again." }
     }
 
     // Insert Media if any

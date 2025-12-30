@@ -45,7 +45,7 @@ export default async function OrderCompletedTemplate({
                 Thank you! Your order was placed successfully.
               </Text>
               <Text className="text-sm sm:text-base text-gray-600 mt-1">
-                We've sent a confirmation to <span className="font-semibold text-gray-900">{order.customer_email || order.email}</span>
+                We&apos;ve sent a confirmation to <span className="font-semibold text-gray-900">{order.customer_email || order.email}</span>
               </Text>
             </div>
           </div>

@@ -29,6 +29,6 @@ export async function getPresignedUploadUrl({
         return { url: signedUrl, key }
     } catch (error) {
         console.error("Error generating presigned URL:", error)
-        return { error: "Failed to generate upload URL" }
+        return { error: "Unable to prepare file upload. Please try again." }
     }
 }

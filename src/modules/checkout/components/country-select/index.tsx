@@ -9,6 +9,7 @@ const CountrySelect = forwardRef<
   HTMLSelectElement,
   NativeSelectProps & {
     region?: Region
+    label?: string
   }
 >(({ placeholder = "Country", region, defaultValue, label = "Country", required, ...props }, ref) => {
   const innerRef = useRef<HTMLSelectElement>(null)
@@ -37,7 +38,6 @@ const CountrySelect = forwardRef<
       ref={innerRef}
       placeholder={placeholder}
       defaultValue={defaultValue || "in"}
-      label={label}
       required={required}
       {...props}
     >

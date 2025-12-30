@@ -40,6 +40,35 @@ const CustomerReviews = ({
     setFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
+  // Simple retry helper
+  const uploadWithRetry = async (url: string, file: File, maxRetries: number = 3): Promise<Response> => {
+    let lastError: Error | null = null
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(url, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type },
+        })
+        if (response.ok) return response
+        // Non-ok response (but not network error), treat as error to potentially retry if transient
+        // (Though usually 4xx/5xx from R2 might be persistent, but 5xx warrants retry)
+        if (response.status >= 500 || response.status === 429) {
+          throw new Error(`Upload failed with status ${response.status} (attempt ${attempt})`)
+        }
+        return response // Return 4xx so main logic handles it as perm failure
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        console.warn(`Upload attempt ${attempt} failed:`, lastError)
+        if (attempt < maxRetries) {
+          // Wait: 1s, 2s, 3s
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+        }
+      }
+    }
+    throw lastError ?? new Error("Upload failed after retries")
+  }
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (rating === 0) {
@@ -65,20 +94,14 @@ const CustomerReviews = ({
         })
 
         if (error || !url || !key) {
-          throw new Error("Failed to get upload URL")
+          throw new Error(error || "Failed to initialize upload. Please try again.")
         }
 
-        // Upload to R2
-        const uploadRes = await fetch(url, {
-          method: "PUT",
-          body: file,
-          headers: {
-            "Content-Type": file.type,
-          },
-        })
+        // Upload to R2 with retry
+        const uploadRes = await uploadWithRetry(url, file)
 
         if (!uploadRes.ok) {
-          throw new Error("Failed to upload file to storage")
+          throw new Error(`Failed to upload file. Server returned ${uploadRes.status}`)
         }
 
         uploadedMedia.push({
@@ -110,8 +133,11 @@ const CustomerReviews = ({
         setRating(0)
         setFiles([])
       }, 2000)
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
+      // Provide user-friendly error if possible
+      const msg = error?.message || "Something went wrong. Please try again."
+      alert(msg) // Or use a toast if available, keeping it simple as per request
       setStatus("error")
     }
   }
@@ -147,123 +173,123 @@ const CustomerReviews = ({
         <Modal isOpen={isModalOpen} close={() => setIsModalOpen(false)} size="large">
           <Modal.Title>Write a Review</Modal.Title>
           <div className="h-full overflow-y-auto overflow-x-hidden px-1 pb-1">
-          <Modal.Body>
-            {status === "success" ? (
-              <div className="flex flex-col items-center justify-center py-10 w-full">
-                <div className="rounded-full bg-green-100 p-3">
-                  <Star className="h-8 w-8 text-green-600 fill-green-600" />
-                </div>
-                <h3 className="mt-4 text-xl font-medium">Thank you regarding your review!</h3>
-                <p className="mt-2 text-center text-gray-500">Your review has been submitted and is pending approval.</p>
-              </div>
-            ) : (
-              <form className="space-y-7 w-full" onSubmit={handleSubmit}>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700">Overall rating</label>
-                  <div className="mt-3 flex items-center gap-2">
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        className={`group transition-all duration-200 ease-out ${rating > index ? "text-amber-500" : "text-gray-400 hover:text-amber-400"} hover:scale-110 active:scale-95`}
-                        onClick={() => setRating(index + 1)}
-                      >
-                        <Star className={`h-10 w-10 transition-all duration-200 ${rating > index ? "fill-current" : ""}`} />
-                      </button>
-                    ))}
+            <Modal.Body>
+              {status === "success" ? (
+                <div className="flex flex-col items-center justify-center py-10 w-full">
+                  <div className="rounded-full bg-green-100 p-3">
+                    <Star className="h-8 w-8 text-green-600 fill-green-600" />
                   </div>
+                  <h3 className="mt-4 text-xl font-medium">Thank you regarding your review!</h3>
+                  <p className="mt-2 text-center text-gray-500">Your review has been submitted and is pending approval.</p>
                 </div>
-
-                <InputControl
-                  label="Review Title"
-                  value={formState.title}
-                  placeholder="Example: Great product!"
-                  onChange={(value) => setFormState((prev) => ({ ...prev, title: value }))}
-                  required
-                />
-
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-gray-700">Review</label>
-                  <textarea
-                    required
-                    value={formState.review}
-                    placeholder="Tell us what you liked or disliked..."
-                    onChange={(event) =>
-                      setFormState((prev) => ({ ...prev, review: event.target.value }))
-                    }
-                    className="min-h-[120px] w-full rounded-xl border border-ui-border-base bg-white px-4 py-3 text-ui-fg-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <span className="text-sm font-semibold text-gray-700">Add Photos/Videos</span>
-                  <div className="flex flex-wrap gap-3">
-                    {files.map((file, idx) => (
-                      <div key={idx} className="relative h-20 w-20 overflow-hidden rounded-xl border-2 border-gray-200 shadow-sm">
-                        {file.type.startsWith("image") ? (
-                          <img src={URL.createObjectURL(file)} alt="preview" className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                            {file.type.startsWith("video") ? <Video className="h-7 w-7 text-gray-400" /> : <Mic className="h-7 w-7 text-gray-400" />}
-                          </div>
-                        )}
+              ) : (
+                <form className="space-y-7 w-full" onSubmit={handleSubmit}>
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700">Overall rating</label>
+                    <div className="mt-3 flex items-center gap-2">
+                      {Array.from({ length: 5 }).map((_, index) => (
                         <button
+                          key={index}
                           type="button"
-                          onClick={() => removeFile(idx)}
-                          className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm transition-all hover:bg-white hover:text-red-600 hover:shadow-md active:scale-95"
+                          className={`group transition-all duration-200 ease-out ${rating > index ? "text-amber-500" : "text-gray-400 hover:text-amber-400"} hover:scale-110 active:scale-95`}
+                          onClick={() => setRating(index + 1)}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Star className={`h-10 w-10 transition-all duration-200 ${rating > index ? "fill-current" : ""}`} />
                         </button>
-                      </div>
-                    ))}
-                    <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 transition-all duration-200 hover:border-primary hover:bg-primary/10 hover:shadow-md active:scale-95">
-                      <ImageIcon className="h-6 w-6 text-gray-400" />
-                      <span className="mt-1 text-[10px] font-medium text-gray-500">Add</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <InputControl
+                    label="Review Title"
+                    value={formState.title}
+                    placeholder="Example: Great product!"
+                    onChange={(value) => setFormState((prev) => ({ ...prev, title: value }))}
+                    required
+                  />
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold text-gray-700">Review</label>
+                    <textarea
+                      required
+                      value={formState.review}
+                      placeholder="Tell us what you liked or disliked..."
+                      onChange={(event) =>
+                        setFormState((prev) => ({ ...prev, review: event.target.value }))
+                      }
+                      className="min-h-[120px] w-full rounded-xl border border-ui-border-base bg-white px-4 py-3 text-ui-fg-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <span className="text-sm font-semibold text-gray-700">Add Photos/Videos</span>
+                    <div className="flex flex-wrap gap-3">
+                      {files.map((file, idx) => (
+                        <div key={idx} className="relative h-20 w-20 overflow-hidden rounded-xl border-2 border-gray-200 shadow-sm">
+                          {file.type.startsWith("image") ? (
+                            <img src={URL.createObjectURL(file)} alt="preview" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gray-100">
+                              {file.type.startsWith("video") ? <Video className="h-7 w-7 text-gray-400" /> : <Mic className="h-7 w-7 text-gray-400" />}
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeFile(idx)}
+                            className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm transition-all hover:bg-white hover:text-red-600 hover:shadow-md active:scale-95"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 transition-all duration-200 hover:border-primary hover:bg-primary/10 hover:shadow-md active:scale-95">
+                        <ImageIcon className="h-6 w-6 text-gray-400" />
+                        <span className="mt-1 text-[10px] font-medium text-gray-500">Add</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*,video/*,audio/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <InputControl
+                    label="Display Name"
+                    value={formState.displayName}
+                    onChange={(value) => setFormState((prev) => ({ ...prev, displayName: value }))}
+                    required={!formState.anonymous}
+                  />
+
+                  <div className="pt-2">
+                    <label className="flex items-center gap-3 text-sm font-medium text-gray-700 cursor-pointer rounded-xl px-2 py-2.5 -mx-2 transition-colors hover:bg-gray-50">
                       <input
-                        type="file"
-                        multiple
-                        accept="image/*,video/*,audio/*"
-                        className="hidden"
-                        onChange={handleFileChange}
+                        type="checkbox"
+                        checked={formState.anonymous}
+                        onChange={() => setFormState((prev) => ({ ...prev, anonymous: !prev.anonymous }))}
+                        className="h-5 w-5 rounded-md border-2 border-gray-300 text-amber-500 transition-all duration-200 focus:border-primary focus:ring-2"
                       />
+                      Keep me anonymous
                     </label>
                   </div>
-                </div>
 
-                <InputControl
-                  label="Display Name"
-                  value={formState.displayName}
-                  onChange={(value) => setFormState((prev) => ({ ...prev, displayName: value }))}
-                  required={!formState.anonymous}
-                />
+                  {status === "error" && (
+                    <p className="text-sm text-red-600">Something went wrong. Please try again.</p>
+                  )}
 
-                <div className="pt-2">
-                  <label className="flex items-center gap-3 text-sm font-medium text-gray-700 cursor-pointer rounded-xl px-2 py-2.5 -mx-2 transition-colors hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      checked={formState.anonymous}
-                      onChange={() => setFormState((prev) => ({ ...prev, anonymous: !prev.anonymous }))}
-                      className="h-5 w-5 rounded-md border-2 border-gray-300 text-amber-500 transition-all duration-200 focus:border-primary focus:ring-2"
-                    />
-                    Keep me anonymous
-                  </label>
-                </div>
-
-                {status === "error" && (
-                  <p className="text-sm text-red-600">Something went wrong. Please try again.</p>
-                )}
-
-                <Modal.Footer>
-                  <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={status === "submitting"}>
-                    {status === "submitting" ? "Submitting..." : "Submit Review"}
-                  </Button>
-                </Modal.Footer>
-              </form>
-            )}
-          </Modal.Body>
+                  <Modal.Footer>
+                    <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={status === "submitting"}>
+                      {status === "submitting" ? "Submitting..." : "Submit Review"}
+                    </Button>
+                  </Modal.Footer>
+                </form>
+              )}
+            </Modal.Body>
           </div>
         </Modal>
       </section>
@@ -294,7 +320,7 @@ const CustomerReviews = ({
             {/* Media Grid */}
             {review.review_media && review.review_media.length > 0 && (
               <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-                {review.review_media.map((media: any) => {
+                {review.review_media.map((media) => {
                   const publicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ? `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${media.file_path}` : "";
 
                   if (media.file_type === 'video') {
@@ -342,7 +368,7 @@ const InputControl = ({
 }: {
   label: string
   value: string
-  onChange: (value: string) => void
+  onChange: (_value: string) => void
   type?: string
   required?: boolean
   placeholder?: string
