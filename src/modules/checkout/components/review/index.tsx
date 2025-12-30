@@ -10,7 +10,7 @@ type CartWithGiftCards = Cart & {
   gift_cards?: Array<{ id: string }>
 }
 
-const Review = ({ cart }: { cart: CartWithGiftCards }) => {
+const Review = ({ cart, selectedPaymentMethod }: { cart: CartWithGiftCards; selectedPaymentMethod?: string }) => {
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && (cart?.total ?? 0) === 0
 
@@ -47,7 +47,7 @@ const Review = ({ cart }: { cart: CartWithGiftCards }) => {
         </div>
       </div>
 
-      <PaymentButton cart={cart} data-testid="submit-order-button" />
+      <PaymentButton cart={cart} selectedPaymentMethod={selectedPaymentMethod} data-testid="submit-order-button" />
     </div>
   )
 }

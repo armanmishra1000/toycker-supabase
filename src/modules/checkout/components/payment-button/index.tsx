@@ -11,11 +11,13 @@ import { Cart } from "@/lib/supabase/types"
 type PaymentButtonProps = {
   cart: Cart
   "data-testid": string
+  selectedPaymentMethod?: string
 }
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({
   cart,
   "data-testid": dataTestId,
+  selectedPaymentMethod,
 }) => {
   const notReady =
     !cart ||
@@ -25,8 +27,11 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
 
   const paymentSession = cart.payment_collection?.payment_sessions?.[0]
 
+  // Use prop for instant button switching, fallback to cart data
+  const providerId = selectedPaymentMethod || paymentSession?.provider_id
+
   switch (true) {
-    case isStripeLike(paymentSession?.provider_id):
+    case isStripeLike(providerId):
       return (
         <StripePaymentButton
           notReady={notReady}
@@ -34,11 +39,11 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
           data-testid={dataTestId}
         />
       )
-    case isManual(paymentSession?.provider_id):
+    case isManual(providerId):
       return (
         <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
       )
-    case isPayU(paymentSession?.provider_id):
+    case isPayU(providerId):
       return (
         <PayUPaymentButton
           notReady={notReady}
@@ -230,10 +235,10 @@ const PayUPaymentButton = ({
       } else {
         const url = session?.data?.payment_url as string | undefined
         if (url) {
-           window.location.href = url
+          window.location.href = url
         } else {
-           setErrorMessage("Payment initialization failed. Please try again.")
-           setSubmitting(false)
+          setErrorMessage("Payment initialization failed. Please try again.")
+          setSubmitting(false)
         }
       }
     } catch (err) {
@@ -259,12 +264,12 @@ const PayUPaymentButton = ({
       >
         Pay with PayU
       </Button>
-      
+
       {paymentUrl && params && (
-        <form 
-          ref={formRef} 
-          action={paymentUrl} 
-          method="POST" 
+        <form
+          ref={formRef}
+          action={paymentUrl}
+          method="POST"
           style={{ display: 'none' }}
         >
           {Object.entries(params).map(([key, value]) => (

@@ -1,4 +1,5 @@
 "use client"
+import { useState } from "react"
 
 import { Cart } from "@/lib/supabase/types"
 import { Text } from "@modules/common/components/text"
@@ -20,6 +21,10 @@ const CheckoutSummary = ({
   cart: Cart
   paymentMethods: PaymentMethod[]
 }) => {
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | undefined>(
+    cart?.payment_collection?.payment_sessions?.find((s) => s.status === "pending")?.provider_id
+  )
+
   return (
     <div className="sticky top-4 flex flex-col gap-4">
       {/* Cart Summary Card */}
@@ -44,12 +49,14 @@ const CheckoutSummary = ({
         <Payment
           cart={cart}
           availablePaymentMethods={paymentMethods}
+          selectedPaymentMethod={selectedPaymentMethod}
+          onPaymentMethodChange={setSelectedPaymentMethod}
         />
       </div>
 
       {/* Place Order Card */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <Review cart={cart} />
+        <Review cart={cart} selectedPaymentMethod={selectedPaymentMethod} />
       </div>
     </div>
   )
