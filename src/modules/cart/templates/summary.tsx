@@ -60,7 +60,7 @@ const Summary = ({ cart }: SummaryProps) => {
           <div className="flex-1">
             {hasFreeShipping ? (
               <p className="text-sm font-semibold text-green-700">
-                🎉 You've unlocked FREE shipping!
+                🎉 You&apos;ve unlocked FREE shipping!
               </p>
             ) : (
               <p className="text-sm text-slate-700">

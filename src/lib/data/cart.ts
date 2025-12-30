@@ -292,50 +292,7 @@ export async function deleteLineItem(lineId: string) {
   return retrieveCart()
 }
 
-export async function setAddresses(_currentState: unknown, formData: FormData) {
-  const cart = await retrieveCart()
-  if (!cart) return { message: "No cart found" }
 
-  const supabase = await createClient()
-
-  const data = {
-    email: formData.get("email") as string,
-    shipping_address: {
-      first_name: formData.get("shipping_address.first_name"),
-      last_name: formData.get("shipping_address.last_name"),
-      address_1: formData.get("shipping_address.address_1"),
-      company: formData.get("shipping_address.company"),
-      postal_code: formData.get("shipping_address.postal_code"),
-      city: formData.get("shipping_address.city"),
-      country_code: formData.get("shipping_address.country_code"),
-      province: formData.get("shipping_address.province"),
-      phone: formData.get("shipping_address.phone"),
-    },
-    billing_address: {
-      first_name: formData.get("billing_address.first_name") || formData.get("shipping_address.first_name"),
-      last_name: formData.get("billing_address.last_name") || formData.get("shipping_address.last_name"),
-      address_1: formData.get("billing_address.address_1") || formData.get("shipping_address.address_1"),
-      company: formData.get("billing_address.company") || formData.get("shipping_address.company"),
-      postal_code: formData.get("billing_address.postal_code") || formData.get("shipping_address.postal_code"),
-      city: formData.get("billing_address.city") || formData.get("shipping_address.city"),
-      country_code: formData.get("billing_address.country_code") || formData.get("shipping_address.country_code"),
-      province: formData.get("billing_address.province") || formData.get("shipping_address.province"),
-      phone: formData.get("billing_address.phone") || formData.get("shipping_address.phone"),
-    }
-  }
-
-  const { error } = await supabase
-    .from("carts")
-    .update(data)
-    .eq("id", cart.id)
-
-  if (error) {
-    return { message: error.message }
-  }
-
-  revalidateTag("cart")
-  redirect("/checkout?step=delivery")
-}
 
 // Background auto-save (no redirect) - Fixes blank page issue
 export async function saveAddressesBackground(_currentState: unknown, formData: FormData) {
@@ -378,6 +335,9 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
   if (error) {
     return { message: error.message, success: false }
   }
+
+  // Update shipping method automatically
+  await autoSelectStandardShipping(cart.id)
 
   revalidateTag("cart")
   return { message: "Saved", success: true }
