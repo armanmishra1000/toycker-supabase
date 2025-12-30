@@ -73,11 +73,13 @@ export default async function AdminOrders() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {orders.length > 0 ? orders.map((order) => {
-                const paymentBadge = getPaymentBadge(order.payment_status, order.payment_method)
+                // Determine actual payment method (same logic as order detail page)
+                const actualPaymentMethod = order.payment_method || (order.payu_txn_id ? 'payu' : 'manual')
+                const isCOD = actualPaymentMethod === 'manual' || actualPaymentMethod === 'cod' || actualPaymentMethod === 'Cash on Delivery'
+
+                const paymentBadge = getPaymentBadge(order.payment_status, actualPaymentMethod)
                 const fulfillmentBadge = getFulfillmentBadge(order.fulfillment_status)
-                const paymentMethodDisplay = order.payment_method === 'manual' || order.payment_method === 'cod'
-                  ? 'COD'
-                  : order.payment_method || (order.payu_txn_id ? 'PayU' : '—')
+                const paymentMethodDisplay = isCOD ? 'COD' : (order.payu_txn_id ? 'PayU' : order.payment_method || '—')
 
                 return (
                   <tr key={order.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
