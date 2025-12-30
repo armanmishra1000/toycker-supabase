@@ -1,13 +1,14 @@
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, MessageSquare } from "lucide-react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { convertToLocale } from "@lib/util/money"
 
 type OverviewProps = {
   customer: any
   orders: any[] | null
+  reviewsCount?: number
 }
 
-const Overview = ({ customer, orders }: OverviewProps) => {
+const Overview = ({ customer, orders, reviewsCount = 0 }: OverviewProps) => {
   return (
     <div data-testid="overview-page-wrapper" className="space-y-6">
       <div className="space-y-1">
@@ -22,7 +23,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 small:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 small:grid-cols-4 gap-4">
         <StatCard
           title="Profile"
           value={`${getProfileCompletion(customer)}%`}
@@ -34,6 +35,12 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           value={`${customer?.addresses?.length || 0}`}
           helper="Saved"
           dataTestId="addresses-count"
+        />
+        <StatCard
+          title="Reviews"
+          value={`${reviewsCount}`}
+          helper="Submitted"
+          dataTestId="reviews-count"
         />
         <StatCard
           title="Orders"

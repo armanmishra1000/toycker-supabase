@@ -126,16 +126,17 @@ const CustomerReviews = ({
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="mt-5 inline-flex items-center justify-center rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-slate-500 hover:bg-slate-50"
+          className="mt-5 inline-flex items-center justify-center rounded-full border-2 border-gray-300 px-8 py-3.5 text-sm font-semibold text-gray-800 transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 hover:shadow-md active:scale-[0.98]"
         >
           Write A Review
         </button>
 
         <Modal isOpen={isModalOpen} close={() => setIsModalOpen(false)} size="large">
           <Modal.Title>Write a Review</Modal.Title>
+          <div className="h-full overflow-y-auto overflow-x-hidden px-1 pb-1">
           <Modal.Body>
             {status === "success" ? (
-              <div className="flex flex-col items-center justify-center py-10">
+              <div className="flex flex-col items-center justify-center py-10 w-full">
                 <div className="rounded-full bg-green-100 p-3">
                   <Star className="h-8 w-8 text-green-600 fill-green-600" />
                 </div>
@@ -143,18 +144,18 @@ const CustomerReviews = ({
                 <p className="mt-2 text-center text-gray-500">Your review has been submitted and is pending approval.</p>
               </div>
             ) : (
-              <form className="space-y-4" onSubmit={handleSubmit}>
+              <form className="space-y-7 w-full" onSubmit={handleSubmit}>
                 <div>
-                  <label className="text-sm font-medium text-gray-900">Overall rating</label>
-                  <div className="mt-2 flex items-center gap-2">
+                  <label className="text-sm font-semibold text-gray-700">Overall rating</label>
+                  <div className="mt-3 flex items-center gap-2">
                     {Array.from({ length: 5 }).map((_, index) => (
                       <button
                         key={index}
                         type="button"
-                        className={`transition-colors ${rating > index ? "text-amber-500" : "text-gray-200 hover:text-amber-200"}`}
+                        className={`group transition-all duration-200 ease-out ${rating > index ? "text-amber-500" : "text-gray-400 hover:text-amber-400"} hover:scale-110 active:scale-95`}
                         onClick={() => setRating(index + 1)}
                       >
-                        <Star className={`h-8 w-8 ${rating > index ? "fill-current" : ""}`} />
+                        <Star className={`h-10 w-10 transition-all duration-200 ${rating > index ? "fill-current" : ""}`} />
                       </button>
                     ))}
                   </div>
@@ -168,8 +169,8 @@ const CustomerReviews = ({
                   required
                 />
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">Review</label>
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-gray-700">Review</label>
                   <textarea
                     required
                     value={formState.review}
@@ -177,34 +178,34 @@ const CustomerReviews = ({
                     onChange={(event) =>
                       setFormState((prev) => ({ ...prev, review: event.target.value }))
                     }
-                    className="min-h-[100px] w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    className="min-h-[120px] w-full rounded-xl border border-ui-border-base bg-white px-4 py-3 text-ui-fg-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-medium text-gray-900">Add Photos/Videos</span>
-                  <div className="flex flex-wrap gap-2">
+                <div className="space-y-3">
+                  <span className="text-sm font-semibold text-gray-700">Add Photos/Videos</span>
+                  <div className="flex flex-wrap gap-3">
                     {files.map((file, idx) => (
-                      <div key={idx} className="relative h-16 w-16 overflow-hidden rounded-lg border border-gray-200">
+                      <div key={idx} className="relative h-20 w-20 overflow-hidden rounded-xl border-2 border-gray-200 shadow-sm">
                         {file.type.startsWith("image") ? (
                           <img src={URL.createObjectURL(file)} alt="preview" className="h-full w-full object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                            {file.type.startsWith("video") ? <Video className="h-6 w-6 text-gray-400" /> : <Mic className="h-6 w-6 text-gray-400" />}
+                            {file.type.startsWith("video") ? <Video className="h-7 w-7 text-gray-400" /> : <Mic className="h-7 w-7 text-gray-400" />}
                           </div>
                         )}
                         <button
                           type="button"
                           onClick={() => removeFile(idx)}
-                          className="absolute right-0 top-0 bg-white/80 p-0.5 text-red-500 hover:text-red-700"
+                          className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm transition-all hover:bg-white hover:text-red-600 hover:shadow-md active:scale-95"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ))}
-                    <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 hover:bg-gray-50">
-                      <ImageIcon className="h-5 w-5 text-gray-400" />
-                      <span className="text-[10px] text-gray-500">Add</span>
+                    <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 transition-all duration-200 hover:border-primary hover:bg-primary/10 hover:shadow-md active:scale-95">
+                      <ImageIcon className="h-6 w-6 text-gray-400" />
+                      <span className="mt-1 text-[10px] font-medium text-gray-500">Add</span>
                       <input
                         type="file"
                         multiple
@@ -223,15 +224,17 @@ const CustomerReviews = ({
                   required={!formState.anonymous}
                 />
 
-                <label className="flex items-center gap-2 text-sm text-gray-900 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formState.anonymous}
-                    onChange={() => setFormState((prev) => ({ ...prev, anonymous: !prev.anonymous }))}
-                    className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
-                  />
-                  Keep me anonymous
-                </label>
+                <div className="pt-2">
+                  <label className="flex items-center gap-3 text-sm font-medium text-gray-700 cursor-pointer rounded-xl px-2 py-2.5 -mx-2 transition-colors hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={formState.anonymous}
+                      onChange={() => setFormState((prev) => ({ ...prev, anonymous: !prev.anonymous }))}
+                      className="h-5 w-5 rounded-md border-2 border-gray-300 text-amber-500 transition-all duration-200 focus:border-primary focus:ring-2"
+                    />
+                    Keep me anonymous
+                  </label>
+                </div>
 
                 {status === "error" && (
                   <p className="text-sm text-red-600">Something went wrong. Please try again.</p>
@@ -248,6 +251,7 @@ const CustomerReviews = ({
               </form>
             )}
           </Modal.Body>
+          </div>
         </Modal>
       </section>
 
@@ -331,8 +335,8 @@ const InputControl = ({
   placeholder?: string
 }) => {
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-900">
+    <div className="space-y-3">
+      <label className="text-sm font-semibold text-gray-700">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
@@ -341,7 +345,7 @@ const InputControl = ({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+        className="w-full rounded-xl border border-ui-border-base bg-white px-4 py-3 text-ui-fg-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
     </div>
   )
