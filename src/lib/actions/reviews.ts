@@ -34,6 +34,7 @@ export type ReviewWithMedia = {
         file_type: "image" | "video" | "audio"
     }[]
     product_name?: string
+    product_thumbnail?: string | null
 }
 
 export async function submitReview(data: ReviewData) {
@@ -193,4 +194,48 @@ export async function getAllReviewsForAdmin() {
         ...r,
         product_name: productMap.get(r.product_id) || "Unknown Product",
     })) as ReviewWithMedia[]
+}
+
+export async function getUserReviews() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return []
+    }
+
+    const { data, error } = await supabase
+        .from("reviews")
+        .select(`
+            *,
+            review_media (*)
+        `)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+
+    if (error) {
+        console.error("Error fetching user reviews:", error)
+        return []
+    }
+
+    // Fetch product names and thumbnails for each review
+    const productIds = data?.map((r) => r.product_id) || []
+
+    const { data: products } = await supabase
+        .from("products")
+        .select("id, name, thumbnail")
+        .in("id", productIds)
+
+    const productMap = new Map(
+        products?.map((p) => [
+            p.id,
+            { name: p.name, thumbnail: p.thumbnail }
+        ]) || []
+    )
+
+    return data?.map((review) => ({
+        ...review,
+        product_name: productMap.get(review.product_id)?.name || "Unknown Product",
+        product_thumbnail: productMap.get(review.product_id)?.thumbnail || null,
+    })) || []
 }

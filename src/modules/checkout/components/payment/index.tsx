@@ -8,7 +8,6 @@ import ErrorMessage from "@modules/checkout/components/error-message"
 import PaymentContainer, {
   StripeCardContainer,
 } from "@modules/checkout/components/payment-container"
-import Divider from "@modules/common/components/divider"
 import { useEffect, useState } from "react"
 import { Cart } from "@/lib/supabase/types"
 
@@ -85,11 +84,11 @@ const Payment = ({
 
   return (
     <div className="bg-white">
-      <div className="flex flex-row items-center justify-between mb-6">
+      <div className="flex flex-row items-center justify-between mb-4">
         <Text
           as="h2"
           weight="bold"
-          className="flex flex-row text-3xl gap-x-2 items-baseline"
+          className="text-3xl flex items-center gap-2"
         >
           Payment Method
         </Text>
@@ -145,7 +144,6 @@ const Payment = ({
           data-testid="payment-method-error-message"
         />
       </div>
-      <Divider className="mt-8" />
     </div>
   )
 }

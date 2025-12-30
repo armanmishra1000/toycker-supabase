@@ -65,7 +65,7 @@ const Addresses = ({
         <Text
           as="h2"
           weight="bold"
-          className="text-xl flex items-center gap-2"
+          className="text-3xl flex items-center gap-2"
         >
           Shipping Address
           {isPending ? (

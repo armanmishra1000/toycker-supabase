@@ -58,7 +58,7 @@ const Modal = ({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 h-screen w-screen bg-black/40" />
+          <div className="fixed inset-0 h-screen w-screen bg-black/20 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 w-screen overflow-y-hidden">
@@ -87,7 +87,8 @@ const Modal = ({
                   "flex flex-col justify-start w-full transform text-left align-middle transition-all h-fit",
                   {
                     "p-0": panelPadding === "none",
-                    "p-5": panelPadding !== "none",
+                    "p-5": panelPadding !== "none" && size !== "large" && size !== "xlarge",
+                    "p-8": panelPadding !== "none" && (size === "large" || size === "xlarge"),
                     "max-w-md": size === "small" && !fullScreen,
                     "max-w-xl": size === "medium" && !fullScreen,
                     "max-w-3xl": size === "large" && !fullScreen,
@@ -96,7 +97,7 @@ const Modal = ({
                     "max-h-[90vh]": size === "xlarge" && !fullScreen,
                     "w-full h-full max-w-none max-h-none p-0": fullScreen,
                     "bg-transparent shadow-none": search,
-                    "bg-white shadow-xl border": !search && !fullScreen,
+                    "bg-white shadow-2xl shadow-gray-200/50 border border-gray-100": !search && !fullScreen,
                     [roundedClassMap[resolvedRounded]]: !search && !fullScreen,
                     "bg-white": fullScreen,
                     "shadow-none border-0 rounded-none": fullScreen,
@@ -119,13 +120,15 @@ const Title: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { close } = useModal()
 
   return (
-    <Dialog.Title className="flex items-center justify-between">
-      <div className="text-xl font-semibold">{children}</div>
-      <div>
-        <button onClick={close} data-testid="close-modal-button">
-          <X size={20} />
-        </button>
-      </div>
+    <Dialog.Title className="flex items-center justify-between pb-2">
+      <div className="text-xl font-semibold text-gray-900">{children}</div>
+      <button
+        onClick={close}
+        data-testid="close-modal-button"
+        className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+      >
+        <X size={20} />
+      </button>
     </Dialog.Title>
   )
 }
@@ -143,7 +146,7 @@ const Body: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 }
 
 const Footer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <div className="flex items-center justify-end gap-x-4">{children}</div>
+  return <div className="flex items-center justify-end gap-3 pt-4">{children}</div>
 }
 
 Modal.Title = Title

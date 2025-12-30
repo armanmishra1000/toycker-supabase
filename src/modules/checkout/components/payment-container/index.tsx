@@ -28,37 +28,51 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
   disabled = false,
   children,
 }) => {
+  const isSelected = selectedPaymentOptionId === paymentProviderId
+
   return (
     <RadioGroupOption
       key={paymentProviderId}
       value={paymentProviderId}
       disabled={disabled}
       className={cn(
-        "flex flex-col gap-y-2 text-sm cursor-pointer py-4 border rounded-lg px-8 mb-2 hover:shadow-sm",
+        "group flex flex-col cursor-pointer border rounded-xl overflow-hidden transition-all duration-200 mb-4",
         {
-          "border-blue-600":
-            selectedPaymentOptionId === paymentProviderId,
+          "border-blue-600 bg-blue-50/30 shadow-sm": isSelected,
+          "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm": !isSelected,
         }
       )}
     >
-      <div className="flex items-center justify-between ">
-        <div className="flex items-center gap-x-4">
-          <Radio checked={selectedPaymentOptionId === paymentProviderId} />
-          <Text className="text-base font-normal">
-            {paymentInfoMap[paymentProviderId]?.title || paymentProviderId}
-          </Text>
+      {/* Payment Method Header */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex items-center gap-3 sm:gap-4 flex-1">
+          <Radio checked={isSelected} />
+          <div className="flex flex-col">
+            <Text className="text-sm sm:text-base font-semibold text-gray-900">
+              {paymentInfoMap[paymentProviderId]?.title || paymentProviderId}
+            </Text>
+            {paymentInfoMap[paymentProviderId]?.description && (
+              <Text className="text-xs sm:text-sm text-gray-500 mt-0.5 leading-snug">
+                {paymentInfoMap[paymentProviderId]?.description}
+              </Text>
+            )}
+          </div>
         </div>
-        <span className="justify-self-end text-gray-900">
-          {paymentInfoMap[paymentProviderId]?.icon}
-        </span>
+        <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-50 group-hover:bg-gray-100 transition-colors">
+          <span className="text-gray-600">
+            {paymentInfoMap[paymentProviderId]?.icon}
+          </span>
+        </div>
       </div>
-      {selectedPaymentOptionId === paymentProviderId &&
-        paymentInfoMap[paymentProviderId]?.description && (
-          <Text className="text-gray-500 text-xs">
-            {paymentInfoMap[paymentProviderId]?.description}
-          </Text>
-        )}
-      {children}
+
+      {/* Additional Content (Card Details) */}
+      {children && (
+        <div className="px-4 sm:px-6 pb-4 sm:pb-5 pt-0">
+          <div className="border-t border-gray-200 pt-3 sm:pt-4 mt-1">
+            {children}
+          </div>
+        </div>
+      )}
     </RadioGroupOption>
   )
 }
@@ -85,14 +99,15 @@ export const StripeCardContainer = ({
       style: {
         base: {
           fontFamily: "Inter, sans-serif",
-          color: "#424270",
+          color: "#1f2937",
+          fontSize: "16px",
           "::placeholder": {
-            color: "rgb(107 114 128)",
+            color: "#9ca3af",
           },
         },
       },
       classes: {
-        base: "pt-3 pb-1 block w-full h-11 px-4 mt-0 bg-white border rounded-md appearance-none focus:outline-none focus:ring-0 focus:shadow-sm border-gray-200 hover:bg-gray-50 transition-all duration-300 ease-in-out",
+        base: "block w-full px-4 py-3.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all",
       },
     }
   }, [])
@@ -106,23 +121,27 @@ export const StripeCardContainer = ({
     >
       {selectedPaymentOptionId === paymentProviderId &&
         (stripeReady ? (
-          <div className="my-4 transition-all duration-150 ease-in-out">
-            <Text className="text-base font-medium text-gray-900 mb-1">
-              Enter your card details:
+          <div>
+            <Text className="text-sm font-semibold text-gray-800 mb-3 block">
+              Card details
             </Text>
-            <CardElement
-              options={useOptions as StripeCardElementOptions}
-              onChange={(e) => {
-                setCardBrand(
-                  e.brand && e.brand.charAt(0).toUpperCase() + e.brand.slice(1)
-                )
-                setError(e.error?.message || null)
-                setCardComplete(e.complete)
-              }}
-            />
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <CardElement
+                options={useOptions as StripeCardElementOptions}
+                onChange={(e) => {
+                  setCardBrand(
+                    e.brand && e.brand.charAt(0).toUpperCase() + e.brand.slice(1)
+                  )
+                  setError(e.error?.message || null)
+                  setCardComplete(e.complete)
+                }}
+              />
+            </div>
           </div>
         ) : (
-          <SkeletonCardDetails />
+          <div>
+            <SkeletonCardDetails />
+          </div>
         ))}
     </PaymentContainer>
   )

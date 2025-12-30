@@ -34,7 +34,7 @@ const BestSelling = async ({ regionId, countryCode, isCustomerLoggedIn, collecti
       aria-labelledby="best-selling-heading"
       data-testid="best-selling-section"
     >
-      <div className="mx-auto max-w-screen-2xl px-4 py-16 md:py-20">
+      <div className="mx-auto max-w-screen-2xl px-4 pt-16 pb-10 md:pt-20 md:pb-10">
         <div className="flex flex-col gap-4 text-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">Curated</p>

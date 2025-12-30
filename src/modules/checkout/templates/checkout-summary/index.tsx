@@ -1,5 +1,4 @@
 "use client"
-import { useState } from "react"
 
 import { Cart } from "@/lib/supabase/types"
 import { Text } from "@modules/common/components/text"
@@ -7,56 +6,58 @@ import { Text } from "@modules/common/components/text"
 import ItemsPreviewTemplate from "@modules/cart/templates/preview"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import CartTotals from "@modules/common/components/cart-totals"
-import Divider from "@modules/common/components/divider"
-import Payment from "@modules/checkout/components/payment"
 import Review from "@modules/checkout/components/review"
 import RewardsRedemption from "@modules/checkout/components/rewards-redemption"
 
-type PaymentMethod = { id: string; name: string }
-
 const CheckoutSummary = ({
   cart,
-  paymentMethods
 }: {
   cart: Cart
-  paymentMethods: PaymentMethod[]
 }) => {
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | undefined>(
-    cart?.payment_collection?.payment_sessions?.find((s) => s.status === "pending")?.provider_id
-  )
-
   return (
-    <div className="sticky top-4 flex flex-col gap-4">
+    <div className="sticky top-4 flex flex-col gap-3 sm:gap-4">
       {/* Cart Summary Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <Text
-          as="h2"
-          weight="bold"
-          className="flex flex-row text-xl items-baseline mb-4"
-        >
-          Order Summary
-        </Text>
-        <CartTotals totals={cart} cart={cart} />
-        <Divider className="my-4" />
-        <ItemsPreviewTemplate cart={cart} />
-        <Divider className="my-4" />
-        <RewardsRedemption cart={cart} />
-        <DiscountCode cart={cart} />
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        {/* Header */}
+        <div className="px-5 sm:px-6 pt-5 sm:pt-6 pb-4 sm:pb-4 border-b border-gray-100">
+          <Text
+            as="h2"
+            weight="bold"
+            className="text-xl sm:text-2xl text-gray-900"
+          >
+            Order Summary
+          </Text>
+        </div>
+
+        {/* Product List */}
+        <div className="px-5 sm:px-6 py-4 sm:py-4">
+          <ItemsPreviewTemplate cart={cart} />
+        </div>
+
+        {/* Pricing Section */}
+        <div className="px-5 sm:px-6 py-4 sm:py-4 bg-gray-50/50 border-t border-gray-100">
+          <CartTotals totals={cart} cart={cart} />
+        </div>
+
+        {/* Rewards & Discount */}
+        <div className="px-5 sm:px-6 py-4 sm:py-4 border-t border-gray-100">
+          <RewardsRedemption cart={cart} />
+          <DiscountCode cart={cart} />
+        </div>
       </div>
 
-      {/* Payment Method Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <Payment
-          cart={cart}
-          availablePaymentMethods={paymentMethods}
-          selectedPaymentMethod={selectedPaymentMethod}
-          onPaymentMethodChange={setSelectedPaymentMethod}
-        />
-      </div>
-
-      {/* Place Order Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <Review cart={cart} selectedPaymentMethod={selectedPaymentMethod} />
+      {/* Complete Order Card */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-5 sm:px-6 pt-5 sm:pt-6 pb-4 sm:pb-4">
+          <Text
+            as="h2"
+            weight="bold"
+            className="text-xl sm:text-2xl text-gray-900 mb-3 sm:mb-4"
+          >
+            Complete Order
+          </Text>
+          <Review cart={cart} />
+        </div>
       </div>
     </div>
   )

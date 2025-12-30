@@ -4,7 +4,7 @@ import repeat from "@lib/util/repeat"
 import { Cart } from "@/lib/supabase/types"
 import { cn } from "@lib/util/cn"
 
-import Item from "@modules/cart/components/item"
+import PreviewItem from "@modules/cart/components/preview-item"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 
 type ItemsTemplateProps = {
@@ -18,7 +18,7 @@ const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
   return (
     <div
       className={cn({
-        "pl-[1px] overflow-y-scroll overflow-x-hidden no-scrollbar max-h-[420px]":
+        "overflow-y-auto no-scrollbar max-h-[420px]":
           hasOverflow,
       })}
     >
@@ -31,10 +31,9 @@ const ItemsPreviewTemplate = ({ cart }: ItemsTemplateProps) => {
                 })
                 .map((item) => {
                   return (
-                    <Item
+                    <PreviewItem
                       key={item.id}
                       item={item}
-                      type="preview"
                       currencyCode={cart.currency_code}
                     />
                   )

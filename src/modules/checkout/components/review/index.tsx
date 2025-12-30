@@ -2,6 +2,7 @@
 
 import { Cart } from "@/lib/supabase/types"
 import { Text } from "@modules/common/components/text"
+import { Lock, AlertCircle } from "lucide-react"
 
 import PaymentButton from "../payment-button"
 
@@ -10,7 +11,7 @@ type CartWithGiftCards = Cart & {
   gift_cards?: Array<{ id: string }>
 }
 
-const Review = ({ cart, selectedPaymentMethod }: { cart: CartWithGiftCards; selectedPaymentMethod?: string }) => {
+const Review = ({ cart }: { cart: CartWithGiftCards }) => {
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && (cart?.total ?? 0) === 0
 
@@ -21,33 +22,42 @@ const Review = ({ cart, selectedPaymentMethod }: { cart: CartWithGiftCards; sele
 
   const isReady = hasAddress && hasShipping && hasPayment
 
+  // Generate error messages
+  const errors = []
+  if (!hasAddress) errors.push("shipping address")
+  if (!hasShipping) errors.push("delivery method")
+  if (!hasPayment) errors.push("payment method")
+
   return (
-    <div className="bg-white pt-4">
-      <div className="flex flex-row items-center justify-between mb-6">
-        <h2 className="flex flex-row text-3xl font-bold gap-x-2 items-baseline">
-          Complete Order
-        </h2>
+    <div className="space-y-4">
+      {/* Security Badge */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+        <Lock size={16} className="text-green-600" />
+        <span className="text-xs font-medium text-green-700">
+          Secure checkout - Your information is protected
+        </span>
       </div>
 
-      <div className="flex items-start gap-x-1 w-full mb-6">
-        <div className="w-full">
-          <Text className="text-sm text-gray-500 mb-4">
-            By clicking the button below, you confirm that you have
-            read, understand and accept our Terms of Use, Terms of Sale and
-            Returns Policy and acknowledge that you have read Toycker Store&apos;s Privacy Policy.
-          </Text>
+      {/* Terms & Conditions */}
+      <div className="text-xs text-gray-500 leading-relaxed">
+        By placing this order, you agree to our{" "}
+        <a href="/policies/terms" className="text-blue-600 hover:underline">Terms of Service</a>
+        {" "}and{" "}
+        <a href="/policies/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>.
+      </div>
 
-          {!isReady && (
-            <Text className="text-sm text-amber-600 mb-4">
-              {!hasAddress && "Please fill in your shipping address. "}
-              {!hasShipping && "Please select a delivery method. "}
-              {!hasPayment && "Please select a payment method."}
-            </Text>
-          )}
+      {/* Error Messages */}
+      {!isReady && (
+        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <AlertCircle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-amber-800">
+            <span className="font-medium">Please complete:</span>{" "}
+            {errors.join(", ")}
+          </div>
         </div>
-      </div>
+      )}
 
-      <PaymentButton cart={cart} selectedPaymentMethod={selectedPaymentMethod} data-testid="submit-order-button" />
+      <PaymentButton cart={cart} data-testid="submit-order-button" />
     </div>
   )
 }

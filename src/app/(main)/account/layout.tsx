@@ -16,10 +16,13 @@ export default async function AccountPageLayout({
     return <LoginTemplate />
   }
 
+  // Check if dashboard has actual content (not just default null)
+  // We use a simple check: if dashboard is not null/undefined, it's a sub-page
+  const hasDashboard = dashboard !== null && dashboard !== undefined
+
   return (
     <AccountLayout customer={customer}>
-      {children}
-      {dashboard}
+      {hasDashboard ? dashboard : children}
     </AccountLayout>
   )
 }

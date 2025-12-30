@@ -33,7 +33,7 @@ const ShippingMethodOption = ({
       className={cn(
         "flex items-center justify-between text-sm cursor-pointer py-4 border rounded-lg px-8 mb-2 hover:shadow-sm transition-all",
         {
-          "border-blue-600 ring-1 ring-blue-600": option.id === selectedId,
+          "border-blue-600 ": option.id === selectedId,
           "cursor-not-allowed opacity-50": disabled,
         }
       )}

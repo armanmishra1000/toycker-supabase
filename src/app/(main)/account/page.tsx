@@ -1,21 +1,6 @@
-import { Metadata } from "next"
-import Overview from "@modules/account/components/overview"
-import { listOrders } from "@lib/data/orders"
-import { retrieveCustomer } from "@lib/data/customer"
-import { notFound } from "next/navigation"
-
-export const metadata: Metadata = {
-  title: "Account",
-  description: "Overview of your account.",
-}
-
-export default async function AccountPage() {
-  const customer = await retrieveCustomer()
-  const orders = await listOrders()
-
-  if (!customer) {
-    notFound()
-  }
-
-  return <Overview customer={customer} orders={orders} />
+// This page component is no longer used directly
+// The actual account pages are rendered via the @dashboard parallel route
+// See: @dashboard/page.tsx for the Overview page
+export default function AccountPage() {
+  return null
 }

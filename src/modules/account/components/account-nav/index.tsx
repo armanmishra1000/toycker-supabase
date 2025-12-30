@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { LogOut, Sparkles, Wallet } from "lucide-react"
+import { LogOut, Sparkles, Wallet, MessageSquare } from "lucide-react"
 import { usePathname, useParams } from "next/navigation"
 import { cn } from "@lib/util/cn"
 
@@ -64,6 +64,12 @@ const AccountNav = ({
                   icon={<Wallet size={20} />}
                   label="Wallet"
                   data-testid="wallet-link"
+                />
+                <MobileLink
+                  href="/account/reviews"
+                  icon={<MessageSquare size={20} />}
+                  label="Reviews"
+                  data-testid="reviews-link"
                 />
                 <MobileLink
                   href="/account/orders"
@@ -142,6 +148,15 @@ const AccountNav = ({
                   data-testid="wallet-link"
                 >
                   <NavRow icon={<Wallet size={18} />} label="Wallet" />
+                </AccountNavLink>
+              </li>
+              <li>
+                <AccountNavLink
+                  href="/account/reviews"
+                  route={route!}
+                  data-testid="reviews-link"
+                >
+                  <NavRow icon={<MessageSquare size={18} />} label="Customer Reviews" />
                 </AccountNavLink>
               </li>
               <li>
