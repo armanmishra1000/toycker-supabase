@@ -50,7 +50,8 @@ export async function submitReview(data: ReviewData) {
     }
 
     // Insert Review
-    const { data: review, error: reviewError } = await supabase
+    // We separate insert and select to better handle potential RLS issues
+    const { data: insertedReview, error: insertError } = await supabase
         .from("reviews")
         .insert({
             product_id: data.product_id,
@@ -60,24 +61,29 @@ export async function submitReview(data: ReviewData) {
             content: data.content,
             display_name: data.display_name,
             is_anonymous: data.is_anonymous,
-            approval_status: "pending", // Always pending initially
+            approval_status: "pending",
         })
-        .select()
+        .select("id") // Only select ID initially to minimize RLS friction
         .single()
 
-    if (reviewError) {
-        console.error("Error creating review:", reviewError)
-        // Check for specific error codes if needed, e.g. FK violation
-        if (reviewError.code === "23503") { // foreign_key_violation
+    if (insertError) {
+        console.error("Error creating review:", insertError)
+        if (insertError.code === "23503") { // foreign_key_violation
             return { error: "Product not found. Please refresh and try again." }
         }
         return { error: "Failed to save review details. Please try again." }
     }
 
+    if (!insertedReview) {
+        return { error: "Review created but failed to verify. Please check your reviews." }
+    }
+
+    const reviewId = insertedReview.id
+
     // Insert Media if any
     if (data.media && data.media.length > 0) {
         const mediaInserts = data.media.map((item) => ({
-            review_id: review.id,
+            review_id: reviewId,
             file_path: item.file_path,
             file_type: item.file_type,
             storage_provider: item.storage_provider || "r2",
