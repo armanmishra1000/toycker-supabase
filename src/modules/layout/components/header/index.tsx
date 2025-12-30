@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Bars3Icon, HeartIcon, ShoppingBagIcon, MagnifyingGlassIcon, UserIcon, EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline"
-import { cn } from "@lib/util/cn"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import AnnouncementBar from "@modules/layout/components/announcement-bar"
