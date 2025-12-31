@@ -76,12 +76,61 @@ export async function getAdminStats() {
 }
 
 // --- Categories ---
-export async function getAdminCategories() {
+
+interface GetAdminCategoriesParams {
+  page?: number
+  limit?: number
+  search?: string
+}
+
+interface PaginatedCategoriesResponse {
+  categories: Category[]
+  count: number
+  totalPages: number
+  currentPage: number
+}
+
+export async function getAdminCategories(params: GetAdminCategoriesParams = {}): Promise<PaginatedCategoriesResponse> {
   await ensureAdmin()
+
+  const { page = 1, limit = 20, search } = params
   const supabase = await createClient()
-  const { data, error } = await supabase.from("categories").select("*").order("name")
+
+  // Calculate total count first
+  let countQuery = supabase.from("categories").select("*", { count: "exact", head: true })
+
+  if (search && search.trim()) {
+    countQuery = countQuery.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
+  }
+
+  const { count } = await countQuery
+
+  // Calculate pagination
+  const offset = (page - 1) * limit
+  const from = offset
+  const to = offset + limit - 1
+  const totalPages = count ? Math.ceil(count / limit) : 1
+
+  // Fetch paginated data
+  let query = supabase
+    .from("categories")
+    .select("*")
+    .order("name")
+    .range(from, to)
+
+  if (search && search.trim()) {
+    query = query.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
+  }
+
+  const { data, error } = await query
   if (error) throw error
-  return data as Category[]
+
+  return {
+    categories: (data || []) as Category[],
+    count: count || 0,
+    totalPages,
+    currentPage: page
+  }
 }
 
 export async function createCategory(formData: FormData) {
@@ -121,7 +170,7 @@ interface PaginatedProductsResponse {
   currentPage: number
 }
 
-export async function getAdminProducts(params: GetAdminProductsParams): Promise<PaginatedProductsResponse> {
+export async function getAdminProducts(params: GetAdminProductsParams = {}): Promise<PaginatedProductsResponse> {
   await ensureAdmin()
 
   const { page = 1, limit = 20, status, search } = params
@@ -325,16 +374,61 @@ export async function deleteVariant(variantId: string) {
 }
 
 // --- Collections ---
-export async function getAdminCollections() {
+
+interface GetAdminCollectionsParams {
+  page?: number
+  limit?: number
+  search?: string
+}
+
+interface PaginatedCollectionsResponse {
+  collections: (Collection & { products: { count: number }[] })[]
+  count: number
+  totalPages: number
+  currentPage: number
+}
+
+export async function getAdminCollections(params: GetAdminCollectionsParams = {}): Promise<PaginatedCollectionsResponse> {
   await ensureAdmin()
+
+  const { page = 1, limit = 20, search } = params
   const supabase = await createClient()
-  const { data, error } = await supabase
+
+  // Calculate total count first
+  let countQuery = supabase.from("collections").select("*", { count: "exact", head: true })
+
+  if (search && search.trim()) {
+    countQuery = countQuery.or(`title.ilike.%${search}%,handle.ilike.%${search}%`)
+  }
+
+  const { count } = await countQuery
+
+  // Calculate pagination
+  const offset = (page - 1) * limit
+  const from = offset
+  const to = offset + limit - 1
+  const totalPages = count ? Math.ceil(count / limit) : 1
+
+  // Fetch paginated data
+  let query = supabase
     .from("collections")
     .select("*, products(count)")
     .order("created_at", { ascending: false })
+    .range(from, to)
 
+  if (search && search.trim()) {
+    query = query.or(`title.ilike.%${search}%,handle.ilike.%${search}%`)
+  }
+
+  const { data, error } = await query
   if (error) throw error
-  return data as (Collection & { products: { count: number }[] })[]
+
+  return {
+    collections: (data || []) as (Collection & { products: { count: number }[] })[],
+    count: count || 0,
+    totalPages,
+    currentPage: page
+  }
 }
 
 export async function getAdminCollection(id: string) {
@@ -399,12 +493,93 @@ export async function getProductCollections(productId: string) {
 }
 
 // --- Orders ---
-export async function getAdminOrders() {
+
+interface GetAdminOrdersParams {
+  page?: number
+  limit?: number
+  search?: string
+}
+
+interface PaginatedOrdersResponse {
+  orders: Order[]
+  count: number
+  totalPages: number
+  currentPage: number
+}
+
+export async function getAdminOrders(params: GetAdminOrdersParams = {}): Promise<PaginatedOrdersResponse> {
   await ensureAdmin()
+
+  const { page = 1, limit = 20, search } = params
   const supabase = await createClient()
-  const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false })
+
+  // Check if search is a number (order ID search)
+  const searchNum = search && search.trim() ? parseInt(search, 10) : NaN
+
+  if (!isNaN(searchNum)) {
+    // Searching by order ID - fetch all orders and filter client-side
+    const { data: allOrders, error } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (error) throw error
+
+    // Filter by display_id
+    const filteredOrders = (allOrders || []).filter(order => order.display_id === searchNum)
+
+    // Calculate pagination for filtered results
+    const count = filteredOrders.length
+    const totalPages = Math.ceil(count / limit) || 1
+    const offset = (page - 1) * limit
+    const paginatedOrders = filteredOrders.slice(offset, offset + limit)
+
+    return {
+      orders: paginatedOrders as Order[],
+      count,
+      totalPages,
+      currentPage: page
+    }
+  }
+
+  // Regular search (by email) or no search
+  // Calculate total count first
+  let countQuery = supabase.from("orders").select("*", { count: "exact", head: true })
+
+  if (search && search.trim()) {
+    // Search by customer_email
+    countQuery = countQuery.ilike("customer_email", `%${search}%`)
+  }
+
+  const { count } = await countQuery
+
+  // Calculate pagination
+  const offset = (page - 1) * limit
+  const from = offset
+  const to = offset + limit - 1
+  const totalPages = count ? Math.ceil(count / limit) : 1
+
+  // Fetch paginated data
+  let query = supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .range(from, to)
+
+  if (search && search.trim()) {
+    // Search by customer_email
+    query = query.ilike("customer_email", `%${search}%`)
+  }
+
+  const { data, error } = await query
   if (error) throw error
-  return data as Order[]
+
+  return {
+    orders: (data || []) as Order[],
+    count: count || 0,
+    totalPages,
+    currentPage: page
+  }
 }
 
 export async function getAdminOrder(id: string) {
@@ -425,12 +600,61 @@ export async function updateOrderStatus(id: string, status: string) {
 }
 
 // --- Customers ---
-export async function getAdminCustomers() {
+
+interface GetAdminCustomersParams {
+  page?: number
+  limit?: number
+  search?: string
+}
+
+interface PaginatedCustomersResponse {
+  customers: CustomerProfile[]
+  count: number
+  totalPages: number
+  currentPage: number
+}
+
+export async function getAdminCustomers(params: GetAdminCustomersParams = {}): Promise<PaginatedCustomersResponse> {
   await ensureAdmin()
+
+  const { page = 1, limit = 20, search } = params
   const supabase = await createClient()
-  const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false })
+
+  // Calculate total count first
+  let countQuery = supabase.from("profiles").select("*", { count: "exact", head: true })
+
+  if (search && search.trim()) {
+    countQuery = countQuery.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+  }
+
+  const { count } = await countQuery
+
+  // Calculate pagination
+  const offset = (page - 1) * limit
+  const from = offset
+  const to = offset + limit - 1
+  const totalPages = count ? Math.ceil(count / limit) : 1
+
+  // Fetch paginated data
+  let query = supabase
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .range(from, to)
+
+  if (search && search.trim()) {
+    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+  }
+
+  const { data, error } = await query
   if (error) throw error
-  return data as CustomerProfile[]
+
+  return {
+    customers: (data || []) as CustomerProfile[],
+    count: count || 0,
+    totalPages,
+    currentPage: page
+  }
 }
 
 export async function getAdminCustomer(id: string) {
@@ -746,11 +970,46 @@ export async function deleteRole(id: string) {
 }
 
 // --- Staff Management ---
-export async function getStaffMembers() {
+
+interface GetStaffMembersParams {
+  page?: number
+  limit?: number
+  search?: string
+}
+
+interface PaginatedStaffMembersResponse {
+  staff: StaffMember[]
+  count: number
+  totalPages: number
+  currentPage: number
+}
+
+export async function getStaffMembers(params: GetStaffMembersParams = {}): Promise<PaginatedStaffMembersResponse> {
   await ensureAdmin()
   const supabase = await createClient()
 
-  const { data, error } = await supabase
+  const { page = 1, limit = 20, search } = params
+
+  // Calculate total count first
+  let countQuery = supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .not("admin_role_id", "is", null)
+
+  if (search && search.trim()) {
+    countQuery = countQuery.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+  }
+
+  const { count } = await countQuery
+
+  // Calculate pagination
+  const offset = (page - 1) * limit
+  const from = offset
+  const to = offset + limit - 1
+  const totalPages = count ? Math.ceil(count / limit) : 1
+
+  // Fetch paginated data
+  let query = supabase
     .from("profiles")
     .select(`
       id,
@@ -763,9 +1022,21 @@ export async function getStaffMembers() {
     `)
     .not("admin_role_id", "is", null)
     .order("created_at", { ascending: false })
+    .range(from, to)
 
+  if (search && search.trim()) {
+    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+  }
+
+  const { data, error } = await query
   if (error) throw error
-  return data as StaffMember[]
+
+  return {
+    staff: (data || []) as StaffMember[],
+    count: count || 0,
+    totalPages,
+    currentPage: page
+  }
 }
 
 export async function inviteStaffMember(email: string, roleId: string) {

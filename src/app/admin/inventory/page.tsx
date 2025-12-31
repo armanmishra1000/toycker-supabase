@@ -1,12 +1,38 @@
 import { getAdminProducts } from "@/lib/data/admin"
-import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
+import { AdminPagination } from "@modules/admin/components/admin-pagination"
+import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import Image from "next/image"
 import Link from "next/link"
 import { TagIcon, ArchiveBoxIcon, ArrowPathIcon } from "@heroicons/react/24/outline"
+import { cn } from "@lib/util/cn"
 
-export default async function AdminInventory() {
-  const products = await getAdminProducts()
+export default async function AdminInventory({
+  searchParams
+}: {
+  searchParams: Promise<{ page?: string; search?: string }>
+}) {
+  const { page = "1", search = "" } = await searchParams
+  const pageNumber = parseInt(page, 10) || 1
+
+  const { products, count, totalPages, currentPage } = await getAdminProducts({
+    page: pageNumber,
+    limit: 20,
+    search: search || undefined
+  })
+
+  const hasSearch = search && search.trim().length > 0
+  const buildUrl = (newPage?: number, clearSearch = false) => {
+    const params = new URLSearchParams()
+    if (newPage && newPage > 1) {
+      params.set("page", newPage.toString())
+    }
+    if (!clearSearch && hasSearch) {
+      params.set("search", search)
+    }
+    const queryString = params.toString()
+    return queryString ? `/admin/inventory?${queryString}` : "/admin/inventory"
+  }
 
   return (
     <div className="space-y-6">
@@ -21,6 +47,14 @@ export default async function AdminInventory() {
         }
       />
 
+      {/* Search Bar */}
+      <AdminSearchInput defaultValue={search} basePath="/admin/inventory" placeholder="Search products by name or handle..." />
+
+      {/* Results Count */}
+      <div className="text-sm text-gray-500">
+        Showing {count > 0 ? ((currentPage - 1) * 20) + 1 : 0} to {Math.min(currentPage * 20, count)} of {count} products
+      </div>
+
       <div className="p-0 border-none shadow-none bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
@@ -33,7 +67,7 @@ export default async function AdminInventory() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {products.map((product) => (
+              {products.length > 0 ? products.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="h-10 w-10 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
@@ -67,10 +101,32 @@ export default async function AdminInventory() {
                     />
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center">
+                      <ArchiveBoxIcon className="h-10 w-10 text-gray-200 mb-3" />
+                      <p className="text-sm font-bold text-gray-900">No products found</p>
+                      {hasSearch ? (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Try adjusting your search or{" "}
+                          <Link href={buildUrl()} className="text-indigo-600 hover:underline">
+                            clear the search
+                          </Link>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 mt-1">No products in inventory yet.</p>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <AdminPagination currentPage={currentPage} totalPages={totalPages} />
       </div>
     </div>
   )

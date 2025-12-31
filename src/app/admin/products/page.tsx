@@ -65,7 +65,7 @@ export default async function AdminProducts({
       />
 
       {/* Search Bar - Auto-searches when typing stops */}
-      <AdminSearchInput defaultValue={search} status={status} />
+      <AdminSearchInput defaultValue={search} basePath="/admin/products" placeholder="Search products by name or handle..." />
 
       {/* Results Count */}
       <div className="text-sm text-gray-500">
