@@ -7,7 +7,7 @@ import {
   BellIcon,
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
-import { ensureAdmin } from "@/lib/data/admin"
+import { ensureAdmin, getAdminUser } from "@/lib/data/admin"
 import { AdminSidebarNav } from "@modules/admin/components/admin-sidebar-nav"
 import { AdminSettingsLink } from "@modules/admin/components/admin-settings-link"
 import { AdminMobileMenu } from "@modules/admin/components/admin-mobile-menu"
@@ -21,6 +21,39 @@ export const revalidate = 30
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await ensureAdmin()
+  const adminUser = await getAdminUser()
+
+  // Generate initials from name or email
+  const getInitials = (firstName: string, lastName: string, email: string) => {
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase()
+    }
+    if (firstName) {
+      return firstName.slice(0, 2).toUpperCase()
+    }
+    if (email) {
+      return email.slice(0, 2).toUpperCase()
+    }
+    return "AD"
+  }
+
+  const getDisplayName = (firstName: string, lastName: string) => {
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`
+    }
+    if (firstName) {
+      return firstName
+    }
+    return "Admin"
+  }
+
+  const initials = adminUser
+    ? getInitials(adminUser.firstName, adminUser.lastName, adminUser.email)
+    : "AD"
+  const displayName = adminUser
+    ? getDisplayName(adminUser.firstName, adminUser.lastName)
+    : "Admin"
+  const email = adminUser?.email || ""
 
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-[260px_1fr] min-h-screen bg-gray-50 font-sans">
@@ -116,11 +149,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
               <button className="flex items-center gap-2 px-2 py-2 sm:px-3 rounded-lg hover:bg-gray-100 transition-all">
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold shadow-sm">
-                  NR
+                  {initials}
                 </div>
                 <div className="hidden xl:flex flex-col items-start">
-                  <span className="text-sm font-medium text-gray-700">Admin</span>
-                  <span className="text-[11px] text-gray-400">admin@toycker.com</span>
+                  <span className="text-sm font-medium text-gray-700">{displayName}</span>
+                  <span className="text-[11px] text-gray-400">{email}</span>
                 </div>
               </button>
             </div>

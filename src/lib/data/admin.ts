@@ -33,6 +33,28 @@ export async function ensureAdmin() {
   }
 }
 
+// --- Get Admin User ---
+export async function getAdminUser() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return null
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, email")
+    .eq("id", user.id)
+    .single()
+
+  return {
+    email: profile?.email || user.email || "",
+    firstName: profile?.first_name || "",
+    lastName: profile?.last_name || "",
+  }
+}
+
 // --- Dashboard Stats ---
 export async function getAdminStats() {
   await ensureAdmin()
