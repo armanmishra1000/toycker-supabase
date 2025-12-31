@@ -11,12 +11,14 @@ import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/
 
 export default async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [product, collections, variants, productCollections] = await Promise.all([
+  const [product, collectionsData, variants, productCollections] = await Promise.all([
     retrieveProduct(id),
     getAdminCollections(),
     getProductVariants(id),
     getProductCollections(id)
   ])
+
+  const collections = collectionsData.collections
 
   // Get selected collection IDs, falling back to product.collection_id for backwards compatibility
   const selectedCollectionIds = productCollections.map(c => c.id)

@@ -6,7 +6,7 @@ import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 
 export default async function NewProduct() {
-  const collections = await getAdminCollections()
+  const { collections } = await getAdminCollections()
 
   const actions = (
     <div className="flex gap-2">
