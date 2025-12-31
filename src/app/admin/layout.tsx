@@ -4,11 +4,13 @@ import {
   ArrowLeftOnRectangleIcon,
   ArrowTopRightOnSquareIcon,
   MagnifyingGlassIcon,
+  BellIcon,
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin } from "@/lib/data/admin"
 import { AdminSidebarNav } from "@modules/admin/components/admin-sidebar-nav"
 import { AdminSettingsLink } from "@modules/admin/components/admin-settings-link"
+import { AdminMobileMenu } from "@modules/admin/components/admin-mobile-menu"
 
 export const metadata = {
   title: "Toycker Admin",
@@ -21,77 +23,115 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await ensureAdmin()
 
   return (
-    <div className="min-h-screen bg-admin-bg flex font-sans text-admin-text-primary">
-      {/* Sidebar */}
-      <aside className="w-60 bg-admin-sidebar flex flex-col fixed inset-y-0 z-50 transition-all duration-300">
-        <div className="h-14 flex items-center px-4 bg-admin-sidebar shrink-0">
-          <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors w-full cursor-pointer">
-            <div className="h-8 w-8 rounded bg-emerald-500 flex items-center justify-center text-white font-bold text-sm">T</div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-sm text-gray-100 leading-tight">Toycker</span>
-              <span className="text-[11px] text-gray-400 font-medium">Store Admin</span>
+    <div className="flex flex-col lg:grid lg:grid-cols-[260px_1fr] min-h-screen bg-gray-50 font-sans">
+      {/* Desktop Sidebar - Hidden on mobile, visible on lg+ */}
+      <aside className="hidden lg:flex bg-white border-r border-gray-200 flex-col sticky top-0 h-screen overflow-hidden">
+        {/* Logo Section */}
+        <div className="h-16 flex items-center px-6 border-b border-gray-200 shrink-0">
+          <Link href="/admin" className="flex items-center gap-3 group">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/30 transition-all">
+              T
             </div>
-          </div>
+            <div className="flex flex-col">
+              <span className="font-semibold text-base text-gray-900 leading-tight">Toycker</span>
+              <span className="text-[11px] text-gray-500 font-medium tracking-wide">ADMIN</span>
+            </div>
+          </Link>
         </div>
 
-        <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-6 overflow-y-auto overflow-x-hidden">
           <AdminSidebarNav />
+        </nav>
+
+        {/* Bottom Section */}
+        <div className="p-3 border-t border-gray-200 space-y-1 shrink-0">
           <Link
             href="/"
             target="_blank"
-            className="group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg transition-all text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 active:scale-[0.98] active:opacity-90"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-all"
           >
-            <div className="mr-3 h-5 w-5 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full border border-[#8c9196] group-hover:border-gray-100" />
+            <div className="h-5 w-5 rounded-md bg-gray-100 group-hover:bg-white flex items-center justify-center">
+              <div className="h-1.5 w-1.5 rounded-full bg-gray-400 group-hover:bg-gray-600" />
             </div>
-            Online Store
-            <ArrowTopRightOnSquareIcon className="ml-auto h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span className="flex-1">Online Store</span>
+            <ArrowTopRightOnSquareIcon className="h-4 w-4 text-gray-400 group-hover:text-gray-600 opacity-60 group-hover:opacity-100 transition-all" />
           </Link>
-        </nav>
-
-        <div className="p-2 border-t border-white/[0.08] space-y-1">
+          <div className="h-px bg-gray-200 my-2" />
           <AdminSettingsLink />
           <form action={signout}>
-            <button className="flex items-center w-full px-3 py-2 text-[14px] font-medium rounded-lg text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 transition-all active:scale-[0.98] active:opacity-90">
-              <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5 text-[#8c9196] group-hover:text-gray-100" />
-              Log out
+            <button
+              type="submit"
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-600 transition-all"
+            >
+              <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+              <span>Log out</span>
             </button>
           </form>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-60 min-h-screen flex flex-col">
-        {/* Top Navbar */}
-        <header className="h-14 bg-white border-b border-admin-border sticky top-0 z-40 flex items-center justify-between px-6 shrink-0">
-          <div className="flex-1 max-w-lg">
-            <div className="relative group">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-gray-600 transition-colors" />
-              <input
-                type="search"
-                placeholder="Search"
-                className="w-full bg-[#f1f2f4] border border-transparent hover:border-[#d3d4d6] rounded-lg py-1.5 pl-9 pr-4 text-sm focus:bg-white focus:border-black focus:ring-0 transition-all placeholder:text-gray-500"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                <div className="px-1.5 py-0.5 rounded border border-gray-200 bg-white text-[10px] font-medium text-gray-400">⌘ K</div>
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 h-screen overflow-hidden">
+        {/* Sticky Top Header */}
+        <header className="shrink-0 h-16 bg-white border-b border-gray-200">
+          <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+            {/* Left: Mobile Menu Toggle & Search */}
+            <div className="flex items-center gap-3 flex-1">
+              <AdminMobileMenu />
+
+              {/* Mobile Logo */}
+              <Link href="/admin" className="lg:hidden flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xs">
+                  T
+                </div>
+                <span className="font-semibold text-sm text-gray-900">Toycker</span>
+              </Link>
+
+              {/* Search - Hidden on smallest screens */}
+              <div className="hidden sm:block flex-1 max-w-xl">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="search"
+                    placeholder="Search products, orders, customers..."
+                    className="w-full h-10 pl-10 pr-4 text-sm bg-gray-100 border-transparent rounded-lg focus:bg-white focus:border-gray-300 focus:ring-2 focus:ring-gray-100 focus:outline-none transition-all placeholder:text-gray-400"
+                  />
+                  <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-200 rounded">
+                    ⌘K
+                  </kbd>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="h-8 w-8 rounded-lg hover:bg-gray-50 flex items-center justify-center text-gray-500 transition-colors">
-              <span className="sr-only">Notifications</span>
-              <div className="h-5 w-5 rounded-full border-2 border-current p-0.5" />
-            </button>
-            <div className="h-8 w-8 rounded bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm cursor-pointer">
-              NR
+
+            {/* Right Actions */}
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+              <button className="relative h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all">
+                <BellIcon className="h-5 w-5" />
+                <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 h-2 w-2 rounded-full bg-red-500" />
+              </button>
+
+              <div className="hidden sm:block h-6 w-px bg-gray-200" />
+
+              <button className="flex items-center gap-2 px-2 py-2 sm:px-3 rounded-lg hover:bg-gray-100 transition-all">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold shadow-sm">
+                  NR
+                </div>
+                <div className="hidden xl:flex flex-col items-start">
+                  <span className="text-sm font-medium text-gray-700">Admin</span>
+                  <span className="text-[11px] text-gray-400">admin@toycker.com</span>
+                </div>
+              </button>
             </div>
           </div>
         </header>
 
-        <div className="p-6 max-w-6xl mx-auto w-full flex-1">
+        {/* Page Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
           {children}
         </div>
-      </main>
+      </div>
     </div>
   )
 }

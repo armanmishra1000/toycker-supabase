@@ -46,51 +46,54 @@ type NavItemProps = {
   href: string
   icon: React.ComponentType<{ className?: string }>
   pathname: string
+  onClick?: () => void
 }
 
-function NavItem({ label, href, icon: Icon, pathname }: NavItemProps) {
+function NavItem({ label, href, icon: Icon, pathname, onClick }: NavItemProps) {
   const active = isActive(pathname, href)
 
   return (
     <Link
       href={href}
-      className={`group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg transition-all ${
+      onClick={onClick}
+      className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
         active
-          ? "bg-white/[0.12] text-white"
-          : "text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100"
-      } active:scale-[0.98] active:opacity-90`}
+          ? "bg-gray-900 text-white shadow-sm"
+          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+      }`}
     >
       <Icon
-        className={`mr-3 h-5 w-5 transition-colors ${
-          active ? "text-white" : "text-[#8c9196] group-hover:text-gray-100"
+        className={`h-5 w-5 shrink-0 transition-colors ${
+          active ? "text-white" : "text-gray-400 group-hover:text-gray-600"
         }`}
       />
-      {label}
+      <span className="flex-1">{label}</span>
     </Link>
   )
 }
 
-export function AdminSidebarNav() {
+export function AdminSidebarNav({ onItemClick }: { onItemClick?: () => void } = {}) {
   const pathname = usePathname()
 
   return (
-    <>
-      <p className="px-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 mt-2">
-        Store Management
-      </p>
-      {NAV_ITEMS.map((item) => (
-        <NavItem
-          key={item.href}
-          label={item.label}
-          href={item.href}
-          icon={item.icon}
-          pathname={pathname}
-        />
-      ))}
-
-      <p className="px-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 mt-6">
-        Sales Channels
-      </p>
-    </>
+    <div className="space-y-6">
+      <div>
+        <p className="px-3 mb-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+          Store
+        </p>
+        <div className="space-y-0.5">
+          {NAV_ITEMS.map((item) => (
+            <NavItem
+              key={item.href}
+              label={item.label}
+              href={item.href}
+              icon={item.icon}
+              pathname={pathname}
+              onClick={onItemClick}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
