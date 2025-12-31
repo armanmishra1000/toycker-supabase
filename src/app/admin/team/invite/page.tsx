@@ -2,6 +2,7 @@ import { getAdminRoles, promoteToStaff } from "@/lib/data/admin"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import SearchableUserSelect from "./user-selector"
+import SubmitButton from "./submit-button"
 import Link from "next/link"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 import { redirect } from "next/navigation"
@@ -10,6 +11,10 @@ async function handlePromotion(formData: FormData) {
     "use server"
     const userId = formData.get("user_id") as string
     const roleId = formData.get("role_id") as string
+
+    if (!userId || !roleId) {
+        throw new Error("Please select a user and a role")
+    }
 
     await promoteToStaff(userId, roleId)
     redirect("/admin/team")
@@ -67,15 +72,11 @@ export default async function AddStaff() {
                         >
                             Cancel
                         </Link>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-all"
-                        >
-                            Add to Team
-                        </button>
+                        <SubmitButton />
                     </div>
                 </form>
             </AdminCard>
         </div>
     )
 }
+
