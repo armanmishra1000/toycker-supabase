@@ -1,22 +1,31 @@
 import { getAdminProducts, deleteProduct } from "@/lib/data/admin"
 import Link from "next/link"
 import Image from "next/image"
-import { PlusIcon, PencilIcon, TrashIcon, TagIcon, ArrowTopRightOnSquareIcon, PhotoIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, PencilIcon, TagIcon, ArrowTopRightOnSquareIcon, PhotoIcon } from "@heroicons/react/24/outline"
 import { convertToLocale } from "@lib/util/money"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import ProductCsvImport from "@modules/admin/components/product-csv-import"
 import MedusaSyncButton from "@modules/admin/components/medusa-sync-button"
+import { AdminPagination } from "@modules/admin/components/admin-pagination"
+import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import { cn } from "@lib/util/cn"
 
 export default async function AdminProducts({
   searchParams
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ page?: string; status?: string; search?: string }>
 }) {
-  const { status = 'all' } = await searchParams
-  const products = await getAdminProducts(status)
+  const { page = "1", status = 'all', search = '' } = await searchParams
+  const pageNumber = parseInt(page, 10) || 1
+
+  const { products, count, totalPages, currentPage } = await getAdminProducts({
+    page: pageNumber,
+    limit: 20,
+    status,
+    search: search || undefined
+  })
 
   const TABS = [
     { label: "All", value: "all" },
@@ -24,6 +33,20 @@ export default async function AdminProducts({
     { label: "Draft", value: "draft" },
     { label: "Archived", value: "archived" },
   ]
+
+  const hasSearch = search && search.trim().length > 0
+  const buildUrl = (newStatus: string, newPage?: number, clearSearch = false) => {
+    const params = new URLSearchParams()
+    params.set("status", newStatus)
+    if (newPage && newPage > 1) {
+      params.set("page", newPage.toString())
+    }
+    if (!clearSearch && hasSearch) {
+      params.set("search", search)
+    }
+    const queryString = params.toString()
+    return queryString ? `/admin/products?${queryString}` : "/admin/products"
+  }
 
   return (
     <div className="space-y-6">
@@ -41,6 +64,14 @@ export default async function AdminProducts({
         }
       />
 
+      {/* Search Bar - Auto-searches when typing stops */}
+      <AdminSearchInput defaultValue={search} status={status} />
+
+      {/* Results Count */}
+      <div className="text-sm text-gray-500">
+        Showing {count > 0 ? ((currentPage - 1) * 20) + 1 : 0} to {Math.min(currentPage * 20, count)} of {count} products
+      </div>
+
       <div className="p-0 border-none shadow-none bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
           {/* Tabs */}
@@ -49,7 +80,7 @@ export default async function AdminProducts({
               {TABS.map((tab) => (
                 <Link
                   key={tab.value}
-                  href={`/admin/products?status=${tab.value}`}
+                  href={buildUrl(tab.value)}
                   className={cn(
                     "py-3 text-sm font-medium border-b-2 transition-colors capitalize",
                     status === tab.value
@@ -130,11 +161,20 @@ export default async function AdminProducts({
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center">
+                  <td colSpan={6} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center">
                       <TagIcon className="h-10 w-10 text-gray-200 mb-3" />
                       <p className="text-sm font-bold text-gray-900">No products found</p>
-                      <p className="text-xs text-gray-400 mt-1">Try changing your filters or adding a new product.</p>
+                      {hasSearch ? (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Try adjusting your search or{" "}
+                          <Link href={buildUrl(status)} className="text-indigo-600 hover:underline">
+                            clear the search
+                          </Link>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 mt-1">Try changing your filters or adding a new product.</p>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -142,6 +182,9 @@ export default async function AdminProducts({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <AdminPagination currentPage={currentPage} totalPages={totalPages} />
       </div>
     </div>
   )
