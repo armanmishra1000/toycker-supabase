@@ -229,6 +229,13 @@ export async function createProduct(formData: FormData) {
   // Keep first collection_id for backwards compatibility or primary collection
   const primaryCollectionId = collectionIds.length > 0 ? collectionIds[0] : null
 
+  // Get category_id
+  const categoryId = formData.get("category_id") as string | null
+  const categoryIdValue = categoryId && categoryId.trim() !== "" ? categoryId : null
+
+  // Get compare_at_price
+  const compareAtPrice = formData.get("compare_at_price") ? parseFloat(formData.get("compare_at_price") as string) : null
+
   const product = {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
@@ -237,8 +244,12 @@ export async function createProduct(formData: FormData) {
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
     collection_id: primaryCollectionId, // Set primary collection
+    category_id: categoryIdValue, // Set category
     status: (formData.get("status") as string) || 'active',
     currency_code: "inr",
+    metadata: {
+      compare_at_price: compareAtPrice,
+    }
   }
 
   const { data: newProduct, error } = await supabase
@@ -279,6 +290,13 @@ export async function updateProduct(formData: FormData) {
   // Keep first collection_id for backwards compatibility
   const primaryCollectionId = collectionIds.length > 0 ? collectionIds[0] : null
 
+  // Get category_id
+  const categoryId = formData.get("category_id") as string | null
+  const categoryIdValue = categoryId && categoryId.trim() !== "" ? categoryId : null
+
+  // Get current product to preserve existing metadata
+  const { data: currentProduct } = await supabase.from("products").select("metadata").eq("id", id).single()
+
   const updates = {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
@@ -287,13 +305,18 @@ export async function updateProduct(formData: FormData) {
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
     collection_id: primaryCollectionId, // Update primary collection
+    category_id: categoryIdValue, // Update category
     status: formData.get("status") as string,
+    metadata: {
+      ...(currentProduct?.metadata || {}),
+      compare_at_price: formData.get("compare_at_price") ? parseFloat(formData.get("compare_at_price") as string) : null,
+    }
   }
 
   const { error } = await supabase.from("products").update(updates).eq("id", id)
   if (error) throw new Error(error.message)
 
-  // Update collections: 
+  // Update collections:
   // 1. Delete existing associations
   await supabase.from("product_collections").delete().eq("product_id", id)
 
@@ -314,7 +337,8 @@ export async function updateProduct(formData: FormData) {
   }
 
   revalidatePath("/admin/products")
-  redirect("/admin/products")
+  revalidatePath(`/admin/products/${id}`)
+  redirect(`/admin/products/${id}`)
 }
 
 export async function deleteProduct(id: string) {
