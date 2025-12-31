@@ -1,4 +1,5 @@
-import { getAdminCollections, updateProduct, getProductVariants } from "@/lib/data/admin"
+import { getAdminCollections, updateProduct, getProductVariants, getProductCollections } from "@/lib/data/admin"
+import CollectionCheckboxList from "@modules/admin/components/collection-checkbox-list"
 import Link from "next/link"
 import { retrieveProduct } from "@lib/data/products"
 import { notFound } from "next/navigation"
@@ -10,11 +11,18 @@ import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/
 
 export default async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [product, collections, variants] = await Promise.all([
+  const [product, collections, variants, productCollections] = await Promise.all([
     retrieveProduct(id),
     getAdminCollections(),
-    getProductVariants(id)
+    getProductVariants(id),
+    getProductCollections(id)
   ])
+
+  // Get selected collection IDs, falling back to product.collection_id for backwards compatibility
+  const selectedCollectionIds = productCollections.map(c => c.id)
+  if (selectedCollectionIds.length === 0 && product?.collection_id) {
+    selectedCollectionIds.push(product.collection_id)
+  }
 
   if (!product) notFound()
 
@@ -160,13 +168,12 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
           <AdminCard title="Organization">
             <div className="space-y-5">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Collection</label>
-                <select name="collection_id" defaultValue={product.collection_id || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 bg-white">
-                  <option value="">None</option>
-                  {collections.map(c => (
-                    <option key={c.id} value={c.id}>{c.title}</option>
-                  ))}
-                </select>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Collections</label>
+                <CollectionCheckboxList
+                  collections={collections}
+                  selectedIds={selectedCollectionIds}
+                  name="collection_ids"
+                />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">URL Handle</label>

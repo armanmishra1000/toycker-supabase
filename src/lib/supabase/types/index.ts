@@ -22,6 +22,7 @@ export interface Product {
   variants?: ProductVariant[];
   options?: ProductOption[];
   collection?: Collection | null;
+  collections?: Collection[];
 }
 
 export interface ProductVariant {

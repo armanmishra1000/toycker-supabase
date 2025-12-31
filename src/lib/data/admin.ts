@@ -101,6 +101,11 @@ export async function getAdminProducts(status?: string) {
 export async function createProduct(formData: FormData) {
   await ensureAdmin()
   const supabase = await createClient()
+
+  const collectionIds = formData.getAll("collection_ids") as string[]
+  // Keep first collection_id for backwards compatibility or primary collection
+  const primaryCollectionId = collectionIds.length > 0 ? collectionIds[0] : null
+
   const product = {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
@@ -108,12 +113,36 @@ export async function createProduct(formData: FormData) {
     price: parseFloat(formData.get("price") as string),
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
-    collection_id: formData.get("collection_id") as string || null,
+    collection_id: primaryCollectionId, // Set primary collection
     status: (formData.get("status") as string) || 'active',
     currency_code: "inr",
   }
-  const { error } = await supabase.from("products").insert(product)
+
+  const { data: newProduct, error } = await supabase
+    .from("products")
+    .insert(product)
+    .select("id")
+    .single()
+
   if (error) throw new Error(error.message)
+
+  // Insert multiple collection associations
+  if (collectionIds.length > 0 && newProduct) {
+    const collectionsToInsert = collectionIds.map(cid => ({
+      product_id: newProduct.id,
+      collection_id: cid
+    }))
+
+    const { error: collectionsError } = await supabase
+      .from("product_collections")
+      .insert(collectionsToInsert)
+
+    if (collectionsError) {
+      console.error("Error linking collections:", collectionsError)
+      // Non-blocking error, but good to log
+    }
+  }
+
   revalidatePath("/admin/products")
   redirect("/admin/products")
 }
@@ -122,6 +151,11 @@ export async function updateProduct(formData: FormData) {
   await ensureAdmin()
   const supabase = await createClient()
   const id = formData.get("id") as string
+
+  const collectionIds = formData.getAll("collection_ids") as string[]
+  // Keep first collection_id for backwards compatibility
+  const primaryCollectionId = collectionIds.length > 0 ? collectionIds[0] : null
+
   const updates = {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
@@ -129,11 +163,33 @@ export async function updateProduct(formData: FormData) {
     price: parseFloat(formData.get("price") as string),
     stock_count: parseInt(formData.get("stock_count") as string),
     image_url: formData.get("image_url") as string,
-    collection_id: formData.get("collection_id") as string || null,
+    collection_id: primaryCollectionId, // Update primary collection
     status: formData.get("status") as string,
   }
+
   const { error } = await supabase.from("products").update(updates).eq("id", id)
   if (error) throw new Error(error.message)
+
+  // Update collections: 
+  // 1. Delete existing associations
+  await supabase.from("product_collections").delete().eq("product_id", id)
+
+  // 2. Insert new associations
+  if (collectionIds.length > 0) {
+    const collectionsToInsert = collectionIds.map(cid => ({
+      product_id: id,
+      collection_id: cid
+    }))
+
+    const { error: collectionsError } = await supabase
+      .from("product_collections")
+      .insert(collectionsToInsert)
+
+    if (collectionsError) {
+      console.error("Error updating product collections:", collectionsError)
+    }
+  }
+
   revalidatePath("/admin/products")
   redirect("/admin/products")
 }
@@ -247,6 +303,25 @@ export async function deleteCollection(id: string) {
   const supabase = await createClient()
   await supabase.from("collections").delete().eq("id", id)
   revalidatePath("/admin/collections")
+}
+
+export async function getProductCollections(productId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("product_collections")
+    .select("collection_id, collections(*)")
+    .eq("product_id", productId)
+
+  if (error) {
+    console.error("Error fetching product collections:", error)
+    return []
+  }
+
+  // Flatten the structure to return just the collection objects
+  // The join returns a single object for 'collections', not an array
+  return data.map(item => item.collections as unknown as Collection).filter(Boolean)
 }
 
 // --- Orders ---

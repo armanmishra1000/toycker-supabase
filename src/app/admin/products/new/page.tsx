@@ -1,4 +1,5 @@
 import { createProduct, getAdminCollections } from "@/lib/data/admin"
+import CollectionCheckboxList from "@modules/admin/components/collection-checkbox-list"
 import Link from "next/link"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
@@ -63,13 +64,13 @@ export default async function NewProduct() {
           </AdminCard>
 
           <AdminCard title="Pricing & Taxes">
-             <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Price (INR)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
-                  <input name="price" type="number" step="0.01" placeholder="0.00" required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
-                </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Price (INR)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                <input name="price" type="number" step="0.01" placeholder="0.00" required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
               </div>
+            </div>
           </AdminCard>
 
           <AdminCard title="Inventory Control">
@@ -82,13 +83,12 @@ export default async function NewProduct() {
           <AdminCard title="Organization">
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Initial Collection</label>
-                <select name="collection_id" className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 bg-white">
-                  <option value="">None</option>
-                  {collections.map(c => (
-                    <option key={c.id} value={c.id}>{c.title}</option>
-                  ))}
-                </select>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Collections</label>
+                <CollectionCheckboxList
+                  collections={collections}
+                  selectedIds={[]}
+                  name="collection_ids"
+                />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">URL Handle</label>

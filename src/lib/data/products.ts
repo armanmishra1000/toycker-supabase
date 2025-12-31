@@ -66,7 +66,18 @@ export const listProducts = cache(async function listProducts(options: {
   }
 
   if (options.queryParams?.collection_id?.length) {
-    query = query.in("collection_id", options.queryParams.collection_id)
+    // Filter by junction table
+    const { data: productIds } = await supabase
+      .from("product_collections")
+      .select("product_id")
+      .in("collection_id", options.queryParams.collection_id)
+
+    if (productIds && productIds.length > 0) {
+      query = query.in("id", productIds.map(p => p.product_id))
+    } else {
+      // Return empty if filtered collection has no products
+      return { response: { products: [], count: 0 } }
+    }
   }
 
   const { data, count, error } = await query.order("created_at", { ascending: false })
@@ -128,7 +139,21 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
     .select(PRODUCT_SELECT, { count: "exact" })
 
   if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])
-  if (queryParams?.collection_id) query = query.in("collection_id", queryParams.collection_id as string[])
+  if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])
+
+  if (queryParams?.collection_id) {
+    const collectionIds = queryParams.collection_id as string[]
+    const { data: productIds } = await supabase
+      .from("product_collections")
+      .select("product_id")
+      .in("collection_id", collectionIds)
+
+    if (productIds && productIds.length > 0) {
+      query = query.in("id", productIds.map(p => p.product_id))
+    } else {
+      return { response: { products: [], count: 0 }, pagination: { page, limit } }
+    }
+  }
   if (queryParams?.q) query = query.ilike("name", `%${queryParams.q}%`)
 
   if (priceFilter?.min !== undefined) query = query.gte("price", priceFilter.min)
