@@ -81,6 +81,29 @@ export async function login(_currentState: unknown, formData: FormData) {
   }
 
   revalidateTag("customers")
+
+  // Check if user is an admin and redirect accordingly
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (user) {
+    const ADMIN_EMAILS = ["admin@toycker.com", "tutanymo@fxzig.com"]
+    const isHardcodedAdmin = ADMIN_EMAILS.includes(user.email || "")
+
+    if (isHardcodedAdmin) {
+      redirect("/admin")
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+
+    if (profile?.role === "admin") {
+      redirect("/admin")
+    }
+  }
+
   redirect(returnUrl || "/account")
 }
 
