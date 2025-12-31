@@ -1,25 +1,14 @@
 import React from "react"
 import Link from "next/link"
 import {
-  HomeIcon,
-  TagIcon,
-  ShoppingBagIcon,
-  UsersIcon,
   ArrowLeftOnRectangleIcon,
-  RectangleStackIcon,
   ArrowTopRightOnSquareIcon,
-  FolderIcon,
-  Cog6ToothIcon,
-  ArchiveBoxIcon,
   MagnifyingGlassIcon,
-  CreditCardIcon,
-  TruckIcon,
-  SparklesIcon,
-  StarIcon,
-  ReceiptPercentIcon
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin } from "@/lib/data/admin"
+import { AdminSidebarNav } from "@modules/admin/components/admin-sidebar-nav"
+import { AdminSettingsLink } from "@modules/admin/components/admin-settings-link"
 
 export const metadata = {
   title: "Toycker Admin",
@@ -27,23 +16,6 @@ export const metadata = {
 }
 
 export const revalidate = 30
-
-const NAV_ITEMS = [
-  { label: "Home", href: "/admin", icon: HomeIcon },
-  { label: "Orders", href: "/admin/orders", icon: ShoppingBagIcon },
-  { label: "Products", href: "/admin/products", icon: TagIcon },
-  { label: "Inventory", href: "/admin/inventory", icon: ArchiveBoxIcon },
-  { label: "Collections", href: "/admin/collections", icon: RectangleStackIcon },
-  { label: "Categories", href: "/admin/categories", icon: FolderIcon },
-  { label: "Shipping", href: "/admin/shipping", icon: TruckIcon },
-  { label: "Shipping Partners", href: "/admin/shipping-partners", icon: TruckIcon },
-  { label: "Payments", href: "/admin/payments", icon: CreditCardIcon },
-  { label: "Customers", href: "/admin/customers", icon: UsersIcon },
-  { label: "Club", href: "/admin/club", icon: SparklesIcon },
-  { label: "Reviews", href: "/admin/reviews", icon: StarIcon },
-  { label: "Team", href: "/admin/team", icon: UsersIcon },
-  { label: "Discounts", href: "/admin/discounts", icon: ReceiptPercentIcon },
-]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await ensureAdmin()
@@ -63,19 +35,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
-          <p className="px-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 mt-2">Store Management</p>
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg transition-all text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 active:scale-[0.98] active:opacity-90"
-            >
-              <item.icon className="mr-3 h-5 w-5 text-[#8c9196] group-hover:text-gray-100 transition-colors" />
-              {item.label}
-            </Link>
-          ))}
-
-          <p className="px-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 mt-6">Sales Channels</p>
+          <AdminSidebarNav />
           <Link
             href="/"
             target="_blank"
@@ -90,13 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </nav>
 
         <div className="p-2 border-t border-white/[0.08] space-y-1">
-          <Link
-            href="/admin/settings"
-            className="group flex items-center px-3 py-2 text-[14px] font-medium rounded-lg text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 transition-colors active:scale-[0.98] active:opacity-90"
-          >
-            <Cog6ToothIcon className="mr-3 h-5 w-5 text-[#8c9196] group-hover:text-gray-100" />
-            Settings
-          </Link>
+          <AdminSettingsLink />
           <form action={signout}>
             <button className="flex items-center w-full px-3 py-2 text-[14px] font-medium rounded-lg text-[#a6acb2] hover:bg-white/[0.08] hover:text-gray-100 transition-all active:scale-[0.98] active:opacity-90">
               <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5 text-[#8c9196] group-hover:text-gray-100" />
