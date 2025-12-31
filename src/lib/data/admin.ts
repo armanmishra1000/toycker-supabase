@@ -84,18 +84,70 @@ export async function deleteCategory(id: string) {
 }
 
 // --- Products ---
-export async function getAdminProducts(status?: string) {
+
+interface GetAdminProductsParams {
+  page?: number
+  limit?: number
+  status?: string
+  search?: string
+}
+
+interface PaginatedProductsResponse {
+  products: Product[]
+  count: number
+  totalPages: number
+  currentPage: number
+}
+
+export async function getAdminProducts(params: GetAdminProductsParams): Promise<PaginatedProductsResponse> {
   await ensureAdmin()
+
+  const { page = 1, limit = 20, status, search } = params
   const supabase = await createClient()
-  let query = supabase.from("products").select("*").order("created_at", { ascending: false })
+
+  // Calculate total count first
+  let countQuery = supabase.from("products").select("*", { count: "exact", head: true })
+
+  if (status && status !== 'all') {
+    countQuery = countQuery.eq('status', status)
+  }
+
+  if (search && search.trim()) {
+    countQuery = countQuery.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
+  }
+
+  const { count } = await countQuery
+
+  // Calculate pagination
+  const offset = (page - 1) * limit
+  const from = offset
+  const to = offset + limit - 1
+  const totalPages = count ? Math.ceil(count / limit) : 1
+
+  // Fetch paginated data
+  let query = supabase
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .range(from, to)
 
   if (status && status !== 'all') {
     query = query.eq('status', status)
   }
 
+  if (search && search.trim()) {
+    query = query.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
+  }
+
   const { data, error } = await query
   if (error) throw error
-  return data as Product[]
+
+  return {
+    products: (data || []) as Product[],
+    count: count || 0,
+    totalPages,
+    currentPage: page
+  }
 }
 
 export async function createProduct(formData: FormData) {

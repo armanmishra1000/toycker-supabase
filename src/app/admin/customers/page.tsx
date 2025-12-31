@@ -13,7 +13,7 @@ export default async function AdminCustomers() {
     <div className="space-y-6">
       <AdminPageHeader title="Customers" subtitle="Manage your customer details and history." />
 
-      <AdminCard className="p-0 border-none shadow-sm bg-transparent">
+      <div className="p-0 border-none shadow-sm bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-gray-100">
             <thead className="bg-[#f9fafb]">
@@ -66,7 +66,7 @@ export default async function AdminCustomers() {
             </tbody>
           </table>
         </div>
-      </AdminCard>
+      </div>
     </div>
   )
 }
