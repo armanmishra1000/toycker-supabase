@@ -745,3 +745,53 @@ export async function removeStaffAccess(userId: string) {
   if (error) throw new Error(error.message)
   revalidatePath("/admin/team")
 }
+
+export async function getRegisteredUsers(searchQuery?: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  let query = supabase
+    .from("profiles")
+    .select("id, email, first_name, last_name, created_at")
+    .is("admin_role_id", null) // Only non-staff users
+    .order("email")
+
+  if (searchQuery && searchQuery.trim()) {
+    query = query.or(`email.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`)
+  }
+
+  const { data, error } = await query.limit(50)
+  if (error) throw error
+  return data
+}
+
+export async function promoteToStaff(userId: string, roleId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Verify user exists and is not already staff
+  const { data: user, error: userError } = await supabase
+    .from("profiles")
+    .select("id, admin_role_id")
+    .eq("id", userId)
+    .single()
+
+  if (userError || !user) {
+    throw new Error("User not found")
+  }
+
+  if (user.admin_role_id) {
+    throw new Error("User is already a staff member")
+  }
+
+  // Assign the role
+  const { error } = await supabase
+    .from("profiles")
+    .update({ admin_role_id: roleId })
+    .eq("id", userId)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/admin/team")
+  redirect("/admin/team")
+}

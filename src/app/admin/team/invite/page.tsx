@@ -1,20 +1,21 @@
-import { getAdminRoles, inviteStaffMember } from "@/lib/data/admin"
+import { getAdminRoles, promoteToStaff } from "@/lib/data/admin"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
+import SearchableUserSelect from "./user-selector"
 import Link from "next/link"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 import { redirect } from "next/navigation"
 
-async function handleInvite(formData: FormData) {
+async function handlePromotion(formData: FormData) {
     "use server"
-    const email = formData.get("email") as string
+    const userId = formData.get("user_id") as string
     const roleId = formData.get("role_id") as string
 
-    await inviteStaffMember(email, roleId)
+    await promoteToStaff(userId, roleId)
     redirect("/admin/team")
 }
 
-export default async function InviteStaff() {
+export default async function AddStaff() {
     const roles = await getAdminRoles()
 
     return (
@@ -26,24 +27,17 @@ export default async function InviteStaff() {
                 </Link>
             </nav>
 
-            <AdminPageHeader title="Invite Staff Member" />
+            <AdminPageHeader
+                title="Add Staff Member"
+                subtitle="Select a registered user to promote to staff."
+            />
 
             <AdminCard>
-                <form action={handleInvite} className="space-y-6">
+                <form action={handlePromotion} className="space-y-6">
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                            Email Address
-                        </label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            required
-                            placeholder="colleague@example.com"
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                            An invitation email will be sent to this address.
+                        <SearchableUserSelect />
+                        <p className="text-xs text-gray-500 mt-2">
+                            Only registered users who are not already staff will appear.
                         </p>
                     </div>
 
@@ -77,7 +71,7 @@ export default async function InviteStaff() {
                             type="submit"
                             className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-all"
                         >
-                            Send Invitation
+                            Add to Team
                         </button>
                     </div>
                 </form>
