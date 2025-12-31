@@ -28,7 +28,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
   const membershipVariant = isMember ? "success" : "neutral"
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-20">
+    <div className="space-y-6 pb-20">
       {/* Navigation */}
       <nav className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
         <Link href="/admin/customers" className="flex items-center">

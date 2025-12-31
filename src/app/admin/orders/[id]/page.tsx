@@ -43,7 +43,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
   const paymentMethod = order.payment_method || (order.payu_txn_id ? "PayU" : "Cash on Delivery")
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="space-y-6">
       <nav className="flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest">
         <Link href="/admin/orders" className="flex items-center hover:text-black transition-colors">
           <ChevronLeftIcon className="h-3 w-3 mr-1" strokeWidth={3} />

@@ -41,7 +41,7 @@ export default async function AdminProducts({
         }
       />
 
-      <AdminCard className="p-0 border-none shadow-none bg-transparent">
+      <div className="p-0 border-none shadow-none bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
           {/* Tabs */}
           <div className="border-b border-gray-200 px-4">
@@ -142,7 +142,7 @@ export default async function AdminProducts({
             </tbody>
           </table>
         </div>
-      </AdminCard>
+      </div>
     </div>
   )
 }

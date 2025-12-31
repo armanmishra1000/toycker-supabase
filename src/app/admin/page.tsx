@@ -10,7 +10,7 @@ export default async function AdminDashboard() {
   const latestOrders = (await getAdminOrders()).slice(0, 5)
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Overview" subtitle="Here's what's happening with your store today." />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

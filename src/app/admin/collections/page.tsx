@@ -21,7 +21,7 @@ export default async function AdminCollections() {
     <div className="space-y-6">
       <AdminPageHeader title="Collections" subtitle="Group products into collections to make it easier for customers to find them by category." actions={actions} />
 
-      <AdminCard className="p-0 border-none shadow-none bg-transparent">
+      <div className="p-0 border-none shadow-none bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-[#f7f8f9]">
@@ -80,7 +80,7 @@ export default async function AdminCollections() {
             </tbody>
           </table>
         </div>
-      </AdminCard>
+      </div>
     </div>
   )
 }

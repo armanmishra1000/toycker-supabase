@@ -36,7 +36,7 @@ export default async function AdminTeam() {
                 }
             />
 
-            <AdminCard className="p-0 border-none shadow-none bg-transparent">
+            <div className="p-0 border-none shadow-none bg-transparent">
                 <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-[#f7f8f9]">
@@ -98,7 +98,7 @@ export default async function AdminTeam() {
                         </tbody>
                     </table>
                 </div>
-            </AdminCard>
+            </div>
         </div>
     )
 }

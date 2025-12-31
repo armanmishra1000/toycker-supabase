@@ -21,7 +21,7 @@ export default async function EditCollection({ params }: { params: Promise<{ id:
   )
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="space-y-8">
       <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
         <Link href="/admin/collections" className="flex items-center hover:text-gray-900 transition-colors">
           <ChevronLeftIcon className="h-4 w-4 mr-1" />

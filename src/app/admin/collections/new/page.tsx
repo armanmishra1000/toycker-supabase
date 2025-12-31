@@ -15,7 +15,7 @@ export default function NewCollection() {
   )
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="space-y-8">
       <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
         <Link href="/admin/collections" className="flex items-center hover:text-gray-900">
           <ChevronLeftIcon className="h-4 w-4 mr-1" />
@@ -26,7 +26,7 @@ export default function NewCollection() {
       <AdminPageHeader title="Create Collection" actions={actions} />
 
       <form id="collection-form" action={createCollection}>
-        <AdminCard title="General Information">
+        <div title="General Information">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Title</label>
@@ -38,7 +38,7 @@ export default function NewCollection() {
               <p className="mt-1 text-xs text-gray-400">Used for the collection URL</p>
             </div>
           </div>
-        </AdminCard>
+        </div>
       </form>
     </div>
   )
