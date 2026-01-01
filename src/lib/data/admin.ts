@@ -1095,7 +1095,7 @@ export async function updateStaffRole(userId: string, roleId: string) {
 
   const { error } = await supabase
     .from("profiles")
-    .update({ admin_role_id: roleId })
+    .update({ admin_role_id: roleId, role: "admin" })
     .eq("id", userId)
 
   if (error) throw new Error(error.message)
@@ -1108,7 +1108,7 @@ export async function removeStaffAccess(userId: string) {
 
   const { error } = await supabase
     .from("profiles")
-    .update({ admin_role_id: null })
+    .update({ admin_role_id: null, role: null })
     .eq("id", userId)
 
   if (error) throw new Error(error.message)
@@ -1153,10 +1153,10 @@ export async function promoteToStaff(userId: string, roleId: string) {
     throw new Error("User is already a staff member")
   }
 
-  // Assign the role
+  // Assign the role AND set admin access
   const { error } = await supabase
     .from("profiles")
-    .update({ admin_role_id: roleId })
+    .update({ admin_role_id: roleId, role: "admin" })
     .eq("id", userId)
 
   if (error) throw new Error(error.message)
