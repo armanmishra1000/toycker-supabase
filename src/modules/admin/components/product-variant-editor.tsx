@@ -119,7 +119,7 @@ export default function ProductVariantEditor({
                                             className="w-full border-gray-300 rounded-md text-sm focus:ring-black focus:border-black"
                                             placeholder="0.00"
                                             value={variant.price}
-                                            onChange={(e) => handleChange(index, "price", parseFloat(e.target.value))}
+                                            onChange={(e) => handleChange(index, "price", e.target.value === "" ? 0 : parseFloat(e.target.value))}
                                         />
                                     </td>
                                     <td className="p-2">
@@ -128,7 +128,7 @@ export default function ProductVariantEditor({
                                             className="w-full border-gray-300 rounded-md text-sm focus:ring-black focus:border-black"
                                             placeholder="0"
                                             value={variant.inventory_quantity}
-                                            onChange={(e) => handleChange(index, "inventory_quantity", parseInt(e.target.value))}
+                                            onChange={(e) => handleChange(index, "inventory_quantity", e.target.value === "" ? 0 : parseInt(e.target.value))}
                                         />
                                     </td>
                                     <td className="p-2 text-center">

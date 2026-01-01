@@ -369,24 +369,45 @@ export async function saveProductVariants(
   await ensureAdmin()
   const supabase = await createClient()
 
-  // Prepare variants for upsert
-  const variantsToSave = variants.map(v => ({
-    id: v.id || undefined, // Let DB generate if new
-    product_id: productId,
-    title: v.title,
-    sku: v.sku || null,
-    price: v.price,
-    inventory_quantity: v.inventory_quantity,
-    manage_inventory: true,
-    allow_backorder: false,
-  }))
+  // Separate new variants from existing ones
+  const newVariants = variants.filter(v => !v.id)
+  const existingVariants = variants.filter(v => v.id)
 
-  // Upsert all variants
-  const { error } = await supabase
-    .from("product_variants")
-    .upsert(variantsToSave, { onConflict: "id" })
+  // Insert new variants (without id - let DB auto-generate)
+  if (newVariants.length > 0) {
+    const { error: insertError } = await supabase
+      .from("product_variants")
+      .insert(newVariants.map(v => ({
+        product_id: productId,
+        title: v.title,
+        sku: v.sku || null,
+        price: v.price,
+        inventory_quantity: v.inventory_quantity,
+        manage_inventory: true,
+        allow_backorder: false,
+      })))
 
-  if (error) throw new Error(error.message)
+    if (insertError) throw new Error(insertError.message)
+  }
+
+  // Update existing variants
+  if (existingVariants.length > 0) {
+    const { error: updateError } = await supabase
+      .from("product_variants")
+      .upsert(existingVariants.map(v => ({
+        id: v.id,
+        product_id: productId,
+        title: v.title,
+        sku: v.sku || null,
+        price: v.price,
+        inventory_quantity: v.inventory_quantity,
+        manage_inventory: true,
+        allow_backorder: false,
+      })), { onConflict: "id" })
+
+    if (updateError) throw new Error(updateError.message)
+  }
+
   revalidatePath(`/admin/products/${productId}`)
   revalidatePath("/admin/products")
 }
