@@ -89,8 +89,8 @@ export default function ProductVariantEditor({
                             <tr>
                                 <th className="px-4 py-3 min-w-[150px]">Title / Option</th>
                                 <th className="px-4 py-3 w-[150px]">SKU</th>
-                                <th className="px-4 py-3 w-[120px]">Price</th>
-                                <th className="px-4 py-3 w-[120px]">Compare at</th>
+                                <th className="px-4 py-3 w-[120px]">Selling Price</th>
+                                <th className="px-4 py-3 w-[120px]">MRP</th>
                                 <th className="px-4 py-3 w-[100px]">Stock</th>
                                 <th className="px-4 py-3 w-[50px]"></th>
                             </tr>

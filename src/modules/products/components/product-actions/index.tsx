@@ -63,6 +63,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
   const searchParams = useSearchParams()
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [giftWrap, setGiftWrap] = useState(false)
   const wishlist = useOptionalWishlist()
@@ -103,6 +104,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
   }, [product.variants])
 
   const selectedVariant = useMemo(() => {
+    // Direct variant selection by ID (for simple variant dropdown)
+    if (selectedVariantId && product.variants) {
+      return product.variants.find((v) => v.id === selectedVariantId)
+    }
+
     // If it's a simple product, use the first variant (or product itself if mocked)
     if (isSimple && product.variants && product.variants.length > 0) {
       return product.variants[0]
@@ -112,11 +118,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
       return undefined
     }
 
-    return product.variants.find((v: any) => {
+    return product.variants.find((v) => {
       const variantOptions = optionsAsKeymap(v.options)
       return isEqual(variantOptions, options)
     })
-  }, [product.variants, options, isSimple])
+  }, [product.variants, options, isSimple, selectedVariantId])
 
   useEffect(() => {
     if (selectedVariant || isSimple) {
@@ -476,6 +482,78 @@ export default function ProductActions({ product, disabled, showSupportActions =
           })}
         </div>
       )}
+
+      {/* Color swatch variant selector when options don't exist but variants do */}
+      {!isSimple && (product.options?.length ?? 0) === 0 && (product.variants?.length ?? 0) > 1 && (() => {
+        // Color name to hex mapping for swatches
+        const colorSwatchMap: Record<string, string> = {
+          red: "#E94235",
+          orange: "#FF8A3C",
+          yellow: "#F6E36C",
+          green: "#3BB273",
+          blue: "#3A7BEB",
+          navy: "#1D3C78",
+          purple: "#8E44AD",
+          pink: "#FF5D8F",
+          black: "#111111",
+          white: "#FAFAFA",
+          grey: "#D9D9D9",
+          gray: "#D9D9D9",
+          brown: "#9B5B2A",
+          gold: "#FFD700",
+          silver: "#C0C0C0",
+          beige: "#F5F5DC",
+          cream: "#FFFDD0",
+          maroon: "#800000",
+          teal: "#008080",
+          coral: "#FF7F50",
+          olive: "#808000",
+          mint: "#98FF98",
+          lavender: "#E6E6FA",
+          cyan: "#00FFFF",
+          turquoise: "#40E0D0",
+        }
+
+        return (
+          <div className="flex flex-col gap-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-900">Color</span>
+              <span className="text-sm text-gray-500">
+                {selectedVariant?.title ?? "Choose"}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {product.variants?.map((variant) => {
+                const colorName = variant.title?.toLowerCase().trim() || ""
+                const colorHex = colorSwatchMap[colorName] || null
+                const isSelected = selectedVariantId === variant.id
+
+                return (
+                  <button
+                    key={variant.id}
+                    onClick={() => setSelectedVariantId(variant.id)}
+                    disabled={!!disabled || isAdding || isBuying}
+                    className={`relative flex h-12 w-12 items-center justify-center rounded-full border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
+                      ${isSelected ? "border-[#E7353A] ring-2 ring-[#FDD5DB]" : "border-gray-200 hover:border-gray-400"}`}
+                    title={variant.title}
+                  >
+                    <span
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full"
+                      style={{ backgroundColor: colorHex || "#f4f4f4" }}
+                    >
+                      {!colorHex && (
+                        <span className="text-[10px] font-bold text-gray-700">
+                          {variant.title?.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       <div className="space-y-3">
         <span className="text-sm font-medium text-slate-700">Add-ons</span>

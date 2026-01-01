@@ -184,7 +184,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
 
       const refreshFromApi = async () => {
         try {
-        const response = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
+          const response = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
           if (response.ok) {
             const payload = (await response.json()) as { cart: Cart | null }
             if (payload.cart) {
@@ -239,6 +239,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           const serverCart = await addToCart({
             productId: product.id,
             quantity,
+            variantId: variant.id,
           })
 
           if (serverCart) {
