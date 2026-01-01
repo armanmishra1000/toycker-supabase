@@ -31,6 +31,7 @@ export interface ProductVariant {
   sku?: string;
   barcode?: string;
   price: number;
+  compare_at_price?: number | null;
   original_price?: number;
   inventory_quantity: number;
   manage_inventory: boolean;
@@ -52,6 +53,7 @@ export interface VariantFormData {
   title: string;
   sku: string;
   price: number;
+  compare_at_price?: number | null;
   inventory_quantity: number;
 }
 

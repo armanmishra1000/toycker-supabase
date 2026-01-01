@@ -1,4 +1,4 @@
-import { getAdminCollections, updateProduct, getProductVariants, getProductCollections, getAdminCategories } from "@/lib/data/admin"
+import { getAdminCollections, updateProduct, getProductVariants, getProductCollections, getAdminCategories, getProductOptions } from "@/lib/data/admin"
 import CategoryCheckboxList from "@modules/admin/components/category-checkbox-list"
 import CollectionCheckboxList from "@modules/admin/components/collection-checkbox-list"
 import { SubmitButton } from "@modules/admin/components/submit-button"
@@ -10,17 +10,19 @@ import { notFound } from "next/navigation"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminBadge from "@modules/admin/components/admin-badge"
+import ProductOptionsEditor from "@modules/admin/components/product-options-editor"
 import ProductVariantEditor from "@modules/admin/components/product-variant-editor"
 import { ChevronLeftIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 
 export default async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [product, collectionsData, categoriesData, variants, productCollections] = await Promise.all([
+  const [product, collectionsData, categoriesData, variants, productCollections, options] = await Promise.all([
     retrieveProduct(id),
     getAdminCollections(),
     getAdminCategories(),
     getProductVariants(id),
-    getProductCollections(id)
+    getProductCollections(id),
+    getProductOptions(id)
   ])
 
   const collections = collectionsData.collections
@@ -123,6 +125,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
               </div>
             </AdminCard>
 
+            <ProductOptionsEditor productId={product.id} initialOptions={options} hasVariants={variants.length > 0} />
             <ProductVariantEditor productId={product.id} initialVariants={variants} />
           </div>
 

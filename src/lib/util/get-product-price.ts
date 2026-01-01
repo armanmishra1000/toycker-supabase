@@ -38,13 +38,14 @@ export const getProductPrice = ({
   const currencyCode = product.currency_code || "INR"
 
   // Helper to build price object
-  const buildPrice = (price: number, originalPrice?: number): VariantPrice => {
-    const original = originalPrice || price
+  const buildPrice = (price: number, originalPrice?: number, compareAtPrice?: number | null): VariantPrice => {
+    // Use compare_at_price if available, otherwise fall back to originalPrice
+    const original = compareAtPrice || originalPrice || price
 
     // Calculate Club Price
     // Club price is applied on the PAYABLE price (calculated_price_number)
-    // If the product is already on sale (compare_at_price), club discount is usually on top of that 
-    // OR on the sale price? 
+    // If the product is already on sale (compare_at_price), club discount is usually on top of that
+    // OR on the sale price?
     // Plan said: "Club members get discounted 'Club Price' on all products (percentage set in admin)"
     // Usually club discount is on the current selling price.
 
@@ -85,7 +86,7 @@ export const getProductPrice = ({
   if (variantId && product.variants) {
     const variant = product.variants.find((v) => v.id === variantId)
     if (variant) {
-      variantPrice = buildPrice(variant.price)
+      variantPrice = buildPrice(variant.price, undefined, variant.compare_at_price)
     }
   }
 

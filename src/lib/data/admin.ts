@@ -382,6 +382,7 @@ export async function saveProductVariants(
         title: v.title,
         sku: v.sku || null,
         price: v.price,
+        compare_at_price: v.compare_at_price || null,
         inventory_quantity: v.inventory_quantity,
         manage_inventory: true,
         allow_backorder: false,
@@ -400,6 +401,7 @@ export async function saveProductVariants(
         title: v.title,
         sku: v.sku || null,
         price: v.price,
+        compare_at_price: v.compare_at_price || null,
         inventory_quantity: v.inventory_quantity,
         manage_inventory: true,
         allow_backorder: false,
@@ -416,6 +418,243 @@ export async function deleteVariant(variantId: string) {
   await ensureAdmin()
   const supabase = await createClient()
   await supabase.from("product_variants").delete().eq("id", variantId)
+}
+
+// --- Product Options ---
+
+export async function getProductOptions(productId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("product_options")
+    .select(`
+      *,
+      values:product_option_values(*)
+    `)
+    .eq("product_id", productId)
+    .order("created_at")
+
+  if (error) throw error
+  return data
+}
+
+export async function saveProductOption(
+  productId: string,
+  option: { title: string; values: string[] }
+) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Insert option
+  const { data: optionData, error: optionError } = await supabase
+    .from("product_options")
+    .insert({ product_id: productId, title: option.title })
+    .select()
+    .single()
+
+  if (optionError) throw optionError
+
+  // Insert values
+  const { error: valuesError } = await supabase
+    .from("product_option_values")
+    .insert(
+      option.values.map(value => ({
+        option_id: optionData.id,
+        value: value.trim()
+      }))
+    )
+
+  if (valuesError) throw valuesError
+
+  revalidatePath(`/admin/products/${productId}`)
+  return optionData
+}
+
+export async function deleteProductOption(optionId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  await supabase.from("product_options").delete().eq("id", optionId)
+}
+
+export async function generateVariantsFromOptions(
+  productId: string,
+  options: { title: string; values: { value: string }[] }[]
+) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Generate Cartesian product of all option values
+  const generateVariantCombinations = (
+    options: { title: string; values: { value: string }[] }[]
+  ): string[][] => {
+    if (options.length === 0) return [[]]
+
+    const [firstOption, ...remainingOptions] = options
+    const remainingCombinations = generateVariantCombinations(remainingOptions)
+
+    const firstOptionValues = firstOption.values || []
+
+    const combinations: string[][] = []
+    for (const valueObj of firstOptionValues) {
+      for (const combination of remainingCombinations) {
+        combinations.push([valueObj.value, ...combination])
+      }
+    }
+
+    return combinations
+  }
+
+  const combinations = generateVariantCombinations(options)
+
+  // Create variants for each combination
+  const variantsToInsert = combinations.map(combination => ({
+    product_id: productId,
+    title: combination.join(" / "),
+    price: 0,
+    inventory_quantity: 0,
+    manage_inventory: true,
+    allow_backorder: false,
+  }))
+
+  const { data, error } = await supabase
+    .from("product_variants")
+    .insert(variantsToInsert)
+    .select()
+
+  if (error) throw error
+
+  revalidatePath(`/admin/products/${productId}`)
+  return data
+}
+
+// Sync existing variants into product_options table
+export async function syncOptionsFromVariants(productId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Get all variants for this product with their options
+  const { data: variants, error: variantsError } = await supabase
+    .from("product_variants")
+    .select("id, title, options")
+    .eq("product_id", productId)
+
+  if (variantsError) throw variantsError
+
+  // Get existing options to avoid duplicates
+  const { data: existingOptions } = await supabase
+    .from("product_options")
+    .select("id, title")
+    .eq("product_id", productId)
+
+  const optionMap = new Map<string, string>()
+  existingOptions?.forEach((opt: { id: string; title: string }) => {
+    optionMap.set(opt.title.toLowerCase(), opt.id)
+  })
+
+  // Collect all variants to update (bulk update at the end)
+  const variantsToUpdate: { id: string; options: any[] }[] = []
+
+  // Process each variant title (e.g., "Color: white" or "Size: M / Color: red")
+  for (const variant of variants || []) {
+    const parts = variant.title.split("/").map((p: string) => p.trim())
+    const newOptions: any[] = []
+
+    for (const part of parts) {
+      const match = part.match(/^([^:]+):\s*(.+)$/)
+      if (match) {
+        const optionTitle = match[1].trim()
+        const optionValue = match[2].trim()
+
+        // Get or create option
+        let optionId: string | undefined = optionMap.get(optionTitle.toLowerCase())
+        if (!optionId) {
+          const { data: newOption, error: insertError } = await supabase
+            .from("product_options")
+            .insert({ title: optionTitle, product_id: productId })
+            .select("id")
+            .single()
+
+          if (insertError) {
+            console.error("Failed to create option:", insertError)
+            continue
+          }
+
+          if (newOption?.id) {
+            optionId = newOption.id
+            // Non-null assertion: we just verified optionId is defined
+            optionMap.set(optionTitle.toLowerCase(), optionId!)
+          }
+        }
+
+        if (!optionId) continue
+
+        // Check if value already exists for this option
+        const { data: existingValue } = await supabase
+          .from("product_option_values")
+          .select("id")
+          .eq("option_id", optionId)
+          .eq("value", optionValue)
+          .maybeSingle()
+
+        if (!existingValue) {
+          // Create option value linked to variant
+          const { data: newValue, error: valueError } = await supabase
+            .from("product_option_values")
+            .insert({
+              option_id: optionId,
+              value: optionValue,
+              variant_id: variant.id
+            })
+            .select("id")
+            .maybeSingle()
+
+          if (valueError) {
+            console.error("Failed to create option value:", valueError)
+            continue
+          }
+
+          // Add the new option reference with the correct IDs
+          if (newValue?.id) {
+            newOptions.push({
+              id: newValue.id,
+              option_id: optionId,
+              value: optionValue
+            })
+          }
+        } else {
+          // Value already exists, add reference to it
+          newOptions.push({
+            id: existingValue.id,
+            option_id: optionId,
+            value: optionValue
+          })
+        }
+      }
+    }
+
+    // Update the variant's options array with the new structure
+    if (newOptions.length > 0) {
+      variantsToUpdate.push({
+        id: variant.id,
+        options: newOptions
+      })
+    }
+  }
+
+  // Bulk update all variants with their new options
+  if (variantsToUpdate.length > 0) {
+    const { error: updateError } = await supabase
+      .from("product_variants")
+      .upsert(variantsToUpdate)
+
+    if (updateError) {
+      console.error("Failed to update variant options:", updateError)
+    }
+  }
+
+  revalidatePath(`/admin/products/${productId}`)
 }
 
 // --- Collections ---
