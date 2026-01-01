@@ -2,6 +2,7 @@ import { createProduct, getAdminCollections, getAdminCategories } from "@/lib/da
 import CollectionCheckboxList from "@modules/admin/components/collection-checkbox-list"
 import { SubmitButton } from "@modules/admin/components/submit-button"
 import ImageUpload from "@modules/admin/components/image-upload"
+import RichTextEditor from "@modules/admin/components/rich-text-editor"
 import Link from "next/link"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
@@ -37,7 +38,7 @@ export default async function NewProduct() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
-                <textarea name="description" rows={8} placeholder="Tell the product's story..." className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
+                <RichTextEditor name="description" placeholder="Tell the product's story..." />
               </div>
             </div>
           </AdminCard>
