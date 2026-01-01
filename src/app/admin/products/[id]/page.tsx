@@ -3,6 +3,7 @@ import CategoryCheckboxList from "@modules/admin/components/category-checkbox-li
 import CollectionCheckboxList from "@modules/admin/components/collection-checkbox-list"
 import { SubmitButton } from "@modules/admin/components/submit-button"
 import ImageUpload from "@modules/admin/components/image-upload"
+import RichTextEditor from "@modules/admin/components/rich-text-editor"
 import Link from "next/link"
 import { retrieveProduct } from "@lib/data/products"
 import { notFound } from "next/navigation"
@@ -80,7 +81,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
-                  <textarea name="description" rows={10} defaultValue={product.description || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0 leading-relaxed transition-all" />
+                  <RichTextEditor name="description" defaultValue={product.description || ""} placeholder="Tell the product's story..." />
                 </div>
               </div>
             </AdminCard>
