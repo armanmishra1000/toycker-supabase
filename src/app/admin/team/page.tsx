@@ -1,15 +1,42 @@
 import { getStaffMembers, getAdminRoles, removeStaffAccess } from "@/lib/data/admin"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
-import AdminCard from "@modules/admin/components/admin-card"
+import { AdminPagination } from "@modules/admin/components/admin-pagination"
+import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import RoleSelector from "./role-selector"
 import Link from "next/link"
-import { UserPlusIcon, Cog6ToothIcon, TrashIcon } from "@heroicons/react/24/outline"
+import { UserPlusIcon, Cog6ToothIcon, TrashIcon, UserGroupIcon } from "@heroicons/react/24/outline"
 
-export default async function AdminTeam() {
-    const [staff, roles] = await Promise.all([
-        getStaffMembers().catch(() => []),
+export default async function AdminTeam({
+    searchParams
+}: {
+    searchParams: Promise<{ page?: string; search?: string }>
+}) {
+    const { page = "1", search = "" } = await searchParams
+    const pageNumber = parseInt(page, 10) || 1
+
+    const [staffData, roles] = await Promise.all([
+        getStaffMembers({
+            page: pageNumber,
+            limit: 20,
+            search: search || undefined
+        }).catch(() => ({ staff: [], count: 0, totalPages: 1, currentPage: 1 })),
         getAdminRoles().catch(() => [])
     ])
+
+    const { staff: staffMembers, count, totalPages, currentPage } = staffData
+
+    const hasSearch = search && search.trim().length > 0
+    const buildUrl = (newPage?: number, clearSearch = false) => {
+        const params = new URLSearchParams()
+        if (newPage && newPage > 1) {
+            params.set("page", newPage.toString())
+        }
+        if (!clearSearch && hasSearch) {
+            params.set("search", search)
+        }
+        const queryString = params.toString()
+        return queryString ? `/admin/team?${queryString}` : "/admin/team"
+    }
 
     return (
         <div className="space-y-8">
@@ -36,6 +63,14 @@ export default async function AdminTeam() {
                 }
             />
 
+            {/* Search Bar */}
+            <AdminSearchInput defaultValue={search} basePath="/admin/team" placeholder="Search staff by name or email..." />
+
+            {/* Results Count */}
+            <div className="text-sm text-gray-500">
+                Showing {count > 0 ? ((currentPage - 1) * 20) + 1 : 0} to {Math.min(currentPage * 20, count)} of {count} staff members
+            </div>
+
             <div className="p-0 border-none shadow-none bg-transparent">
                 <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -49,7 +84,7 @@ export default async function AdminTeam() {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-100">
-                            {staff.length > 0 ? staff.map((member) => (
+                            {staffMembers.length > 0 ? staffMembers.map((member) => (
                                 <tr key={member.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center gap-3">
@@ -90,16 +125,31 @@ export default async function AdminTeam() {
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-sm">
-                                        No staff members found. Click "Add Staff" to add team members.
+                                    <td colSpan={5} className="px-6 py-20 text-center text-gray-500 text-sm">
+                                        <div className="flex flex-col items-center">
+                                            <UserGroupIcon className="w-12 h-12 text-gray-200 mb-3" />
+                                            <p className="text-sm font-bold text-gray-900">No staff members found</p>
+                                            {hasSearch ? (
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    Try adjusting your search or{" "}
+                                                    <Link href={buildUrl()} className="text-indigo-600 hover:underline">
+                                                        clear the search
+                                                    </Link>
+                                                </p>
+                                            ) : (
+                                                <p className="text-xs text-gray-400 mt-1">Click "Add Staff" to add team members.</p>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination */}
+                <AdminPagination currentPage={currentPage} totalPages={totalPages} />
             </div>
         </div>
     )
 }
-

@@ -7,7 +7,8 @@ import Link from "next/link"
 
 export default async function AdminDashboard() {
   const stats = await getAdminStats()
-  const latestOrders = (await getAdminOrders()).slice(0, 5)
+  const { orders: allOrders } = await getAdminOrders()
+  const latestOrders = allOrders.slice(0, 5)
 
   return (
     <div className="space-y-6">

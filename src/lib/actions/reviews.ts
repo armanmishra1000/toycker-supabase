@@ -167,43 +167,86 @@ export async function getProductReviews(productId: string) {
     return data as ReviewWithMedia[]
 }
 
-export async function getAllReviewsForAdmin() {
+export async function getAllReviewsForAdmin(params: { page?: number; limit?: number; search?: string } = {}) {
+    const { page = 1, limit = 20, search } = params
     const supabase = await createClient()
-    const { data: reviews, error } = await supabase
+
+    // Calculate total count first
+    let countQuery = supabase
+        .from("reviews")
+        .select("*", { count: "exact", head: true })
+
+    if (search && search.trim()) {
+        // Search only on columns that are likely to exist
+        countQuery = countQuery.or(`title.ilike.%${search}%`)
+    }
+
+    const { count } = await countQuery
+
+    // Calculate pagination
+    const offset = (page - 1) * limit
+    const from = offset
+    const to = offset + limit - 1
+    const totalPages = count ? Math.ceil(count / limit) : 1
+
+    // Fetch paginated data
+    let query = supabase
         .from("reviews")
         .select(`
       *,
       review_media (*)
     `)
         .order("created_at", { ascending: false })
+        .range(from, to)
 
-    if (error || !reviews) return []
+    if (search && search.trim()) {
+        // Search only on columns that are likely to exist
+        query = query.or(`title.ilike.%${search}%`)
+    }
+
+    const { data: reviews, error } = await query
+
+    if (error || !reviews) {
+        return {
+            reviews: [],
+            count: 0,
+            totalPages,
+            currentPage: page
+        }
+    }
 
     // Fetch product names manually
     const productIds = Array.from(new Set(reviews.map((r) => r.product_id)))
 
-    // Note: Assuming 'products' table exists. 
+    // Note: Assuming 'products' table exists.
     // If not, this might fail, but based on user context it should exist.
     // We use 'in' filter.
     const { data: products } = await supabase
         .from("products")
-        .select("id, title, name") // medusa products usually have 'title', supabase maybe 'name'? 
-        // Checking previously viewed file skeleton-product-preview.tsx might show product shape, 
-        // or just assume 'title' or 'name'. 
+        .select("id, title, name") // medusa products usually have 'title', supabase maybe 'name'?
+        // Checking previously viewed file skeleton-product-preview.tsx might show product shape,
+        // or just assume 'title' or 'name'.
         // 'ProductTemplate' uses 'product.name'. So it is 'name' or mapped to name.
-        // The supabase type says 'Product'. 
-        // Let's try select 'id, title, name' and see what we get or use 'name' if standard. 
+        // The supabase type says 'Product'.
+        // Let's try select 'id, title, name' and see what we get or use 'name' if standard.
         // Toycker repo seems to use Medusa structure synced to Supabase. Medusa uses 'title'.
-        // But 'ProductTemplate' used 'product.name'. 
+        // But 'ProductTemplate' used 'product.name'.
         // I'll select 'id, title, name' to be safe and check which one is present.
         .in("id", productIds)
 
     const productMap = new Map(products?.map((p: any) => [p.id, p.name || p.title || "Unknown Product"]) || [])
 
-    return reviews.map((r) => ({
+    const reviewsWithProductNames = reviews.map((r) => ({
         ...r,
         product_name: productMap.get(r.product_id) || "Unknown Product",
     })) as ReviewWithMedia[]
+
+    return {
+        reviews: reviewsWithProductNames,
+        count: count || 0,
+        totalPages,
+        currentPage: page
+    }
 }
 
 export async function getUserReviews() {

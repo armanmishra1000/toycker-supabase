@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { cn } from "@lib/util/cn"
 
 interface AdminPaginationProps {
@@ -11,11 +11,12 @@ interface AdminPaginationProps {
 export function AdminPagination({ currentPage, totalPages }: AdminPaginationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams)
     params.set("page", newPage.toString())
-    router.push(`?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`)
   }
 
   const isFirstPage = currentPage <= 1

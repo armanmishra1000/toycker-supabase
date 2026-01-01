@@ -1,21 +1,20 @@
-import { createProduct, getAdminCollections } from "@/lib/data/admin"
+import { createProduct, getAdminCollections, getAdminCategories } from "@/lib/data/admin"
 import CollectionCheckboxList from "@modules/admin/components/collection-checkbox-list"
+import { SubmitButton } from "@modules/admin/components/submit-button"
+import ImageUpload from "@modules/admin/components/image-upload"
 import Link from "next/link"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 
 export default async function NewProduct() {
-  const collections = await getAdminCollections()
+  const [collectionsData, categoriesData] = await Promise.all([
+    getAdminCollections(),
+    getAdminCategories()
+  ])
 
-  const actions = (
-    <div className="flex gap-2">
-      <Link href="/admin/products" className="px-4 py-2 text-sm font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest">Cancel</Link>
-      <button form="product-form" type="submit" className="px-6 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-all shadow-sm">
-        Create Product
-      </button>
-    </div>
-  )
+  const collections = collectionsData.collections
+  const categories = categoriesData.categories
 
   return (
     <div className="space-y-6">
@@ -26,7 +25,7 @@ export default async function NewProduct() {
         </Link>
       </nav>
 
-      <AdminPageHeader title="Add Product" actions={actions} />
+      <AdminPageHeader title="Add Product" />
 
       <form id="product-form" action={createProduct} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -44,10 +43,13 @@ export default async function NewProduct() {
           </AdminCard>
 
           <AdminCard title="Media Library">
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Image URL</label>
-              <input name="image_url" type="url" placeholder="https://cdn.toycker.in/..." className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
-              <p className="mt-3 text-xs text-gray-400 italic">Images help customers visualize the toy during play.</p>
+            <ImageUpload name="image_url" />
+          </AdminCard>
+
+          <AdminCard title="Product Variants">
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 mb-2">Product variants can be added after creating the product.</p>
+              <p className="text-xs text-gray-400">Once created, you can add variants like different sizes, colors, or styles.</p>
             </div>
           </AdminCard>
         </div>
@@ -63,13 +65,25 @@ export default async function NewProduct() {
             </div>
           </AdminCard>
 
-          <AdminCard title="Pricing & Taxes">
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Price (INR)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
-                <input name="price" type="number" step="0.01" placeholder="0.00" required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
+          <AdminCard title="Pricing">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                    <input name="price" type="number" step="0.01" placeholder="0.00" required className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-black focus:border-black focus:ring-0" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Compare at</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-gray-400 font-bold text-sm">₹</span>
+                    <input name="compare_at_price" type="number" step="0.01" placeholder="0.00" className="w-full rounded-lg border border-gray-300 pl-7 pr-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0" />
+                  </div>
+                </div>
               </div>
+              <p className="text-[10px] text-gray-400 font-medium italic">To show a reduced price, move the original price into &quot;Compare at price&quot;.</p>
             </div>
           </AdminCard>
 
@@ -82,6 +96,21 @@ export default async function NewProduct() {
 
           <AdminCard title="Organization">
             <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Category</label>
+                <select
+                  name="category_id"
+                  defaultValue=""
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-bold focus:border-black focus:ring-0 bg-white"
+                >
+                  <option value="">No category</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Collections</label>
                 <CollectionCheckboxList
@@ -96,6 +125,15 @@ export default async function NewProduct() {
               </div>
             </div>
           </AdminCard>
+
+          <div className="flex justify-end">
+            <Link href="/admin/products" className="px-4 py-2 text-sm font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest">
+              Cancel
+            </Link>
+            <SubmitButton className="px-6 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-all shadow-sm ml-2">
+              Create Product
+            </SubmitButton>
+          </div>
         </div>
       </form>
     </div>

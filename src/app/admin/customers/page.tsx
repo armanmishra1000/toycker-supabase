@@ -1,17 +1,50 @@
 import { getAdminCustomers } from "@/lib/data/admin"
-import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminBadge from "@modules/admin/components/admin-badge"
+import { AdminPagination } from "@modules/admin/components/admin-pagination"
+import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import Link from "next/link"
 import DeleteCustomerButton from "@modules/admin/components/delete-customer-button"
 import { UsersIcon } from "@heroicons/react/24/outline"
 
-export default async function AdminCustomers() {
-  const customers = await getAdminCustomers()
+export default async function AdminCustomers({
+  searchParams
+}: {
+  searchParams: Promise<{ page?: string; search?: string }>
+}) {
+  const { page = "1", search = "" } = await searchParams
+  const pageNumber = parseInt(page, 10) || 1
+
+  const { customers, count, totalPages, currentPage } = await getAdminCustomers({
+    page: pageNumber,
+    limit: 20,
+    search: search || undefined
+  })
+
+  const hasSearch = search && search.trim().length > 0
+  const buildUrl = (newPage?: number, clearSearch = false) => {
+    const params = new URLSearchParams()
+    if (newPage && newPage > 1) {
+      params.set("page", newPage.toString())
+    }
+    if (!clearSearch && hasSearch) {
+      params.set("search", search)
+    }
+    const queryString = params.toString()
+    return queryString ? `/admin/customers?${queryString}` : "/admin/customers"
+  }
 
   return (
     <div className="space-y-6">
       <AdminPageHeader title="Customers" subtitle="Manage your customer details and history." />
+
+      {/* Search Bar */}
+      <AdminSearchInput defaultValue={search} basePath="/admin/customers" placeholder="Search customers by name or email..." />
+
+      {/* Results Count */}
+      <div className="text-sm text-gray-500">
+        Showing {count > 0 ? ((currentPage - 1) * 20) + 1 : 0} to {Math.min(currentPage * 20, count)} of {count} customers
+      </div>
 
       <div className="p-0 border-none shadow-sm bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
@@ -25,7 +58,7 @@ export default async function AdminCustomers() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {customers.map((customer) => (
+              {customers.length > 0 ? customers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-gray-50/80 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link href={`/admin/customers/${customer.id}`} className="flex items-center">
@@ -52,13 +85,22 @@ export default async function AdminCustomers() {
                     <DeleteCustomerButton customerId={customer.id} customerName={`${customer.first_name || ''} ${customer.last_name || customer.email}`} />
                   </td>
                 </tr>
-              ))}
-              {customers.length === 0 && (
+              )) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-16 text-center text-gray-500 text-sm">
-                    <div className="flex flex-col items-center justify-center">
-                      <UsersIcon className="w-12 h-12 text-gray-200 mb-2" />
-                      <p>No customers found.</p>
+                  <td colSpan={4} className="px-6 py-20 text-center text-gray-500 text-sm">
+                    <div className="flex flex-col items-center">
+                      <UsersIcon className="w-12 h-12 text-gray-200 mb-3" />
+                      <p className="text-sm font-bold text-gray-900">No customers found</p>
+                      {hasSearch ? (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Try adjusting your search or{" "}
+                          <Link href={buildUrl()} className="text-indigo-600 hover:underline">
+                            clear the search
+                          </Link>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 mt-1">No customers yet.</p>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -66,6 +108,9 @@ export default async function AdminCustomers() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <AdminPagination currentPage={currentPage} totalPages={totalPages} />
       </div>
     </div>
   )

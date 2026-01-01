@@ -1,21 +1,36 @@
 import { getAdminCategories, deleteCategory } from "@/lib/data/admin"
 import Link from "next/link"
-import { PlusIcon, TrashIcon, FolderIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, FolderIcon, ArrowTopRightOnSquareIcon, TrashIcon } from "@heroicons/react/24/outline"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
-import AdminCard from "@modules/admin/components/admin-card"
+import { AdminPagination } from "@modules/admin/components/admin-pagination"
+import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 
-export default async function AdminCategories() {
-  const categories = await getAdminCategories()
+export default async function AdminCategories({
+  searchParams
+}: {
+  searchParams: Promise<{ page?: string; search?: string }>
+}) {
+  const { page = "1", search = "" } = await searchParams
+  const pageNumber = parseInt(page, 10) || 1
 
-  const actions = (
-    <Link
-      href="/admin/categories/new"
-      className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-black hover:bg-gray-800 transition-all"
-    >
-      <PlusIcon className="h-4 w-4 mr-2" strokeWidth={3} />
-      Add category
-    </Link>
-  )
+  const { categories, count, totalPages, currentPage } = await getAdminCategories({
+    page: pageNumber,
+    limit: 20,
+    search: search || undefined
+  })
+
+  const hasSearch = search && search.trim().length > 0
+  const buildUrl = (newPage?: number, clearSearch = false) => {
+    const params = new URLSearchParams()
+    if (newPage && newPage > 1) {
+      params.set("page", newPage.toString())
+    }
+    if (!clearSearch && hasSearch) {
+      params.set("search", search)
+    }
+    const queryString = params.toString()
+    return queryString ? `/admin/categories?${queryString}` : "/admin/categories"
+  }
 
   return (
     <div className="space-y-6">
@@ -28,6 +43,14 @@ export default async function AdminCategories() {
           </Link>
         }
       />
+
+      {/* Search Bar */}
+      <AdminSearchInput defaultValue={search} basePath="/admin/categories" placeholder="Search categories by name or handle..." />
+
+      {/* Results Count */}
+      <div className="text-sm text-gray-500">
+        Showing {count > 0 ? ((currentPage - 1) * 20) + 1 : 0} to {Math.min(currentPage * 20, count)} of {count} categories
+      </div>
 
       <div className="p-0 border-none shadow-none bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
@@ -74,14 +97,30 @@ export default async function AdminCategories() {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-gray-500 text-sm">
-                    No categories found. Organize products into groups for easier browsing.
+                  <td colSpan={3} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center">
+                      <FolderIcon className="h-10 w-10 text-gray-200 mb-3" />
+                      <p className="text-sm font-bold text-gray-900">No categories found</p>
+                      {hasSearch ? (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Try adjusting your search or{" "}
+                          <Link href={buildUrl()} className="text-indigo-600 hover:underline">
+                            clear the search
+                          </Link>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 mt-1">Organize products into groups for easier browsing.</p>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <AdminPagination currentPage={currentPage} totalPages={totalPages} />
       </div>
     </div>
   )

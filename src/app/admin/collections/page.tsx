@@ -1,11 +1,36 @@
 import { getAdminCollections, deleteCollection } from "@/lib/data/admin"
 import Link from "next/link"
-import { PlusIcon, PencilIcon, TrashIcon, RectangleStackIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, PencilIcon, RectangleStackIcon, ArrowTopRightOnSquareIcon, TrashIcon } from "@heroicons/react/24/outline"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
-import AdminCard from "@modules/admin/components/admin-card"
+import { AdminPagination } from "@modules/admin/components/admin-pagination"
+import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 
-export default async function AdminCollections() {
-  const collections = await getAdminCollections()
+export default async function AdminCollections({
+  searchParams
+}: {
+  searchParams: Promise<{ page?: string; search?: string }>
+}) {
+  const { page = "1", search = "" } = await searchParams
+  const pageNumber = parseInt(page, 10) || 1
+
+  const { collections, count, totalPages, currentPage } = await getAdminCollections({
+    page: pageNumber,
+    limit: 20,
+    search: search || undefined
+  })
+
+  const hasSearch = search && search.trim().length > 0
+  const buildUrl = (newPage?: number, clearSearch = false) => {
+    const params = new URLSearchParams()
+    if (newPage && newPage > 1) {
+      params.set("page", newPage.toString())
+    }
+    if (!clearSearch && hasSearch) {
+      params.set("search", search)
+    }
+    const queryString = params.toString()
+    return queryString ? `/admin/collections?${queryString}` : "/admin/collections"
+  }
 
   const actions = (
     <Link
@@ -20,6 +45,14 @@ export default async function AdminCollections() {
   return (
     <div className="space-y-6">
       <AdminPageHeader title="Collections" subtitle="Group products into collections to make it easier for customers to find them by category." actions={actions} />
+
+      {/* Search Bar */}
+      <AdminSearchInput defaultValue={search} basePath="/admin/collections" placeholder="Search collections by title or handle..." />
+
+      {/* Results Count */}
+      <div className="text-sm text-gray-500">
+        Showing {count > 0 ? ((currentPage - 1) * 20) + 1 : 0} to {Math.min(currentPage * 20, count)} of {count} collections
+      </div>
 
       <div className="p-0 border-none shadow-none bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
@@ -72,14 +105,30 @@ export default async function AdminCollections() {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-gray-500 text-sm">
-                    No collections found. Use groupings to organize your shop.
+                  <td colSpan={3} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center">
+                      <RectangleStackIcon className="h-10 w-10 text-gray-200 mb-3" />
+                      <p className="text-sm font-bold text-gray-900">No collections found</p>
+                      {hasSearch ? (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Try adjusting your search or{" "}
+                          <Link href={buildUrl()} className="text-indigo-600 hover:underline">
+                            clear the search
+                          </Link>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 mt-1">Use groupings to organize your shop.</p>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <AdminPagination currentPage={currentPage} totalPages={totalPages} />
       </div>
     </div>
   )
