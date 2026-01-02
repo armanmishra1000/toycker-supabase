@@ -31,6 +31,23 @@ interface DatabaseCartItem {
   metadata?: Record<string, unknown>
 }
 
+/** Raw cart item from selective query - Supabase may return array or object depending on query */
+type ProductPartial = { id: string; name: string; handle: string; image_url: string | null; images: unknown[] }
+type VariantPartial = { id: string; title: string; sku: string | null; price: number }
+
+interface CartItemRaw {
+  id: string
+  cart_id: string
+  product_id: string
+  variant_id: string
+  quantity: number
+  created_at: string
+  updated_at: string
+  metadata?: Record<string, unknown>
+  product: ProductPartial | ProductPartial[] | null
+  variant: VariantPartial | VariantPartial[] | null
+}
+
 /** Shipping method stored in cart */
 interface CartShippingMethod {
   shipping_option_id: string
@@ -39,10 +56,13 @@ interface CartShippingMethod {
   min_order_free_shipping?: number | null
 }
 
-const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): CartItem[] => {
+const mapCartItems = (items: CartItemRaw[], clubDiscountPercentage = 0): CartItem[] => {
   return items.map((item) => {
-    const product = item.product
-    const variant = item.variant
+    // Handle both array and object returns from Supabase
+    const productRaw = item.product
+    const variantRaw = item.variant
+    const product = Array.isArray(productRaw) ? productRaw[0] : productRaw
+    const variant = Array.isArray(variantRaw) ? variantRaw[0] : variantRaw
 
     let thumbnail = product?.image_url
     if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
@@ -73,8 +93,8 @@ const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): Ca
       original_total: originalPrice * item.quantity,
       subtotal: discountedPrice * item.quantity,
       has_club_discount: hasClubDiscount,
-      product: product ?? undefined,
-      variant: variant ?? undefined
+      product: product as Product | undefined,
+      variant: variant as ProductVariant | undefined
     }
   })
 }
@@ -87,11 +107,11 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
   const { data: cartData, error } = await supabase
     .from("carts")
     .select(`
-      *,
+      id, user_id, email, currency_code, shipping_address, billing_address, shipping_methods, payment_collection, metadata, created_at, updated_at,
       items:cart_items(
-        *,
-        product:products(*),
-        variant:product_variants(*)
+        id, cart_id, product_id, variant_id, quantity, metadata, created_at, updated_at,
+        product:products(id, name, handle, image_url, images),
+        variant:product_variants(id, title, sku, price)
       )
     `)
     .eq("id", id)

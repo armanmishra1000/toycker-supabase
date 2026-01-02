@@ -42,10 +42,16 @@ const normalizeProductImage = (product: Product): Product => {
   }
 }
 
-const PRODUCT_SELECT = `
-  *, 
-  variants:product_variants(*), 
-  options:product_options(*, values:product_option_values(*))
+// For product listings (cards, grids) - minimal columns for egress optimization
+const PRODUCT_LIST_SELECT = `
+  id, name, handle, price, currency_code, image_url, thumbnail, images, status, created_at
+`
+
+// For product detail page - includes variants and options
+const PRODUCT_DETAIL_SELECT = `
+  id, name, handle, description, price, currency_code, image_url, thumbnail, images, status, metadata, created_at,
+  variants:product_variants(id, title, sku, price, inventory_quantity),
+  options:product_options(id, title, values:product_option_values(id, value))
 `
 
 export const listProducts = cache(async function listProducts(options: {
@@ -59,7 +65,7 @@ export const listProducts = cache(async function listProducts(options: {
 
   let query = supabase
     .from("products")
-    .select(PRODUCT_SELECT, { count: "exact" })
+    .select(PRODUCT_LIST_SELECT, { count: "exact" })
 
   if (options.queryParams?.limit) {
     query = query.limit(options.queryParams.limit)
@@ -95,7 +101,7 @@ export const retrieveProduct = cache(async function retrieveProduct(id: string):
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
-    .select(PRODUCT_SELECT)
+    .select(PRODUCT_DETAIL_SELECT)
     .eq("id", id)
     .maybeSingle()
 
@@ -107,7 +113,7 @@ export const getProductByHandle = cache(async function getProductByHandle(handle
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
-    .select(PRODUCT_SELECT)
+    .select(PRODUCT_DETAIL_SELECT)
     .eq("handle", handle)
     .maybeSingle()
 
@@ -136,7 +142,7 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
 
   let query = supabase
     .from("products")
-    .select(PRODUCT_SELECT, { count: "exact" })
+    .select(PRODUCT_LIST_SELECT, { count: "exact" })
 
   if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])
   if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])

@@ -8,7 +8,7 @@ export const listCategories = cache(async (): Promise<Category[]> => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("categories")
-    .select("*")
+    .select("id, name, handle, description")
 
   if (error) {
     console.error("Error fetching categories:", error)
@@ -24,7 +24,7 @@ export const getCategoryByHandle = cache(async (categoryHandle: string[]): Promi
 
   const { data, error } = await supabase
     .from("categories")
-    .select("*")
+    .select("id, name, handle, description")
     .eq("handle", handle)
     .maybeSingle()
 

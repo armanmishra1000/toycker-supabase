@@ -13,7 +13,7 @@ export const listCollections = async () => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("collections")
-    .select("*")
+    .select("id, title, handle, created_at")
 
   if (error) {
     console.error("Error fetching collections:", error.message)
@@ -27,7 +27,7 @@ export const getCollectionByHandle = async (handle: string) => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("collections")
-    .select("*")
+    .select("id, title, handle, created_at")
     .eq("handle", handle)
     .maybeSingle()
 
