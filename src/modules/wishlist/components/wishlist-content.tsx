@@ -18,11 +18,14 @@ type WishlistContentProps = {
 }
 
 const WishlistContent = ({ countryCode, clubDiscountPercentage }: WishlistContentProps) => {
-  const { items, toggleWishlist } = useWishlist()
-  const [recentIds, setRecentIds] = useState<string[]>([])
+  const { items, toggleWishlist, isInitialized } = useWishlist()
+  const [recentIdsRaw, setRecentIds] = useState<string[]>([])
 
-  const wishlistState = useProductsByIds(items, countryCode)
-  const recentState = useProductsByIds(recentIds, countryCode)
+  const itemsMemo = useMemo(() => items, [items])
+  const recentIdsMemo = useMemo(() => recentIdsRaw, [recentIdsRaw])
+
+  const wishlistState = useProductsByIds(itemsMemo, countryCode)
+  const recentState = useProductsByIds(recentIdsMemo, countryCode)
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -45,7 +48,11 @@ const WishlistContent = ({ countryCode, clubDiscountPercentage }: WishlistConten
     items.forEach((id) => toggleWishlist(id))
   }, [items, toggleWishlist])
 
-  const showRecentlyViewedSection = recentIds.length > 0 || recentState.isLoading
+  const showRecentlyViewedSection = recentIdsMemo.length > 0 || recentState.isLoading
+
+  if (!isInitialized) {
+    return <ProductGridSkeleton />
+  }
 
   return (
     <div className="space-y-12">
@@ -67,7 +74,10 @@ const WishlistContent = ({ countryCode, clubDiscountPercentage }: WishlistConten
             </div>
 
             {wishlistState.error && (
-              <p className="rounded-lg border border-ui-border-danger bg-ui-bg-base px-4 py-3 text-sm text-ui-fg-danger" role="alert">
+              <p
+                className="rounded-lg border border-ui-border-danger bg-ui-bg-base px-4 py-3 text-sm text-ui-fg-danger"
+                role="alert"
+              >
                 {wishlistState.error}
               </p>
             )}
@@ -75,7 +85,10 @@ const WishlistContent = ({ countryCode, clubDiscountPercentage }: WishlistConten
             {wishlistState.isLoading ? (
               <ProductGridSkeleton />
             ) : wishlistState.products.length ? (
-              <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" data-testid="wishlist-grid">
+              <ul
+                className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+                data-testid="wishlist-grid"
+              >
                 {wishlistState.products.map((product) => (
                   <li key={product.id}>
                     <ProductPreview
@@ -165,25 +178,16 @@ const useProductsByIds = (ids: string[], countryCode: string) => {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const controllerRef = useRef<AbortController | null>(null)
-
-  useEffect(() => {
-    return () => controllerRef.current?.abort()
-  }, [])
 
   useEffect(() => {
     if (!ids.length) {
-      controllerRef.current?.abort()
-      controllerRef.current = null
       setProducts([])
       setIsLoading(false)
       setError(null)
       return
     }
 
-    controllerRef.current?.abort()
-    const controller = new AbortController()
-    controllerRef.current = controller
+    let active = true
     setIsLoading(true)
     setError(null)
 
@@ -200,7 +204,6 @@ const useProductsByIds = (ids: string[], countryCode: string) => {
             limit: ids.length,
             productsIds: ids,
           }),
-          signal: controller.signal,
         })
 
         if (!response.ok) {
@@ -211,25 +214,29 @@ const useProductsByIds = (ids: string[], countryCode: string) => {
           products: Product[]
         }
 
-        setProducts(payload.products)
-      } catch (fetchError) {
-        if ((fetchError as Error).name === "AbortError") {
+        if (active) {
+          setProducts(payload.products)
+        }
+      } catch (fetchError: any) {
+        if (!active) {
           return
         }
-        setError((fetchError as Error).message)
+        setError(fetchError.message)
       } finally {
-        if (controllerRef.current === controller) {
+        if (active) {
           setIsLoading(false)
         }
       }
     }
 
-    fetchProducts().catch((reason) => {
-      if ((reason as Error).name !== "AbortError") {
-        setError((reason as Error).message)
-        setIsLoading(false)
-      }
+    // Explicitly catch the promise to prevent "Uncaught (in promise)" errors
+    fetchProducts().catch(() => {
+      /* Silently ignore unhandled rejections during unmount */
     })
+
+    return () => {
+      active = false
+    }
   }, [countryCode, ids])
 
   const orderedProducts = useMemo(() => {

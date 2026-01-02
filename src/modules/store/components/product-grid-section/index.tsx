@@ -11,7 +11,6 @@ import {
 } from "@modules/store/components/refinement-list/types"
 import { useOptionalStorefrontFilters } from "@modules/store/context/storefront-filters"
 import { Product } from "@/lib/supabase/types"
-import { WishlistProvider } from "@modules/products/context/wishlist"
 import ProductGridSkeleton from "@modules/store/components/product-grid-section/product-grid-skeleton"
 import { getGridClassName } from "@modules/store/components/product-grid-section/utils"
 
@@ -76,52 +75,50 @@ const ProductGridSection = ({
   const emptyStateHeading = useMemo(() => title || "Products", [title])
 
   return (
-    <WishlistProvider isAuthenticated={isCustomerLoggedIn} loginPath={loginPath}>
-      <section className="space-y-6" data-loading={isLoading ? "true" : undefined}>
-        <ResultsToolbar totalCount={effectiveCount} viewMode={derived.viewMode} sortBy={derived.sortBy} />
+    <section className="space-y-6" data-loading={isLoading ? "true" : undefined}>
+      <ResultsToolbar totalCount={effectiveCount} viewMode={derived.viewMode} sortBy={derived.sortBy} />
 
-        {derived.error && (
-          <p className="rounded-md border border-ui-border-danger bg-ui-bg-base px-4 py-3 text-sm text-ui-fg-danger" role="alert">
-            {derived.error}
-          </p>
-        )}
+      {derived.error && (
+        <p className="rounded-md border border-ui-border-danger bg-ui-bg-base px-4 py-3 text-sm text-ui-fg-danger" role="alert">
+          {derived.error}
+        </p>
+      )}
 
-        {isLoading ? (
-          <ProductGridSkeleton viewMode={derived.viewMode} count={derived.pageSize} />
-        ) : hasProducts ? (
-          derived.viewMode === "list" ? (
-            <div className={gridClassName} data-testid="products-list">
-              {derived.products.map((product) => (
+      {isLoading ? (
+        <ProductGridSkeleton viewMode={derived.viewMode} count={derived.pageSize} />
+      ) : hasProducts ? (
+        derived.viewMode === "list" ? (
+          <div className={gridClassName} data-testid="products-list">
+            {derived.products.map((product) => (
+              <ProductPreview
+                key={product.id}
+                product={product}
+                viewMode={derived.viewMode}
+                clubDiscountPercentage={clubDiscountPercentage}
+              />
+            ))}
+          </div>
+        ) : (
+          <ul className={gridClassName} data-testid="products-list">
+            {derived.products.map((product) => (
+              <li key={product.id}>
                 <ProductPreview
-                  key={product.id}
                   product={product}
                   viewMode={derived.viewMode}
                   clubDiscountPercentage={clubDiscountPercentage}
                 />
-              ))}
-            </div>
-          ) : (
-            <ul className={gridClassName} data-testid="products-list">
-              {derived.products.map((product) => (
-                <li key={product.id}>
-                  <ProductPreview
-                    product={product}
-                    viewMode={derived.viewMode}
-                    clubDiscountPercentage={clubDiscountPercentage}
-                  />
-                </li>
-              ))}
-            </ul>
-          )
-        ) : (
-          <EmptyState heading={emptyStateHeading} />
-        )}
+              </li>
+            ))}
+          </ul>
+        )
+      ) : (
+        <EmptyState heading={emptyStateHeading} />
+      )}
 
-        {totalPages > 1 && !derived.error && (
-          <Pagination data-testid="product-pagination" page={derived.page} totalPages={totalPages} />
-        )}
-      </section>
-    </WishlistProvider>
+      {totalPages > 1 && !derived.error && (
+        <Pagination data-testid="product-pagination" page={derived.page} totalPages={totalPages} />
+      )}
+    </section>
   )
 }
 

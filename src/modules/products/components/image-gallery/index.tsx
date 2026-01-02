@@ -189,14 +189,14 @@ const ImageGallery = ({ images, variant = "default" }: ImageGalleryProps) => {
 
         <button
           type="button"
-          className="product-gallery-prev absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-ui-bg-base text-ui-fg-base shadow-sm transition hover:bg-ui-bg-subtle"
+          className="product-gallery-prev absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-ui-bg-base text-ui-fg-base shadow-sm transition bg-white"
           aria-label="Previous image"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
         <button
           type="button"
-          className="product-gallery-next absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-ui-bg-base text-ui-fg-base shadow-sm transition hover:bg-ui-bg-subtle"
+          className="product-gallery-next absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-ui-bg-base text-ui-fg-base shadow-sm transition bg-white"
           aria-label="Next image"
         >
           <ChevronRight className="h-5 w-5" />

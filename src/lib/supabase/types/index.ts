@@ -8,6 +8,7 @@ export interface Product {
   price: number;
   currency_code: string;
   image_url: string | null;
+  video_url?: string | null;
   thumbnail: string | null;
   images: (string | ProductImage)[] | null;
   stock_count: number;
@@ -23,6 +24,7 @@ export interface Product {
   options?: ProductOption[];
   collection?: Collection | null;
   collections?: Collection[];
+  categories?: Category[];
 }
 
 export interface ProductVariant {
@@ -177,7 +179,7 @@ export interface CartItem {
   id: string;
   cart_id: string;
   product_id: string;
-  variant_id: string;
+  variant_id: string | null;
   quantity: number;
   created_at: string;
   updated_at: string;

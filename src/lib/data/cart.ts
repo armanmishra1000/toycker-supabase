@@ -22,7 +22,7 @@ interface DatabaseCartItem {
   id: string
   cart_id: string
   product_id: string
-  variant_id: string
+  variant_id: string | null
   quantity: number
   created_at: string
   updated_at: string
@@ -55,7 +55,7 @@ const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): Ca
       }
     }
 
-    const originalPrice = Number(variant?.price || 0)
+    const originalPrice = Number(variant?.price || product?.price || 0)
     const hasClubDiscount = clubDiscountPercentage > 0
     const discountedPrice = hasClubDiscount
       ? Math.round(originalPrice * (1 - clubDiscountPercentage / 100))
@@ -230,7 +230,7 @@ export async function addToCart({
   const cart = await getOrSetCart()
   const supabase = await createClient()
 
-  let targetVariantId = variantId
+  let targetVariantId = variantId === productId ? undefined : variantId
   if (!targetVariantId) {
     const { data: variants } = await supabase
       .from("product_variants")
@@ -243,16 +243,20 @@ export async function addToCart({
     }
   }
 
-  if (!targetVariantId) {
-    throw new Error("Product has no variants")
-  }
-
-  const { data: existingItem } = await supabase
+  // Find if item already exists in cart. For single products (no variants), targetVariantId will be null.
+  const query = supabase
     .from("cart_items")
     .select("*")
     .eq("cart_id", cart.id)
-    .eq("variant_id", targetVariantId)
-    .maybeSingle()
+    .eq("product_id", productId)
+
+  if (targetVariantId) {
+    query.eq("variant_id", targetVariantId)
+  } else {
+    query.is("variant_id", null)
+  }
+
+  const { data: existingItem } = await query.maybeSingle()
 
   if (existingItem) {
     const currentQuantity = typeof existingItem.quantity === 'number' ? existingItem.quantity : 0
@@ -590,11 +594,13 @@ export async function placeOrder() {
 
 export async function createBuyNowCart({
   variantId,
+  productId,
   quantity,
   countryCode,
   metadata
 }: {
-  variantId: string
+  variantId?: string | null
+  productId?: string
   quantity: number
   countryCode: string
   metadata?: Record<string, unknown>
@@ -612,13 +618,18 @@ export async function createBuyNowCart({
 
   if (error) throw new Error(error.message)
 
-  const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
+  let targetProductId = productId || ""
 
-  if (variant && variant.product_id) {
+  if (variantId && !targetProductId) {
+    const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
+    if (variant) targetProductId = variant.product_id
+  }
+
+  if (targetProductId) {
     await supabase.from("cart_items").insert({
       cart_id: newCartId,
-      product_id: variant.product_id,
-      variant_id: variantId,
+      product_id: targetProductId,
+      variant_id: variantId || null,
       quantity: quantity,
       metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null
     })

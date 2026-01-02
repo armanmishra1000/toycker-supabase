@@ -15,6 +15,8 @@ import Image from "next/image"
 import { useBodyScrollLock } from "@modules/layout/hooks/useBodyScrollLock"
 import { useCartSidebar } from "@modules/layout/context/cart-sidebar-context"
 import { getImageUrl } from "@lib/util/get-image-url"
+import QuantitySelector from "@modules/common/components/quantity-selector"
+import { useCartStore } from "@modules/cart/context/cart-store-context"
 
 type CartSidebarProps = {
   isOpen: boolean
@@ -23,6 +25,7 @@ type CartSidebarProps = {
 
 const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
   const { cart } = useCartSidebar()
+  const { optimisticUpdateQuantity } = useCartStore()
   useBodyScrollLock({ isLocked: isOpen })
 
   const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0
@@ -122,10 +125,11 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                         }
 
                         const renderTitle = () => {
+                          const displayTitle = item.product_title || item.title
                           if (!item.product_handle || giftWrapLine) {
                             return (
                               <p className="text-base font-semibold text-slate-900 line-clamp-2">
-                                {giftWrapLine ? "Gift Wrap" : item.title}
+                                {giftWrapLine ? "Gift Wrap" : displayTitle}
                               </p>
                             )
                           }
@@ -136,7 +140,7 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                               className="text-base font-semibold text-slate-900 line-clamp-2"
                               onClick={onClose}
                             >
-                              {item.title}
+                              {displayTitle}
                             </LocalizedClientLink>
                           )
                         }
@@ -144,37 +148,31 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                         return (
                           <div
                             key={item.id}
-                            className="flex gap-4 rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-sm"
+                            className="flex gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm"
                           >
                             {renderThumbnail()}
 
-                            <div className="flex flex-1 flex-col gap-2">
+                            <div className="flex flex-1 flex-col justify-between">
                               <div className="flex items-start justify-between gap-3">
-                                <div className="flex flex-col">
+                                <div className="flex flex-col gap-0.5 min-w-0">
                                   {renderTitle()}
                                   {!giftWrapLine && <LineItemOptions variant={item.variant} />}
-                                  <span className="text-sm text-slate-500">
-                                    Quantity: {item.quantity}
-                                  </span>
                                 </div>
                                 <LineItemPrice item={item} style="tight" currencyCode={cart!.currency_code} />
                               </div>
 
-                              {!giftWrapLine && (
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                  <span className="rounded-full bg-slate-100 px-2 py-1">
-                                    Ships in 1-2 days
-                                  </span>
-                                  {item.variant?.inventory_quantity === 0 && (
-                                    <span className="rounded-full bg-amber-100 px-2 py-1 text-amber-800">
-                                      Backorder
-                                    </span>
+                              <div className="flex items-end justify-between pt-3">
+                                <div className="flex flex-col gap-2">
+                                  {!giftWrapLine && (
+                                    <QuantitySelector
+                                      quantity={item.quantity}
+                                      onChange={(newQty) => optimisticUpdateQuantity(item.id, newQty)}
+                                      size="small"
+                                      className="w-fit"
+                                    />
                                   )}
                                 </div>
-                              )}
-
-                              <div className="flex items-center justify-between pt-2">
-                                <DeleteButton id={item.id}>Remove</DeleteButton>
+                                <DeleteButton id={item.id} className="text-xs text-slate-400 hover:text-slate-900" />
                               </div>
                             </div>
                           </div>

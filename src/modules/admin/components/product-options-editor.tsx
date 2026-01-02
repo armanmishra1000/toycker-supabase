@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition, useEffect } from "react"
-import { getProductOptions, saveProductOption, deleteProductOption, generateVariantsFromOptions, syncOptionsFromVariants } from "@/lib/data/admin"
+import { getProductOptions, saveProductOption, deleteProductOption, generateVariantsFromOptions } from "@/lib/data/admin"
 import AdminCard from "./admin-card"
 import { PlusIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline"
 import { useRouter } from "next/navigation"
@@ -24,28 +24,7 @@ export default function ProductOptionsEditor({ productId, initialOptions = [], h
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingOption, setEditingOption] = useState<{ id: string; title: string; values: { id: string; value: string }[] } | null>(null)
   const [formData, setFormData] = useState<OptionFormData>({ title: "", values: "" })
-  const [hasSynced, setHasSynced] = useState(false)
 
-  // Auto-sync options from variants on mount if:
-  // - No options exist
-  // - Variants exist
-  // - Haven't synced yet
-  useEffect(() => {
-    if (options.length === 0 && hasVariants && !hasSynced) {
-      setHasSynced(true)
-      startTransition(async () => {
-        try {
-          await syncOptionsFromVariants(productId)
-          const updated = await getProductOptions(productId)
-          setOptions(updated)
-        } catch (error) {
-          // Silently fail - don't crash the page if sync fails
-          // User can manually add options or the schema migration might need to be run
-          console.info("Auto-sync skipped (may need schema migration):", error)
-        }
-      })
-    }
-  }, [options.length, hasVariants, hasSynced, productId])
 
   const handleOpenModal = (option?: { id: string; title: string; values: { id: string; value: string }[] }) => {
     if (option) {

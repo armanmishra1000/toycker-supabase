@@ -8,6 +8,7 @@ import getShortDescription from "@modules/products/utils/get-short-description"
 import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
+import QuantitySelector from "@modules/common/components/quantity-selector"
 import { useOptionalWishlist } from "@modules/products/context/wishlist"
 import { isEqual } from "lodash"
 import {
@@ -26,8 +27,6 @@ import {
   Heart,
   Loader2,
   MessageCircleQuestion,
-  Minus,
-  Plus,
   Share2,
 } from "lucide-react"
 import { useCartSidebar } from "@modules/layout/context/cart-sidebar-context"
@@ -57,7 +56,7 @@ const optionsAsKeymap = (
   }, {})
 }
 
-export default function ProductActions({ product, disabled, showSupportActions = true, syncVariantParam = true, onActionComplete, clubDiscountPercentage }: ProductActionsProps) {
+export default function ProductActions({ product, disabled, showSupportActions = true, syncVariantParam = false, onActionComplete, clubDiscountPercentage }: ProductActionsProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -67,7 +66,6 @@ export default function ProductActions({ product, disabled, showSupportActions =
   const [quantity, setQuantity] = useState(1)
   const [giftWrap, setGiftWrap] = useState(false)
   const wishlist = useOptionalWishlist()
-  const [localWishlistSaved, setLocalWishlistSaved] = useState(false)
   const [isQuestionOpen, setIsQuestionOpen] = useState(false)
   const [questionStatus, setQuestionStatus] = useState<"idle" | "success">(
     "idle"
@@ -95,13 +93,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
     return (variant.inventory_quantity ?? 0) > 0
   }, [])
 
-  // If there is only 1 variant, preselect the options
-  useEffect(() => {
-    if (product.variants?.length === 1) {
-      const variantOptions = optionsAsKeymap(product.variants[0].options)
-      setOptions(variantOptions ?? {})
-    }
-  }, [product.variants])
+  // No-op - consolidated below
 
   const selectedVariant = useMemo(() => {
     // Direct variant selection by ID (for simple variant dropdown)
@@ -124,8 +116,13 @@ export default function ProductActions({ product, disabled, showSupportActions =
     })
   }, [product.variants, options, isSimple, selectedVariantId])
 
+  // Check if there are any options with actual values
+  const hasValidOptions = useMemo(() => {
+    return (product.options || []).some(option => (option.values?.length ?? 0) > 0)
+  }, [product.options])
+
   useEffect(() => {
-    if (selectedVariant || isSimple) {
+    if (isSimple) {
       return
     }
 
@@ -137,21 +134,24 @@ export default function ProductActions({ product, disabled, showSupportActions =
     const preferred = variants.find((variant: any) => isVariantAvailable(variant)) ?? variants[0]
     const variantOptions = optionsAsKeymap(preferred.options)
 
-    setOptions((prev) => {
-      if (Object.keys(prev).length > 0) {
-        return prev
-      }
-      return variantOptions ?? {}
-    })
-  }, [isVariantAvailable, product.variants, selectedVariant, isSimple])
-
-  useEffect(() => {
-    if (wishlist || typeof window === "undefined") {
-      return
+    // Only set if nothing is perfectly selected yet
+    if (!selectedVariant) {
+      setOptions(variantOptions ?? {})
+      setSelectedVariantId(preferred.id)
     }
-    const saved = window.localStorage.getItem(`wishlist-${product.id}`)
-    setLocalWishlistSaved(saved === "true")
-  }, [product.id, wishlist])
+  }, [isVariantAvailable, product.variants, selectedVariant, isSimple, hasValidOptions])
+
+  // Sync options when selectedVariantId changes manually (e.g. from Beetle color swatches)
+  useEffect(() => {
+    if (selectedVariantId && !hasValidOptions) {
+      const variant = product.variants?.find(v => v.id === selectedVariantId)
+      if (variant) {
+        const variantOptions = optionsAsKeymap(variant.options)
+        setOptions(variantOptions ?? {})
+      }
+    }
+  }, [selectedVariantId, hasValidOptions, product.variants])
+
 
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
@@ -208,6 +208,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
+    // If no variants exist, use product stock
+    if (!product.variants || product.variants.length === 0) {
+      return (product.stock_count || 0) > 0
+    }
+
     // If we don't manage inventory, we can always add to cart
     if (selectedVariant && !selectedVariant.manage_inventory) {
       return true
@@ -228,17 +233,22 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
     // Otherwise, we can't add to cart
     return false
-  }, [selectedVariant])
+  }, [selectedVariant, product.variants, product.stock_count])
 
   const maxQuantity = useMemo(() => {
+    // If no variants exist, use product stock
+    if (!product.variants || product.variants.length === 0) {
+      return Math.max(product.stock_count || 0, 0)
+    }
+
     if (!selectedVariant) {
-      return 10
+      return 0 // Changed from 10 to 0 to avoid "9 pieces left" bug when nothing is selected
     }
     if (!selectedVariant.manage_inventory || selectedVariant.allow_backorder) {
       return 10
     }
     return Math.max(selectedVariant.inventory_quantity ?? 0, 0)
-  }, [selectedVariant])
+  }, [selectedVariant, product.variants, product.stock_count])
 
   const updateQuantity = (direction: "inc" | "dec") => {
     setQuantity((prev) => {
@@ -251,22 +261,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
     })
   }
 
-  const toggleLocalWishlist = useCallback(() => {
-    if (typeof window === "undefined") {
-      return
-    }
-    const next = !localWishlistSaved
-    window.localStorage.setItem(`wishlist-${product.id}`, String(next))
-    setLocalWishlistSaved(next)
-  }, [product.id, localWishlistSaved])
-
   const handleWishlistClick = useCallback(() => {
     if (wishlist) {
       wishlist.toggleWishlist(product.id)
-      return
     }
-    toggleLocalWishlist()
-  }, [product.id, toggleLocalWishlist, wishlist])
+  }, [product.id, wishlist])
 
   const buildLineItemMetadata = useCallback(() => {
     if (!giftWrap) {
@@ -304,14 +303,25 @@ export default function ProductActions({ product, disabled, showSupportActions =
   ])
 
   const handleAddToCartClick = () => {
-    if (!selectedVariant?.id || isAdding) {
+    if (isAdding || (!selectedVariant?.id && product.variants && product.variants.length > 0)) {
       return
     }
 
     startAddToCart(async () => {
       try {
         openCart()
-        await addVariantToCart()
+        if (selectedVariant?.id) {
+          await addVariantToCart()
+        } else {
+          await optimisticAdd({
+            product,
+            variant: undefined,
+            quantity,
+            countryCode,
+            metadata: buildLineItemMetadata(),
+          })
+          onActionComplete?.()
+        }
       } catch (error) {
         console.error("Failed to add to cart", error)
       }
@@ -319,14 +329,15 @@ export default function ProductActions({ product, disabled, showSupportActions =
   }
 
   const handleBuyNowClick = async () => {
-    if (!selectedVariant?.id) {
+    if (isBuying || (!selectedVariant?.id && product.variants && product.variants.length > 0)) {
       return
     }
 
     setIsBuying(true)
     try {
       await createBuyNowCart({
-        variantId: selectedVariant.id,
+        variantId: selectedVariant?.id || null,
+        productId: product.id,
         quantity,
         countryCode,
         metadata: buildLineItemMetadata(),
@@ -388,30 +399,27 @@ export default function ProductActions({ product, disabled, showSupportActions =
     selectedVariant ? priceMeta.variantPrice : priceMeta.cheapestPrice
   )
 
-  const requiresSelection = !isSimple && (product.options?.length ?? 0) > 0 && !selectedVariant
+
+  const requiresSelection = !isSimple && hasValidOptions && !selectedVariant
 
   const canTransactBase =
     inStock &&
-    !!selectedVariant &&
+    (!!selectedVariant || (!product.variants || product.variants.length === 0)) &&
     !disabled &&
-    isValidVariant
+    (isValidVariant || (!product.variants || product.variants.length === 0))
 
   const isBusy = isAdding || isBuying
 
   const addToCartLabel = requiresSelection
     ? "Select options"
-    : !isValidVariant
-      ? "Select options"
-      : !inStock
-        ? "Out of stock"
-        : "Add to Cart"
+    : !inStock
+      ? "Out of stock"
+      : "Add to Cart"
 
   const disableAddButton = !canTransactBase || isAdding
   const disableBuyNowButton = !canTransactBase || isBuying
 
-  const isWishlistActive = wishlist
-    ? wishlist.isInWishlist(product.id)
-    : localWishlistSaved
+  const isWishlistActive = wishlist?.isInWishlist(product.id) ?? false
 
   return (
     <section className="flex flex-col gap-6">
@@ -421,11 +429,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
             {product.title}
           </h1>
           {(() => {
-            const blurb = getShortDescription(product, { fallbackToDescription: false })
-            if (!blurb) {
-              return null
-            }
-            return <p className="text-base text-slate-500">{blurb}</p>
+            // Deprecated location - keeping empty to effectively remove from top if needed, 
+            // or better yet, just remove this block if I am sure. 
+            // The user wants it above "Inclusive of all taxes".
+            // I will remove this block and place it down below.
+            return null
           })()}
         </div>
 
@@ -458,10 +466,15 @@ export default function ProductActions({ product, disabled, showSupportActions =
             </div>
           )}
         </div>
+        {(() => {
+          const blurb = getShortDescription(product, { fallbackToDescription: false })
+          if (!blurb) return null
+          return <p className="text-sm text-slate-500 mb-1">{blurb}</p>
+        })()}
         <p className="text-sm text-slate-500">Inclusive of all taxes</p>
       </div>
 
-      {!isSimple && (product.options?.length ?? 0) > 0 && (product.variants?.length ?? 0) > 1 && (
+      {!isSimple && hasValidOptions && (product.variants?.length ?? 0) > 1 && (
         <div className="flex flex-col gap-y-4">
           {(product.options || []).map((option) => {
             const normalizedTitle = option.title?.toLowerCase() ?? ""
@@ -483,9 +496,8 @@ export default function ProductActions({ product, disabled, showSupportActions =
         </div>
       )}
 
-      {/* Color swatch variant selector when options don't exist but variants do */}
-      {!isSimple && (product.options?.length ?? 0) === 0 && (product.variants?.length ?? 0) > 1 && (() => {
-        // Color name to hex mapping for swatches
+      {/* Color swatch variant selector when options don't exist OR have no values, but variants do */}
+      {!isSimple && !hasValidOptions && (product.variants?.length ?? 0) > 1 && (() => {
         const colorSwatchMap: Record<string, string> = {
           red: "#E94235",
           orange: "#FF8A3C",
@@ -512,6 +524,14 @@ export default function ProductActions({ product, disabled, showSupportActions =
           lavender: "#E6E6FA",
           cyan: "#00FFFF",
           turquoise: "#40E0D0",
+          sky: "#87CEEB",
+          indigo: "#4B0082",
+          violet: "#EE82EE",
+          magenta: "#FF00FF",
+          lime: "#00FF00",
+          charcoal: "#36454F",
+          slate: "#708090",
+          crimson: "#DC143C",
         }
 
         return (
@@ -588,32 +608,20 @@ export default function ProductActions({ product, disabled, showSupportActions =
         </label>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <p className="text-sm font-medium text-slate-700">Quantity</p>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => updateQuantity("dec")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:bg-slate-50"
-            aria-label="Decrease quantity"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <div className="flex h-12 min-w-[64px] items-center justify-center rounded-full border border-slate-200 text-lg font-semibold">
-            {quantity}
-          </div>
-          <button
-            type="button"
-            onClick={() => updateQuantity("inc")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:bg-slate-50"
-            aria-label="Increase quantity"
-            disabled={maxQuantity === 0 || (maxQuantity !== 0 && quantity >= maxQuantity)}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+        <div className="flex items-center gap-4">
+          <QuantitySelector
+            quantity={quantity}
+            onChange={setQuantity}
+            onIncrement={() => updateQuantity("inc")}
+            onDecrement={() => updateQuantity("dec")}
+            max={maxQuantity === 0 ? 1 : maxQuantity}
+            className="w-fit"
+          />
           {maxQuantity !== 0 && (
-            <p className="text-xs text-slate-500">
-              {Math.max(maxQuantity - quantity, 0)} pieces left in stock
+            <p className="text-xs text-slate-500 font-medium">
+              {Math.max(maxQuantity - quantity, 0)} items left in stock
             </p>
           )}
         </div>

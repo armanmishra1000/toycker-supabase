@@ -72,13 +72,15 @@ export const getProductPrice = ({
   let cheapestPrice: VariantPrice | null = null
 
   if (product.variants && product.variants.length > 0) {
-    // Find lowest variant price
-    const minPrice = Math.min(...product.variants.map((v) => v.price))
-    cheapestPrice = buildPrice(minPrice)
+    // Find lowest variant price - Strictly prioritize variants if they exist
+    // We need to find the variant with the lowest price to show as the "starting at" or "current" price
+    const cheapestVariant = [...product.variants].sort((a, b) => a.price - b.price)[0]
+    const productCompareAt = (product.metadata?.compare_at_price as number) || undefined
+    cheapestPrice = buildPrice(cheapestVariant.price, productCompareAt, cheapestVariant.compare_at_price)
   } else {
-    // Use base product price
+    // Use base product price only if no variants exist
     const compareAt = (product.metadata?.compare_at_price as number) || undefined
-    cheapestPrice = buildPrice(product.price, compareAt)
+    cheapestPrice = buildPrice(product.price, undefined, compareAt)
   }
 
   // 2. Calculate Selected Variant Price
@@ -86,7 +88,8 @@ export const getProductPrice = ({
   if (variantId && product.variants) {
     const variant = product.variants.find((v) => v.id === variantId)
     if (variant) {
-      variantPrice = buildPrice(variant.price, undefined, variant.compare_at_price)
+      const productCompareAt = (product.metadata?.compare_at_price as number) || undefined
+      variantPrice = buildPrice(variant.price, productCompareAt, variant.compare_at_price)
     }
   }
 

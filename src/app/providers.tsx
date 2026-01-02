@@ -8,13 +8,30 @@ import { CartStoreProvider } from "@modules/cart/context/cart-store-context"
 import { ToastProvider } from "@modules/common/context/toast-context"
 import { ShippingPriceProvider } from "@modules/common/context/shipping-price-context"
 
-const Providers = ({ children }: { children: ReactNode }) => {
+import { WishlistProvider } from "@modules/products/context/wishlist"
+
+const Providers = ({
+  children,
+  isAuthenticated = false,
+  initialWishlistItems = [],
+}: {
+  children: ReactNode
+  isAuthenticated?: boolean
+  initialWishlistItems?: string[]
+}) => {
   return (
     <LayoutDataProvider>
       <ToastProvider>
         <CartStoreProvider>
           <ShippingPriceProvider>
-            <CartSidebarProvider>{children}</CartSidebarProvider>
+            <CartSidebarProvider>
+              <WishlistProvider
+                isAuthenticated={isAuthenticated}
+                initialItems={initialWishlistItems}
+              >
+                {children}
+              </WishlistProvider>
+            </CartSidebarProvider>
           </ShippingPriceProvider>
         </CartStoreProvider>
       </ToastProvider>

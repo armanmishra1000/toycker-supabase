@@ -1,6 +1,5 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductPreview from "@modules/products/components/product-preview"
-import { WishlistProvider } from "@modules/products/context/wishlist"
 import { getCollectionProductsByHandle } from "@modules/home/lib/get-collection-products"
 
 const BEST_SELLING_COLLECTION_HANDLE = "best-selling"
@@ -51,19 +50,17 @@ const BestSelling = async ({ regionId, countryCode, isCustomerLoggedIn, collecti
           </div>
         </div>
 
-        <WishlistProvider isAuthenticated={isCustomerLoggedIn} loginPath={accountPath}>
-          <ul className="mt-10 grid gap-6 grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 lg:[&>li:nth-last-child(-n+2)]:hidden xl:[&>li:nth-last-child(-n+2)]:block">
-            {products.map((product) => (
-              <li key={product.id}>
-                <ProductPreview
-                  product={product}
-                  viewMode="grid-5"
-                  clubDiscountPercentage={clubDiscountPercentage}
-                />
-              </li>
-            ))}
-          </ul>
-        </WishlistProvider>
+        <ul className="mt-10 grid gap-6 grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 lg:[&>li:nth-last-child(-n+2)]:hidden xl:[&>li:nth-last-child(-n+2)]:block">
+          {products.map((product) => (
+            <li key={product.id}>
+              <ProductPreview
+                product={product}
+                viewMode="grid-5"
+                clubDiscountPercentage={clubDiscountPercentage}
+              />
+            </li>
+          ))}
+        </ul>
 
         <div className="mt-10 text-center">
           <LocalizedClientLink

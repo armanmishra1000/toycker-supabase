@@ -1,6 +1,6 @@
 "use client"
 
-import { addToCart, deleteLineItem } from "@lib/data/cart"
+import { addToCart, deleteLineItem, updateLineItem } from "@lib/data/cart"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
 import { Cart, Product, ProductVariant, CartItem } from "@/lib/supabase/types"
 import isEqual from "lodash/isEqual"
@@ -19,7 +19,7 @@ import { useOptionalToast } from "@modules/common/context/toast-context"
 
 type OptimisticAddInput = {
   product: Product
-  variant: ProductVariant
+  variant?: ProductVariant // Make optional
   quantity: number
   countryCode?: string
   metadata?: Record<string, string | number | boolean | null>
@@ -30,6 +30,7 @@ type CartStoreContextValue = {
   setFromServer: (cart: Cart | null) => void
   optimisticAdd: (input: OptimisticAddInput) => Promise<void>
   optimisticRemove: (lineId: string) => Promise<void>
+  optimisticUpdateQuantity: (lineId: string, quantity: number) => Promise<void>
   reloadFromServer: () => Promise<void>
   isSyncing: boolean
   lastError: string | null
@@ -54,25 +55,25 @@ const mergeLineItems = (
 
 const buildOptimisticLineItem = (
   product: Product,
-  variant: ProductVariant,
+  variant: ProductVariant | undefined,
   quantity: number,
   _cartRef: Cart,
   metadata?: Record<string, string | number | boolean | null>,
 ): CartItem => {
-  const tempId = `temp-${variant.id}-${Date.now()}`
-  const price = variant.price
+  const tempId = `temp-${variant?.id || product.id}-${Date.now()}`
+  const price = variant?.price || product.price
   const total = price * quantity
 
   return {
     id: tempId,
-    title: variant.title || product.name,
+    title: variant?.title || product.name,
     thumbnail: product.thumbnail || product.image_url || undefined,
     quantity,
-    variant_id: variant.id,
+    variant_id: variant?.id || null,
     product_id: product.id,
     cart_id: "temp",
     metadata: (metadata as Record<string, unknown>) ?? {},
-    variant: variant,
+    variant: variant || undefined,
     product: product,
     product_title: product.name,
     product_handle: product.handle ?? undefined,
@@ -208,7 +209,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       ) => isEqual(left ?? {}, right ?? {})
 
       const existing = baseCart.items?.find(
-        (item) => item.variant_id === variant.id && areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
+        (item) => item.variant_id === (variant?.id || null) && areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
       )
       let nextItems: CartItem[]
 
@@ -239,7 +240,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           const serverCart = await addToCart({
             productId: product.id,
             quantity,
-            variantId: variant.id,
+            variantId: variant?.id,
           })
 
           if (serverCart) {
@@ -283,18 +284,75 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [setFromServer, showToast])
 
+  const optimisticUpdateQuantity = useCallback(
+    async (lineId: string, quantity: number) => {
+      if (!cart) {
+        setLastError("No cart found")
+        return
+      }
+
+      setLastError(null)
+      const previousCart = cart
+
+      const nextItems = cart.items?.map((item) => {
+        if (item.id === lineId) {
+          const unitPrice = item.unit_price ?? 0
+          const originalUnitPrice = item.original_unit_price ?? unitPrice
+          return {
+            ...item,
+            quantity,
+            total: unitPrice * quantity,
+            original_total: originalUnitPrice * quantity,
+            updated_at: new Date().toISOString(),
+          }
+        }
+        return item
+      })
+
+      if (nextItems) {
+        setCart(mergeLineItems(cart, nextItems))
+      }
+
+      try {
+        await updateLineItem({ lineId, quantity })
+        const response = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
+        if (response.ok) {
+          const payload = (await response.json()) as { cart: Cart | null }
+          setFromServer(payload.cart)
+        }
+      } catch (error) {
+        const errorMessage = (error as Error)?.message ?? "Failed to update quantity"
+        setLastError(errorMessage)
+        showToast?.(errorMessage, "error")
+        setCart(previousCart)
+      }
+    },
+    [cart, setFromServer, showToast]
+  )
+
   const value = useMemo(
     () => ({
       cart,
       setFromServer,
       optimisticAdd,
       optimisticRemove,
+      optimisticUpdateQuantity,
       reloadFromServer,
       isSyncing,
       lastError,
       isRemoving,
     }),
-    [cart, isSyncing, lastError, optimisticAdd, optimisticRemove, reloadFromServer, setFromServer, isRemoving],
+    [
+      cart,
+      isSyncing,
+      lastError,
+      optimisticAdd,
+      optimisticRemove,
+      optimisticUpdateQuantity,
+      reloadFromServer,
+      setFromServer,
+      isRemoving,
+    ]
   )
 
   return <CartStoreContext.Provider value={value}>{children}</CartStoreContext.Provider>

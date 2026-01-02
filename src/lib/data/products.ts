@@ -138,7 +138,11 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
     .from("products")
     .select(PRODUCT_SELECT, { count: "exact" })
 
-  if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])
+  if (queryParams?.id) {
+    const ids = Array.isArray(queryParams.id) ? queryParams.id : [queryParams.id]
+    query = query.in("id", ids)
+  }
+
   if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])
 
   if (queryParams?.collection_id) {

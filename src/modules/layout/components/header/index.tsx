@@ -86,7 +86,9 @@ const Header = ({
   const wishlistCount = useWishlistCount()
 
   useEffect(() => {
-    setCart(cart ?? null)
+    if (cart !== undefined) {
+      setCart(cart ?? null)
+    }
   }, [cart, setCart])
 
   const openSearch = () => setIsSearchOpen(true)

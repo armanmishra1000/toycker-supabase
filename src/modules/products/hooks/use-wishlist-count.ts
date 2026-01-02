@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-
-import { WISHLIST_UPDATED_EVENT } from "@modules/products/context/wishlist"
+import { useOptionalWishlist } from "@modules/products/context/wishlist"
 
 const STORAGE_KEY = "toycker_wishlist"
 
@@ -27,41 +26,23 @@ const readCount = () => {
 }
 
 export const useWishlistCount = () => {
-  const [count, setCount] = useState(() => readCount())
+  const wishlist = useOptionalWishlist()
+  const [localCount, setLocalCount] = useState(() => readCount())
 
   useEffect(() => {
-    setCount(readCount())
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return
+    if (!wishlist) {
+      setLocalCount(readCount())
     }
+  }, [wishlist])
 
-    const handleUpdate = (event: Event) => {
-      if ((event as CustomEvent<{ count?: number }>).detail?.count !== undefined) {
-        setCount((event as CustomEvent<{ count: number }>).detail.count)
-      } else {
-        setCount(readCount())
-      }
-    }
+  // If we have the global wishlist context, use its length.
+  // This is the source of truth for both logged-in and guest users.
+  if (wishlist) {
+    return wishlist.items.length
+  }
 
-    const handleStorage = (storageEvent: StorageEvent) => {
-      if (!storageEvent.key || storageEvent.key === STORAGE_KEY) {
-        setCount(readCount())
-      }
-    }
-
-    window.addEventListener(WISHLIST_UPDATED_EVENT, handleUpdate as EventListener)
-    window.addEventListener("storage", handleStorage)
-
-    return () => {
-      window.removeEventListener(WISHLIST_UPDATED_EVENT, handleUpdate as EventListener)
-      window.removeEventListener("storage", handleStorage)
-    }
-  }, [])
-
-  return count
+  // Fallback for cases where WishlistProvider is not yet active (rare in global setup)
+  return localCount
 }
 
 export default useWishlistCount
