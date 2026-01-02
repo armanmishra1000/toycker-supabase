@@ -583,6 +583,19 @@ export async function placeOrder() {
       }).eq("id", order.id)
     }
 
+    // --- Persist Lifetime Club Savings ---
+    if (cart.club_savings && cart.club_savings > 0) {
+      const currentSavings = Number(user?.user_metadata?.total_club_savings || 0)
+      const newSavings = currentSavings + cart.club_savings
+
+      await supabase.auth.updateUser({
+        data: {
+          total_club_savings: newSavings
+        }
+      })
+    }
+    // -------------------------------------
+
     revalidateTag("rewards")
   }
 
