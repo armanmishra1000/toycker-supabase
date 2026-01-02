@@ -20,9 +20,9 @@ type AccordionItemProps = AccordionPrimitive.AccordionItemProps & {
 
 type AccordionProps =
   | (AccordionPrimitive.AccordionSingleProps &
-      React.RefAttributes<HTMLDivElement>)
+    React.RefAttributes<HTMLDivElement>)
   | (AccordionPrimitive.AccordionMultipleProps &
-      React.RefAttributes<HTMLDivElement>)
+    React.RefAttributes<HTMLDivElement>)
 
 const Accordion: React.FC<AccordionProps> & {
   Item: React.FC<AccordionItemProps>
@@ -53,22 +53,24 @@ const Item: React.FC<AccordionItemProps> = ({
         className
       )}
     >
-      <AccordionPrimitive.Header className="px-1">
-        <div className="flex flex-col">
+      <AccordionPrimitive.Header className="flex">
+        <AccordionPrimitive.Trigger className="group flex w-full flex-col px-1 text-left focus:outline-none">
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-4">
-              <Text className="text-base font-medium text-slate-800">{title}</Text>
+              <Text className="text-base font-medium text-slate-800 transition-colors group-hover:text-primary">
+                {title}
+              </Text>
             </div>
-            <AccordionPrimitive.Trigger className="group inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition group-hover:bg-slate-50 group-hover:border-slate-300">
               {customTrigger || <MorphingTrigger />}
-            </AccordionPrimitive.Trigger>
+            </div>
           </div>
           {subtitle && (
             <Text as="span" size="small" className="mt-1">
               {subtitle}
             </Text>
           )}
-        </div>
+        </AccordionPrimitive.Trigger>
       </AccordionPrimitive.Header>
       <AccordionPrimitive.Content
         forceMount={forceMountContent}

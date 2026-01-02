@@ -55,27 +55,8 @@ const DescriptionTab = ({
 }
 
 const ShippingReturnsTab = () => (
-  <div className="space-y-4 py-6 text-sm text-slate-700">
-    <div>
-      <p className="font-semibold">Order Now and Get it Delivered.</p>
-      <p className="text-ui-fg-subtle">
-        We dispatch within 24 hours and deliver across India via express partners.
-      </p>
-    </div>
-    <div>
-      <p className="font-semibold">Cash On Delivery is Available</p>
-      <p className="text-ui-fg-subtle">
-        Choose COD at checkout for a worry-free purchase experience.
-      </p>
-    </div>
-    <div>
-      <p className="font-semibold">
-        Easy Returns / Exchanges Policy (Wrong/Damaged items Only)
-      </p>
-      <p className="text-ui-fg-subtle">
-        Share unboxing photos within 48 hours and we will arrange a free exchange.
-      </p>
-    </div>
+  <div className="py-6 text-sm text-slate-700">
+    <p>Quick Delivery & 7-Day Return Policy</p>
   </div>
 )
 
