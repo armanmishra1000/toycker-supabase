@@ -15,6 +15,9 @@ import { AdminMobileMenu } from "@modules/admin/components/admin-mobile-menu"
 export const metadata = {
   title: "Toycker Admin",
   description: "Store Management",
+  icons: {
+    icon: "/favicon.jpg",
+  },
 }
 
 export const revalidate = 30

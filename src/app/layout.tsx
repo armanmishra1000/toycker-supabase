@@ -9,6 +9,9 @@ import { getWishlistItems } from "@lib/data/wishlist"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
+  icons: {
+    icon: "/favicon.jpg",
+  },
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
