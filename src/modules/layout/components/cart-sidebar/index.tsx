@@ -25,7 +25,7 @@ type CartSidebarProps = {
 
 const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
   const { cart } = useCartSidebar()
-  const { optimisticUpdateQuantity } = useCartStore()
+  const { optimisticUpdateQuantity, isUpdating, isRemoving } = useCartStore()
   useBodyScrollLock({ isLocked: isOpen })
 
   const totalItems = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0
@@ -167,6 +167,8 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                                     <QuantitySelector
                                       quantity={item.quantity}
                                       onChange={(newQty) => optimisticUpdateQuantity(item.id, newQty)}
+                                      loading={isUpdating(item.id)}
+                                      disabled={isRemoving(item.id)}
                                       size="small"
                                       className="w-fit"
                                     />

@@ -35,6 +35,7 @@ type CartStoreContextValue = {
   isSyncing: boolean
   lastError: string | null
   isRemoving: (lineId: string) => boolean
+  isUpdating: (lineId: string) => boolean
 }
 
 const CartStoreContext = createContext<CartStoreContextValue | undefined>(undefined)
@@ -284,6 +285,13 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [setFromServer, showToast])
 
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
+
+  const isUpdating = useCallback(
+    (lineId: string) => updatingIds.has(lineId),
+    [updatingIds]
+  )
+
   const optimisticUpdateQuantity = useCallback(
     async (lineId: string, quantity: number) => {
       if (!cart) {
@@ -292,6 +300,12 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       }
 
       setLastError(null)
+      setUpdatingIds((prev) => {
+        const next = new Set(prev)
+        next.add(lineId)
+        return next
+      })
+
       const previousCart = cart
 
       const nextItems = cart.items?.map((item) => {
@@ -325,6 +339,12 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         setLastError(errorMessage)
         showToast?.(errorMessage, "error")
         setCart(previousCart)
+      } finally {
+        setUpdatingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(lineId)
+          return next
+        })
       }
     },
     [cart, setFromServer, showToast]
@@ -341,6 +361,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       isSyncing,
       lastError,
       isRemoving,
+      isUpdating,
     }),
     [
       cart,
@@ -352,6 +373,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       reloadFromServer,
       setFromServer,
       isRemoving,
+      isUpdating,
     ]
   )
 

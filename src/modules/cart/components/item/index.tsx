@@ -26,8 +26,7 @@ type ItemProps = {
 }
 
 const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
-  const { optimisticUpdateQuantity } = useCartStore()
-  const [updating, setUpdating] = useState(false)
+  const { optimisticUpdateQuantity, isUpdating, isRemoving } = useCartStore()
   const [error, setError] = useState<string | null>(null)
 
   const giftWrapLine = isGiftWrapLine(item.metadata)
@@ -35,14 +34,10 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const canNavigate = Boolean(item.product_handle && !giftWrapLine)
 
   const handleQuantityChange = async (newQuantity: number) => {
-    setError(null)
-    setUpdating(true)
     try {
       await optimisticUpdateQuantity(item.id, newQuantity)
     } catch (err: any) {
       setError(err.message || "Failed to update quantity")
-    } finally {
-      setUpdating(false)
     }
   }
 
@@ -152,7 +147,8 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
                 quantity={item.quantity}
                 onChange={handleQuantityChange}
                 max={maxQuantity}
-                loading={updating}
+                loading={isUpdating(item.id)}
+                disabled={isRemoving(item.id)}
                 size="small"
                 data-testid="product-select-button"
               />
@@ -171,7 +167,8 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             quantity={item.quantity}
             onChange={handleQuantityChange}
             max={maxQuantity}
-            loading={updating}
+            loading={isUpdating(item.id)}
+            disabled={isRemoving(item.id)}
             data-testid="product-select-button"
           />
         </div>
