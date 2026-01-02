@@ -16,7 +16,7 @@ export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> 
 
   const { data: addresses } = await supabase
     .from("addresses")
-    .select("*")
+    .select("id, first_name, last_name, address_1, address_2, city, province, postal_code, country_code, phone, company")
     .eq("user_id", user.id)
 
   return {
