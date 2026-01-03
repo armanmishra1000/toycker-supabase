@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData, AdminRole, StaffMember } from "@/lib/supabase/types"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 
 // --- Auth Check ---
@@ -143,6 +143,7 @@ export async function createCategory(formData: FormData) {
   }
   const { error } = await supabase.from("categories").insert(category)
   if (error) throw new Error(error.message)
+  revalidateTag("categories")
   revalidatePath("/admin/categories")
   redirect("/admin/categories")
 }
@@ -151,6 +152,7 @@ export async function deleteCategory(id: string) {
   await ensureAdmin()
   const supabase = await createClient()
   await supabase.from("categories").delete().eq("id", id)
+  revalidateTag("categories")
   revalidatePath("/admin/categories")
 }
 
@@ -277,6 +279,7 @@ export async function createProduct(formData: FormData) {
     }
   }
 
+  revalidateTag("products")
   revalidatePath("/admin/products")
   redirect("/admin/products")
 }
@@ -336,6 +339,7 @@ export async function updateProduct(formData: FormData) {
     }
   }
 
+  revalidateTag("products")
   revalidatePath("/admin/products")
   revalidatePath(`/admin/products/${id}`)
   redirect(`/admin/products/${id}`)
@@ -345,6 +349,7 @@ export async function deleteProduct(id: string) {
   await ensureAdmin()
   const supabase = await createClient()
   await supabase.from("products").delete().eq("id", id)
+  revalidateTag("products")
   revalidatePath("/admin/products")
 }
 
@@ -493,6 +498,7 @@ export async function createCollection(formData: FormData) {
   }
   const { error } = await supabase.from("collections").insert(collection)
   if (error) throw new Error(error.message)
+  revalidateTag("collections")
   revalidatePath("/admin/collections")
   redirect("/admin/collections")
 }
@@ -507,6 +513,7 @@ export async function updateCollection(formData: FormData) {
   }
   const { error } = await supabase.from("collections").update(updates).eq("id", id)
   if (error) throw new Error(error.message)
+  revalidateTag("collections")
   revalidatePath("/admin/collections")
   redirect("/admin/collections")
 }
@@ -515,6 +522,7 @@ export async function deleteCollection(id: string) {
   await ensureAdmin()
   const supabase = await createClient()
   await supabase.from("collections").delete().eq("id", id)
+  revalidateTag("collections")
   revalidatePath("/admin/collections")
 }
 
