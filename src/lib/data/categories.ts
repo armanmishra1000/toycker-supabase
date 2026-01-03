@@ -1,10 +1,14 @@
 "use server"
 
-import { cache } from "react"
+import { unstable_cache } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { Category } from "@/lib/supabase/types"
 
-export const listCategories = cache(async (): Promise<Category[]> => {
+// Cache TTL: 10 minutes in seconds
+const CATEGORIES_CACHE_TTL = 86400
+
+// Internal function for listCategories
+const listCategoriesInternal = async (): Promise<Category[]> => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("categories")
@@ -16,9 +20,16 @@ export const listCategories = cache(async (): Promise<Category[]> => {
   }
 
   return data as Category[]
-})
+}
 
-export const getCategoryByHandle = cache(async (categoryHandle: string[]): Promise<Category | null> => {
+export const listCategories = unstable_cache(
+  listCategoriesInternal,
+  ["categories", "list"],
+  { revalidate: CATEGORIES_CACHE_TTL, tags: ["categories"] }
+)
+
+// Internal function for getCategoryByHandle
+const getCategoryByHandleInternal = async (categoryHandle: string[]): Promise<Category | null> => {
   const handle = categoryHandle[categoryHandle.length - 1]
   const supabase = await createClient()
 
@@ -37,4 +48,10 @@ export const getCategoryByHandle = cache(async (categoryHandle: string[]): Promi
   }
 
   return data as Category
-})
+}
+
+export const getCategoryByHandle = unstable_cache(
+  getCategoryByHandleInternal,
+  ["categories", "handle"],
+  { revalidate: CATEGORIES_CACHE_TTL, tags: ["categories"] }
+)

@@ -1,6 +1,6 @@
 "use server"
 
-import { cache } from "react"
+import { unstable_cache } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { Product } from "@/lib/supabase/types"
 import { SortOptions } from "@modules/store/components/refinement-list/types"
@@ -54,13 +54,17 @@ const PRODUCT_DETAIL_SELECT = `
   options:product_options(id, title, values:product_option_values(id, value))
 `
 
-export const listProducts = cache(async function listProducts(options: {
+// Cache TTL: 24 hours in seconds
+const PRODUCTS_CACHE_TTL = 86400
+
+// Internal function for listProducts
+const listProductsInternal = async (options: {
   regionId?: string
   queryParams?: {
     limit?: number
     collection_id?: string[]
   }
-} = {}): Promise<{ response: { products: Product[]; count: number } }> {
+} = {}): Promise<{ response: { products: Product[]; count: number } }> => {
   const supabase = await createClient()
 
   let query = supabase
@@ -95,9 +99,16 @@ export const listProducts = cache(async function listProducts(options: {
 
   const products = (data || []).map((p) => normalizeProductImage(p as Product))
   return { response: { products, count: count || 0 } }
-})
+}
 
-export const retrieveProduct = cache(async function retrieveProduct(id: string): Promise<Product | null> {
+export const listProducts = unstable_cache(
+  listProductsInternal,
+  ["products", "list"],
+  { revalidate: PRODUCTS_CACHE_TTL, tags: ["products"] }
+)
+
+// Internal function for retrieveProduct
+const retrieveProductInternal = async (id: string): Promise<Product | null> => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
@@ -107,9 +118,16 @@ export const retrieveProduct = cache(async function retrieveProduct(id: string):
 
   if (error || !data) return null
   return normalizeProductImage(data as Product)
-})
+}
 
-export const getProductByHandle = cache(async function getProductByHandle(handle: string): Promise<Product | null> {
+export const retrieveProduct = unstable_cache(
+  retrieveProductInternal,
+  ["products", "detail"],
+  { revalidate: PRODUCTS_CACHE_TTL, tags: ["products"] }
+)
+
+// Internal function for getProductByHandle
+const getProductByHandleInternal = async (handle: string): Promise<Product | null> => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
@@ -119,9 +137,16 @@ export const getProductByHandle = cache(async function getProductByHandle(handle
 
   if (error || !data) return null
   return normalizeProductImage(data as Product)
-})
+}
 
-export const listPaginatedProducts = cache(async function listPaginatedProducts({
+export const getProductByHandle = unstable_cache(
+  getProductByHandleInternal,
+  ["products", "handle"],
+  { revalidate: PRODUCTS_CACHE_TTL, tags: ["products"] }
+)
+
+// Internal function for listPaginatedProducts
+const listPaginatedProductsInternal = async ({
   page = 1,
   limit = 12,
   sortBy = "featured",
@@ -136,7 +161,7 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
   availability?: string
   priceFilter?: { min?: number; max?: number }
   ageFilter?: string
-}) {
+}) => {
   const supabase = await createClient()
   const offset = (page - 1) * limit
 
@@ -189,4 +214,10 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
     },
     pagination: { page, limit },
   }
-})
+}
+
+export const listPaginatedProducts = unstable_cache(
+  listPaginatedProductsInternal,
+  ["products", "paginated"],
+  { revalidate: PRODUCTS_CACHE_TTL, tags: ["products"] }
+)
