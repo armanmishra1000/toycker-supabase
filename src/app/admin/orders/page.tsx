@@ -6,6 +6,7 @@ import { AdminPagination } from "@modules/admin/components/admin-pagination"
 import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import Link from "next/link"
 import { ShoppingBagIcon } from "@heroicons/react/24/outline"
+import { formatIST } from "@/lib/util/date"
 
 // Helper to format payment status for display
 function getPaymentBadge(paymentStatus: string, paymentMethod?: string | null) {
@@ -123,7 +124,7 @@ export default async function AdminOrders({
                       </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(order.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {formatIST(order.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-600">{order.customer_email}</div>

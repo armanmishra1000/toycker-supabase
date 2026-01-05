@@ -8,6 +8,7 @@ import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
 import Image from "next/image"
 import FulfillmentModal from "./fulfillment-modal"
+import { formatIST } from "@/lib/util/date"
 
 export default async function AdminOrderDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -38,24 +39,6 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
       )}
     </div>
   )
-
-  // Helper for IST formatting
-  const formatIST = (dateString: string) => {
-    try {
-      return new Intl.DateTimeFormat("en-IN", {
-        timeZone: "Asia/Kolkata",
-        year: "numeric",
-        month: "numeric",
-        day: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-        second: "numeric",
-        hour12: true,
-      }).format(new Date(dateString))
-    } catch (e) {
-      return new Date(dateString).toLocaleString()
-    }
-  }
 
   // Determine payment method display with specific sub-method for PayU
   let paymentMethod = order.payment_method || (order.payu_txn_id ? "PayU" : "Cash on Delivery")

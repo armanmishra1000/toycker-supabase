@@ -4,6 +4,7 @@ import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { ShoppingBagIcon, UserIcon, ArrowPathIcon } from "@heroicons/react/24/outline"
 import Link from "next/link"
+import { formatIST } from "@/lib/util/date"
 
 export default async function AdminDashboard() {
   const stats = await getAdminStats()
@@ -81,7 +82,7 @@ export default async function AdminDashboard() {
 
                   <div>
                     <p className="text-sm text-gray-900">Order <span className="font-semibold">#{order.display_id}</span> was placed</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{formatIST(order.created_at)}</p>
                   </div>
                 </div>
               )) : (

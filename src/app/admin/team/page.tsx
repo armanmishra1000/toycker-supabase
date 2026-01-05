@@ -5,6 +5,7 @@ import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import RoleSelector from "./role-selector"
 import Link from "next/link"
 import { UserPlusIcon, Cog6ToothIcon, TrashIcon, UserGroupIcon } from "@heroicons/react/24/outline"
+import { formatIST } from "@/lib/util/date"
 
 export default async function AdminTeam({
     searchParams
@@ -109,7 +110,7 @@ export default async function AdminTeam({
                                         />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(member.created_at).toLocaleDateString()}
+                                        {formatIST(member.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                         <form action={removeStaffAccess.bind(null, member.id)}>

@@ -38,7 +38,9 @@ function isActive(pathname: string, href: string): boolean {
   if (href === "/admin") {
     return pathname === "/admin"
   }
-  return pathname.startsWith(href)
+  // Ensure we match either the exact path or a subpath (e.g. /admin/orders matches /admin/orders/123)
+  // But strictly avoid matching /admin/shipping for /admin/shipping-partners
+  return pathname === href || pathname.startsWith(`${href}/`)
 }
 
 type NavItemProps = {
@@ -56,16 +58,14 @@ function NavItem({ label, href, icon: Icon, pathname, onClick }: NavItemProps) {
     <Link
       href={href}
       onClick={onClick}
-      className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
-        active
+      className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${active
           ? "bg-gray-900 text-white shadow-sm"
           : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-      }`}
+        }`}
     >
       <Icon
-        className={`h-5 w-5 shrink-0 transition-colors ${
-          active ? "text-white" : "text-gray-400 group-hover:text-gray-600"
-        }`}
+        className={`h-5 w-5 shrink-0 transition-colors ${active ? "text-white" : "text-gray-400 group-hover:text-gray-600"
+          }`}
       />
       <span className="flex-1">{label}</span>
     </Link>

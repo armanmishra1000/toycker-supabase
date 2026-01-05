@@ -9,6 +9,7 @@ import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
 import DeleteCustomerButton from "@modules/admin/components/delete-customer-button"
 import { cn } from "@lib/util/cn"
+import { formatIST } from "@/lib/util/date"
 
 export default async function AdminCustomerDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -22,7 +23,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
   // @ts-ignore
   const rewardBalance = customer.reward_wallet?.balance || 0
   const clubSavings = customer.total_club_savings || 0
-  const joinDate = new Date(customer.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+  const joinDate = formatIST(customer.created_at, { month: 'long', day: 'numeric', year: 'numeric' })
 
   // Determine membership status
   const isMember = customer.is_club_member
@@ -112,7 +113,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
                           <Link href={`/admin/orders/${order.id}`}>#{order.display_id}</Link>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(order.created_at).toLocaleDateString()}
+                          {formatIST(order.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <AdminBadge variant={getStatusVariant(order.status)}>{order.status}</AdminBadge>
@@ -206,7 +207,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
                   <div className="h-px bg-gray-100 my-2" />
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Member Since</p>
-                    <p className="text-sm font-medium text-gray-900">{customer.club_member_since ? new Date(customer.club_member_since).toLocaleDateString() : 'Unknown'}</p>
+                    <p className="text-sm font-medium text-gray-900">{customer.club_member_since ? formatIST(customer.club_member_since) : 'Unknown'}</p>
                   </div>
                 </>
               )}
@@ -256,7 +257,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(tx.created_at).toLocaleDateString()}
+                        {formatIST(tx.created_at)}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-700">
                         {tx.description}

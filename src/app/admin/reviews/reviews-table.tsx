@@ -5,6 +5,7 @@ import { approveReview, rejectReview, deleteReview, type ReviewWithMedia } from 
 import { Star, Eye, Check, X, Trash2, FileText, Image as ImageIcon, Video, Mic } from "lucide-react"
 import clsx from "clsx"
 import Image from "next/image"
+import { formatIST } from "@/lib/util/date"
 
 type Review = ReviewWithMedia // Typed from server action return
 
@@ -104,7 +105,7 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
                                             <span className="text-gray-900">{review.is_anonymous ? "Anonymous" : review.display_name}</span>
-                                            <span className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</span>
+                                            <span className="text-xs text-gray-400">{formatIST(review.created_at)}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -192,7 +193,7 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                                 <div>
                                     <h4 className="font-medium text-gray-900 text-lg">{selectedReview.product_name}</h4>
                                     <p className="text-sm text-gray-500">
-                                        By {selectedReview.is_anonymous ? "Anonymous" : selectedReview.display_name} • {new Date(selectedReview.created_at).toLocaleString()}
+                                        By {selectedReview.is_anonymous ? "Anonymous" : selectedReview.display_name} • {formatIST(selectedReview.created_at)}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-full text-amber-700 font-bold">
