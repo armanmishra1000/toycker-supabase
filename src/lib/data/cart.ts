@@ -316,6 +316,11 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
 
   const supabase = await createClient()
 
+  const shippingPhone = formData.get("shipping_address.phone") as string
+  if (!shippingPhone || shippingPhone.trim() === "") {
+    return { message: "Phone number is required", success: false }
+  }
+
   const data = {
     email: formData.get("email") as string,
     shipping_address: {
