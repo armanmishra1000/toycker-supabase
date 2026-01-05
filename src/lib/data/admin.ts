@@ -75,6 +75,43 @@ export async function getAdminStats() {
   }
 }
 
+// --- Get Low Stock Stats ---
+export async function getLowStockStats(threshold: number = 5) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Count products with low stock (base products)
+  const { count: lowStockProducts } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+    .lte("stock_count", threshold)
+    .gt("stock_count", 0)
+
+  // Count products out of stock
+  const { count: outOfStockProducts } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+    .eq("stock_count", 0)
+
+  // Count variants with low stock
+  const { count: lowStockVariants } = await supabase
+    .from("product_variants")
+    .select("*", { count: "exact", head: true })
+    .lte("inventory_quantity", threshold)
+    .gt("inventory_quantity", 0)
+
+  // Count variants out of stock
+  const { count: outOfStockVariants } = await supabase
+    .from("product_variants")
+    .select("*", { count: "exact", head: true })
+    .eq("inventory_quantity", 0)
+
+  return {
+    lowStock: (lowStockProducts || 0) + (lowStockVariants || 0),
+    outOfStock: (outOfStockProducts || 0) + (outOfStockVariants || 0)
+  }
+}
+
 // --- Categories ---
 
 interface GetAdminCategoriesParams {
@@ -167,6 +204,7 @@ interface GetAdminProductsParams {
   limit?: number
   status?: string
   search?: string
+  stock_status?: "all" | "low_stock" | "out_of_stock"
 }
 
 interface PaginatedProductsResponse {
@@ -193,6 +231,12 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
     countQuery = countQuery.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
   }
 
+  if (params.stock_status === "low_stock") {
+    countQuery = countQuery.lte("stock_count", 5).gt("stock_count", 0)
+  } else if (params.stock_status === "out_of_stock") {
+    countQuery = countQuery.eq("stock_count", 0)
+  }
+
   const { count } = await countQuery
 
   // Calculate pagination
@@ -214,6 +258,12 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
 
   if (search && search.trim()) {
     query = query.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
+  }
+
+  if (params.stock_status === "low_stock") {
+    query = query.lte("stock_count", 5).gt("stock_count", 0)
+  } else if (params.stock_status === "out_of_stock") {
+    query = query.eq("stock_count", 0)
   }
 
   const { data, error } = await query

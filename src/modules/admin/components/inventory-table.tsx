@@ -2,13 +2,14 @@
 
 import { Product } from "@/lib/supabase/types"
 import { updateInventory } from "@/lib/data/admin"
-import { 
-  TagIcon, 
-  ChevronDownIcon, 
-  ChevronUpIcon, 
+import {
+  TagIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   Loader2,
   PackageIcon,
-  LayersIcon
+  LayersIcon,
+  AlertCircle
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -19,6 +20,8 @@ import { cn } from "@lib/util/cn"
 type InventoryTableProps = {
   initialProducts: Product[]
 }
+
+const LOW_STOCK_THRESHOLD = 5
 
 export default function InventoryTable({ initialProducts }: InventoryTableProps) {
   const { showToast } = useToast()
@@ -67,7 +70,7 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
                 <tr className={cn("hover:bg-gray-50 transition-colors", isExpanded && "bg-gray-50/50")}>
                   <td className="px-6 py-4">
                     {hasVariants && (
-                      <button 
+                      <button
                         onClick={() => toggleExpand(product.id)}
                         className="p-1 hover:bg-gray-200 rounded-md transition-colors"
                       >
@@ -116,6 +119,17 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
                           Base Stock
                         </span>
                       )}
+                      {(hasVariants ? false : (product.stock_count || 0) <= LOW_STOCK_THRESHOLD) && (
+                        <span className={cn(
+                          "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                          (product.stock_count || 0) === 0
+                            ? "bg-red-50 text-red-700 border border-red-100"
+                            : "bg-amber-50 text-amber-700 border border-amber-100"
+                        )}>
+                          <AlertCircle className="w-3 h-3" />
+                          {(product.stock_count || 0) === 0 ? "Out of Stock" : "Low Stock"}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right relative">
@@ -132,8 +146,11 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
                           }
                         }}
                         className={cn(
-                          "w-24 rounded-lg border px-3 py-1.5 text-sm font-medium text-gray-900 text-right transition-all focus:ring-2 focus:ring-indigo-500/20",
+                          "w-24 rounded-lg border px-3 py-1.5 text-sm font-medium text-right transition-all focus:ring-2 focus:ring-indigo-500/20",
                           hasVariants ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed" : "border-gray-300 focus:border-indigo-500",
+                          !hasVariants && (product.stock_count || 0) === 0 && "border-red-300 text-red-600 bg-red-50/30",
+                          !hasVariants && (product.stock_count || 0) > 0 && (product.stock_count || 0) <= LOW_STOCK_THRESHOLD && "border-amber-300 text-amber-600 bg-amber-50/30",
+                          !hasVariants && (product.stock_count || 0) > LOW_STOCK_THRESHOLD && "text-gray-900",
                           isUpdatingProduct && "opacity-50"
                         )}
                         title={hasVariants ? "Manage stock at variant level" : "Update base stock"}
@@ -158,8 +175,21 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
                                     </div>
                                   </td>
                                   <td className="py-2 px-4 text-right">
-                                    <div className="flex items-center justify-end gap-2 text-xs text-gray-400 italic">
-                                      {variant.manage_inventory ? "Tracked" : "Not tracked"}
+                                    <div className="flex items-center justify-end gap-2">
+                                      {(variant.inventory_quantity || 0) <= LOW_STOCK_THRESHOLD && (
+                                        <span className={cn(
+                                          "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase",
+                                          (variant.inventory_quantity || 0) === 0
+                                            ? "bg-red-50 text-red-700 border border-red-100"
+                                            : "bg-amber-50 text-amber-700 border border-amber-100"
+                                        )}>
+                                          <AlertCircle className="w-2.5 h-2.5" />
+                                          {(variant.inventory_quantity || 0) === 0 ? "Empty" : "Low"}
+                                        </span>
+                                      )}
+                                      <span className="text-xs text-gray-400 italic">
+                                        {variant.manage_inventory ? "Tracked" : "Not tracked"}
+                                      </span>
                                     </div>
                                   </td>
                                   <td className="py-2 pl-4 pr-0 text-right w-[150px]">
@@ -176,7 +206,10 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
                                           }
                                         }}
                                         className={cn(
-                                          "w-24 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-800 text-right transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20",
+                                          "w-24 rounded-md border bg-white px-2 py-1 text-xs font-semibold text-right transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20",
+                                          (variant.inventory_quantity || 0) === 0 ? "border-red-300 text-red-600 bg-red-50/30" :
+                                            (variant.inventory_quantity || 0) <= LOW_STOCK_THRESHOLD ? "border-amber-300 text-amber-600 bg-amber-50/30" :
+                                              "border-gray-200 text-gray-800",
                                           isUpdatingVariant && "opacity-50"
                                         )}
                                       />
