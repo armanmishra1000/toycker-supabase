@@ -340,6 +340,12 @@ export interface RewardTransaction {
   created_at: string;
 }
 
+export interface RewardTransactionWithOrder extends RewardTransaction {
+  orders: {
+    display_id: number;
+  } | null;
+}
+
 export type OrderEventType =
   | 'order_placed'
   | 'payment_pending'

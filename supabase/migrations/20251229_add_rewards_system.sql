@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS reward_transactions (
     amount INTEGER NOT NULL, -- positive = earned, negative = spent
     type TEXT NOT NULL CHECK (type IN ('earned', 'spent')),
     description TEXT NOT NULL,
-    order_id UUID,
+    order_id TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
