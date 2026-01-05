@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData, AdminRole, StaffMember } from "@/lib/supabase/types"
+import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData, AdminRole, StaffMember, RewardTransactionWithOrder } from "@/lib/supabase/types"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -1113,17 +1113,72 @@ export async function getAdminCustomer(id: string) {
   const { data: orders } = await supabase.from("orders").select("*").eq("user_id", id).order("created_at", { ascending: false })
   const { data: addresses } = await supabase.from("addresses").select("*").eq("user_id", id)
   const { data: wallet } = await supabase.from("reward_wallets").select("*").eq("user_id", id).maybeSingle()
+  const transactions = wallet ? await getAdminRewardTransactions(id) : []
 
   return {
     ...profile,
     orders: orders || [],
     addresses: addresses || [],
     reward_wallet: wallet || null,
+    reward_transactions: transactions,
     // Use fallback values if profile columns are null (though migration should handle this)
     is_club_member: profile.is_club_member || false,
     club_member_since: profile.club_member_since || null,
     total_club_savings: profile.total_club_savings || 0
   }
+}
+
+export async function getAdminRewardTransactions(userId: string): Promise<RewardTransactionWithOrder[]> {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { data: wallet } = await supabase
+    .from("reward_wallets")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle()
+
+  if (!wallet) return []
+
+  // 1. Fetch transactions
+  const { data: transactions, error: txError } = await supabase
+    .from("reward_transactions")
+    .select("*")
+    .eq("wallet_id", wallet.id)
+    .order("created_at", { ascending: false })
+
+  if (txError || !transactions) return []
+
+  // 2. Collect unique order IDs
+  const orderIds = Array.from(new Set(
+    transactions
+      .filter(tx => tx.order_id)
+      .map(tx => tx.order_id)
+  ))
+
+  // 3. Fetch order display IDs
+  let ordersMap: Record<string, number> = {}
+  if (orderIds.length > 0) {
+    const { data: orders, error: orderError } = await supabase
+      .from("orders")
+      .select("id, display_id")
+      .in("id", orderIds)
+
+    if (orders) {
+      ordersMap = orders.reduce((acc, order) => {
+        acc[order.id] = order.display_id
+        return acc
+      }, {} as Record<string, number>)
+    }
+  }
+
+  // 4. Map display IDs back to transactions
+  return transactions.map(tx => ({
+    ...tx,
+    orders: tx.order_id && ordersMap[tx.order_id]
+      ? { display_id: ordersMap[tx.order_id] }
+      : null
+  })) as RewardTransactionWithOrder[]
 }
 
 export async function deleteCustomer(id: string) {

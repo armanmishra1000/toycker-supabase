@@ -351,10 +351,49 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
     return { message: error.message, success: false }
   }
 
+  // Claim cart for user if not already linked
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user && !cart.user_id) {
+    await supabase.from("carts").update({ user_id: user.id }).eq("id", cart.id)
+  }
+
+  // Save address to profile if requested
+  const saveToProfile = formData.get("save_address") === "on"
+  if (saveToProfile && user) {
+    try {
+      // Check if this exact address already exists for the user to avoid duplicates
+      const { data: existingAddresses, error: fetchError } = await supabase
+        .from("addresses")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("address_1", data.shipping_address.address_1)
+        .eq("postal_code", data.shipping_address.postal_code)
+        .maybeSingle()
+
+      if (!fetchError && !existingAddresses) {
+        await supabase.from("addresses").insert({
+          user_id: user.id,
+          first_name: data.shipping_address.first_name,
+          last_name: data.shipping_address.last_name,
+          address_1: data.shipping_address.address_1,
+          company: data.shipping_address.company,
+          postal_code: data.shipping_address.postal_code,
+          city: data.shipping_address.city,
+          country_code: data.shipping_address.country_code,
+          province: data.shipping_address.province,
+          phone: data.shipping_address.phone,
+        })
+      }
+    } catch (e) {
+      console.error("Failed to save address to profile:", e)
+    }
+  }
+
   // Update shipping method automatically
   await autoSelectStandardShipping(cart.id)
 
   revalidateTag("cart")
+  revalidateTag("customers")
   return { message: "Saved", success: true }
 }
 
@@ -593,6 +632,11 @@ export async function placeOrder() {
           total_club_savings: newSavings
         }
       })
+
+      // Sync to profiles table for admin accessibility
+      await supabase.from("profiles").update({
+        total_club_savings: newSavings
+      }).eq("id", order.user_id)
     }
     // -------------------------------------
 

@@ -225,12 +225,14 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 type="reset"
                 variant="secondary"
                 onClick={close}
-                className="h-10"
+                className="h-10 w-full sm:w-auto"
                 data-testid="cancel-button"
               >
                 Cancel
               </Button>
-              <SubmitButton data-testid="save-button">Save</SubmitButton>
+              <SubmitButton size="base" className="h-10 w-full sm:w-auto" data-testid="save-button">
+                Save
+              </SubmitButton>
             </div>
           </Modal.Footer>
         </form>

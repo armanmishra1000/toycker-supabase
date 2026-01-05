@@ -88,6 +88,13 @@ export async function checkAndActivateMembership(userId: string, orderTotal: num
                 return false
             }
 
+            // Sync to profiles table for admin accessibility
+            await supabase.from("profiles").update({
+                is_club_member: true,
+                club_member_since: new Date().toISOString(),
+                total_club_savings: 0
+            }).eq("id", userId)
+
             // Note: revalidateTag must be called by the caller (e.g., placeOrder)
             // since it cannot be called during render
             return true // Activated

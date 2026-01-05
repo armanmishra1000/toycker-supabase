@@ -28,6 +28,8 @@ const ShippingAddress = ({
     email: cart?.email || "",
   })
 
+  const [saveAddress, setSaveAddress] = useState(false)
+
   const countriesInRegion = useMemo(
     () => cart?.region?.countries?.map((c: any) => c.iso_2),
     [cart?.region]
@@ -199,6 +201,17 @@ const ShippingAddress = ({
           data-testid="billing-address-checkbox"
         />
       </div>
+      {customer && (
+        <div className="mb-6 sm:mb-8">
+          <Checkbox
+            label="Save address for future use"
+            name="save_address"
+            checked={saveAddress}
+            onChange={() => setSaveAddress(!saveAddress)}
+            data-testid="save-address-checkbox"
+          />
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
         <Input
           label="Email"
