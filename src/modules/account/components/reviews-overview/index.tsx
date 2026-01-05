@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@modules/common/components/button"
 import ReviewCard from "../review-card"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -7,13 +9,26 @@ type ReviewsOverviewProps = {
     reviews: ReviewWithMedia[]
 }
 
+import { useState } from "react"
+import CustomerReviewsModal from "./customer-reviews-modal"
+
 const ReviewsOverview = ({ reviews }: ReviewsOverviewProps) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const openModal = () => setIsOpen(true)
+    const closeModal = () => setIsOpen(false)
+
     if (reviews?.length) {
         return (
-            <div className="flex flex-col gap-y-6 w-full">
-                {reviews.map((review) => (
-                    <ReviewCard key={review.id} review={review} />
-                ))}
+            <div className="w-full">
+                <Button onClick={openModal} className="w-full sm:w-auto">
+                    View My Purchase Reviews
+                </Button>
+
+                <CustomerReviewsModal
+                    isOpen={isOpen}
+                    close={closeModal}
+                    reviews={reviews}
+                />
             </div>
         )
     }

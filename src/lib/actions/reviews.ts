@@ -49,6 +49,34 @@ export async function submitReview(data: ReviewData) {
         return { error: "You must be logged in to submit a review." }
     }
 
+    // Verify that the user has purchased the product
+    const { data: orders, error: ordersError } = await supabase
+        .from("orders")
+        .select("items")
+        .eq("user_id", user.id)
+
+    if (ordersError) {
+        console.error("Error fetching user orders for review verification:", ordersError)
+        return { error: "Failed to verify purchase history. Please try again." }
+    }
+
+    console.log(`[ReviewVerify] User: ${user.id}, Product: ${data.product_id}`)
+    console.log(`[ReviewVerify] Orders found: ${orders?.length}`)
+
+    // Check if product exists in any of the user's orders
+    // Use proper type assertion for items which is JSONB in DB but CartItem[] in app
+    const hasPurchased = orders?.some((order) => {
+        const items = order.items as unknown as { product_id: string }[]
+        const found = items?.some((item) => item.product_id === data.product_id)
+        if (found) console.log(`[ReviewVerify] Match found in order!`)
+        return found
+    })
+
+    if (!hasPurchased) {
+        console.log(`[ReviewVerify] No matching purchase found.`)
+        return { error: "You can only review products you have purchased." }
+    }
+
     // Insert Review
     // We separate insert and select to better handle potential RLS issues
     const { data: insertedReview, error: insertError } = await supabase

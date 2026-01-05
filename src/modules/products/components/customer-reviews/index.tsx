@@ -20,6 +20,8 @@ const CustomerReviews = ({
   customer: CustomerProfile | null
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [errorModalOpen, setErrorModalOpen] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
   const [rating, setRating] = useState(0)
   const [formState, setFormState] = useState({
     review: "",
@@ -72,7 +74,8 @@ const CustomerReviews = ({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (rating === 0) {
-      alert("Please select a star rating")
+      setErrorMessage("Please select a star rating")
+      setErrorModalOpen(true)
       return
     }
 
@@ -134,10 +137,10 @@ const CustomerReviews = ({
         setFiles([])
       }, 2000)
     } catch (error: any) {
-      console.error(error)
       // Provide user-friendly error if possible
       const msg = error?.message || "Something went wrong. Please try again."
-      alert(msg) // Or use a toast if available, keeping it simple as per request
+      setErrorMessage(msg)
+      setErrorModalOpen(true)
       setStatus("error")
     }
   }
@@ -275,10 +278,6 @@ const CustomerReviews = ({
                     </label>
                   </div>
 
-                  {status === "error" && (
-                    <p className="text-sm text-red-600">Something went wrong. Please try again.</p>
-                  )}
-
                   <Modal.Footer>
                     <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
                       Cancel
@@ -291,6 +290,21 @@ const CustomerReviews = ({
               )}
             </Modal.Body>
           </div>
+        </Modal>
+
+        {/* Error Modal */}
+        <Modal isOpen={errorModalOpen} close={() => setErrorModalOpen(false)}>
+          <Modal.Title>Notice</Modal.Title>
+          <Modal.Body>
+            <div className="py-4 text-center">
+              <p className="text-gray-700">{errorMessage}</p>
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button onClick={() => setErrorModalOpen(false)} className="w-full">
+              OK
+            </Button>
+          </Modal.Footer>
         </Modal>
       </section>
 

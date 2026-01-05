@@ -81,31 +81,41 @@ const ReviewCard = ({ review }: ReviewCardProps) => {
             {review.review_media && review.review_media.length > 0 && (
                 <div className="mt-4">
                     <div className="flex flex-wrap gap-2">
-                        {review.review_media.map((media) => (
-                            <div
-                                key={media.id}
-                                className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
-                                data-testid="review-media"
-                            >
-                                {media.file_type === "image" && (
-                                    <img
-                                        src={media.file_path}
-                                        alt="Review media"
-                                        className="w-full h-full object-cover"
-                                    />
-                                )}
-                                {media.file_type === "video" && (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <Video className="h-8 w-8 text-gray-400" />
-                                    </div>
-                                )}
-                                {media.file_type === "audio" && (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <Mic className="h-8 w-8 text-gray-400" />
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                        {review.review_media.map((media) => {
+                            let imageUrl = media.file_path
+                            if (media.file_type === "image" && !imageUrl.startsWith("http")) {
+                                const r2Hostname = process.env.NEXT_PUBLIC_R2_MEDIA_HOSTNAME || "cdn.toycker.in"
+                                // Ensure no double slashes
+                                const cleanPath = media.file_path.startsWith("/") ? media.file_path.slice(1) : media.file_path
+                                imageUrl = `https://${r2Hostname}/${cleanPath}`
+                            }
+
+                            return (
+                                <div
+                                    key={media.id}
+                                    className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
+                                    data-testid="review-media"
+                                >
+                                    {media.file_type === "image" && (
+                                        <img
+                                            src={imageUrl}
+                                            alt="Review media"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    )}
+                                    {media.file_type === "video" && (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <Video className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                    )}
+                                    {media.file_type === "audio" && (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <Mic className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
             )}

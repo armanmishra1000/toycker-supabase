@@ -44,14 +44,17 @@ const Item: React.FC<AccordionItemProps> = ({
   triggerable,
   ...props
 }) => {
+  const id = React.useId()
   return (
     <AccordionPrimitive.Item
       {...props}
-      className={cn(
-        "group border-t border-slate-200 last:mb-0 last:border-b",
-        "py-4",
-        className
-      )}
+      className={
+        cn(
+          "group border-t border-slate-200 last:mb-0 last:border-b",
+          "py-4",
+          className
+        )
+      }
     >
       <AccordionPrimitive.Header className="flex">
         <AccordionPrimitive.Trigger className="group flex w-full flex-col px-1 text-left focus:outline-none">
@@ -83,7 +86,7 @@ const Item: React.FC<AccordionItemProps> = ({
           <div className="w-full">{children}</div>
         </div>
       </AccordionPrimitive.Content>
-    </AccordionPrimitive.Item>
+    </AccordionPrimitive.Item >
   )
 }
 
