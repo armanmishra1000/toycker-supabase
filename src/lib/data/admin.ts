@@ -1040,7 +1040,17 @@ export async function updateOrderStatus(id: string, status: string) {
   const supabase = await createClient()
   const { error } = await supabase.from("orders").update({ status }).eq("id", id)
   if (error) throw error
-  revalidatePath(`/ admin / orders / ${id} `)
+
+  // Log to timeline
+  await logOrderEvent(
+    id,
+    status as OrderEventType,
+    `Order ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+    `Order status changed to ${status}.`,
+    "admin"
+  )
+
+  revalidatePath(`/admin/orders/${id}`)
   revalidatePath("/admin/orders")
 }
 
@@ -1338,16 +1348,34 @@ export async function logOrderEvent(
   eventType: OrderEventType,
   title: string,
   description: string,
-  actor: string = "admin",
+  actor: string = "system",
   metadata: Record<string, unknown> = {}
 ) {
   const supabase = await createClient()
+
+  // If actor is "admin", try to get the actual admin name
+  let actorDisplay = actor
+  if (actor === "admin") {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", user.id)
+        .single()
+
+      if (profile) {
+        actorDisplay = `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || user.email || "Admin"
+      }
+    }
+  }
+
   const { error } = await supabase.from("order_timeline").insert({
     order_id: orderId,
     event_type: eventType,
     title,
     description,
-    actor,
+    actor: actorDisplay,
     metadata,
   })
 
@@ -1362,7 +1390,11 @@ export async function fulfillOrder(orderId: string, formData: FormData) {
   const supabase = await createClient()
 
   const shippingPartnerId = formData.get("shipping_partner_id") as string
-  const trackingNumber = formData.get("tracking_number") as string | null
+  const trackingNumber = formData.get("tracking_number") as string
+
+  if (!trackingNumber || trackingNumber.trim() === "") {
+    throw new Error("Tracking number is required")
+  }
 
   // Get shipping partner name for timeline
   let partnerName = "Unknown"

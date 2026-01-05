@@ -101,25 +101,26 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
           {/* Timeline */}
           <AdminCard title="Timeline">
             <div className="space-y-6">
-              {timeline.length > 0 ? timeline.map((event, index) => (
+              {timeline.map((event, index) => (
                 <TimelineItem
                   key={event.id}
                   title={event.title}
                   description={event.description || ""}
                   timestamp={new Date(event.created_at).toLocaleString()}
+                  actor={event.actor}
                   active={true}
-                  last={index === timeline.length - 1}
+                  last={index === timeline.length - 1 && timeline.some(e => e.event_type === 'order_placed')}
                 />
-              )) : (
-                <>
-                  <TimelineItem
-                    title="Order Placed"
-                    description={`Customer placed this order.`}
-                    timestamp={new Date(order.created_at).toLocaleString()}
-                    active={true}
-                    last={true}
-                  />
-                </>
+              ))}
+              {!timeline.some(e => e.event_type === 'order_placed') && (
+                <TimelineItem
+                  title="Order Placed"
+                  description="Customer placed this order."
+                  timestamp={new Date(order.created_at).toLocaleString()}
+                  actor="customer"
+                  active={true}
+                  last={true}
+                />
               )}
             </div>
           </AdminCard>
@@ -209,7 +210,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
   )
 }
 
-function TimelineItem({ title, description, timestamp, active, last }: { title: string, description: string, timestamp: string, active: boolean, last?: boolean }) {
+function TimelineItem({ title, description, timestamp, actor, active, last }: { title: string, description: string, timestamp: string, actor: string, active: boolean, last?: boolean }) {
   return (
     <div className={`relative pl-8 ${last ? '' : 'pb-6'}`}>
       {!last && <div className={`absolute left-[11px] top-[24px] bottom-0 w-0.5 ${active ? 'bg-indigo-600' : 'bg-gray-100'}`} />}
@@ -217,9 +218,16 @@ function TimelineItem({ title, description, timestamp, active, last }: { title: 
         <CheckIcon className="h-3 w-3 stroke-[4]" />
       </div>
       <div>
-        <p className={`text-sm font-bold ${active ? 'text-gray-900' : 'text-gray-400'}`}>{title}</p>
+        <div className="flex items-center justify-between gap-1">
+          <p className={`text-sm font-bold ${active ? 'text-gray-900' : 'text-gray-400'}`}>{title}</p>
+          <span className="text-[10px] text-gray-400 font-medium">{timestamp}</span>
+        </div>
         <p className="text-xs text-gray-500 mt-1">{description}</p>
-        <p className="text-xs text-gray-400 mt-1">{timestamp}</p>
+        <div className="flex items-center gap-1.5 mt-2">
+          <span className="px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            {actor === 'system' ? '💻 System' : actor === 'customer' ? '👤 Customer' : `🛡️ Admin: ${actor}`}
+          </span>
+        </div>
       </div>
     </div>
   )

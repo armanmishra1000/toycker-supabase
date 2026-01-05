@@ -582,6 +582,16 @@ export async function placeOrder() {
 
   if (orderError) throw new Error(orderError.message)
 
+  // Log "Order Placed" event
+  const { logOrderEvent } = await import("@lib/data/admin")
+  await logOrderEvent(
+    order.id,
+    "order_placed",
+    "Order Placed",
+    "Customer placed this order.",
+    "customer"
+  )
+
   // Handle rewards for club members
   if (order.user_id) {
     const { checkAndActivateMembership, getClubSettings } = await import("@lib/data/club")
