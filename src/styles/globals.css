@@ -8,6 +8,7 @@ body {
 }
 
 @layer utilities {
+
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -18,16 +19,18 @@ body {
   }
 
   .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
 
-  input:focus ~ label,
-  input:not(:placeholder-shown) ~ label {
+  input:focus~label,
+  input:not(:placeholder-shown)~label {
     @apply -translate-y-2 text-xsmall-regular;
   }
 
-  input:focus ~ label {
+  input:focus~label {
     @apply left-0;
   }
 
@@ -64,6 +67,7 @@ body {
   .click-feedback {
     @apply transition-transform duration-75 ease-out cursor-pointer;
   }
+
   .click-feedback:active {
     @apply scale-[0.97] opacity-90;
   }
@@ -72,6 +76,7 @@ body {
   .checkout-card {
     @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-shadow hover:shadow-md;
   }
+
   .checkout-section {
     @apply bg-white rounded-lg border border-gray-100 p-6 mb-4;
   }
@@ -91,6 +96,7 @@ body {
       transform: translateY(-100%);
       opacity: 0;
     }
+
     to {
       transform: translateY(0);
       opacity: 1;

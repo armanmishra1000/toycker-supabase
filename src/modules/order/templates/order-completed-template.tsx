@@ -8,7 +8,7 @@ import ShippingDetails from "@modules/order/components/shipping-details"
 import PaymentDetails from "@modules/order/components/payment-details"
 import { Order } from "@/lib/supabase/types"
 import ClubWelcomeBanner from "@modules/order/components/club-welcome-banner"
-import { CheckCircle } from "lucide-react"
+import { Check } from "lucide-react"
 
 type OrderCompletedTemplateProps = {
   order: Order
@@ -26,53 +26,63 @@ export default async function OrderCompletedTemplate({
     : 10
 
   return (
-    <div className="py-6 min-h-[calc(100vh-64px)] bg-gray-50">
-      <div className="content-container flex flex-col justify-center items-center gap-y-6 max-w-4xl h-full w-full">
-        {/* Success Header Card */}
-        <div className="w-full bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-6 sm:p-8 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0">
-              <div className="h-14 w-14 sm:h-16 sm:w-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                <CheckCircle className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
-              </div>
+    <div className="py-12 min-h-[calc(100vh-64px)] bg-slate-50/50">
+      <div className="content-container flex flex-col justify-center items-center gap-y-8 max-w-4xl h-full w-full">
+        {/* Celebratory Header Card */}
+        <div className="w-full bg-white rounded-3xl border border-emerald-100 p-8 sm:p-12 shadow-xl shadow-emerald-900/5 flex flex-col items-center text-center relative overflow-hidden">
+          {/* Decorative Background Spreads */}
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-60" />
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-teal-50 rounded-full blur-3xl opacity-60" />
+
+          <div className="relative mb-6">
+            <div className="w-20 h-20 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200 rotate-3 transform transition-transform hover:rotate-6">
+              <Check className="w-10 h-10 text-white" />
             </div>
-            <div className="flex-1">
-              <Text
-                as="h1"
-                weight="bold"
-                className="text-2xl sm:text-3xl text-gray-900"
-              >
-                Thank you! Your order was placed successfully.
-              </Text>
-              <Text className="text-sm sm:text-base text-gray-600 mt-1">
-                We&apos;ve sent a confirmation to <span className="font-semibold text-gray-900">{order.customer_email || order.email}</span>
-              </Text>
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm -rotate-12">
+              <span className="text-xs">✨</span>
             </div>
           </div>
+
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mb-3 tracking-tight">
+            Order Confirmed!
+          </h1>
+          <p className="text-slate-600 text-lg max-w-md mx-auto leading-relaxed">
+            Thank you for shopping with Toycker. We&apos;re getting your order ready for delivery.
+          </p>
         </div>
 
-        {/* Order Details Card */}
+        {/* Main Content Grid */}
         <div
-          className="flex flex-col gap-6 w-full bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8"
+          className="flex flex-col gap-8 w-full"
           data-testid="order-complete-container"
         >
           {newlyActivated && (
             <ClubWelcomeBanner discountPercentage={discountPercentage} />
           )}
 
-          <OrderDetails order={order} />
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10">
+              <OrderDetails order={order} />
+            </div>
 
-          <Text as="h2" weight="bold" className="text-2xl text-gray-900">
-            Order Summary
-          </Text>
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden pt-8">
+              <div className="px-6 sm:px-10 mb-6">
+                <h3 className="text-xl font-bold text-slate-900">Order Summary</h3>
+              </div>
+              <Items order={order} />
+              <div className="bg-slate-50/80 p-6 sm:p-10 border-t border-dashed border-slate-200">
+                <CartTotals totals={order} order={order} />
+              </div>
+            </div>
 
-          <Items order={order} />
-          <CartTotals totals={order} order={order} />
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10">
+              <ShippingDetails order={order} />
+            </div>
+          </div>
 
-          <ShippingDetails order={order} />
-          <PaymentDetails order={order} />
-
-          <Help />
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10">
+            <Help />
+          </div>
         </div>
       </div>
     </div>

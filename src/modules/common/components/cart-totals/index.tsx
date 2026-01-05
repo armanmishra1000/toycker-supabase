@@ -85,48 +85,23 @@ const CartTotals: React.FC<CartTotalsProps> = ({
   const isFreeShipping = displayShippingSubtotal === 0
 
   return (
-    <div className="space-y-4">
-      {/* Club Member Savings Banner */}
-      {is_club_member && club_savings > 0 && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-2.5 text-green-700 mb-2">
-            <span className="text-lg">🎉</span>
-            <span className="font-bold text-sm">Toycker Club Savings!</span>
-          </div>
-          <div className="text-green-700 font-bold text-xl">
-            You saved {convertToLocale({ amount: club_savings, currency_code: normalizedCurrency })}
-          </div>
-          <div className="text-green-600 text-xs mt-1.5">
-            Thank you for being a valued club member
-          </div>
-        </div>
-      )}
-
-      {/* Pricing Rows */}
-      <div className="space-y-3 text-sm text-slate-600">
-        <div className="flex items-center justify-between">
-          <span className="font-medium text-slate-600">Subtotal</span>
-          <span className="font-semibold text-slate-900" data-testid="cart-subtotal" data-value={itemSubtotal}>
-            {convertToLocale({ amount: itemSubtotal, currency_code: normalizedCurrency })}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span>Shipping</span>
-          <span data-testid="cart-shipping" data-value={displayShippingSubtotal}>
-            {displayShippingSubtotal === 0 && ((cart?.shipping_methods?.length ?? 0) > 0 || order?.shipping_total === 0) ? (
-              <span className="text-green-600 font-semibold">Free Shipping</span>
-            ) : (
-              convertToLocale({ amount: displayShippingSubtotal, currency_code: normalizedCurrency })
-            )}
+    <div className="flex flex-col text-slate-600 gap-y-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-base">
+          <span className="font-medium text-slate-500 uppercase tracking-tighter text-xs">Subtotal</span>
+          <span className="font-bold text-slate-900" data-testid="cart-subtotal" data-value={itemSubtotal}>
+            {convertToLocale({
+              amount: itemSubtotal,
+              currency_code: normalizedCurrency,
+            })}
           </span>
         </div>
 
         {discountSubtotal > 0 && (
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-slate-600">Discount</span>
+          <div className="flex items-center justify-between bg-emerald-50 px-4 py-3 rounded-2xl border border-emerald-100 shadow-sm shadow-emerald-900/5">
+            <span className="font-bold text-emerald-800 text-sm">Reward Discount Applied</span>
             <span
-              className="font-semibold text-green-600"
+              className="font-black text-emerald-800"
               data-testid="cart-discount"
               data-value={discountSubtotal}
             >
@@ -139,46 +114,52 @@ const CartTotals: React.FC<CartTotalsProps> = ({
           </div>
         )}
 
-        {rewards_discount > 0 && (
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 font-medium text-slate-600">
-              <span>🎁</span>
-              <span>Rewards</span>
-            </span>
-            <span
-              className="font-semibold text-purple-600"
-              data-testid="cart-rewards-discount"
-              data-value={rewards_discount}
-            >
-              -{" "}
-              {convertToLocale({
-                amount: rewards_discount,
+        <div className="flex items-center justify-between text-base">
+          <span className="font-medium text-slate-500 uppercase tracking-tighter text-xs">Shipping</span>
+          <span className="font-bold text-slate-900" data-testid="cart-shipping" data-value={displayShippingSubtotal}>
+            {isFreeShipping ? (
+              <span className="text-emerald-600 font-black">FREE</span>
+            ) : (
+              convertToLocale({
+                amount: displayShippingSubtotal,
                 currency_code: normalizedCurrency,
-              })}
-            </span>
-          </div>
-        )}
+              })
+            )}
+          </span>
+        </div>
 
-        <div className="flex justify-between">
-          <span className="font-medium text-slate-600">Taxes</span>
-          <span className="font-semibold text-slate-900" data-testid="cart-taxes" data-value={tax_total || 0}>
-            {convertToLocale({ amount: tax_total ?? 0, currency_code: normalizedCurrency })}
+        <div className="flex items-center justify-between text-base">
+          <span className="font-medium text-slate-500 uppercase tracking-tighter text-xs">Taxes</span>
+          <span className="font-bold text-slate-900" data-testid="cart-taxes" data-value={tax_total || 0}>
+            {convertToLocale({
+              amount: tax_total || 0,
+              currency_code: normalizedCurrency,
+            })}
           </span>
         </div>
       </div>
 
-      {/* Total */}
-      <div className="pt-4 mt-4 border-t-2 border-slate-200">
-        <div className="flex items-center justify-between">
-          <span className="text-base font-bold text-slate-900">Total</span>
-          <span
-            className="text-2xl font-bold text-slate-900"
-            data-testid="cart-total"
-            data-value={total || 0}
-          >
-            {convertToLocale({ amount: total ?? 0, currency_code: normalizedCurrency })}
+      <div className="my-6 border-t border-slate-200 border-dashed" />
+
+      <div className="flex items-center justify-between px-2">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            Final Total
+          </span>
+          <span className="text-[10px] text-slate-400 font-medium italic">
+            Inclusive of all applicable taxes
           </span>
         </div>
+        <span
+          className="text-4xl font-black text-slate-900 tracking-tighter"
+          data-testid="cart-total"
+          data-value={total || 0}
+        >
+          {convertToLocale({
+            amount: total || 0,
+            currency_code: normalizedCurrency,
+          })}
+        </span>
       </div>
     </div>
   )
