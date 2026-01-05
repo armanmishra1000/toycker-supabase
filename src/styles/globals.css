@@ -3,8 +3,19 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  height: 100%;
+  position: relative;
+}
+
 body {
   font-family: var(--font-Grandstander), sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 @layer utilities {
