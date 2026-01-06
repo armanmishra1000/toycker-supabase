@@ -116,8 +116,8 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
       })
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { message?: string }
-        throw new Error(payload.message || "Unable to search by image")
+        const payload = (await response.json().catch(() => ({}))) as { message?: string; error?: string }
+        throw new Error(payload.error || payload.message || "Unable to search by image")
       }
 
       const payload = (await response.json()) as SearchResultsPayload

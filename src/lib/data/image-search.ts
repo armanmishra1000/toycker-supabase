@@ -4,11 +4,13 @@ import { createClient } from "@/lib/supabase/server"
 import { searchEntities, SearchResultsPayload } from "./search"
 
 // Configuration for Transformers.js
-// We use the 'onnx-community/clip-vit-base-patch32' model which provides 512-dim embeddings
-// or 'Xenova/clip-vit-base-patch32'
 const EMBEDDING_MODEL = "Xenova/clip-vit-base-patch32"
 
-// Prevent model downloading during build/runtime if possible, or cache it
+// Serverless optimization: Use /tmp for model caching if available (Vercel)
+if (process.env.NODE_ENV === 'production') {
+  env.cacheDir = "/tmp/transformers-cache"
+}
+
 env.allowLocalModels = false
 env.useBrowserCache = false
 
@@ -16,10 +18,13 @@ env.useBrowserCache = false
 let imagePipeline: any = null
 
 async function getPipeline() {
+  const start = Date.now()
   if (!imagePipeline) {
+    console.log(`[ImageSearch] Loading model: ${EMBEDDING_MODEL}...`)
     imagePipeline = await pipeline("image-feature-extraction", EMBEDDING_MODEL, {
-      quantized: false, // Better accuracy for embeddings
+      quantized: true, // Reduced model size for serverless (150MB vs 300MB)
     })
+    console.log(`[ImageSearch] Model loaded in ${Date.now() - start}ms`)
   }
   return imagePipeline
 }
