@@ -8,6 +8,7 @@ import ShippingDetails from "@modules/order/components/shipping-details"
 import PaymentDetails from "@modules/order/components/payment-details"
 import { Order } from "@/lib/supabase/types"
 import ClubWelcomeBanner from "@modules/order/components/club-welcome-banner"
+import { ClearCartOnMount } from "@modules/order/components/clear-cart-on-mount"
 import { Check } from "lucide-react"
 
 type OrderCompletedTemplateProps = {
@@ -27,6 +28,7 @@ export default async function OrderCompletedTemplate({
 
   return (
     <div className="py-12 min-h-[calc(100vh-64px)] bg-slate-50/50">
+      <ClearCartOnMount />
       <div className="content-container flex flex-col justify-center items-center gap-y-8 max-w-4xl h-full w-full">
         {/* Celebratory Header Card */}
         <div className="w-full bg-white rounded-3xl border border-emerald-100 p-8 sm:p-12 shadow-xl shadow-emerald-900/5 flex flex-col items-center text-center relative overflow-hidden">

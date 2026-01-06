@@ -35,9 +35,9 @@ export const CartSidebarProvider = ({ children }: { children: ReactNode }) => {
   }, [reloadFromServer])
 
   const openCart = useCallback(() => {
-    refreshCart()
     setIsOpen(true)
-  }, [refreshCart])
+    // Cart state is already fresh from optimistic updates - no need to refresh
+  }, [])
 
   const closeCart = useCallback(() => {
     setIsOpen(false)

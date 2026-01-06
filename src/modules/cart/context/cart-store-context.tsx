@@ -16,6 +16,7 @@ import {
 } from "react"
 import { useLayoutData } from "@modules/layout/context/layout-data-context"
 import { useOptionalToast } from "@modules/common/context/toast-context"
+import { useCartPersistence } from "@lib/hooks/use-cart-persistence"
 
 type OptimisticAddInput = {
   product: Product
@@ -28,6 +29,7 @@ type OptimisticAddInput = {
 type CartStoreContextValue = {
   cart: Cart | null
   setFromServer: (cart: Cart | null) => void
+  clearCart: () => void
   optimisticAdd: (input: OptimisticAddInput) => Promise<void>
   optimisticRemove: (lineId: string) => Promise<void>
   optimisticUpdateQuantity: (lineId: string, quantity: number) => Promise<void>
@@ -126,6 +128,13 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     previousCartRef.current = nextCart
   }, [])
 
+  const clearCart = useCallback(() => {
+    setCart(null)
+    previousCartRef.current = null
+    setRemovingIds(new Set())
+    setUpdatingIds(new Set())
+  }, [])
+
   const isRemoving = useCallback(
     (lineId: string) => removingIds.has(lineId),
     [removingIds],
@@ -153,7 +162,6 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           if (refreshed.ok) {
             const payload = (await refreshed.json()) as { cart: Cart | null }
             setFromServer(payload.cart)
-            showToast?.("Item removed from cart", "success")
           }
         } catch (error) {
           const errorMessage = (error as Error)?.message ?? "Failed to remove item"
@@ -247,7 +255,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           if (serverCart) {
             setFromServer(serverCart)
             await refreshFromApi()
-            showToast?.("Item added to cart", "success")
+            // Toast removed - silent add for better UX
             return
           }
         } catch (error) {
@@ -275,7 +283,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       }
       const payload = (await response.json()) as { cart: Cart | null }
       setFromServer(payload.cart)
-      showToast?.("Cart reloaded", "success")
+      // Toast removed - silent reload for better UX
     } catch (error) {
       const errorMessage = (error as Error)?.message ?? "Failed to reload cart"
       setLastError(errorMessage)
@@ -284,6 +292,9 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       setIsSyncing(false)
     }
   }, [setFromServer, showToast])
+
+  // Enable localStorage persistence and cross-tab sync
+  useCartPersistence(cart, reloadFromServer)
 
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
 
@@ -354,6 +365,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       cart,
       setFromServer,
+      clearCart,
       optimisticAdd,
       optimisticRemove,
       optimisticUpdateQuantity,
@@ -372,6 +384,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       optimisticUpdateQuantity,
       reloadFromServer,
       setFromServer,
+      clearCart,
       isRemoving,
       isUpdating,
     ]
