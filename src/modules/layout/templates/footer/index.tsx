@@ -254,9 +254,21 @@ export default function Footer() {
 
       <DecorativeGround year={year} />
       <div className="bg-primary">
-        <p className="flex items-end justify-center py-4 text-center text-sm text-white drop-shadow">
-        © {year} Toycker. All Rights Reserved by Toycker Studio
-      </p>
+        <div className="content-container">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 text-center text-sm text-white drop-shadow">
+          <p>© {year} Toycker. All Rights Reserved by Toycker Studio</p>
+          <div className="flex items-center gap-2">
+            <span className="text-white">Managed by</span>
+            <Image
+              src="/assets/images/apexture.png"
+              alt="Apexture"
+              width={100}
+              height={24}
+              className="h-6 w-auto brightness-0 invert opacity-90 hover:opacity-100 transition-opacity"
+            />
+          </div>
+        </div>
+        </div>
       </div>
     </footer>
   )

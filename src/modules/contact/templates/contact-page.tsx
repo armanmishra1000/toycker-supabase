@@ -82,7 +82,7 @@ const ContactPage = (_props: ContactPageProps) => {
             Contact Toycker
           </p>
           <h1 className="text-4xl font-semibold text-ui-fg-base">
-            One head office · Three fully-equipped branches
+            One head office · One fully-equipped branch
           </h1>
           <p className="mx-auto max-w-3xl text-ui-fg-subtle">
             We’re here to help! Whether you have questions about our products,
@@ -91,90 +91,90 @@ const ContactPage = (_props: ContactPageProps) => {
           </p>
         </div>
         <div className="max-w-screen-2xl mx-auto mb-12">
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-2xl border border-[#e4e7ec] bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
-                
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffe3e3] text-primary mb-3">
-                    <Mail className="h-6 w-6" aria-hidden />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary">
-                      Customer Care
-                    </p>
-                    <a
-                      href={contactInfo.email.href}
-                      className="text-xl font-semibold text-ui-fg-base underline decoration-primary underline-offset-4"
-                    >
-                      {contactInfo.email.display}
-                    </a>
-                    <p className="text-sm text-ui-fg-subtle">
-                      Our support specialists respond within business hours.
-                    </p>
-                  </div>
-              </div>
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-[#e4e7ec] bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
 
-              <div className="rounded-2xl border border-[#e4e7ec] bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffe3e3] text-primary mb-3">
-                    <Clock3 className="h-6 w-6" aria-hidden />
-                  </div>
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary">
-                      Business Hours
-                    </p>
-                    <div className="space-y-2  text-ui-fg-base">
-                      <div className="flex items-center gap-3">
-                        <Clock3 className="h-5 w-5 text-primary" aria-hidden />
-                        <span>{contactInfo.hours.weekdays}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Ban className="h-5 w-5 text-primary" aria-hidden />
-                        <span>{contactInfo.hours.sunday}</span>
-                      </div>
-                    </div>
-                  </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffe3e3] text-primary mb-3">
+                <Mail className="h-6 w-6" aria-hidden />
               </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary">
+                  Customer Care
+                </p>
+                <a
+                  href={contactInfo.email.href}
+                  className="text-xl font-semibold text-ui-fg-base underline decoration-primary underline-offset-4"
+                >
+                  {contactInfo.email.display}
+                </a>
+                <p className="text-sm text-ui-fg-subtle">
+                  Our support specialists respond within business hours.
+                </p>
+              </div>
+            </div>
 
-              <div className="rounded-2xl border border-[#e4e7ec] bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary">
-                    Follow Us
-                  </p>
-                  <p className="text-sm text-ui-fg-subtle">
-                    Join our community for launches, events, and behind-the-scenes fun.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    {socialLinks.map(({ id, label, href, Icon }) => (
-                      <a
-                        key={id}
-                        href={href}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={label}
-                        className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e7ec] text-ui-fg-base transition hover:border-primary hover:bg-primary/10 hover:text-primary"
-                      >
-                        <Icon className="h-5 w-5" aria-hidden />
-                      </a>
-                    ))}
+            <div className="rounded-2xl border border-[#e4e7ec] bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffe3e3] text-primary mb-3">
+                <Clock3 className="h-6 w-6" aria-hidden />
+              </div>
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary">
+                  Business Hours
+                </p>
+                <div className="space-y-2  text-ui-fg-base">
+                  <div className="flex items-center gap-3">
+                    <Clock3 className="h-5 w-5 text-primary" aria-hidden />
+                    <span>{contactInfo.hours.weekdays}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Ban className="h-5 w-5 text-primary" aria-hidden />
+                    <span>{contactInfo.hours.sunday}</span>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="rounded-2xl border border-transparent bg-gradient-to-br from-[#ff3e3e] to-[#d50000] text-white p-6">
-                <p className="text-sm uppercase tracking-[0.4em] text-white/80">
-                  Need Assistance?
+            <div className="rounded-2xl border border-[#e4e7ec] bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary">
+                  Follow Us
                 </p>
-                <h3 className="mt-3 text-2xl font-semibold">Talk to our team</h3>
-                <p className="mt-2 text-sm text-white/90">
-                  Share your request and we’ll respond within business hours.
+                <p className="text-sm text-ui-fg-subtle">
+                  Join our community for launches, events, and behind-the-scenes fun.
                 </p>
-                <a
-                  href="#contact-form"
-                  className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary transition hover:bg-black hover:text-white"
-                >
-                  Start Inquiry
-                </a>
+                <div className="flex flex-wrap gap-3">
+                  {socialLinks.map(({ id, label, href, Icon }) => (
+                    <a
+                      key={id}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={label}
+                      className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e7ec] text-ui-fg-base transition hover:border-primary hover:bg-primary/10 hover:text-primary"
+                    >
+                      <Icon className="h-5 w-5" aria-hidden />
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
+
+            <div className="rounded-2xl border border-transparent bg-gradient-to-br from-[#ff3e3e] to-[#d50000] text-white p-6">
+              <p className="text-sm uppercase tracking-[0.4em] text-white/80">
+                Need Assistance?
+              </p>
+              <h3 className="mt-3 text-2xl font-semibold">Talk to our team</h3>
+              <p className="mt-2 text-sm text-white/90">
+                Share your request and we’ll respond within business hours.
+              </p>
+              <a
+                href="#contact-form"
+                className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary transition hover:bg-black hover:text-white"
+              >
+                Start Inquiry
+              </a>
+            </div>
+          </div>
         </div>
 
         <div className="max-w-screen-xl mx-auto">
@@ -199,35 +199,35 @@ const ContactPage = (_props: ContactPageProps) => {
                 >
                   <div className="bg-white z-10 h-full flex flex-col justify-between py-3 ps-4">
 
-                  <div className="space-y-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary">
-                      {location.label}
-                    </p>
-                    <h2 className="text-2xl font-semibold uppercase text-ui-fg-base">
-                      {location.title}
-                    </h2>
+                    <div className="space-y-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary">
+                        {location.label}
+                      </p>
+                      <h2 className="text-2xl font-semibold uppercase text-ui-fg-base">
+                        {location.title}
+                      </h2>
 
-                    <address className="space-y-1 not-italic text-ui-fg-subtle">
-                      {location.addressLines.map((line) => (
-                        <p key={line}>{line}</p>
-                      ))}
-                    </address>
+                      <address className="space-y-1 not-italic text-ui-fg-subtle">
+                        {location.addressLines.map((line) => (
+                          <p key={line}>{line}</p>
+                        ))}
+                      </address>
 
-                    <p className="text-lg font-semibold text-ui-fg-base">
-                      {location.phone.display}
-                    </p>
-                  </div>
+                      <p className="text-lg font-semibold text-ui-fg-base">
+                        {location.phone.display}
+                      </p>
+                    </div>
 
-                  <div className="mt-10">
-                    <a
-                      href={location.virtualTourUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center rounded-full px-10 py-2.5 text-sm font-semibold uppercase tracking-[0.25em] text-white transition bg-black hover:bg-primary hover:text-white"
-                    >
-                      Get Virtual Tour
-                    </a>
-                  </div>
+                    <div className="mt-10">
+                      <a
+                        href={location.virtualTourUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-full px-10 py-2.5 text-sm font-semibold uppercase tracking-[0.25em] text-white transition bg-black hover:bg-primary hover:text-white"
+                      >
+                        Get Virtual Tour
+                      </a>
+                    </div>
                   </div>
                 </article>
               </section>
@@ -329,9 +329,8 @@ const ContactPage = (_props: ContactPageProps) => {
 
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <p
-                  className={`text-sm font-semibold ${
-                    status === "success" ? "text-primary" : "text-transparent"
-                  }`}
+                  className={`text-sm font-semibold ${status === "success" ? "text-primary" : "text-transparent"
+                    }`}
                   aria-live="polite"
                 >
                   Thanks for reaching out! We’ll get back to you shortly.

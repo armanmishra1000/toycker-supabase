@@ -36,11 +36,11 @@ export interface ShopMenuPromo {
 export const navLinks: NavLink[] = [
   { id: "home", label: "Home", href: "/" },
   { id: "shop", label: "Shop", href: "/shop-by-age", hasDropdown: true },
-  { id: "about", label: "About Us", href: "/about" },
-  { id: "contact", label: "Contact", href: "/contact" },
   { id: "metal-cars", label: "Metal Car", href: "/collections/metal-car" },
   { id: "boys", label: "Boys", href: "/collections/boys" },
   { id: "girls", label: "Girls", href: "/collections/girls" },
+  { id: "about", label: "About Us", href: "/about" },
+  { id: "contact", label: "Contact", href: "/contact" },
   { id: "club", label: "Club", href: "/club" },
 ]
 
