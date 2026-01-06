@@ -1,128 +1,123 @@
 "use server"
 
-import { listProducts } from "@lib/data/products"
-import { listCategories } from "@lib/data/categories"
-import { listCollections } from "@lib/data/collections"
+import { createClient } from "@/lib/supabase/server"
 import { Product, Category, Collection } from "@/lib/supabase/types"
 
 export type SearchProductSummary = {
-  id: string
-  title: string
-  handle: string
-  thumbnail?: string | null
-  price?: {
-    amount: number
-    currencyCode: string
-    formatted: string
-  }
+    id: string
+    title: string
+    handle: string
+    thumbnail?: string | null
+    price?: {
+        amount: number
+        currencyCode: string
+        formatted: string
+    }
 }
 
 export type SearchCategorySummary = {
-  id: string
-  name: string
-  handle: string
+    id: string
+    name: string
+    handle: string
 }
 
 export type SearchCollectionSummary = {
-  id: string
-  title: string
-  handle: string
+    id: string
+    title: string
+    handle: string
 }
 
 export type SearchResultsPayload = {
-  products: SearchProductSummary[]
-  categories: SearchCategorySummary[]
-  collections: SearchCollectionSummary[]
-  suggestions: string[]
+    products: SearchProductSummary[]
+    categories: SearchCategorySummary[]
+    collections: SearchCollectionSummary[]
+    suggestions: string[]
 }
 
 type SearchEntitiesArgs = {
-  query: string
-  countryCode: string
-  productLimit?: number
-  taxonomyLimit?: number
+    query: string
+    countryCode: string
+    productLimit?: number
+    taxonomyLimit?: number
 }
-
-const normalizeProduct = (product: Product): SearchProductSummary => {
-  return {
-    id: product.id,
-    title: product.name,
-    handle: product.handle,
-    thumbnail: product.image_url,
-    price: {
-      amount: product.price,
-      currencyCode: product.currency_code,
-      formatted: `₹${product.price}`,
-    },
-  }
-}
-
-const normalizeCategory = (
-  category: Category
-): SearchCategorySummary => ({
-  id: category.id,
-  name: category.name,
-  handle: category.handle,
-})
-
-const normalizeCollection = (
-  collection: Collection
-): SearchCollectionSummary => ({
-  id: collection.id,
-  title: collection.title,
-  handle: collection.handle,
-})
 
 export const searchEntities = async ({
-  query,
-  countryCode,
-  productLimit = 6,
-  taxonomyLimit = 5,
+    query,
+    countryCode,
+    productLimit = 6,
+    taxonomyLimit = 5,
 }: SearchEntitiesArgs): Promise<SearchResultsPayload> => {
-  const normalizedQuery = query.trim()
+    const normalizedQuery = query.trim()
 
-  if (!normalizedQuery) {
-    return { products: [], categories: [], collections: [], suggestions: [] }
-  }
+    if (!normalizedQuery) {
+        return { products: [], categories: [], collections: [], suggestions: [] }
+    }
 
-  const [productsResponse, categories, collectionsResponse] = await Promise.all([
-    listProducts(),
-    listCategories(),
-    listCollections(),
-  ])
+    const supabase = await createClient()
 
-  const allProducts = productsResponse.response.products
+    // 1. Parallelize queries for speed
+    const [productsRes, categoriesRes, collectionsRes] = await Promise.all([
+        // Search Products
+        supabase
+            .from("products")
+            .select("id, name, handle, image_url, price, currency_code, thumbnail")
+            .ilike("name", `%${normalizedQuery}%`)
+            .limit(productLimit)
+            .order("created_at", { ascending: false }),
 
-  const products = allProducts
-    .filter(p => p.name.toLowerCase().includes(normalizedQuery.toLowerCase()))
-    .slice(0, productLimit)
-    .map(normalizeProduct)
-    
-  const trimmedCategories = categories
-    .filter(c => c.name.toLowerCase().includes(normalizedQuery.toLowerCase()))
-    .slice(0, taxonomyLimit)
-    .map(normalizeCategory)
-    
-  const trimmedCollections = collectionsResponse.collections
-    .filter(c => c.title.toLowerCase().includes(normalizedQuery.toLowerCase()))
-    .slice(0, taxonomyLimit)
-    .map(normalizeCollection)
+        // Search Categories
+        supabase
+            .from("categories")
+            .select("id, name, handle")
+            .ilike("name", `%${normalizedQuery}%`)
+            .limit(taxonomyLimit),
 
-  const suggestionPool = [
-    normalizedQuery,
-    ...products.map((p) => p.title),
-    ...trimmedCategories.map((c) => c.name),
-    ...trimmedCollections.map((c) => c.title),
-  ]
+        // Search Collections
+        supabase
+            .from("collections")
+            .select("id, title, handle")
+            .ilike("title", `%${normalizedQuery}%`)
+            .limit(taxonomyLimit),
+    ])
 
-  const suggestions = suggestionPool
-    .filter((value, index, self) => value && self.indexOf(value) === index)
-    .slice(0, 6)
+    // 2. Process results (Normalization)
+    const products = (productsRes.data || []).map((p: any) => ({
+        id: p.id,
+        title: p.name,
+        handle: p.handle,
+        thumbnail: p.image_url || p.thumbnail,
+        price: {
+            amount: p.price,
+            currencyCode: p.currency_code,
+            formatted: `₹${p.price}`,
+        },
+    }))
 
-  return {
-    products,
-    categories: trimmedCategories,
-    collections: trimmedCollections,
-    suggestions,
-  }
+    const categories = (categoriesRes.data || []).map((c: { id: string; name: string; handle: string }) => ({
+        id: c.id,
+        name: c.name,
+        handle: c.handle,
+    }))
+
+    const collections = (collectionsRes.data || []).map((c: { id: string; title: string; handle: string }) => ({
+        id: c.id,
+        title: c.title,
+        handle: c.handle,
+    }))
+
+    // 3. Generate Suggestions
+    const suggestionPool = [
+        normalizedQuery,
+        ...products.map((p: { title: string }) => p.title),
+        ...categories.map((c: { name: string }) => c.name),
+    ]
+
+    const uniqueSuggestions = Array.from(new Set(suggestionPool)).slice(0, 6)
+
+    return {
+        products,
+        categories,
+        collections,
+        suggestions: uniqueSuggestions,
+    }
 }

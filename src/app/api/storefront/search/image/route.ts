@@ -1,47 +1,36 @@
-import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { NextRequest, NextResponse } from "next/server"
+import { searchByImage, isImageSearchEnabled } from "@/lib/data/image-search"
 
-import { isImageSearchEnabled, searchByImage } from "@lib/data/image-search"
+export async function POST(req: NextRequest) {
+  if (!isImageSearchEnabled) {
+    return NextResponse.json({ error: "Image search is disabled" }, { status: 403 })
+  }
 
-export async function POST(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const countryParam = searchParams.get("countryCode")
-    const cookieCountry = (await cookies()).get("country_code")?.value
-    const countryCode = countryParam || cookieCountry
-    const limit = Number(searchParams.get("limit")) || 6
+    const formData = await req.formData()
+    const file = formData.get("file") as File
 
-    if (!countryCode) {
-      return NextResponse.json({ message: "countryCode is required" }, { status: 400 })
+    if (!file) {
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
     }
 
-    const formData = await request.formData()
-    const file = formData.get("file")
+    const countryCode = req.nextUrl.searchParams.get("countryCode") || "IN"
+    const limit = parseInt(req.nextUrl.searchParams.get("limit") || "6")
 
-    if (!(file instanceof File)) {
-      return NextResponse.json({ message: "file is required" }, { status: 400 })
-    }
+    const buffer = Buffer.from(await file.arrayBuffer())
 
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-
-    if (!isImageSearchEnabled) {
-      return NextResponse.json(
-        { message: "Image search provider not configured", products: [], categories: [], collections: [], suggestions: [] },
-        { status: 501 }
-      )
-    }
-
-    const results = await searchByImage({ fileBuffer: buffer, countryCode, limit })
-
-    return NextResponse.json(results, {
-      headers: {
-        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
-      },
+    const results = await searchByImage({
+      fileBuffer: buffer,
+      countryCode,
+      limit,
     })
+
+    return NextResponse.json(results)
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to process image search"
-    return NextResponse.json({ message }, { status: 500 })
+    console.error("Image search API error:", error)
+    return NextResponse.json(
+      { error: "Internal server error during image search" },
+      { status: 500 }
+    )
   }
 }
