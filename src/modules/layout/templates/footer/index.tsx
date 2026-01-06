@@ -142,7 +142,7 @@ export default function Footer() {
     <footer className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-[#f6fbff] to-white">
       <FloatingDecor />
 
-      <div className="content-container relative z-10 pb-16 pt-12 xl:pb-28 md:pb-32">
+      <div className="mx-auto px-4 max-w-[1440px] relative z-10 pb-16 pt-12 xl:pb-28 md:pb-32">
         <div className="grid gap-10 lg:[grid-template-columns:1.8fr_0.9fr_0.9fr_1.8fr]">
           <div className="space-y-6">
             <LocalizedClientLink href="/" className="inline-flex items-center gap-3">
@@ -254,7 +254,7 @@ export default function Footer() {
 
       <DecorativeGround year={year} />
       <div className="bg-primary">
-        <div className="content-container">
+        <div className="mx-auto px-4 max-w-[1440px]">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 text-center text-sm text-white drop-shadow">
           <p>© {year} Toycker. All Rights Reserved by Toycker Studio</p>
           <div className="flex items-center gap-2">
