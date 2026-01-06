@@ -11,7 +11,8 @@ import CollectionCheckboxList from "./collection-checkbox-list"
 import AdminBadge from "./admin-badge"
 import ProductVariantEditor from "./product-variant-editor"
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
-import { PackageIcon, LayersIcon } from "lucide-react"
+import { PackageIcon, LayersIcon, Play } from "lucide-react"
+import MediaGallery from "./media-manager"
 import { cn } from "@/lib/util/cn"
 import { useState } from "react"
 
@@ -84,42 +85,42 @@ export default function EditProductForm({
 
             <AdminCard title="Media Assets">
               <div className="space-y-4">
-                <ImageUpload name="image_url" initialUrl={product.image_url || undefined} label="Primary Image" />
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">YouTube Video URL</label>
-                  <input name="video_url" type="url" defaultValue={product.video_url || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all" placeholder="https://youtube.com/watch?v=..." />
-                </div>
+                <MediaGallery
+                  initialImages={product.images?.map(img => typeof img === 'string' ? img : img.url) || []}
+                  onOrderChange={(newImages: string[]) => {
+                    // This is handled by hidden input for form submission
+                  }}
+                />
+              </div>
+            </AdminCard>
 
-                {/* Image Gallery - Show all images */}
-                {(product.images && Array.isArray(product.images) && product.images.length > 0) ? (
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                      Media Gallery ({product.images.length} images)
-                    </label>
-                    <div className="grid grid-cols-4 gap-3">
-                      {product.images.map((img, index) => {
-                        const imageUrl = typeof img === 'string' ? img : img.url
-                        return (
-                          <div
-                            key={index}
-                            className={`aspect-square relative rounded-lg overflow-hidden border ${index === 0 ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'} bg-gray-50 group`}
-                          >
-                            <img
-                              src={imageUrl}
-                              alt={`Product image ${index + 1}`}
-                              className="object-cover w-full h-full transition-transform group-hover:scale-105"
-                            />
-                            {index === 0 && (
-                              <span className="absolute top-1 left-1 bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                                Primary
-                              </span>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
+            <AdminCard title="YouTube Video">
+              <div className="space-y-4">
+                <p className="text-xs text-gray-500 mb-2">
+                  Enhance your product page with a video. We support direct YouTube links.
+                </p>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 text-xs">Video URL</label>
+                  <input
+                    name="video_url"
+                    type="url"
+                    defaultValue={product.video_url || ""}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium focus:border-black focus:ring-0 transition-all bg-gray-50/30"
+                    placeholder="https://youtube.com/watch?v=..."
+                  />
+                </div>
+                {product.video_url && (
+                  <div className="mt-4 aspect-video rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                    <iframe
+                      className="w-full h-full"
+                      src={`https://www.youtube.com/embed/${new URL(product.video_url).searchParams.get('v') || product.video_url.split('/').pop()}`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
                   </div>
-                ) : null}
+                )}
               </div>
             </AdminCard>
 

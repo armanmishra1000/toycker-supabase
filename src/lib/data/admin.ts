@@ -330,6 +330,7 @@ export async function createProduct(formData: FormData) {
     },
     short_description: formData.get("short_description") as string,
     video_url: formData.get("video_url") as string,
+    images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : [],
   }
 
   const { data: newProduct, error } = await supabase
@@ -413,8 +414,8 @@ export async function updateProduct(formData: FormData) {
   // Deprecated single category_id for DB column
   const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null
 
-  // Get current product to preserve existing metadata, price and stock
-  const { data: currentProduct } = await supabase.from("products").select("metadata, price, stock_count").eq("id", id).single()
+  // Get current product to preserve existing metadata, price, stock and images
+  const { data: currentProduct } = await supabase.from("products").select("metadata, price, stock_count, images").eq("id", id).single()
 
   const productPrice = formData.get("price") ? parseFloat(formData.get("price") as string) : currentProduct?.price || 0
   const stockCountString = formData.get("stock_count") as string | null
@@ -436,6 +437,7 @@ export async function updateProduct(formData: FormData) {
     },
     short_description: formData.get("short_description") as string,
     video_url: formData.get("video_url") as string,
+    images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : (currentProduct?.images || []),
   }
 
   const { error } = await supabase.from("products").update(updates).eq("id", id)

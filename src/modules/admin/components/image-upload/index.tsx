@@ -91,10 +91,6 @@ export default function ImageUpload({ name, initialUrl, label = "Image URL" }: I
     setImageUrl("")
   }
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setImageUrl(e.target.value)
-  }
-
   return (
     <div className="space-y-4">
       {/* Hidden input to store the URL for form submission */}
@@ -102,16 +98,17 @@ export default function ImageUpload({ name, initialUrl, label = "Image URL" }: I
 
       {/* Image Preview */}
       {imageUrl && (
-        <div className="relative w-48 aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50 shadow-inner group">
+        <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.07)] group transition-all hover:shadow-md">
           <img
             src={imageUrl}
             alt="Product preview"
-            className="object-cover w-full h-full"
+            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-[1.02]"
           />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
           <button
             type="button"
             onClick={handleRemoveImage}
-            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+            className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-md text-gray-900 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:text-red-600 shadow-sm border border-gray-100"
             title="Remove image"
           >
             <XMarkIcon className="h-4 w-4" />
@@ -120,46 +117,44 @@ export default function ImageUpload({ name, initialUrl, label = "Image URL" }: I
       )}
 
       {/* Upload Button */}
-      <div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-          disabled={isUploading}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 border border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-black hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <PhotoIcon className="h-5 w-5" />
-          {isUploading ? `Uploading... ${uploadProgress}%` : "Upload Image"}
-        </button>
-        <p className="mt-2 text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
-      </div>
-
-      {/* Or Manual URL Input */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400">or enter URL:</span>
-      </div>
-      <input
-        type="url"
-        value={imageUrl}
-        onChange={handleUrlChange}
-        placeholder="https://cdn.toycker.in/..."
-        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0"
-      />
-
-      {/* Upload Progress Bar */}
-      {isUploading && (
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-black h-2 rounded-full transition-all duration-300"
-            style={{ width: `${uploadProgress}%` }}
+      {!imageUrl && (
+        <div className="group relative">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            className="hidden"
+            disabled={isUploading}
           />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="w-full flex flex-col items-center justify-center gap-3 px-6 py-10 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50 hover:bg-white hover:border-black hover:shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:scale-110 transition-transform">
+              <PhotoIcon className="h-6 w-6 text-gray-400 group-hover:text-black" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-bold text-gray-900">
+                {isUploading ? `Uploading... ${uploadProgress}%` : `Upload ${label}`}
+              </p>
+              <p className="mt-1 text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
+            </div>
+          </button>
+
+          {/* Upload Progress Bar */}
+          {isUploading && (
+            <div className="absolute inset-x-0 -bottom-1">
+              <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-black h-full transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

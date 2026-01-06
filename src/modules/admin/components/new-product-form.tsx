@@ -8,6 +8,7 @@ import ImageUpload from "./image-upload"
 import RichTextEditor from "./rich-text-editor"
 import CollectionCheckboxList from "./collection-checkbox-list"
 import { TrashIcon, PlusIcon, LayersIcon, PackageIcon } from "lucide-react"
+import MediaGallery from "./media-manager"
 import { useState } from "react"
 import { cn } from "@lib/util/cn"
 
@@ -80,14 +81,14 @@ export default function NewProductForm({ collections, categories }: NewProductFo
           <div className="space-y-4">
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Product Title</label>
-              <input 
-                name="name" 
-                type="text" 
-                placeholder="e.g. 1:16 Racing Sport Mood Car" 
-                required 
+              <input
+                name="name"
+                type="text"
+                placeholder="e.g. 1:16 Racing Sport Mood Car"
+                required
                 value={name}
                 onChange={handleNameChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" 
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0"
               />
             </div>
             <div>
@@ -96,26 +97,36 @@ export default function NewProductForm({ collections, categories }: NewProductFo
             </div>
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Short Description</label>
-              <textarea 
-                name="short_description" 
-                rows={3} 
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all" 
-                placeholder="Brief summary (displayed on product page)..." 
+              <textarea
+                name="short_description"
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all"
+                placeholder="Brief summary (displayed on product page)..."
               />
             </div>
           </div>
         </AdminCard>
 
-        <AdminCard title="Media Library">
-          <ImageUpload name="image_url" />
-          <div className="mt-4">
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">YouTube Video URL</label>
-            <input 
-              name="video_url" 
-              type="url" 
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all" 
-              placeholder="https://youtube.com/watch?v=..." 
-            />
+        <AdminCard title="Media Assets">
+          <div className="space-y-4">
+            <MediaGallery />
+          </div>
+        </AdminCard>
+
+        <AdminCard title="YouTube Video">
+          <div className="space-y-4">
+            <p className="text-xs text-gray-500 mb-2">
+              Enhance your product page with a video. We support direct YouTube links.
+            </p>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Video URL</label>
+              <input
+                name="video_url"
+                type="url"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium focus:border-black focus:ring-0 transition-all bg-gray-50/30"
+                placeholder="https://youtube.com/watch?v=..."
+              />
+            </div>
           </div>
         </AdminCard>
 
@@ -328,14 +339,14 @@ export default function NewProductForm({ collections, categories }: NewProductFo
             </div>
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">URL Handle</label>
-              <input 
-                name="handle" 
-                type="text" 
-                placeholder="toy-slug-here" 
-                required 
+              <input
+                name="handle"
+                type="text"
+                placeholder="toy-slug-here"
+                required
                 value={handle}
                 onChange={handleHandleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-bold focus:border-black focus:ring-0" 
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-bold focus:border-black focus:ring-0"
               />
             </div>
           </div>
