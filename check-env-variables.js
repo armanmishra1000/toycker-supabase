@@ -9,6 +9,10 @@ const requiredEnvs = [
     key: "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     description: "Your Supabase anonymous public key",
   },
+  {
+    key: "NEXT_PUBLIC_BASE_URL",
+    description: "The base URL of your application (e.g., http://localhost:3000)",
+  },
 ]
 
 function checkEnvVariables() {

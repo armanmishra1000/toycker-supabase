@@ -15,12 +15,18 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
+          console.log("Middleware setAll cookies:", cookiesToSet.map(c => c.name))
           cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              path: '/',
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+            })
           )
         },
       },
@@ -39,6 +45,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Safety net removed as it causes issues with JS-based verification flow
+
   return await updateSession(request)
 }
 
@@ -52,6 +60,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!api/payu/callback|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api/payu/callback|api/auth/callback|auth/confirm|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

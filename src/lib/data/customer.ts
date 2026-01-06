@@ -2,7 +2,8 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { revalidateTag } from "next/cache"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { revalidateTag, revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { CustomerProfile, Address } from "@/lib/supabase/types"
 
@@ -42,7 +43,8 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signUp({
+  // We rely on Supabase's built-in email collision check instead of a slow admin list
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -51,15 +53,33 @@ export async function signup(_currentState: unknown, formData: FormData) {
         last_name,
         phone,
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/auth/confirm`,
     },
   })
+
+  console.log("Signup triggered for:", email, "Redirecting to:", `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/auth/confirm`)
 
   if (error) {
     return error.message
   }
 
+  // Supabase "success" handling:
+  // 1. If email is already in use, `identities` will be an empty array
+  if (data.user && data.user.identities && data.user.identities.length === 0) {
+    return "Email already in use. Please sign in instead."
+  }
+
+  // 2. If email confirmation is enabled and the user is new, `session` will be null
+  if (data.user && !data.session) {
+    console.log("Signup successful, requiring confirmation. Returning success message.")
+    return "Check your email for the confirmation link to complete your signup."
+  }
+
+  revalidatePath("/", "layout")
+  revalidatePath("/account", "layout")
   revalidateTag("customers")
+
+  // redirect MUST NOT be in try-catch (it's not here, but being safe)
   redirect("/account")
 }
 
@@ -71,7 +91,7 @@ export async function login(_currentState: unknown, formData: FormData) {
 
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -80,28 +100,34 @@ export async function login(_currentState: unknown, formData: FormData) {
     return error.message
   }
 
-  revalidateTag("customers")
+  let isAdmin = false
 
   // Check if user is an admin and redirect accordingly
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (user) {
+  if (data.user) {
     const ADMIN_EMAILS = ["admin@toycker.com", "tutanymo@fxzig.com"]
-    const isHardcodedAdmin = ADMIN_EMAILS.includes(user.email || "")
+    const isHardcodedAdmin = ADMIN_EMAILS.includes(data.user.email || "")
 
     if (isHardcodedAdmin) {
-      redirect("/admin")
-    }
+      isAdmin = true
+    } else {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .single()
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    if (profile?.role === "admin") {
-      redirect("/admin")
+      if (profile?.role === "admin") {
+        isAdmin = true
+      }
     }
+  }
+
+  revalidatePath("/", "layout")
+  revalidatePath("/account", "layout")
+  revalidateTag("customers")
+
+  if (isAdmin) {
+    redirect("/admin")
   }
 
   redirect(returnUrl || "/account")
@@ -113,7 +139,7 @@ export async function signout() {
 
   revalidateTag("customers")
   revalidateTag("cart")
-  redirect("/")
+  redirect("/account")
 }
 
 export async function updateCustomer(data: Partial<CustomerProfile>) {
