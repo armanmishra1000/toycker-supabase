@@ -56,7 +56,7 @@ export default async function ClubPage() {
                             </Button>
                         </Link>
                         {!customer && (
-                            <Link href="/account/login">
+                            <Link href="/account">
                                 <Button className="h-14 px-10 rounded-full text-lg" variant="secondary">
                                     Log In
                                 </Button>

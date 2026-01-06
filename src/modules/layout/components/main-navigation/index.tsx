@@ -12,6 +12,7 @@ import {
   ShopMenuSection,
 } from "@modules/layout/config/navigation"
 import { useOnClickOutside } from "@modules/layout/hooks/useOnClickOutside"
+import { Sparkles } from "lucide-react"
 
 type MainNavigationProps = {
   navLinks: NavLink[]
@@ -124,18 +125,16 @@ const MainNavigation = ({ navLinks, shopMenuSections, shopMenuPromo }: MainNavig
             >
               <button
                 onClick={() => (isOpen ? setActiveDropdownId(null) : openDropdown(link.id))}
-                className={`flex items-center gap-1 font-medium transition-colors hover:text-primary py-4 ${
-                  active ? "text-primary" : "text-black"
-                }`}
+                className={`flex items-center gap-1 font-medium transition-colors hover:text-primary py-4 ${active ? "text-primary" : "text-black"
+                  }`}
                 aria-expanded={isOpen}
                 aria-haspopup="true"
                 onKeyDown={(event) => handleTriggerKeyDown(event, link.id, isOpen)}
               >
                 {link.label}
                 <ChevronDownIcon
-                  className={`w-4 h-4 transition-transform duration-300 ${
-                    isOpen ? "rotate-180" : ""
-                  }`}
+                  className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""
+                    }`}
                 />
               </button>
               <ShopMegaMenu
@@ -155,15 +154,22 @@ const MainNavigation = ({ navLinks, shopMenuSections, shopMenuPromo }: MainNavig
           )
         }
 
+        const isHighlight = link.id === "club"
+
         return (
           <LocalizedClientLink
             key={link.id}
             href={link.href}
-            className={`font-medium transition-colors hover:text-primary py-4 ${
-              active ? "text-primary" : "text-black"
-            }`}
+            className={
+              isHighlight
+                ? "px-5 py-2 rounded-full bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white font-medium transition-all flex items-center gap-2 flex items-center "
+                : `font-medium transition-colors py-4 ${active ? "text-primary" : "text-black hover:text-primary"}`
+            }
             onClick={closeDropdown}
           >
+            {isHighlight && (
+              <Sparkles className="w-5 h-5" />
+            )}
             {link.label}
           </LocalizedClientLink>
         )

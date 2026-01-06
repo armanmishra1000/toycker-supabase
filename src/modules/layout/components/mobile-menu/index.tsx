@@ -24,7 +24,7 @@
 // }: MobileMenuProps) => {
 //   const menuRef = useRef<HTMLDivElement>(null)
 //   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
-  
+
 //   useOnClickOutside(menuRef, onClose)
 
 //   // Lock body scroll when menu is open
@@ -141,7 +141,7 @@
 //                 )}
 //               </li>
 //             ))}
-            
+
 //             {/* Wishlist Link - No Icon */}
 //             <li>
 //               <LocalizedClientLink 
@@ -249,9 +249,8 @@ const MobileMenu = ({
       <div className="fixed inset-0 z-50 pointer-events-none">
         {/* Main Menu Drawer - Full screen on mobile */}
         <div
-          className={`absolute left-0 top-0 h-full w-full sm:w-[85%] sm:max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out will-change-transform pointer-events-auto ${
-            viewCount >= 1 ? "translate-x-0" : "-translate-x-full"
-          }`}
+          className={`absolute left-0 top-0 h-full w-full sm:w-[85%] sm:max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out will-change-transform pointer-events-auto ${viewCount >= 1 ? "translate-x-0" : "-translate-x-full"
+            }`}
         >
           {/* Main Menu Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 flex justify-between items-center z-10">
@@ -285,8 +284,17 @@ const MobileMenu = ({
                     <LocalizedClientLink
                       href={link.href}
                       onClick={closeAll}
-                      className="block py-4 px-6 text-base font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                      className={
+                        link.id === "club"
+                          ? "flex items-center gap-2 mx-4 my-2 px-4 py-3 rounded-xl bg-violet-50 text-violet-700 font-bold border border-violet-100 shadow-sm"
+                          : "block py-4 px-6 text-base font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                      }
                     >
+                      {link.id === "club" && (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-violet-500">
+                          <path fillRule="evenodd" d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813a3.75 3.75 0 002.576-2.576l.813-2.846A.75.75 0 019 4.5zM9 15a.75.75 0 01.721.544l.195.682a2.25 2.25 0 001.548 1.548l.682.195a.75.75 0 010 1.442l-.682.195a2.25 2.25 0 00-1.548 1.548l-.195.682a.75.75 0 01-1.442 0l-.195-.682a2.25 2.25 0 00-1.548-1.548l-.682-.195a.75.75 0 010-1.442l.682-.195a2.25 2.25 0 001.548-1.548l.195-.682A.75.75 0 019 15z" clipRule="evenodd" />
+                        </svg>
+                      )}
                       {link.label}
                     </LocalizedClientLink>
                   )}
@@ -346,9 +354,8 @@ const MobileMenu = ({
 
         {/* Shop Drawer - Opens when clicking Shop */}
         <div
-          className={`absolute left-0 top-0 h-full w-full sm:w-[85%] sm:max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out will-change-transform pointer-events-auto ${
-            viewCount >= 2 ? "translate-x-0" : "-translate-x-full"
-          }`}
+          className={`absolute left-0 top-0 h-full w-full sm:w-[85%] sm:max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out will-change-transform pointer-events-auto ${viewCount >= 2 ? "translate-x-0" : "-translate-x-full"
+            }`}
         >
           {currentView?.type === "shop" ? (
             <>
@@ -389,9 +396,8 @@ const MobileMenu = ({
 
         {/* Section Drawer - Opens when clicking a section */}
         <div
-          className={`absolute left-0 top-0 h-full w-full sm:w-[85%] sm:max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out will-change-transform pointer-events-auto ${
-            viewCount >= 3 ? "translate-x-0" : "-translate-x-full"
-          }`}
+          className={`absolute left-0 top-0 h-full w-full sm:w-[85%] sm:max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out will-change-transform pointer-events-auto ${viewCount >= 3 ? "translate-x-0" : "-translate-x-full"
+            }`}
         >
           {currentView?.type === "section" && currentView.section ? (
             <>
