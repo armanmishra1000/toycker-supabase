@@ -1192,17 +1192,27 @@ export async function getAdminRewardTransactions(userId: string): Promise<Reward
 }
 
 export async function deleteCustomer(id: string) {
-  await ensureAdmin()
-  const supabase = await createAdminClient()
+  try {
+    await ensureAdmin()
+    const supabase = await createAdminClient()
 
-  const { error } = await supabase.auth.admin.deleteUser(id)
+    const { error } = await supabase.auth.admin.deleteUser(id)
 
-  if (error) {
-    throw error
+    if (error) {
+      console.error("ADMIN: deleteUser auth api error:", error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath("/admin/customers")
+    return { success: true }
+  } catch (err: any) {
+    console.error("ADMIN: deleteCustomer CRITICAL FAILURE:", err)
+    // Return a user-friendly error if the key is missing
+    if (err.message?.includes("SUPABASE_SERVICE_ROLE_KEY")) {
+      return { success: false, error: "Server Error: SUPABASE_SERVICE_ROLE_KEY is not configured." }
+    }
+    return { success: false, error: err.message || "An unexpected error occurred." }
   }
-
-  revalidatePath("/admin/customers")
-  redirect("/admin/customers")
 }
 
 // --- Payment Methods ---
