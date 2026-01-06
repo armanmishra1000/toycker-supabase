@@ -15,9 +15,10 @@ export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> 
     return null
   }
 
+
   const { data: addresses } = await supabase
     .from("addresses")
-    .select("id, first_name, last_name, address_1, address_2, city, province, postal_code, country_code, phone, company")
+    .select("id, first_name, last_name, address_1, address_2, city, province, postal_code, country_code, phone, company, is_default_billing, is_default_shipping")
     .eq("user_id", user.id)
 
   return {
@@ -25,7 +26,7 @@ export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> 
     email: user.email!,
     first_name: user.user_metadata?.first_name || "",
     last_name: user.user_metadata?.last_name || "",
-    phone: user.phone || "",
+    phone: user.user_metadata?.phone || user.phone || "",
     created_at: user.created_at,
     addresses: (addresses as Address[]) || [],
     is_club_member: user.user_metadata?.is_club_member || false,
@@ -162,6 +163,7 @@ export async function updateCustomer(data: Partial<CustomerProfile>) {
   }
 
   revalidateTag("customers")
+  revalidatePath("/", "layout")
 }
 
 export async function addCustomerAddress(
@@ -187,6 +189,8 @@ export async function addCustomerAddress(
     province: formData.get("province") as string,
     postal_code: formData.get("postal_code") as string,
     phone: formData.get("phone") as string,
+    is_default_billing: formData.get("isDefaultBilling") === "true",
+    is_default_shipping: formData.get("isDefaultShipping") === "true",
   }
 
   const { error } = await supabase.from("addresses").insert(address)
@@ -196,6 +200,7 @@ export async function addCustomerAddress(
   }
 
   revalidateTag("customers")
+  revalidatePath("/", "layout")
   return { success: true, error: null }
 }
 
@@ -217,6 +222,8 @@ export async function updateCustomerAddress(
     province: formData.get("province") as string,
     postal_code: formData.get("postal_code") as string,
     phone: formData.get("phone") as string,
+    is_default_billing: formData.get("isDefaultBilling") === "true",
+    is_default_shipping: formData.get("isDefaultShipping") === "true",
   }
 
   const { error } = await supabase
@@ -229,6 +236,7 @@ export async function updateCustomerAddress(
   }
 
   revalidateTag("customers")
+  revalidatePath("/", "layout")
   return { success: true, error: null }
 }
 

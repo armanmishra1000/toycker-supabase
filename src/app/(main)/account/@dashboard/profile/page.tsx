@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   description: "View and edit your Toycker Store profile.",
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function Profile() {
   const customer = await retrieveCustomer()
   const regions = await listRegions()

@@ -92,6 +92,8 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
   return (
     <form action={formAction} onReset={() => clearState()} className="w-full">
       <input type="hidden" name="addressId" value={billingAddress?.id} />
+      <input type="hidden" name="isDefaultBilling" value="true" />
+      <input type="hidden" name="isDefaultShipping" value="false" />
       <AccountInfo
         label="Billing address"
         currentInfo={currentInfo}
@@ -124,6 +126,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             data-testid="billing-company-input"
           />
           <Input
+            key={customer.phone}
             label="Phone"
             name="phone"
             type="phone"
@@ -173,7 +176,6 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             required
             data-testid="billing-country-code-select"
           >
-            <option value="">-</option>
             {regionOptions.map((option, i) => {
               return (
                 <option key={i} value={option?.value}>
