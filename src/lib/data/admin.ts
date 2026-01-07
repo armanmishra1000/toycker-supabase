@@ -1530,7 +1530,7 @@ export async function getAdminRoles() {
 
 export async function createRole(formData: FormData) {
   await ensureAdmin()
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   const name = formData.get("name") as string
   const permissionsStr = formData.get("permissions") as string
@@ -1549,7 +1549,7 @@ export async function createRole(formData: FormData) {
 
 export async function deleteRole(id: string) {
   await ensureAdmin()
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   // Check if role is system role
   const { data: role } = await supabase
@@ -1564,6 +1564,52 @@ export async function deleteRole(id: string) {
 
   await supabase.from("admin_roles").delete().eq("id", id)
   revalidatePath("/admin/team/roles")
+}
+
+export async function getAdminRole(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("admin_roles")
+    .select("*")
+    .eq("id", id)
+    .single()
+
+  if (error) throw error
+  return data as AdminRole
+}
+
+export async function updateRole(id: string, formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createAdminClient()
+
+  // Check if role is system role
+  const { data: role } = await supabase
+    .from("admin_roles")
+    .select("is_system")
+    .eq("id", id)
+    .single()
+
+  if (role?.is_system) {
+    throw new Error("Cannot edit system roles")
+  }
+
+  const name = formData.get("name") as string
+  const permissionsStr = formData.get("permissions") as string
+  const permissions = permissionsStr ? JSON.parse(permissionsStr) as string[] : []
+
+  const { error } = await supabase
+    .from("admin_roles")
+    .update({
+      name,
+      permissions,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+
+  if (error) throw new Error(error.message)
+  revalidatePath("/admin/team/roles")
+  redirect("/admin/team/roles")
 }
 
 // --- Staff Management ---
