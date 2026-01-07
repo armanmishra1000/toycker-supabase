@@ -4,7 +4,7 @@ import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import Link from "next/link"
-import { PlusIcon, LockClosedIcon, TrashIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, LockClosedIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline"
 
 export default async function AdminRoles() {
     const roles = await getAdminRoles()
@@ -57,15 +57,24 @@ export default async function AdminRoles() {
 
                             <div className="flex items-center gap-2">
                                 {!role.is_system && (
-                                    <form action={deleteRole.bind(null, role.id)}>
-                                        <button
-                                            type="submit"
-                                            className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50"
-                                            title="Delete role"
+                                    <>
+                                        <Link
+                                            href={`/admin/team/roles/${role.id}`}
+                                            className="p-2 text-gray-400 hover:text-indigo-600 transition-colors rounded-lg hover:bg-indigo-50"
+                                            title="Edit role"
                                         >
-                                            <TrashIcon className="h-4 w-4" />
-                                        </button>
-                                    </form>
+                                            <PencilIcon className="h-4 w-4" />
+                                        </Link>
+                                        <form action={deleteRole.bind(null, role.id)}>
+                                            <button
+                                                type="submit"
+                                                className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50"
+                                                title="Delete role"
+                                            >
+                                                <TrashIcon className="h-4 w-4" />
+                                            </button>
+                                        </form>
+                                    </>
                                 )}
                             </div>
                         </div>
