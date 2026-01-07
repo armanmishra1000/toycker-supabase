@@ -78,7 +78,7 @@ export const footerLinkGroups: FooterLinkGroup[] = [
     links: [
       { id: "about-us", label: "About Us", href: "/about" },
       { id: "contact-us", label: "Contact Us", href: "/contact" },
-      { id: "membership", label: "Membership", href: "/membership" },
+      { id: "membership", label: "Membership", href: "/club" },
       { id: "return-refund", label: "Return & Refund", href: "/policies/returns" },
       { id: "shipping-policy", label: "Shipping Policy", href: "/policies/shipping" },
       { id: "terms", label: "Terms & Condition", href: "/policies/terms" },

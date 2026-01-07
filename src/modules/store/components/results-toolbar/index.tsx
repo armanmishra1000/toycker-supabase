@@ -110,8 +110,7 @@ const ResultsToolbar = ({ totalCount, viewMode, sortBy }: ResultsToolbarProps) =
                 aria-pressed={isActive}
                 onClick={() => handleViewChange(mode.value)}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm md:px-3 md:py-2 md:text-xs font-semibold transition-all shadow-sm md:shadow-none",
-                  mode.value !== "list" && "hidden md:inline-flex",
+                  "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm md:px-3 md:py-2 md:text-xs font-semibold transition-all shadow-sm md:shadow-none hidden md:inline-flex",
                   isActive
                     ? "border-transparent bg-gray-900 text-white shadow-sm"
                     : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-900"

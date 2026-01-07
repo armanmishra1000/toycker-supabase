@@ -75,6 +75,47 @@ export async function getAdminStats() {
   }
 }
 
+// --- Notifications ---
+export async function getAdminNotifications() {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("admin_notifications")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  if (error) throw error
+  return data || []
+}
+
+export async function markNotificationAsRead(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("admin_notifications")
+    .update({ is_read: true })
+    .eq("id", id)
+
+  if (error) throw error
+  revalidatePath("/admin")
+}
+
+export async function clearAllNotifications() {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("admin_notifications")
+    .update({ is_read: true })
+    .eq("is_read", false)
+
+  if (error) throw error
+  revalidatePath("/admin")
+}
+
 // --- Get Low Stock Stats ---
 export async function getLowStockStats(threshold: number = 5) {
   await ensureAdmin()
