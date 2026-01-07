@@ -11,6 +11,7 @@ import { ensureAdmin, getAdminUser } from "@/lib/data/admin"
 import { AdminSidebarNav } from "@modules/admin/components/admin-sidebar-nav"
 import { AdminSettingsLink } from "@modules/admin/components/admin-settings-link"
 import { AdminMobileMenu } from "@modules/admin/components/admin-mobile-menu"
+import { AdminNotificationDropdown } from "@modules/admin/components/notifications"
 
 export const metadata = {
   title: "Toycker Admin",
@@ -143,10 +144,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
             {/* Right Actions */}
             <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-              <button className="relative h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all">
-                <BellIcon className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 h-2 w-2 rounded-full bg-red-500" />
-              </button>
+              <AdminNotificationDropdown />
 
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
 
