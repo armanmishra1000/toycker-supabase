@@ -1116,9 +1116,9 @@ export async function getAdminCustomers(params: GetAdminCustomersParams = {}): P
 
 export async function getAdminCustomer(id: string) {
   await ensureAdmin()
-  const supabase = await createClient()
+  // Use admin client to bypass user-specific RLS policies
+  const supabase = await createAdminClient()
 
-  // Club membership data is now synced to profiles table
   const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", id).single()
   if (profileError) throw profileError
 
@@ -1142,7 +1142,7 @@ export async function getAdminCustomer(id: string) {
 
 export async function getAdminRewardTransactions(userId: string): Promise<RewardTransactionWithOrder[]> {
   await ensureAdmin()
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   const { data: wallet } = await supabase
     .from("reward_wallets")

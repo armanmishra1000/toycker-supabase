@@ -37,10 +37,10 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
     setUpdating(prev => ({ ...prev, [key]: true }))
     try {
       await updateInventory(productId, quantity, variantId)
-      showToast("Stock updated successfully", "success")
+      showToast("The stock levels for the selected item have been updated.", "success", "Inventory Updated")
     } catch (error) {
       console.error(error)
-      showToast("Failed to update stock", "error")
+      showToast("There was a problem updating the stock levels. Please try again.", "error", "Update Failed")
     } finally {
       setUpdating(prev => ({ ...prev, [key]: false }))
     }

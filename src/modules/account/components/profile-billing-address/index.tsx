@@ -3,11 +3,11 @@
 import React, { useEffect, useMemo, useActionState } from "react"
 
 import Input from "@modules/common/components/input"
-import NativeSelect from "@modules/common/components/native-select"
 
 import AccountInfo from "../account-info"
 import { CustomerProfile, Region } from "@/lib/supabase/types"
 import { addCustomerAddress, updateCustomerAddress } from "@lib/data/customer"
+import CountrySelect from "@modules/checkout/components/country-select"
 
 type MyInformationProps = {
   customer: CustomerProfile
@@ -99,6 +99,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
         currentInfo={currentInfo}
         isSuccess={successState}
         isError={!!state.error}
+        errorMessage={state.error || undefined}
         clearState={clearState}
         data-testid="account-billing-address-editor"
       >
@@ -170,20 +171,13 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             defaultValue={billingAddress?.province || undefined}
             data-testid="billing-province-input"
           />
-          <NativeSelect
+          <CountrySelect
             name="country_code"
-            defaultValue={billingAddress?.country_code || undefined}
+            defaultValue={billingAddress?.country_code || "in"}
+            region={regions?.[0]}
             required
             data-testid="billing-country-code-select"
-          >
-            {regionOptions.map((option, i) => {
-              return (
-                <option key={i} value={option?.value}>
-                  {option?.label}
-                </option>
-              )
-            })}
-          </NativeSelect>
+          />
         </div>
       </AccountInfo>
     </form>

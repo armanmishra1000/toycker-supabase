@@ -6,6 +6,7 @@ import { deleteVariant, saveProductVariants } from "@/lib/data/admin"
 import AdminCard from "./admin-card"
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline"
 import { useRouter } from "next/navigation"
+import { useToast } from "@modules/common/context/toast-context"
 
 export default function ProductVariantEditor({
     productId,
@@ -15,6 +16,7 @@ export default function ProductVariantEditor({
     initialVariants: ProductVariant[]
 }) {
     const router = useRouter()
+    const { showToast } = useToast()
     const [isPending, startTransition] = useTransition()
     // Local state for the form variants
     const [variants, setVariants] = useState<VariantFormData[]>(
@@ -71,11 +73,11 @@ export default function ProductVariantEditor({
         startTransition(async () => {
             try {
                 await saveProductVariants(productId, variants)
-                alert("Variants saved successfully!")
+                showToast("The product variants have been successfully updated.", "success", "Changes Saved")
                 router.refresh()
             } catch (error) {
                 console.error(error)
-                alert("Failed to save variants.")
+                showToast("There was a problem saving your changes. Please try again.", "error", "Save Failed")
             }
         })
     }
