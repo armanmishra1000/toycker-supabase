@@ -177,20 +177,34 @@ export async function addCustomerAddress(
     return { success: false, error: "Not authenticated" }
   }
 
+  // Trimming inputs
+  const first_name = (formData.get("first_name") as string || "").trim()
+  const last_name = (formData.get("last_name") as string || "").trim()
+
   const address = {
     user_id: user.id,
-    first_name: formData.get("first_name") as string,
-    last_name: formData.get("last_name") as string,
-    company: formData.get("company") as string,
-    address_1: formData.get("address_1") as string,
-    address_2: formData.get("address_2") as string,
-    city: formData.get("city") as string,
-    country_code: formData.get("country_code") as string,
-    province: formData.get("province") as string,
-    postal_code: formData.get("postal_code") as string,
-    phone: formData.get("phone") as string,
+    first_name,
+    last_name,
+    company: (formData.get("company") as string || "").trim(),
+    address_1: (formData.get("address_1") as string || "").trim(),
+    address_2: (formData.get("address_2") as string || "").trim(),
+    city: (formData.get("city") as string || "").trim(),
+    country_code: (formData.get("country_code") as string || "").trim().toLowerCase(),
+    province: (formData.get("province") as string || "").trim(),
+    postal_code: (formData.get("postal_code") as string || "").trim(),
+    phone: (formData.get("phone") as string || "").trim(),
     is_default_billing: formData.get("isDefaultBilling") === "true",
     is_default_shipping: formData.get("isDefaultShipping") === "true",
+  }
+
+  // If adding a billing address through the profile and user has no addresses, make it default
+  const { count } = await supabase
+    .from("addresses")
+    .select("*", { count: 'exact', head: true })
+    .eq("user_id", user.id)
+
+  if (count === 0) {
+    address.is_default_billing = true
   }
 
   const { error } = await supabase.from("addresses").insert(address)

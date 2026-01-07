@@ -1116,16 +1116,16 @@ export async function getAdminCustomers(params: GetAdminCustomersParams = {}): P
 
 export async function getAdminCustomer(id: string) {
   await ensureAdmin()
-  const supabase = await createClient()
+  // Use admin client to bypass user-specific RLS policies
+  const supabase = await createAdminClient()
 
-  // Club membership data is now synced to profiles table
   const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", id).single()
   if (profileError) throw profileError
 
   const { data: orders } = await supabase.from("orders").select("*").eq("user_id", id).order("created_at", { ascending: false })
   const { data: addresses } = await supabase.from("addresses").select("*").eq("user_id", id)
   const { data: wallet } = await supabase.from("reward_wallets").select("*").eq("user_id", id).maybeSingle()
-  const transactions = wallet ? await getAdminRewardTransactions(id) : []
+  const transactions = wallet ? await getAdminRewardTransactions(id, supabase) : []
 
   return {
     ...profile,
@@ -1140,9 +1140,11 @@ export async function getAdminCustomer(id: string) {
   }
 }
 
-export async function getAdminRewardTransactions(userId: string): Promise<RewardTransactionWithOrder[]> {
-  await ensureAdmin()
-  const supabase = await createClient()
+export async function getAdminRewardTransactions(userId: string, supabase?: any): Promise<RewardTransactionWithOrder[]> {
+  if (!supabase) {
+    await ensureAdmin()
+    supabase = await createAdminClient()
+  }
 
   const { data: wallet } = await supabase
     .from("reward_wallets")
@@ -1164,8 +1166,8 @@ export async function getAdminRewardTransactions(userId: string): Promise<Reward
   // 2. Collect unique order IDs
   const orderIds = Array.from(new Set(
     transactions
-      .filter(tx => tx.order_id)
-      .map(tx => tx.order_id)
+      .filter((tx: any) => tx.order_id)
+      .map((tx: any) => tx.order_id)
   ))
 
   // 3. Fetch order display IDs
@@ -1177,7 +1179,7 @@ export async function getAdminRewardTransactions(userId: string): Promise<Reward
       .in("id", orderIds)
 
     if (orders) {
-      ordersMap = orders.reduce((acc, order) => {
+      ordersMap = orders.reduce((acc: Record<string, number>, order: any) => {
         acc[order.id] = order.display_id
         return acc
       }, {} as Record<string, number>)
@@ -1185,7 +1187,7 @@ export async function getAdminRewardTransactions(userId: string): Promise<Reward
   }
 
   // 4. Map display IDs back to transactions
-  return transactions.map(tx => ({
+  return transactions.map((tx: any) => ({
     ...tx,
     orders: tx.order_id && ordersMap[tx.order_id]
       ? { display_id: ordersMap[tx.order_id] }

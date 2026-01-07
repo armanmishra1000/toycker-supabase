@@ -40,7 +40,7 @@ export const navLinks: NavLink[] = [
   { id: "boys", label: "Boys", href: "/collections/boys" },
   { id: "girls", label: "Girls", href: "/collections/girls" },
   { id: "about", label: "About Us", href: "/about" },
-  { id: "contact", label: "Contact", href: "/contact" },
+  { id: "contact", label: "Contact Us", href: "/contact" },
   { id: "club", label: "Club", href: "/club" },
 ]
 

@@ -25,13 +25,13 @@ export default function DeleteCustomerButton({ customerId, customerName }: { cus
             }
 
             // Success
-            showToast("Customer deleted successfully", "success")
+            showToast("The customer and all their associated data have been permanently removed.", "success", "Customer Deleted")
             setIsOpen(false)
             setIsDeleting(false)
         } catch (error) {
             console.error("Failed to delete customer:", error)
             setIsDeleting(false)
-            showToast("An unexpected error occurred", "error")
+            showToast("There was a problem deleting the customer. Please try again.", "error", "Deletion Failed")
         }
     }
 

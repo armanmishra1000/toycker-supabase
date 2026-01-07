@@ -20,17 +20,20 @@
     $$;
 
     -- Create comprehensive RLS policies for product_options
+    DROP POLICY IF EXISTS "Allow public read access to product options" ON product_options;
     CREATE POLICY "Allow public read access to product options"
         ON product_options
         FOR SELECT
         USING (true);
 
+    DROP POLICY IF EXISTS "Allow authenticated users to insert product options" ON product_options;
     CREATE POLICY "Allow authenticated users to insert product options"
         ON product_options
         FOR INSERT
         TO authenticated
         WITH CHECK (true);
 
+    DROP POLICY IF EXISTS "Allow authenticated users to update product options" ON product_options;
     CREATE POLICY "Allow authenticated users to update product options"
         ON product_options
         FOR UPDATE
@@ -38,6 +41,7 @@
         USING (true)
         WITH CHECK (true);
 
+    DROP POLICY IF EXISTS "Allow authenticated users to delete product options" ON product_options;
     CREATE POLICY "Allow authenticated users to delete product options"
         ON product_options
         FOR DELETE
@@ -45,17 +49,20 @@
         USING (true);
 
     -- Create comprehensive RLS policies for product_option_values
+    DROP POLICY IF EXISTS "Allow public read access to product option values" ON product_option_values;
     CREATE POLICY "Allow public read access to product option values"
         ON product_option_values
         FOR SELECT
         USING (true);
 
+    DROP POLICY IF EXISTS "Allow authenticated users to insert product option values" ON product_option_values;
     CREATE POLICY "Allow authenticated users to insert product option values"
         ON product_option_values
         FOR INSERT
         TO authenticated
         WITH CHECK (true);
 
+    DROP POLICY IF EXISTS "Allow authenticated users to update product option values" ON product_option_values;
     CREATE POLICY "Allow authenticated users to update product option values"
         ON product_option_values
         FOR UPDATE
@@ -63,6 +70,7 @@
         USING (true)
         WITH CHECK (true);
 
+    DROP POLICY IF EXISTS "Allow authenticated users to delete product option values" ON product_option_values;
     CREATE POLICY "Allow authenticated users to delete product option values"
         ON product_option_values
         FOR DELETE
