@@ -86,19 +86,6 @@ export type FAQItem = {
   answer: string
 }
 
-export type CTAContent = {
-  title: string
-  description: string
-  primaryCta: {
-    label: string
-    href: string
-  }
-  secondaryCta: {
-    label: string
-    href: string
-  }
-}
-
 export const heroContent: HeroContent = {
   eyebrow: "Play starts here",
   title: "Welcome to Toycker.com – Elevating the Art of Play",
@@ -116,19 +103,5 @@ export const heroContent: HeroContent = {
   image: {
     src: "/assets/images/about-page.png",
     alt: "Kids laughing while playing with colorful toys",
-  },
-}
-
-export const ctaContent: CTAContent = {
-  title: "Thank you for choosing Toycker.com",
-  description:
-    "Explore our ever-growing collection and experience how thoughtful design, quality craftsmanship, and a love for play can transform your home.",
-  primaryCta: {
-    label: "Browse collections",
-    href: "/collections",
-  },
-  secondaryCta: {
-    label: "Talk to us",
-    href: "/contact",
   },
 }

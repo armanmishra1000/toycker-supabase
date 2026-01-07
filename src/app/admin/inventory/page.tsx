@@ -53,7 +53,7 @@ export default async function AdminInventory({
         actions={
           <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all gap-2">
             <ArrowPathIcon className="h-4 w-4" />
-            Bulk Update
+            Update
           </button>
         }
       />
