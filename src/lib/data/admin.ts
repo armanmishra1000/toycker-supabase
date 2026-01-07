@@ -15,13 +15,6 @@ export async function ensureAdmin() {
     redirect("/login?next=/admin")
   }
 
-  const ADMIN_EMAILS = ["admin@toycker.com", "tutanymo@fxzig.com"]
-  const isHardcodedAdmin = ADMIN_EMAILS.includes(user.email || "")
-
-  if (isHardcodedAdmin) {
-    return
-  }
-
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -1103,6 +1096,7 @@ interface GetAdminCustomersParams {
   page?: number
   limit?: number
   search?: string
+  type?: "admin" | "club" | "customer" | "all"
 }
 
 interface PaginatedCustomersResponse {
@@ -1115,14 +1109,22 @@ interface PaginatedCustomersResponse {
 export async function getAdminCustomers(params: GetAdminCustomersParams = {}): Promise<PaginatedCustomersResponse> {
   await ensureAdmin()
 
-  const { page = 1, limit = 20, search } = params
+  const { page = 1, limit = 20, search, type } = params
   const supabase = await createClient()
 
   // Calculate total count first
   let countQuery = supabase.from("profiles").select("*", { count: "exact", head: true })
 
+  if (type === "admin") {
+    countQuery = countQuery.eq("role", "admin")
+  } else if (type === "club") {
+    countQuery = countQuery.eq("is_club_member", true).neq("role", "admin")
+  } else if (type === "customer") {
+    countQuery = countQuery.eq("is_club_member", false).or("role.is.null,role.neq.admin")
+  }
+
   if (search && search.trim()) {
-    countQuery = countQuery.or(`first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `)
+    countQuery = countQuery.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
   }
 
   const { count } = await countQuery
@@ -1140,8 +1142,16 @@ export async function getAdminCustomers(params: GetAdminCustomersParams = {}): P
     .order("created_at", { ascending: false })
     .range(from, to)
 
+  if (type === "admin") {
+    query = query.eq("role", "admin")
+  } else if (type === "club") {
+    query = query.eq("is_club_member", true).neq("role", "admin")
+  } else if (type === "customer") {
+    query = query.eq("is_club_member", false).or("role.is.null,role.neq.admin")
+  }
+
   if (search && search.trim()) {
-    query = query.or(`first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `)
+    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
   }
 
   const { data, error } = await query
