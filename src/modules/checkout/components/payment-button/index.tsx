@@ -7,6 +7,7 @@ import { useElements, useStripe } from "@stripe/react-stripe-js"
 import React, { useState } from "react"
 import ErrorMessage from "../error-message"
 import { Cart } from "@/lib/supabase/types"
+import { useCheckout } from "../../context/checkout-context"
 
 type PaymentButtonProps = {
   cart: Cart
@@ -67,6 +68,8 @@ const StripePaymentButton = ({
 }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const { isUpdating } = useCheckout()
 
   const onPaymentCompleted = async () => {
     await placeOrder()
@@ -147,7 +150,7 @@ const StripePaymentButton = ({
   return (
     <>
       <Button
-        disabled={disabled || notReady || submitting}
+        disabled={disabled || notReady || submitting || isUpdating}
         onClick={handlePayment}
         size="large"
         isLoading={submitting}
@@ -168,6 +171,8 @@ const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  const { isUpdating } = useCheckout()
+
   const onPaymentCompleted = async () => {
     await placeOrder()
       .catch((err) => {
@@ -186,7 +191,7 @@ const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
   return (
     <>
       <Button
-        disabled={notReady || submitting}
+        disabled={notReady || submitting || isUpdating}
         isLoading={submitting}
         onClick={handlePayment}
         size="large"
@@ -214,6 +219,8 @@ const PayUPaymentButton = ({
 }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const { isUpdating } = useCheckout()
   const formRef = React.useRef<HTMLFormElement>(null)
 
   const handlePayment = () => {
@@ -258,7 +265,7 @@ const PayUPaymentButton = ({
   return (
     <>
       <Button
-        disabled={notReady || submitting}
+        disabled={notReady || submitting || isUpdating}
         onClick={handlePayment}
         size="large"
         isLoading={submitting}

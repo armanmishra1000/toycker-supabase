@@ -51,7 +51,7 @@ const ProductGridSection = ({
       viewMode: context.filters.viewMode,
       sortBy: context.filters.sortBy,
       pageSize: context.pageSize,
-      isLoading: context.isFetching || context.isPending,
+      isLoading: context.isFetching,
       error: context.error,
     }
     : {
@@ -79,7 +79,7 @@ const ProductGridSection = ({
       <ResultsToolbar totalCount={effectiveCount} viewMode={derived.viewMode} sortBy={derived.sortBy} />
 
       {derived.error && (
-        <p className="rounded-md border border-ui-border-danger bg-ui-bg-base px-4 py-3 text-sm text-ui-fg-danger" role="alert">
+        <p className="rounded-md border border-red-500 bg-white px-4 py-3 text-sm text-red-600" role="alert">
           {derived.error}
         </p>
       )}
@@ -123,11 +123,11 @@ const ProductGridSection = ({
 }
 
 const EmptyState = ({ heading }: { heading: string }) => (
-  <div className="rounded-xl border border-dashed border-ui-border-strong bg-ui-bg-base px-6 py-12 text-center">
-    <p className="text-lg font-medium text-ui-fg-base">
+  <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center shadow-sm">
+    <p className="text-lg font-bold text-slate-900">
       {`We couldn't find any ${heading.toLowerCase()}.`}
     </p>
-    <p className="mt-2 text-sm text-ui-fg-subtle">
+    <p className="mt-2 text-sm text-gray-500">
       Try adjusting your filters to find what you are looking for.
     </p>
   </div>

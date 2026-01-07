@@ -103,7 +103,7 @@ const RefinementList = ({
   const effectiveFilters = shouldUseCustomState
     ? fallbackFilters
     : storefrontFilters
-    ? {
+      ? {
         availability: storefrontFilters.filters.availability,
         age: storefrontFilters.filters.age,
         category: storefrontFilters.filters.categoryId,
@@ -111,7 +111,7 @@ const RefinementList = ({
         priceMin: storefrontFilters.filters.priceRange?.min,
         priceMax: storefrontFilters.filters.priceRange?.max,
       }
-    : fallbackFilters
+      : fallbackFilters
   const resolvedSearchQuery = shouldUseCustomState
     ? searchQuery ?? undefined
     : storefrontFilters?.filters.searchQuery ?? searchQuery ?? undefined
@@ -259,9 +259,9 @@ const RefinementList = ({
         min === undefined && max === undefined
           ? undefined
           : {
-              min,
-              max,
-            }
+            min,
+            max,
+          }
       )
       updateSearchParams((params) => {
         if (min !== undefined) {
@@ -461,11 +461,11 @@ const RefinementList = ({
                 key={`${Array.isArray(filter.paramKey) ? filter.paramKey.join("-") : filter.paramKey}-${filter.value}`}
                 type="button"
                 onClick={() => clearFilter(filter.paramKey)}
-                className="group/filter inline-flex items-center gap-2 rounded-full border border-ui-border-strong/70 bg-ui-bg-base px-3 py-1 text-xs font-medium text-ui-fg-base shadow-sm transition-colors hover:bg-ui-bg-subtle"
+                className="group/filter inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-slate-900 shadow-sm transition-colors hover:bg-gray-50"
                 aria-label={`Remove ${filter.label}`}
               >
                 <span>{filter.label}</span>
-                <span className="text-ui-fg-muted">✕</span>
+                <span className="text-gray-400 font-bold">✕</span>
               </button>
             ))}
           </div>
@@ -476,7 +476,7 @@ const RefinementList = ({
             <FilterSection title="Availability">
               <CheckboxGroup
                 options={filterOptions.availability}
-                  selectedValue={selectedAvailability}
+                selectedValue={selectedAvailability}
                 onChange={(value) => toggleCheckboxParam("availability", value)}
               />
             </FilterSection>
@@ -523,7 +523,7 @@ const FilterSection = ({
   children: ReactNode
 }) => (
   <div className="space-y-3">
-    <p className="text-base font-semibold text-ui-fg-base">{title}</p>
+    <p className="text-sm font-bold uppercase tracking-wider text-slate-900">{title}</p>
     <div className="space-y-3">{children}</div>
   </div>
 )
@@ -542,17 +542,17 @@ const CheckboxGroup = ({
       const isChecked = selectedValue === option.value
 
       return (
-        <label key={option.value} className="flex items-center gap-3 text-sm font-medium text-ui-fg-base">
+        <label key={option.value} className="flex items-center gap-3 text-sm font-medium text-gray-700 cursor-pointer hover:text-slate-900 transition-colors">
           <input
             type="checkbox"
             checked={isChecked}
             onChange={() => onChange(option.value)}
-            className="h-4 w-4 rounded border border-ui-border-base text-ui-fg-base focus:ring-0"
+            className="h-4 w-4 rounded border-gray-300 text-slate-900 focus:ring-slate-900"
           />
-          <span className="flex-1 text-ui-fg-base">
+          <span className="flex-1">
             {option.label}
             {typeof option.count === "number" && (
-              <span className="text-ui-fg-muted"> ({option.count})</span>
+              <span className="text-gray-400 text-xs ml-1 font-normal"> ({option.count})</span>
             )}
           </span>
         </label>
@@ -617,9 +617,9 @@ const PriceRangeControls = ({
             className="absolute inset-0 h-6 w-full appearance-none bg-transparent"
             style={{ accentColor: "#0f172a" }}
           />
-          <div className="pointer-events-none absolute left-0 right-0 top-1/2 -translate-y-1/2 rounded-full border border-ui-fg-base" />
+          <div className="pointer-events-none absolute left-0 right-0 top-1/2 -translate-y-1/2 rounded-full border border-slate-900" />
         </div>
-        <p className="text-sm font-medium text-ui-fg-base">
+        <p className="text-sm font-medium text-slate-900">
           Price: {formatCurrency(priceRange.min ?? sliderBounds.min)} – {formatCurrency(priceRange.max ?? sliderBounds.max)}
         </p>
       </div>
@@ -636,14 +636,14 @@ const InputField = ({
   onChange: (event: ChangeEvent<HTMLInputElement>) => void
   onBlur: () => void
 }) => (
-  <div className="flex flex-1 items-center gap-2 rounded-lg border border-ui-border-base px-3 py-2 text-sm font-semibold text-ui-fg-base shadow-sm">
-    <span className="text-xs font-semibold text-ui-fg-muted">₹</span>
+  <div className="flex flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm transition-all focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900">
+    <span className="text-xs font-bold text-gray-400">₹</span>
     <input
       type="number"
       value={value}
       onChange={onChange}
       onBlur={onBlur}
-      className="w-full border-none bg-transparent p-0 text-sm font-semibold text-ui-fg-base outline-none"
+      className="w-full border-none bg-transparent p-0 text-sm font-bold text-slate-900 outline-none focus:ring-0"
     />
   </div>
 )

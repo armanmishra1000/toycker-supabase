@@ -10,6 +10,7 @@ import { CheckCircle, Loader2 } from "lucide-react"
 import BillingAddress from "../billing_address"
 import ErrorMessage from "../error-message"
 import ShippingAddress from "../shipping-address"
+import { useCheckout } from "../../context/checkout-context"
 
 const Addresses = ({
   cart,
@@ -29,6 +30,13 @@ const Addresses = ({
       : true
   )
   const toggleSameAsBilling = () => setSameAsBilling(!sameAsBilling)
+
+  const { setSectionUpdating } = useCheckout()
+
+  // Sync local transition state with global context
+  React.useEffect(() => {
+    setSectionUpdating("addresses", isPending)
+  }, [isPending, setSectionUpdating])
 
   const [message, formAction] = useActionState(saveAddressesBackground, null)
 
@@ -69,9 +77,17 @@ const Addresses = ({
         >
           Shipping Address
           {isPending ? (
-            <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
+              <span className="text-sm font-normal text-gray-500">Updating...</span>
+            </div>
+          ) : message?.success ? (
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <span className="text-sm font-normal text-green-600">Saved</span>
+            </div>
           ) : addressSaved ? (
-            <CheckCircle className="h-5 w-5 text-green-500" />
+            <CheckCircle className="h-4 w-4 text-gray-300" />
           ) : null}
         </Text>
       </div>

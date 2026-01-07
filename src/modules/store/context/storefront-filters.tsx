@@ -8,7 +8,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useTransition,
 } from "react"
 
 import type { ReactNode } from "react"
@@ -54,7 +53,6 @@ type StorefrontFiltersContextValue = {
   pageSize: number
   totalPages: number
   isFetching: boolean
-  isPending: boolean
   error?: string
   activeFilterCount: number
   setAvailability: (value?: AvailabilityFilter) => void
@@ -128,7 +126,6 @@ export const StorefrontFiltersProvider = ({
   }))
   const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | undefined>()
-  const [isPending, startTransition] = useTransition()
   const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => () => abortControllerRef.current?.abort(), [])
@@ -236,7 +233,7 @@ export const StorefrontFiltersProvider = ({
   const commitFilters = useCallback(
     (next: FilterState, { shouldFetch = true }: { shouldFetch?: boolean } = {}) => {
       filtersRef.current = next
-      startTransition(() => setFilterState(next))
+      setFilterState(next)
       triggerFetch(next, { shouldFetch })
     },
     [triggerFetch]
@@ -335,7 +332,6 @@ export const StorefrontFiltersProvider = ({
       pageSize,
       totalPages,
       isFetching,
-      isPending,
       error,
       activeFilterCount,
       setAvailability,
@@ -359,7 +355,6 @@ export const StorefrontFiltersProvider = ({
       pageSize,
       totalPages,
       isFetching,
-      isPending,
       error,
       activeFilterCount,
       setAvailability,

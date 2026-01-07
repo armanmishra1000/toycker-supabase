@@ -10,6 +10,8 @@ import PaymentContainer, {
 } from "@modules/checkout/components/payment-container"
 import { useEffect, useState } from "react"
 import { Cart } from "@/lib/supabase/types"
+import { Loader2, CheckCircle } from "lucide-react"
+import { useCheckout } from "../../context/checkout-context"
 
 const Payment = ({
   cart,
@@ -29,6 +31,15 @@ const Payment = ({
   const [error, setError] = useState<string | null>(null)
   const [cardBrand, setCardBrand] = useState<string | null>(null)
   const [cardComplete, setCardComplete] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+
+  const { setSectionUpdating } = useCheckout()
+
+  // Sync local loading state with global context
+  useEffect(() => {
+    setSectionUpdating("payment", isLoading)
+  }, [isLoading, setSectionUpdating])
 
   // Use prop if available, otherwise local state (though with prop control, local state is redundant for selection)
   // We'll use local state to track what to display if parent doesn't maximize control, 
@@ -54,6 +65,8 @@ const Payment = ({
 
   const setPaymentMethod = async (method: string) => {
     setError(null)
+    setIsLoading(true)
+    setIsSuccess(false)
     setInternalSelection(method)
     if (onPaymentMethodChange) {
       onPaymentMethodChange(method)
@@ -76,9 +89,12 @@ const Payment = ({
       }
 
       await initiatePaymentSession(cart, paymentData)
+      setIsSuccess(true)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to set payment method"
       setError(message)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -91,6 +107,19 @@ const Payment = ({
           className="text-3xl flex items-center gap-2"
         >
           Payment Method
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
+              <span className="text-sm font-normal text-gray-500">Updating...</span>
+            </div>
+          ) : isSuccess ? (
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <span className="text-sm font-normal text-green-600">Saved</span>
+            </div>
+          ) : currentSelection ? (
+            <CheckCircle className="h-4 w-4 text-gray-300" />
+          ) : null}
         </Text>
       </div>
 

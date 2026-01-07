@@ -58,7 +58,6 @@ const ResultsToolbar = ({ totalCount, viewMode, sortBy }: ResultsToolbarProps) =
   const handleViewChange = (nextMode: ViewMode) => {
     if (storefrontFilters) {
       storefrontFilters.setViewMode(nextMode)
-      return
     }
     setParam("view", nextMode)
   }
@@ -83,7 +82,7 @@ const ResultsToolbar = ({ totalCount, viewMode, sortBy }: ResultsToolbarProps) =
           <button
             type="button"
             onClick={filterDrawer.open}
-            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-900 transition hover:border-gray-300"
+            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm md:px-3 md:py-2 md:text-xs font-semibold text-gray-900 transition hover:border-gray-300 shadow-sm md:shadow-none"
           >
             <SlidersHorizontal className="h-4 w-4" aria-hidden />
             <span>Filters</span>
@@ -111,7 +110,8 @@ const ResultsToolbar = ({ totalCount, viewMode, sortBy }: ResultsToolbarProps) =
                 aria-pressed={isActive}
                 onClick={() => handleViewChange(mode.value)}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold transition-all",
+                  "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm md:px-3 md:py-2 md:text-xs font-semibold transition-all shadow-sm md:shadow-none",
+                  mode.value !== "list" && "hidden md:inline-flex",
                   isActive
                     ? "border-transparent bg-gray-900 text-white shadow-sm"
                     : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-900"
@@ -151,7 +151,7 @@ const SortDropdown = ({
             id={buttonId}
             aria-controls={optionsId}
             className={cn(
-              "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold transition-all",
+              "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm md:px-3 md:py-2 md:text-xs font-semibold transition-all shadow-sm md:shadow-none",
               "border-gray-200 bg-gray-50 text-gray-900 hover:border-gray-300"
             )}
           >
