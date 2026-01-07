@@ -123,9 +123,9 @@ const FilterDrawer = ({
       pendingFilters.priceMin === undefined && pendingFilters.priceMax === undefined
         ? undefined
         : {
-            min: pendingFilters.priceMin,
-            max: pendingFilters.priceMax,
-          }
+          min: pendingFilters.priceMin,
+          max: pendingFilters.priceMax,
+        }
 
     storefrontFilters.updateFilters({
       availability: pendingFilters.availability,
@@ -164,7 +164,7 @@ const FilterDrawer = ({
     <FilterDrawerContext.Provider value={value}>
       {children}
       <Transition show={isOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={close}>
+        <Dialog as="div" className="relative z-[90]" onClose={close}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-200"
@@ -174,7 +174,7 @@ const FilterDrawer = ({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black/40" />
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
           </Transition.Child>
 
           <div className="fixed inset-0 flex">
@@ -187,15 +187,15 @@ const FilterDrawer = ({
               leaveFrom="translate-x-0"
               leaveTo="-translate-x-full"
             >
-              <DialogPanel className="flex h-full w-full max-w-md flex-col bg-ui-bg-base shadow-elevation-card-rest">
-                <div className="flex items-center justify-between border-b border-ui-border-subtle px-5 py-4">
-                  <DialogTitle className="text-base font-semibold text-ui-fg-base">
+              <DialogPanel className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                  <DialogTitle className="text-lg font-bold text-slate-900">
                     {title}
                   </DialogTitle>
                   <button
                     type="button"
                     onClick={close}
-                    className="rounded-full border border-ui-border-base p-1 text-ui-fg-muted transition hover:border-ui-border-strong hover:text-ui-fg-base"
+                    className="ml-auto rounded-full border border-gray-200 p-2 text-gray-500 transition hover:border-slate-900 hover:text-slate-900"
                     aria-label="Close filters"
                   >
                     <X className="h-5 w-5" aria-hidden />
@@ -208,12 +208,12 @@ const FilterDrawer = ({
                     onFiltersChange={setPendingFilters}
                   />
                 </div>
-                <div className="border-t border-ui-border-subtle px-5 py-4">
+                <div className="border-t border-gray-100 px-5 py-4">
                   <button
                     type="button"
                     onClick={applyFilters}
                     disabled={!hasChanges}
-                    className="w-full rounded-2xl bg-ui-fg-base px-4 py-3 text-sm font-semibold text-ui-fg-on-inverted transition disabled:cursor-not-allowed disabled:bg-ui-fg-disabled"
+                    className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-gray-300"
                   >
                     Apply filters
                   </button>

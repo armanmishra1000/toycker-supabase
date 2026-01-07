@@ -44,7 +44,7 @@ const ProductGridSkeleton = ({ viewMode = "grid-4", count = 12 }: ProductGridSke
     <ul className={gridClassName} data-testid="products-list-skeleton" aria-label="Loading products">
       {items.map((item) => (
         <li key={`grid-skeleton-${item}`}>
-          <div className="group relative flex flex-col gap-4 rounded-2xl bg-ui-bg-base/90">
+          <div className="group relative flex flex-col gap-4 rounded-2xl bg-white">
             <div className={`${block} aspect-square w-full rounded-2xl`} />
             <div className="flex flex-col gap-3">
               <div className={`${block} h-5 w-3/4 rounded-full`} />
