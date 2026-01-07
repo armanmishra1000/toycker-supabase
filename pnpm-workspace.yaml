@@ -1,0 +1,5 @@
+ignoredBuiltDependencies:
+  - esbuild
+  - protobufjs
+  - sharp
+  - unrs-resolver

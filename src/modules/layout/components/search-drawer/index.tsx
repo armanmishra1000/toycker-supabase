@@ -36,7 +36,7 @@ const fallbackSuggestions = [
 
 type SearchStatus = "idle" | "loading" | "success" | "error"
 
-const IMAGE_SEARCH_ENABLED = process.env.NEXT_PUBLIC_IMAGE_SEARCH_ENABLED === "true"
+const IMAGE_SEARCH_ENABLED = true // Enabled for prototype
 
 const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
   const router = useRouter()
@@ -77,7 +77,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
     startListening,
     stopListening,
   } = useVoiceSearch({
-    onResult: (value) => setQuery(value),
+    onResult: (value: string) => setQuery(value),
   })
 
   const statusForDisplay = activeTab === "image" ? imageStatus : status
@@ -116,8 +116,8 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
       })
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { message?: string }
-        throw new Error(payload.message || "Unable to search by image")
+        const payload = (await response.json().catch(() => ({}))) as { message?: string; error?: string }
+        throw new Error(payload.error || payload.message || "Unable to search by image")
       }
 
       const payload = (await response.json()) as SearchResultsPayload
@@ -336,9 +336,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                           <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
                         </div>
                       )}
-                      {!isImageSearchAvailable && (
-                        <p className="text-xs font-semibold text-primary">Coming Soon</p>
-                      )}
+                      {/* Removed Coming Soon badge */}
                       <p className="text-xs text-slate-500 text-center">
                         We will find visually similar items. Supported: png, jpg, webp.
                       </p>
@@ -348,7 +346,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                           : "bg-slate-200 text-slate-500"
                           }`}
                       >
-                        {isImageSearchAvailable ? "Choose image" : "Coming soon"}
+                        {isImageSearchAvailable ? "Choose image" : "Upload Image"}
                       </span>
                     </label>
                     {imageError && (

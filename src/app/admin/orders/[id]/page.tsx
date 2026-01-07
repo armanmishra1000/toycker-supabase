@@ -1,4 +1,4 @@
-import { getAdminOrder, updateOrderStatus, getActiveShippingPartners, fulfillOrder, getOrderTimeline, getCustomerDisplayId } from "@/lib/data/admin"
+import { getAdminOrder, updateOrderStatus, getActiveShippingPartners, getOrderTimeline, getCustomerDisplayId } from "@/lib/data/admin"
 import { formatCustomerDisplayId } from "@/lib/util/customer"
 import { notFound } from "next/navigation"
 import Link from "next/link"
@@ -8,6 +8,7 @@ import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
 import Image from "next/image"
 import FulfillmentModal from "./fulfillment-modal"
+import { formatIST } from "@/lib/util/date"
 
 export default async function AdminOrderDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -39,8 +40,25 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
     </div>
   )
 
-  // Determine payment method display
-  const paymentMethod = order.payment_method || (order.payu_txn_id ? "PayU" : "Cash on Delivery")
+  // Determine payment method display with specific sub-method for PayU
+  let paymentMethod = order.payment_method || (order.payu_txn_id ? "PayU" : "Cash on Delivery")
+  if (order.payu_txn_id && order.metadata?.payu_payload) {
+    const payload = order.metadata.payu_payload as any
+    const modeMap: Record<string, string> = {
+      'CC': 'Credit Card',
+      'DC': 'Debit Card',
+      'NB': 'Net Banking',
+      'UPI': 'UPI',
+      'UP': 'UPI',
+      'CASH': 'Cash Card',
+      'EMI': 'EMI'
+    }
+    const mode = payload.mode ? (modeMap[payload.mode] || payload.mode) : ""
+    const bank = payload.bankcode && payload.bankcode !== 'UPI' ? ` (${payload.bankcode})` : ""
+    paymentMethod = `PayU - ${mode}${bank}`.trim()
+  }
+
+  const rewardsUsed = Number(order.metadata?.rewards_used || 0)
 
   return (
     <div className="space-y-6">
@@ -85,11 +103,19 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
             <div className="p-8 bg-gray-50/50 border-t border-gray-100 space-y-3">
               <div className="flex justify-between text-sm font-medium text-gray-500">
                 <span>Subtotal</span>
-                <span className="text-gray-900 font-bold">{convertToLocale({ amount: order.total_amount, currency_code: order.currency_code })}</span>
+                <span className="text-gray-900 font-bold">{convertToLocale({ amount: order.subtotal || (order.total_amount + rewardsUsed), currency_code: order.currency_code })}</span>
               </div>
+              {rewardsUsed > 0 && (
+                <div className="flex justify-between text-sm font-medium text-emerald-600">
+                  <span>Rewards Redeemed</span>
+                  <span className="font-bold">-{convertToLocale({ amount: rewardsUsed, currency_code: order.currency_code })}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm font-medium text-gray-500">
                 <span>Shipping</span>
-                <span className="text-emerald-600 font-bold uppercase tracking-tighter">Free Shipping</span>
+                <span className="text-emerald-600 font-bold uppercase tracking-tighter">
+                  {order.shipping_total === 0 ? "Free Shipping" : convertToLocale({ amount: order.shipping_total || 0, currency_code: order.currency_code })}
+                </span>
               </div>
               <div className="flex justify-between text-lg font-black text-gray-900 pt-4 border-t border-gray-200">
                 <span>Total</span>
@@ -101,25 +127,26 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
           {/* Timeline */}
           <AdminCard title="Timeline">
             <div className="space-y-6">
-              {timeline.length > 0 ? timeline.map((event, index) => (
+              {timeline.map((event, index) => (
                 <TimelineItem
                   key={event.id}
                   title={event.title}
                   description={event.description || ""}
-                  timestamp={new Date(event.created_at).toLocaleString()}
+                  timestamp={formatIST(event.created_at)}
+                  actor={event.actor}
                   active={true}
-                  last={index === timeline.length - 1}
+                  last={index === timeline.length - 1 && timeline.some(e => e.event_type === 'order_placed')}
                 />
-              )) : (
-                <>
-                  <TimelineItem
-                    title="Order Placed"
-                    description={`Customer placed this order.`}
-                    timestamp={new Date(order.created_at).toLocaleString()}
-                    active={true}
-                    last={true}
-                  />
-                </>
+              ))}
+              {!timeline.some(e => e.event_type === 'order_placed') && (
+                <TimelineItem
+                  title="Order Placed"
+                  description="Customer placed this order."
+                  timestamp={formatIST(order.created_at)}
+                  actor="customer"
+                  active={true}
+                  last={true}
+                />
               )}
             </div>
           </AdminCard>
@@ -136,7 +163,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                 <div>
                   <p className="text-sm font-bold text-gray-900">{paymentMethod}</p>
                   <p className="text-xs text-gray-500">
-                    {paymentMethod === 'Cash on Delivery' || paymentMethod === 'Manual'
+                    {paymentMethod.includes('Cash on Delivery') || paymentMethod.includes('Manual')
                       ? (order.payment_status === 'paid' || order.payment_status === 'captured' ? 'COD - Collected' : 'COD - Pending')
                       : (order.payment_status === 'paid' || order.payment_status === 'captured' ? 'Paid' : order.payment_status)}
                   </p>
@@ -195,9 +222,21 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
               <div className="flex gap-3 text-sm font-medium text-gray-600 leading-relaxed">
                 <MapPinIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
                 <div>
-                  <p className="font-bold text-gray-900 tracking-tight">{order.shipping_address?.first_name} {order.shipping_address?.last_name}</p>
+                  <p className="font-bold text-gray-900 tracking-tight">
+                    {order.shipping_address?.first_name} {order.shipping_address?.last_name}
+                  </p>
+                  {order.shipping_address?.company && (
+                    <p className="text-gray-500 text-xs font-bold">{order.shipping_address.company}</p>
+                  )}
                   <p>{order.shipping_address?.address_1}</p>
-                  <p className="uppercase">{order.shipping_address?.city} {order.shipping_address?.postal_code}</p>
+                  {order.shipping_address?.address_2 && (
+                    <p>{order.shipping_address.address_2}</p>
+                  )}
+                  <p className="uppercase">
+                    {order.shipping_address?.city}
+                    {order.shipping_address?.province ? `, ${order.shipping_address.province}` : ""}
+                    {` ${order.shipping_address?.postal_code}`}
+                  </p>
                   <p className="text-xs font-bold text-gray-400 mt-2">{order.shipping_address?.country_code?.toUpperCase()}</p>
                 </div>
               </div>
@@ -209,7 +248,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
   )
 }
 
-function TimelineItem({ title, description, timestamp, active, last }: { title: string, description: string, timestamp: string, active: boolean, last?: boolean }) {
+function TimelineItem({ title, description, timestamp, actor, active, last }: { title: string, description: string, timestamp: string, actor: string, active: boolean, last?: boolean }) {
   return (
     <div className={`relative pl-8 ${last ? '' : 'pb-6'}`}>
       {!last && <div className={`absolute left-[11px] top-[24px] bottom-0 w-0.5 ${active ? 'bg-indigo-600' : 'bg-gray-100'}`} />}
@@ -217,9 +256,16 @@ function TimelineItem({ title, description, timestamp, active, last }: { title: 
         <CheckIcon className="h-3 w-3 stroke-[4]" />
       </div>
       <div>
-        <p className={`text-sm font-bold ${active ? 'text-gray-900' : 'text-gray-400'}`}>{title}</p>
+        <div className="flex items-center justify-between gap-1">
+          <p className={`text-sm font-bold ${active ? 'text-gray-900' : 'text-gray-400'}`}>{title}</p>
+          <span className="text-[10px] text-gray-400 font-medium">{timestamp}</span>
+        </div>
         <p className="text-xs text-gray-500 mt-1">{description}</p>
-        <p className="text-xs text-gray-400 mt-1">{timestamp}</p>
+        <div className="flex items-center gap-1.5 mt-2">
+          <span className="px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            {actor === 'system' ? '💻 System' : actor === 'customer' ? '👤 Customer' : `🛡️ Admin: ${actor}`}
+          </span>
+        </div>
       </div>
     </div>
   )

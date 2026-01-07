@@ -2,8 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData, AdminRole, StaffMember } from "@/lib/supabase/types"
-import { revalidatePath, revalidateTag } from "next/cache"
+import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData, AdminRole, StaffMember, RewardTransactionWithOrder } from "@/lib/supabase/types"
+import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 // --- Auth Check ---
@@ -75,6 +75,43 @@ export async function getAdminStats() {
   }
 }
 
+// --- Get Low Stock Stats ---
+export async function getLowStockStats(threshold: number = 5) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Count products with low stock (base products)
+  const { count: lowStockProducts } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+    .lte("stock_count", threshold)
+    .gt("stock_count", 0)
+
+  // Count products out of stock
+  const { count: outOfStockProducts } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+    .eq("stock_count", 0)
+
+  // Count variants with low stock
+  const { count: lowStockVariants } = await supabase
+    .from("product_variants")
+    .select("*", { count: "exact", head: true })
+    .lte("inventory_quantity", threshold)
+    .gt("inventory_quantity", 0)
+
+  // Count variants out of stock
+  const { count: outOfStockVariants } = await supabase
+    .from("product_variants")
+    .select("*", { count: "exact", head: true })
+    .eq("inventory_quantity", 0)
+
+  return {
+    lowStock: (lowStockProducts || 0) + (lowStockVariants || 0),
+    outOfStock: (outOfStockProducts || 0) + (outOfStockVariants || 0)
+  }
+}
+
 // --- Categories ---
 
 interface GetAdminCategoriesParams {
@@ -99,6 +136,9 @@ export async function getAdminCategories(params: GetAdminCategoriesParams = {}):
   // Calculate total count first
   let countQuery = supabase.from("categories").select("*", { count: "exact", head: true })
 
+  // If limit is -1, we want all items, but we skip pagination logic
+  const isFetchAll = limit === -1
+
   if (search && search.trim()) {
     countQuery = countQuery.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
   }
@@ -116,7 +156,10 @@ export async function getAdminCategories(params: GetAdminCategoriesParams = {}):
     .from("categories")
     .select("*")
     .order("name")
-    .range(from, to)
+
+  if (!isFetchAll) {
+    query = query.range(from, to)
+  }
 
   if (search && search.trim()) {
     query = query.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
@@ -143,7 +186,6 @@ export async function createCategory(formData: FormData) {
   }
   const { error } = await supabase.from("categories").insert(category)
   if (error) throw new Error(error.message)
-  revalidateTag("categories")
   revalidatePath("/admin/categories")
   redirect("/admin/categories")
 }
@@ -152,7 +194,6 @@ export async function deleteCategory(id: string) {
   await ensureAdmin()
   const supabase = await createClient()
   await supabase.from("categories").delete().eq("id", id)
-  revalidateTag("categories")
   revalidatePath("/admin/categories")
 }
 
@@ -163,6 +204,7 @@ interface GetAdminProductsParams {
   limit?: number
   status?: string
   search?: string
+  stock_status?: "all" | "low_stock" | "out_of_stock"
 }
 
 interface PaginatedProductsResponse {
@@ -189,6 +231,12 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
     countQuery = countQuery.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
   }
 
+  if (params.stock_status === "low_stock") {
+    countQuery = countQuery.lte("stock_count", 5).gt("stock_count", 0)
+  } else if (params.stock_status === "out_of_stock") {
+    countQuery = countQuery.eq("stock_count", 0)
+  }
+
   const { count } = await countQuery
 
   // Calculate pagination
@@ -200,7 +248,7 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
   // Fetch paginated data
   let query = supabase
     .from("products")
-    .select("*")
+    .select("*, variants:product_variants(*)")
     .order("created_at", { ascending: false })
     .range(from, to)
 
@@ -210,6 +258,12 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
 
   if (search && search.trim()) {
     query = query.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
+  }
+
+  if (params.stock_status === "low_stock") {
+    query = query.lte("stock_count", 5).gt("stock_count", 0)
+  } else if (params.stock_status === "out_of_stock") {
+    query = query.eq("stock_count", 0)
   }
 
   const { data, error } = await query
@@ -231,9 +285,31 @@ export async function createProduct(formData: FormData) {
   // Keep first collection_id for backwards compatibility or primary collection
   const primaryCollectionId = collectionIds.length > 0 ? collectionIds[0] : null
 
-  // Get category_id
+  // Get category_ids (supporting multiple)
   const categoryId = formData.get("category_id") as string | null
-  const categoryIdValue = categoryId && categoryId.trim() !== "" ? categoryId : null
+  const categoryIds = formData.getAll("category_ids") as string[]
+
+  // Backwards compatibility: if category_id is set but category_ids is empty, use it
+  if (categoryId && categoryId.trim() !== "" && categoryIds.length === 0) {
+    categoryIds.push(categoryId)
+  }
+
+  // Deprecated single category_id for DB column
+  const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null
+
+  // Get variants JSON if any
+  const variantsJson = formData.get("variants") as string | null
+  const variantsData: VariantFormData[] = variantsJson ? JSON.parse(variantsJson) : []
+
+  let productPrice = formData.get("price") ? parseFloat(formData.get("price") as string) : 0
+  const stockCountString = formData.get("stock_count") as string | null
+  let productStockCount = (stockCountString && stockCountString.trim() !== "") ? parseInt(stockCountString) : 0
+
+  // If we have multiple variants, override base product price/stock from them
+  if (variantsData.length > 0) {
+    productPrice = Math.min(...variantsData.map(v => v.price))
+    productStockCount = variantsData.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0)
+  }
 
   // Get compare_at_price
   const compareAtPrice = formData.get("compare_at_price") ? parseFloat(formData.get("compare_at_price") as string) : null
@@ -242,16 +318,19 @@ export async function createProduct(formData: FormData) {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
     description: formData.get("description") as string,
-    price: parseFloat(formData.get("price") as string),
-    stock_count: parseInt(formData.get("stock_count") as string),
+    price: productPrice,
+    stock_count: productStockCount,
     image_url: formData.get("image_url") as string,
-    collection_id: primaryCollectionId, // Set primary collection
-    category_id: categoryIdValue, // Set category
+    collection_id: primaryCollectionId && primaryCollectionId.trim() !== "" ? primaryCollectionId : null, // Set primary collection
+    category_id: primaryCategoryId, // Set category
     status: (formData.get("status") as string) || 'active',
     currency_code: "inr",
     metadata: {
       compare_at_price: compareAtPrice,
-    }
+    },
+    short_description: formData.get("short_description") as string,
+    video_url: formData.get("video_url") as string,
+    images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : [],
   }
 
   const { data: newProduct, error } = await supabase
@@ -261,6 +340,24 @@ export async function createProduct(formData: FormData) {
     .single()
 
   if (error) throw new Error(error.message)
+
+  // Create variants
+  if (newProduct) {
+    if (variantsData.length > 0) {
+      // Create provided variants
+      const variantsToInsert = variantsData.map(v => ({
+        product_id: newProduct.id,
+        title: v.title,
+        sku: v.sku,
+        price: v.price,
+        compare_at_price: v.compare_at_price,
+        inventory_quantity: v.inventory_quantity,
+        manage_inventory: true,
+        allow_backorder: false,
+      }))
+      await supabase.from("product_variants").insert(variantsToInsert)
+    }
+  }
 
   // Insert multiple collection associations
   if (collectionIds.length > 0 && newProduct) {
@@ -279,7 +376,16 @@ export async function createProduct(formData: FormData) {
     }
   }
 
-  revalidateTag("products")
+  // Insert multiple category associations
+  if (categoryIds.length > 0 && newProduct) {
+    const categoriesToInsert = categoryIds.map(cid => ({
+      product_id: newProduct.id,
+      category_id: cid
+    }))
+
+    await supabase.from("product_categories").insert(categoriesToInsert)
+  }
+
   revalidatePath("/admin/products")
   redirect("/admin/products")
 }
@@ -293,31 +399,55 @@ export async function updateProduct(formData: FormData) {
   // Keep first collection_id for backwards compatibility
   const primaryCollectionId = collectionIds.length > 0 ? collectionIds[0] : null
 
-  // Get category_id
+  // Get category_ids (supporting multiple)
   const categoryId = formData.get("category_id") as string | null
-  const categoryIdValue = categoryId && categoryId.trim() !== "" ? categoryId : null
+  const categoryIds = formData.getAll("category_ids") as string[]
 
-  // Get current product to preserve existing metadata
-  const { data: currentProduct } = await supabase.from("products").select("metadata").eq("id", id).single()
+  // Get product_type
+  const productType = formData.get("product_type") as string || "single"
 
-  const updates = {
+  // Backwards compatibility: if category_id is set but category_ids is empty, use it
+  if (categoryId && categoryId.trim() !== "" && categoryIds.length === 0) {
+    categoryIds.push(categoryId)
+  }
+
+  // Deprecated single category_id for DB column
+  const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null
+
+  // Get current product to preserve existing metadata, price, stock and images
+  const { data: currentProduct } = await supabase.from("products").select("metadata, price, stock_count, images").eq("id", id).single()
+
+  const productPrice = formData.get("price") ? parseFloat(formData.get("price") as string) : currentProduct?.price || 0
+  const stockCountString = formData.get("stock_count") as string | null
+  const productStockCount = (stockCountString && stockCountString.trim() !== "") ? parseInt(stockCountString) : currentProduct?.stock_count || 0
+
+  const updates: any = {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
     description: formData.get("description") as string,
-    price: parseFloat(formData.get("price") as string),
-    stock_count: parseInt(formData.get("stock_count") as string),
+    price: productPrice,
+    stock_count: productStockCount,
     image_url: formData.get("image_url") as string,
-    collection_id: primaryCollectionId, // Update primary collection
-    category_id: categoryIdValue, // Update category
+    collection_id: primaryCollectionId && primaryCollectionId.trim() !== "" ? primaryCollectionId : null, // Update primary collection
+    category_id: primaryCategoryId, // Update category
     status: formData.get("status") as string,
     metadata: {
       ...(currentProduct?.metadata || {}),
-      compare_at_price: formData.get("compare_at_price") ? parseFloat(formData.get("compare_at_price") as string) : null,
-    }
+      compare_at_price: formData.get("compare_at_price") ? parseFloat(formData.get("compare_at_price") as string) : (currentProduct?.metadata?.compare_at_price || null),
+    },
+    short_description: formData.get("short_description") as string,
+    video_url: formData.get("video_url") as string,
+    images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : (currentProduct?.images || []),
   }
 
   const { error } = await supabase.from("products").update(updates).eq("id", id)
   if (error) throw new Error(error.message)
+
+  // Handle variants based on product type
+  if (productType === "single") {
+    // If switching to single product, delete all variants
+    await supabase.from("product_variants").delete().eq("product_id", id)
+  }
 
   // Update collections:
   // 1. Delete existing associations
@@ -339,18 +469,38 @@ export async function updateProduct(formData: FormData) {
     }
   }
 
-  revalidateTag("products")
+  // Update categories:
+  // 1. Delete existing associations
+  await supabase.from("product_categories").delete().eq("product_id", id)
+
+  // 2. Insert new associations
+  if (categoryIds.length > 0) {
+    const categoriesToInsert = categoryIds.map(cid => ({
+      product_id: id,
+      category_id: cid
+    }))
+
+    await supabase.from("product_categories").insert(categoriesToInsert)
+  }
+
   revalidatePath("/admin/products")
   revalidatePath(`/admin/products/${id}`)
   redirect(`/admin/products/${id}`)
 }
 
-export async function deleteProduct(id: string) {
+export async function deleteProduct(id: string, redirectTo?: string) {
   await ensureAdmin()
   const supabase = await createClient()
-  await supabase.from("products").delete().eq("id", id)
-  revalidateTag("products")
+
+  const { error } = await supabase.from("products").delete().eq("id", id)
+  if (error) throw error
+
   revalidatePath("/admin/products")
+  revalidatePath("/admin/inventory")
+
+  if (redirectTo) {
+    redirect(redirectTo)
+  }
 }
 
 // --- Product Variants ---
@@ -387,6 +537,7 @@ export async function saveProductVariants(
         title: v.title,
         sku: v.sku || null,
         price: v.price,
+        compare_at_price: v.compare_at_price || null,
         inventory_quantity: v.inventory_quantity,
         manage_inventory: true,
         allow_backorder: false,
@@ -405,6 +556,7 @@ export async function saveProductVariants(
         title: v.title,
         sku: v.sku || null,
         price: v.price,
+        compare_at_price: v.compare_at_price || null,
         inventory_quantity: v.inventory_quantity,
         manage_inventory: true,
         allow_backorder: false,
@@ -413,14 +565,225 @@ export async function saveProductVariants(
     if (updateError) throw new Error(updateError.message)
   }
 
+  // Update total stock count on product
+  const { data: allVariants } = await supabase
+    .from("product_variants")
+    .select("inventory_quantity")
+    .eq("product_id", productId)
+
+  if (allVariants) {
+    const totalStock = allVariants.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0)
+    await supabase.from("products").update({ stock_count: totalStock }).eq("id", productId)
+  }
+
+  // Get product handle for revalidation
+  const { data: product } = await supabase.from("products").select("handle").eq("id", productId).single()
+
   revalidatePath(`/admin/products/${productId}`)
   revalidatePath("/admin/products")
+  if (product?.handle) {
+    revalidatePath(`/products/${product.handle}`)
+  }
 }
-
 export async function deleteVariant(variantId: string) {
   await ensureAdmin()
   const supabase = await createClient()
-  await supabase.from("product_variants").delete().eq("id", variantId)
+
+  // Get variant details before deletion to find product_id
+  const { data: variant } = await supabase
+    .from("product_variants")
+    .select("product_id")
+    .eq("id", variantId)
+    .single()
+
+  const { error } = await supabase.from("product_variants").delete().eq("id", variantId)
+  if (error) throw error
+
+  if (variant) {
+    // Get product handle for revalidation
+    const { data: product } = await supabase.from("products").select("handle").eq("id", variant.product_id).single()
+
+    revalidatePath(`/admin/products/${variant.product_id}`)
+    if (product?.handle) {
+      revalidatePath(`/products/${product.handle}`)
+    }
+
+    // Update total stock count on product
+    const { data: allVariants } = await supabase
+      .from("product_variants")
+      .select("inventory_quantity")
+      .eq("product_id", variant.product_id)
+
+    const totalStock = allVariants?.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0) || 0
+    await supabase.from("products").update({ stock_count: totalStock }).eq("id", variant.product_id)
+  }
+  revalidatePath("/admin/products")
+  revalidatePath("/admin/inventory")
+}
+
+export async function updateInventory(productId: string, quantity: number, variantId?: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  if (variantId) {
+    // Update variant stock
+    const { error: variantError } = await supabase
+      .from("product_variants")
+      .update({ inventory_quantity: quantity })
+      .eq("id", variantId)
+
+    if (variantError) throw variantError
+
+    // Recalculate total stock
+    const { data: allVariants } = await supabase
+      .from("product_variants")
+      .select("inventory_quantity")
+      .eq("product_id", productId)
+
+    if (allVariants) {
+      const totalStock = allVariants.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0)
+      await supabase.from("products").update({ stock_count: totalStock }).eq("id", productId)
+    }
+  } else {
+    // Update base product stock
+    const { error: productError } = await supabase
+      .from("products")
+      .update({ stock_count: quantity })
+      .eq("id", productId)
+
+    if (productError) throw productError
+
+    // Also sync the default variant if it's a simple product
+    const { data: variants } = await supabase
+      .from("product_variants")
+      .select("id")
+      .eq("product_id", productId)
+
+    if (variants && variants.length === 1) {
+      await supabase
+        .from("product_variants")
+        .update({ inventory_quantity: quantity })
+        .eq("id", variants[0].id)
+    }
+  }
+
+  revalidatePath("/admin/inventory")
+  revalidatePath(`/admin/products/${productId}`)
+
+  // Get handle for storefront revalidation
+  const { data: product } = await supabase.from("products").select("handle").eq("id", productId).single()
+  if (product?.handle) {
+    revalidatePath(`/products/${product.handle}`)
+  }
+}
+
+// --- Product Options ---
+
+export async function getProductOptions(productId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("product_options")
+    .select(`
+      *,
+      values:product_option_values(*)
+    `)
+    .eq("product_id", productId)
+    .order("created_at")
+
+  if (error) throw error
+  return data
+}
+
+export async function saveProductOption(
+  productId: string,
+  option: { title: string; values: string[] }
+) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Insert option
+  const { data: optionData, error: optionError } = await supabase
+    .from("product_options")
+    .insert({ product_id: productId, title: option.title })
+    .select()
+    .single()
+
+  if (optionError) throw optionError
+
+  // Insert values
+  const { error: valuesError } = await supabase
+    .from("product_option_values")
+    .insert(
+      option.values.map(value => ({
+        option_id: optionData.id,
+        value: value.trim()
+      }))
+    )
+
+  if (valuesError) throw valuesError
+
+  revalidatePath(`/admin/products/${productId}`)
+  return optionData
+}
+
+export async function deleteProductOption(optionId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  await supabase.from("product_options").delete().eq("id", optionId)
+}
+
+export async function generateVariantsFromOptions(
+  productId: string,
+  options: { title: string; values: { value: string }[] }[]
+) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // Generate Cartesian product of all option values
+  const generateVariantCombinations = (
+    options: { title: string; values: { value: string }[] }[]
+  ): string[][] => {
+    if (options.length === 0) return [[]]
+
+    const [firstOption, ...remainingOptions] = options
+    const remainingCombinations = generateVariantCombinations(remainingOptions)
+
+    const firstOptionValues = firstOption.values || []
+
+    const combinations: string[][] = []
+    for (const valueObj of firstOptionValues) {
+      for (const combination of remainingCombinations) {
+        combinations.push([valueObj.value, ...combination])
+      }
+    }
+
+    return combinations
+  }
+
+  const combinations = generateVariantCombinations(options)
+
+  // Create variants for each combination
+  const variantsToInsert = combinations.map(combination => ({
+    product_id: productId,
+    title: combination.join(" / "),
+    price: 0,
+    inventory_quantity: 0,
+    manage_inventory: true,
+    allow_backorder: false,
+  }))
+
+  const { data, error } = await supabase
+    .from("product_variants")
+    .insert(variantsToInsert)
+    .select()
+
+  if (error) throw error
+
+  revalidatePath(`/admin/products/${productId}`)
+  return data
 }
 
 // --- Collections ---
@@ -444,8 +807,12 @@ export async function getAdminCollections(params: GetAdminCollectionsParams = {}
   const { page = 1, limit = 20, search } = params
   const supabase = await createClient()
 
+  // If limit is -1, we want all items
+  const isFetchAll = limit === -1
+
   // Calculate total count first
   let countQuery = supabase.from("collections").select("*", { count: "exact", head: true })
+
 
   if (search && search.trim()) {
     countQuery = countQuery.or(`title.ilike.%${search}%,handle.ilike.%${search}%`)
@@ -462,12 +829,18 @@ export async function getAdminCollections(params: GetAdminCollectionsParams = {}
   // Fetch paginated data
   let query = supabase
     .from("collections")
-    .select("*, products(count)")
+    .select(`
+    *,
+    products:product_collections(count)
+    `)
     .order("created_at", { ascending: false })
-    .range(from, to)
+
+  if (!isFetchAll) {
+    query = query.range(from, to)
+  }
 
   if (search && search.trim()) {
-    query = query.or(`title.ilike.%${search}%,handle.ilike.%${search}%`)
+    query = query.or(`title.ilike.% ${search}%, handle.ilike.% ${search}% `)
   }
 
   const { data, error } = await query
@@ -489,6 +862,17 @@ export async function getAdminCollection(id: string) {
   return data as Collection
 }
 
+export async function getProductCategories(productId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("product_categories")
+    .select("category_id")
+    .eq("product_id", productId)
+
+  if (error) return []
+  return data.map(item => item.category_id)
+}
+
 export async function createCollection(formData: FormData) {
   await ensureAdmin()
   const supabase = await createClient()
@@ -498,7 +882,6 @@ export async function createCollection(formData: FormData) {
   }
   const { error } = await supabase.from("collections").insert(collection)
   if (error) throw new Error(error.message)
-  revalidateTag("collections")
   revalidatePath("/admin/collections")
   redirect("/admin/collections")
 }
@@ -513,7 +896,6 @@ export async function updateCollection(formData: FormData) {
   }
   const { error } = await supabase.from("collections").update(updates).eq("id", id)
   if (error) throw new Error(error.message)
-  revalidateTag("collections")
   revalidatePath("/admin/collections")
   redirect("/admin/collections")
 }
@@ -522,7 +904,6 @@ export async function deleteCollection(id: string) {
   await ensureAdmin()
   const supabase = await createClient()
   await supabase.from("collections").delete().eq("id", id)
-  revalidateTag("collections")
   revalidatePath("/admin/collections")
 }
 
@@ -530,19 +911,32 @@ export async function getProductCollections(productId: string) {
   await ensureAdmin()
   const supabase = await createClient()
 
+  // Try fetching with plural relationship 'collections'
   const { data, error } = await supabase
     .from("product_collections")
-    .select("collection_id, collections(*)")
+    .select("collection_id, collections:collections(*)")
     .eq("product_id", productId)
 
-  if (error) {
-    console.error("Error fetching product collections:", error)
-    return []
+  if (error || !data || data.length === 0) {
+    // Try singular relationship 'collection' if plural fails or is empty
+    const { data: singularData, error: singularError } = await supabase
+      .from("product_collections")
+      .select("collection_id, collection:collections(*)")
+      .eq("product_id", productId)
+
+    if (singularError || !singularData) {
+      console.error("Error fetching product collections:", singularError || "No data")
+      return []
+    }
+
+    return singularData
+      .map(item => (item as any).collection as unknown as Collection)
+      .filter(Boolean)
   }
 
-  // Flatten the structure to return just the collection objects
-  // The join returns a single object for 'collections', not an array
-  return data.map(item => item.collections as unknown as Collection).filter(Boolean)
+  return data
+    .map(item => (item as any).collections as unknown as Collection)
+    .filter(Boolean)
 }
 
 // --- Orders ---
@@ -601,7 +995,7 @@ export async function getAdminOrders(params: GetAdminOrdersParams = {}): Promise
 
   if (search && search.trim()) {
     // Search by customer_email
-    countQuery = countQuery.ilike("customer_email", `%${search}%`)
+    countQuery = countQuery.ilike("customer_email", `% ${search}% `)
   }
 
   const { count } = await countQuery
@@ -621,7 +1015,7 @@ export async function getAdminOrders(params: GetAdminOrdersParams = {}): Promise
 
   if (search && search.trim()) {
     // Search by customer_email
-    query = query.ilike("customer_email", `%${search}%`)
+    query = query.ilike("customer_email", `% ${search}% `)
   }
 
   const { data, error } = await query
@@ -648,6 +1042,16 @@ export async function updateOrderStatus(id: string, status: string) {
   const supabase = await createClient()
   const { error } = await supabase.from("orders").update({ status }).eq("id", id)
   if (error) throw error
+
+  // Log to timeline
+  await logOrderEvent(
+    id,
+    status as OrderEventType,
+    `Order ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+    `Order status changed to ${status}.`,
+    "admin"
+  )
+
   revalidatePath(`/admin/orders/${id}`)
   revalidatePath("/admin/orders")
 }
@@ -677,7 +1081,7 @@ export async function getAdminCustomers(params: GetAdminCustomersParams = {}): P
   let countQuery = supabase.from("profiles").select("*", { count: "exact", head: true })
 
   if (search && search.trim()) {
-    countQuery = countQuery.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+    countQuery = countQuery.or(`first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `)
   }
 
   const { count } = await countQuery
@@ -696,7 +1100,7 @@ export async function getAdminCustomers(params: GetAdminCustomersParams = {}): P
     .range(from, to)
 
   if (search && search.trim()) {
-    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+    query = query.or(`first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `)
   }
 
   const { data, error } = await query
@@ -721,12 +1125,14 @@ export async function getAdminCustomer(id: string) {
   const { data: orders } = await supabase.from("orders").select("*").eq("user_id", id).order("created_at", { ascending: false })
   const { data: addresses } = await supabase.from("addresses").select("*").eq("user_id", id)
   const { data: wallet } = await supabase.from("reward_wallets").select("*").eq("user_id", id).maybeSingle()
+  const transactions = wallet ? await getAdminRewardTransactions(id) : []
 
   return {
     ...profile,
     orders: orders || [],
     addresses: addresses || [],
     reward_wallet: wallet || null,
+    reward_transactions: transactions,
     // Use fallback values if profile columns are null (though migration should handle this)
     is_club_member: profile.is_club_member || false,
     club_member_since: profile.club_member_since || null,
@@ -734,18 +1140,81 @@ export async function getAdminCustomer(id: string) {
   }
 }
 
-export async function deleteCustomer(id: string) {
+export async function getAdminRewardTransactions(userId: string): Promise<RewardTransactionWithOrder[]> {
   await ensureAdmin()
-  const supabase = await createAdminClient()
+  const supabase = await createClient()
 
-  const { error } = await supabase.auth.admin.deleteUser(id)
+  const { data: wallet } = await supabase
+    .from("reward_wallets")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle()
 
-  if (error) {
-    throw error
+  if (!wallet) return []
+
+  // 1. Fetch transactions
+  const { data: transactions, error: txError } = await supabase
+    .from("reward_transactions")
+    .select("*")
+    .eq("wallet_id", wallet.id)
+    .order("created_at", { ascending: false })
+
+  if (txError || !transactions) return []
+
+  // 2. Collect unique order IDs
+  const orderIds = Array.from(new Set(
+    transactions
+      .filter(tx => tx.order_id)
+      .map(tx => tx.order_id)
+  ))
+
+  // 3. Fetch order display IDs
+  let ordersMap: Record<string, number> = {}
+  if (orderIds.length > 0) {
+    const { data: orders, error: orderError } = await supabase
+      .from("orders")
+      .select("id, display_id")
+      .in("id", orderIds)
+
+    if (orders) {
+      ordersMap = orders.reduce((acc, order) => {
+        acc[order.id] = order.display_id
+        return acc
+      }, {} as Record<string, number>)
+    }
   }
 
-  revalidatePath("/admin/customers")
-  redirect("/admin/customers")
+  // 4. Map display IDs back to transactions
+  return transactions.map(tx => ({
+    ...tx,
+    orders: tx.order_id && ordersMap[tx.order_id]
+      ? { display_id: ordersMap[tx.order_id] }
+      : null
+  })) as RewardTransactionWithOrder[]
+}
+
+export async function deleteCustomer(id: string) {
+  try {
+    await ensureAdmin()
+    const supabase = await createAdminClient()
+
+    const { error } = await supabase.auth.admin.deleteUser(id)
+
+    if (error) {
+      console.error("ADMIN: deleteUser auth api error:", error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath("/admin/customers")
+    return { success: true }
+  } catch (err: any) {
+    console.error("ADMIN: deleteCustomer CRITICAL FAILURE:", err)
+    // Return a user-friendly error if the key is missing
+    if (err.message?.includes("SUPABASE_SERVICE_ROLE_KEY")) {
+      return { success: false, error: "Server Error: SUPABASE_SERVICE_ROLE_KEY is not configured." }
+    }
+    return { success: false, error: err.message || "An unexpected error occurred." }
+  }
 }
 
 // --- Payment Methods ---
@@ -891,16 +1360,34 @@ export async function logOrderEvent(
   eventType: OrderEventType,
   title: string,
   description: string,
-  actor: string = "admin",
+  actor: string = "system",
   metadata: Record<string, unknown> = {}
 ) {
   const supabase = await createClient()
+
+  // If actor is "admin", try to get the actual admin name
+  let actorDisplay = actor
+  if (actor === "admin") {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", user.id)
+        .single()
+
+      if (profile) {
+        actorDisplay = `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || user.email || "Admin"
+      }
+    }
+  }
+
   const { error } = await supabase.from("order_timeline").insert({
     order_id: orderId,
     event_type: eventType,
     title,
     description,
-    actor,
+    actor: actorDisplay,
     metadata,
   })
 
@@ -915,7 +1402,11 @@ export async function fulfillOrder(orderId: string, formData: FormData) {
   const supabase = await createClient()
 
   const shippingPartnerId = formData.get("shipping_partner_id") as string
-  const trackingNumber = formData.get("tracking_number") as string | null
+  const trackingNumber = formData.get("tracking_number") as string
+
+  if (!trackingNumber || trackingNumber.trim() === "") {
+    throw new Error("Tracking number is required")
+  }
 
   // Get shipping partner name for timeline
   let partnerName = "Unknown"
@@ -942,7 +1433,7 @@ export async function fulfillOrder(orderId: string, formData: FormData) {
 
   // Log timeline event
   const description = trackingNumber
-    ? `Order shipped via ${partnerName}. Tracking: ${trackingNumber}`
+    ? `Order shipped via ${partnerName}.Tracking: ${trackingNumber} `
     : `Order shipped via ${partnerName}.`
 
   await logOrderEvent(
@@ -954,7 +1445,7 @@ export async function fulfillOrder(orderId: string, formData: FormData) {
     { shipping_partner: partnerName, tracking_number: trackingNumber }
   )
 
-  revalidatePath(`/admin/orders/${orderId}`)
+  revalidatePath(`/ admin / orders / ${orderId} `)
   revalidatePath("/admin/orders")
 }
 
@@ -1050,7 +1541,7 @@ export async function getStaffMembers(params: GetStaffMembersParams = {}): Promi
     .not("admin_role_id", "is", null)
 
   if (search && search.trim()) {
-    countQuery = countQuery.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+    countQuery = countQuery.or(`first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `)
   }
 
   const { count } = await countQuery
@@ -1065,20 +1556,20 @@ export async function getStaffMembers(params: GetStaffMembersParams = {}): Promi
   let query = supabase
     .from("profiles")
     .select(`
-      id,
-      email,
-      first_name,
-      last_name,
-      admin_role_id,
-      created_at,
-      admin_role:admin_roles(*)
+  id,
+    email,
+    first_name,
+    last_name,
+    admin_role_id,
+    created_at,
+    admin_role: admin_roles(*)
     `)
     .not("admin_role_id", "is", null)
     .order("created_at", { ascending: false })
     .range(from, to)
 
   if (search && search.trim()) {
-    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+    query = query.or(`first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `)
   }
 
   const { data, error } = await query

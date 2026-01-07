@@ -14,6 +14,7 @@ import MobileMenu from "@modules/layout/components/mobile-menu"
 import SearchDrawer from "@modules/layout/components/search-drawer"
 import CartSidebar from "@modules/layout/components/cart-sidebar"
 import { useCartSidebar } from "@modules/layout/context/cart-sidebar-context"
+import { useCartStore } from "@modules/cart/context/cart-store-context"
 import { useWishlistCount } from "@modules/products/hooks/use-wishlist-count"
 import {
   AgeCategory,
@@ -84,9 +85,12 @@ const Header = ({
   } = useCartSidebar()
   const pathname = usePathname()
   const wishlistCount = useWishlistCount()
+  const { cart: storeCart } = useCartStore()
 
   useEffect(() => {
-    setCart(cart ?? null)
+    if (cart !== undefined) {
+      setCart(cart ?? null)
+    }
   }, [cart, setCart])
 
   const openSearch = () => setIsSearchOpen(true)
@@ -95,9 +99,11 @@ const Header = ({
   useEffect(() => {
     setIsSearchOpen(false)
   }, [pathname])
-  const resolvedCart = sharedCart ?? cart
+
+  // Use cart from store for instant reactivity
+  const activeCart = storeCart ?? sharedCart ?? cart
   const cartItemCount =
-    resolvedCart?.items?.reduce((total: number, item: { quantity: number }) => total + item.quantity, 0) || 0
+    activeCart?.items?.reduce((total: number, item: { quantity: number }) => total + item.quantity, 0) || 0
   const resolvedNavLinks = navLinks && navLinks.length ? navLinks : defaultNavLinks
   const resolvedAgeCategories = ageCategories && ageCategories.length ? ageCategories : defaultAgeCategories
   const fallbackSections = defaultShopMenuSections.map((section) =>

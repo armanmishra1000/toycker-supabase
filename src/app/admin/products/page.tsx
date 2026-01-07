@@ -11,6 +11,7 @@ import MedusaSyncButton from "@modules/admin/components/medusa-sync-button"
 import { AdminPagination } from "@modules/admin/components/admin-pagination"
 import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import { cn } from "@lib/util/cn"
+import DeleteProductButton from "@modules/admin/components/delete-product-button"
 
 export default async function AdminProducts({
   searchParams
@@ -156,6 +157,11 @@ export default async function AdminProducts({
                       <Link href={`/admin/products/${product.id}`} className="p-2 text-gray-400 hover:text-black transition-colors">
                         <PencilIcon className="h-4 w-4" />
                       </Link>
+                      <DeleteProductButton 
+                        productId={product.id} 
+                        productName={product.name} 
+                        variant="icon"
+                      />
                     </div>
                   </td>
                 </tr>

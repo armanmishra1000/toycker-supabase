@@ -6,6 +6,7 @@ import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import Link from "next/link"
 import DeleteCustomerButton from "@modules/admin/components/delete-customer-button"
 import { UsersIcon } from "@heroicons/react/24/outline"
+import { formatIST } from "@/lib/util/date"
 
 export default async function AdminCustomers({
   searchParams
@@ -48,7 +49,7 @@ export default async function AdminCustomers({
 
       <div className="p-0 border-none shadow-sm bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
-          <table className="min-w-full divide-y divide-gray-100">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-[#f9fafb]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
@@ -79,7 +80,7 @@ export default async function AdminCustomers({
                     </AdminBadge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(customer.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {formatIST(customer.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                     <DeleteCustomerButton customerId={customer.id} customerName={`${customer.first_name || ''} ${customer.last_name || customer.email}`} />

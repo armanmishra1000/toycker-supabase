@@ -8,6 +8,7 @@ export interface Product {
   price: number;
   currency_code: string;
   image_url: string | null;
+  video_url?: string | null;
   thumbnail: string | null;
   images: (string | ProductImage)[] | null;
   stock_count: number;
@@ -23,6 +24,7 @@ export interface Product {
   options?: ProductOption[];
   collection?: Collection | null;
   collections?: Collection[];
+  categories?: Category[];
 }
 
 export interface ProductVariant {
@@ -31,6 +33,7 @@ export interface ProductVariant {
   sku?: string;
   barcode?: string;
   price: number;
+  compare_at_price?: number | null;
   original_price?: number;
   inventory_quantity: number;
   manage_inventory: boolean;
@@ -52,6 +55,7 @@ export interface VariantFormData {
   title: string;
   sku: string;
   price: number;
+  compare_at_price?: number | null;
   inventory_quantity: number;
 }
 
@@ -175,7 +179,7 @@ export interface CartItem {
   id: string;
   cart_id: string;
   product_id: string;
-  variant_id: string;
+  variant_id: string | null;
   quantity: number;
   created_at: string;
   updated_at: string;
@@ -334,6 +338,12 @@ export interface RewardTransaction {
   description: string;
   order_id: string | null;
   created_at: string;
+}
+
+export interface RewardTransactionWithOrder extends RewardTransaction {
+  orders: {
+    display_id: number;
+  } | null;
 }
 
 export type OrderEventType =

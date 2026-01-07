@@ -1,3 +1,5 @@
+"use client"
+
 import { login } from "@lib/data/customer"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -6,12 +8,12 @@ import Input from "@modules/common/components/input"
 import { useActionState } from "react"
 
 type Props = {
-  setCurrentView: (view: LOGIN_VIEW) => void
+  setCurrentView: (_view: LOGIN_VIEW) => void
   returnUrl?: string
 }
 
 const Login = ({ setCurrentView, returnUrl }: Props) => {
-  const [message, formAction] = useActionState(login, null)
+  const [message, formAction, isPending] = useActionState(login, null)
 
   return (
     <div className="w-full flex flex-col gap-y-6" data-testid="login-page">
@@ -25,6 +27,7 @@ const Login = ({ setCurrentView, returnUrl }: Props) => {
             title="Enter a valid email address."
             autoComplete="email"
             required
+            disabled={isPending}
             data-testid="email-input"
           />
           <Input
@@ -33,13 +36,18 @@ const Login = ({ setCurrentView, returnUrl }: Props) => {
             type="password"
             autoComplete="current-password"
             required
+            disabled={isPending}
             data-testid="password-input"
           />
         </div>
         <div aria-live="polite" className="min-h-[24px] mt-3">
           <ErrorMessage error={message} data-testid="login-error-message" />
         </div>
-        <SubmitButton data-testid="sign-in-button" className="w-full mt-4 rounded-xl py-4 bg-primary border-primary shadow-none hover:bg-foreground transition-all">
+        <SubmitButton
+          data-testid="sign-in-button"
+          isLoading={isPending}
+          className="w-full mt-4 rounded-xl py-4 bg-primary border-primary shadow-none hover:bg-foreground transition-all"
+        >
           Sign in
         </SubmitButton>
       </form>
@@ -48,7 +56,8 @@ const Login = ({ setCurrentView, returnUrl }: Props) => {
         <div className="flex items-center justify-center gap-x-4">
           <button
             onClick={() => setCurrentView(LOGIN_VIEW.REGISTER)}
-            className="underline font-semibold text-black text-lg"
+            disabled={isPending}
+            className="underline font-semibold text-black text-lg disabled:opacity-50"
             data-testid="register-button"
           >
             Join Toycker

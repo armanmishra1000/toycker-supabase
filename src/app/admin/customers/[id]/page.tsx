@@ -2,12 +2,14 @@
 import { getAdminCustomer } from "@/lib/data/admin"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ChevronLeftIcon, ShoppingBagIcon, CalendarIcon, StarIcon, BanknotesIcon, MapIcon, CreditCardIcon } from "@heroicons/react/24/outline"
+import { ChevronLeftIcon, ShoppingBagIcon, CalendarIcon, StarIcon, BanknotesIcon, MapIcon, CreditCardIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "@heroicons/react/24/outline"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
 import DeleteCustomerButton from "@modules/admin/components/delete-customer-button"
+import { cn } from "@lib/util/cn"
+import { formatIST } from "@/lib/util/date"
 
 export default async function AdminCustomerDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -21,7 +23,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
   // @ts-ignore
   const rewardBalance = customer.reward_wallet?.balance || 0
   const clubSavings = customer.total_club_savings || 0
-  const joinDate = new Date(customer.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+  const joinDate = formatIST(customer.created_at, { month: 'long', day: 'numeric', year: 'numeric' })
 
   // Determine membership status
   const isMember = customer.is_club_member
@@ -111,7 +113,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
                           <Link href={`/admin/orders/${order.id}`}>#{order.display_id}</Link>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(order.created_at).toLocaleDateString()}
+                          {formatIST(order.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <AdminBadge variant={getStatusVariant(order.status)}>{order.status}</AdminBadge>
@@ -186,7 +188,9 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone</p>
-                  <p className="text-sm font-semibold text-gray-900">{customer.phone || 'N/A'}</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {customer.phone || customer.addresses?.[0]?.phone || 'N/A'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -203,7 +207,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
                   <div className="h-px bg-gray-100 my-2" />
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Member Since</p>
-                    <p className="text-sm font-medium text-gray-900">{customer.club_member_since ? new Date(customer.club_member_since).toLocaleDateString() : 'Unknown'}</p>
+                    <p className="text-sm font-medium text-gray-900">{customer.club_member_since ? formatIST(customer.club_member_since) : 'Unknown'}</p>
                   </div>
                 </>
               )}
@@ -211,6 +215,84 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
           </AdminCard>
         </div>
       </div>
+
+      {/* Rewards Ledger */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900">Reward Transaction History</h2>
+        <AdminCard className="p-0 border-none shadow-sm overflow-hidden">
+          {/* @ts-ignore */}
+          {customer.reward_transactions && customer.reward_transactions.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-100">
+                <thead className="bg-gray-50/50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {/* @ts-ignore */}
+                  {customer.reward_transactions.map((tx: any) => (
+                    <tr key={tx.id} className="hover:bg-gray-50/80 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          {tx.type === 'earned' ? (
+                            <div className="p-1 rounded bg-emerald-50 text-emerald-600">
+                              <ArrowTrendingUpIcon className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <div className="p-1 rounded bg-red-50 text-red-600">
+                              <ArrowTrendingDownIcon className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                          <span className={cn(
+                            "text-xs font-bold uppercase",
+                            tx.type === 'earned' ? "text-emerald-700" : "text-red-700"
+                          )}>
+                            {tx.type}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatIST(tx.created_at)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {tx.description}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {tx.orders ? (
+                          <Link href={`/admin/orders/${tx.order_id}`} className="text-blue-600 hover:underline">
+                            #{tx.orders.display_id}
+                          </Link>
+                        ) : (
+                          <span className="text-gray-400">---</span>
+                        )}
+                      </td>
+                      <td className={cn(
+                        "px-6 py-4 whitespace-nowrap text-sm font-bold text-right",
+                        tx.amount > 0 ? "text-emerald-600" : "text-red-600"
+                      )}>
+                        {tx.amount > 0 ? '+' : ''}{tx.amount}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center text-gray-500">
+              <StarIcon className="w-12 h-12 text-gray-200 mb-3" />
+              <p className="font-medium">No transactions yet</p>
+              <p className="text-sm">This customer hasn&apos;t earned or spent any rewards.</p>
+            </div>
+          )}
+        </AdminCard>
+      </div>
+
+      <div className="h-20" /> {/* Spacer */}
     </div>
   )
 }

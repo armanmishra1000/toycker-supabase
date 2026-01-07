@@ -47,7 +47,7 @@ const ProductTemplate = async ({
       >
         <Breadcrumbs className="mb-6" items={[{ label: "Store", href: "/store" }, { label: product.name }]} />
         <div className="flex flex-col gap-10 xl:flex-row xl:items-start">
-          <div className="w-full xl:w-3/5">
+          <div className="w-full xl:w-3/5 xl:sticky xl:top-[120px] self-start">
             <ImageGallery images={images} />
           </div>
           <div className="w-full xl:w-2/5">
@@ -68,6 +68,39 @@ const ProductTemplate = async ({
             </Suspense>
             <div className="mt-6">
               <OrderInformation />
+              {(() => {
+                if (!product.video_url) return null
+                
+                // Simple ID extraction for standard formats
+                let videoId = ""
+                try {
+                   const url = new URL(product.video_url)
+                   if (url.hostname.includes("youtube.com")) {
+                     videoId = url.searchParams.get("v") || ""
+                   } else if (url.hostname.includes("youtu.be")) {
+                     videoId = url.pathname.slice(1)
+                   }
+                } catch (e) {
+                  // Fallback if full URL parsing fails or is just an ID
+                  videoId = product.video_url 
+                }
+
+                if (!videoId) return null
+
+                return (
+                  <div className="mt-6 aspect-video w-full overflow-hidden rounded-xl border border-slate-200">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={`https://www.youtube.com/embed/${videoId}`}
+                      title="Product Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="border-0"
+                    />
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </div >

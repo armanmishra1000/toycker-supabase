@@ -101,6 +101,16 @@ export async function POST(request: NextRequest) {
 
       console.log("[PAYU] Order created successfully:", order.id)
 
+      // Log "Order Placed" event
+      const { logOrderEvent } = await import("@/lib/data/admin")
+      await logOrderEvent(
+        order.id,
+        "order_placed",
+        "Order Placed",
+        "Order placed via PayU payment gateway.",
+        "system"
+      )
+
       // Success! Redirect to confirmation
       const response = htmlRedirect(`/order/confirmed/${order.id}`)
       response.cookies.delete("toycker_cart_id")

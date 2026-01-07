@@ -152,11 +152,10 @@ const Hero = ({ banners }: HeroProps) => {
                 <div className="w-full">
                   <div className="relative w-full overflow-hidden md:rounded-2xl bg-slate-200 aspect-[16/9]">
                     <div
-                      className={`absolute inset-0 ${
-                        loadedIds.has(slide.id)
+                      className={`absolute inset-0 ${loadedIds.has(slide.id)
                           ? "opacity-0"
                           : "animate-pulse bg-ui-bg-subtle"
-                      } transition-opacity duration-300`}
+                        } transition-opacity duration-300`}
                     />
                     <Image
                       src={slide.image_url}

@@ -6,56 +6,93 @@ type OrderDetailsProps = {
   showStatus?: boolean
 }
 
-const OrderDetails = ({ order, showStatus }: OrderDetailsProps) => {
-  const formatStatus = (str: string) => {
-    const formatted = str.split("_").join(" ")
+const OrderDetails = ({ order }: OrderDetailsProps) => {
+  const isCOD =
+    order.payment_method?.toLowerCase().includes("cod") ||
+    order.payment_method?.toLowerCase().includes("cash") ||
+    (order.metadata?.payment_method as string)?.toLowerCase() === "cod"
 
-    return formatted.slice(0, 1).toUpperCase() + formatted.slice(1)
-  }
+  const rewardsEarned = (order.metadata?.rewards_earned as number) || 0
 
   return (
-    <div>
-      <Text>
-        We have sent the order confirmation details to{" "}
-        <span
-          className="text-gray-900 font-semibold"
-          data-testid="order-email"
-        >
-          {order.customer_email}
-        </span>
-        .
-      </Text>
-      <Text className="mt-2">
-        Order date:{" "}
-        <span data-testid="order-date">
-          {new Date(order.created_at).toDateString()}
-        </span>
-      </Text>
-      <Text className="mt-2 text-blue-600">
-        Order number: <span data-testid="order-id">{order.display_id}</span>
-      </Text>
+    <div className="flex flex-col gap-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-y-1">
+          <p className="text-sm font-bold uppercase tracking-widest text-slate-400">
+            Confirmed To
+          </p>
+          <Text className="text-lg font-bold text-slate-900">
+            {order.customer_email || order.email}
+          </Text>
+          {order.shipping_address?.phone && (
+            <Text className="text-slate-500 font-medium">
+              {order.shipping_address.phone}
+            </Text>
+          )}
+        </div>
 
-      <div className="flex items-center text-xs gap-x-4 mt-4">
-        {showStatus && (
-          <>
-            <Text>
-              Order status:{" "}
-              <span className="text-gray-500 " data-testid="order-status">
-                {formatStatus(order.fulfillment_status)}
-              </span>
-            </Text>
-            <Text>
-              Payment status:{" "}
-              <span
-                className="text-gray-500 "
-                data-testid="order-payment-status"
-              >
-                {formatStatus(order.payment_status)}
-              </span>
-            </Text>
-          </>
-        )}
+        <div className="flex flex-col md:items-end gap-y-1">
+          <p className="text-sm font-bold uppercase tracking-widest text-slate-400">
+            Payment Status
+          </p>
+          <div className="flex items-center gap-x-2">
+            <span
+              className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm ${isCOD
+                  ? "bg-amber-100 text-amber-700 border border-amber-200"
+                  : "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                }`}
+            >
+              {isCOD ? "COD" : "Paid"}
+            </span>
+          </div>
+        </div>
       </div>
+
+      <div className="flex flex-wrap gap-6 items-center justify-between pb-6 border-b border-slate-100">
+        <div className="flex flex-col gap-y-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+            Order Date
+          </p>
+          <Text className="font-bold text-slate-800">
+            {new Date(order.created_at).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </Text>
+        </div>
+        <div className="flex flex-col md:items-end gap-y-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+            Order Number
+          </p>
+          <Text className="text-xl font-black text-blue-600 tracking-tight">
+            #{order.display_id}
+          </Text>
+        </div>
+      </div>
+
+      {rewardsEarned > 0 && (
+        <div className="group relative bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 overflow-hidden shadow-xl shadow-indigo-200 transition-all hover:scale-[1.01]">
+          {/* Animated background stars or sparkles could go here */}
+          <div className="absolute top-0 right-0 p-4 opacity-20 transform translate-x-4 -translate-y-4">
+            <span className="text-8xl">💎</span>
+          </div>
+
+          <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl shadow-inner group-hover:rotate-12 transition-transform">
+              🎁
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h4 className="text-white font-black text-xl mb-0.5">
+                Premium Rewards Credited!
+              </h4>
+              <p className="text-indigo-100 font-medium">
+                You earned <span className="text-white font-black text-2xl mx-1 animate-pulse">{rewardsEarned}</span> reward points from this purchase.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

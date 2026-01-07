@@ -93,14 +93,14 @@ export default function FulfillmentModal({ orderId, shippingPartners }: Fulfillm
 
                             <div>
                                 <label htmlFor="tracking_number" className="block text-sm font-bold text-gray-700 mb-2">
-                                    Tracking Number
-                                    <span className="font-normal text-gray-400 ml-1">(optional)</span>
+                                    Tracking Number *
                                 </label>
                                 <input
                                     type="text"
                                     name="tracking_number"
                                     id="tracking_number"
                                     placeholder="e.g., 1234567890"
+                                    required
                                     className="block w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
                                 />
                             </div>

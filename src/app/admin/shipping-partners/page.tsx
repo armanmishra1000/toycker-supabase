@@ -4,6 +4,7 @@ import { PlusIcon, TrashIcon, TruckIcon } from "@heroicons/react/24/outline"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
+import { formatIST } from "@/lib/util/date"
 
 export default async function AdminShippingPartners() {
     const partners = await getShippingPartners()
@@ -51,7 +52,7 @@ export default async function AdminShippingPartners() {
                                         </AdminBadge>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(partner.created_at).toLocaleDateString()}
+                                        {formatIST(partner.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

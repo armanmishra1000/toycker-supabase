@@ -7,14 +7,22 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
 import { useRouter } from "next/navigation"
 
+import {
+  addToWishlist,
+  getWishlistItems,
+  removeFromWishlist,
+} from "@lib/data/wishlist"
+
 type WishlistContextValue = {
   items: string[]
   isInWishlist: (productId: string) => boolean
-  toggleWishlist: (productId: string) => void
+  toggleWishlist: (productId: string) => Promise<void>
+  isInitialized: boolean
 }
 
 export const WISHLIST_UPDATED_EVENT = "toycker:wishlist:update"
@@ -40,30 +48,74 @@ type WishlistProviderProps = {
   children: ReactNode
   isAuthenticated?: boolean
   loginPath?: string
+  initialItems?: string[]
 }
 
 export const WishlistProvider = ({
   children,
   isAuthenticated = false,
   loginPath = "/account",
+  initialItems = [],
 }: WishlistProviderProps) => {
-  const [items, setItems] = useState<string[]>([])
+  const [items, setItems] = useState<string[]>(initialItems)
+  const [isInitialized, setIsInitialized] = useState(initialItems.length > 0)
+  const isInitializing = useRef(false)
   const router = useRouter()
 
   useEffect(() => {
-    setItems(readFromStorage())
-  }, [])
+    if (isAuthenticated) {
+      if (initialItems.length > 0) {
+        setItems(initialItems)
+        setIsInitialized(true)
+      } else if (!isInitialized && !isInitializing.current) {
+        isInitializing.current = true
+        getWishlistItems().then((dbItems) => {
+          setItems(dbItems)
+          setIsInitialized(true)
+        })
+      }
+    } else {
+      setItems(readFromStorage())
+      setIsInitialized(true)
+    }
+  }, [isAuthenticated, initialItems.length, isInitialized])
 
+  // Handle guest items merging when user logs in
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!isAuthenticated || !isInitialized) {
       return
     }
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-    } catch {
-      // Ignore storage errors for prototype scope
+
+    const guestItems = readFromStorage()
+    if (guestItems.length === 0) {
+      // Even if no items, we clear the storage to avoid carrying over "guest" state
+      window.localStorage.removeItem(STORAGE_KEY)
+      return
     }
-  }, [items])
+
+    const merge = async () => {
+      // Filter out items already in the DB to avoid redundant requests
+      const newItems = guestItems.filter((id) => !items.includes(id))
+
+      if (newItems.length > 0) {
+        // Sequentially add items (safe for simple wishlists)
+        for (const productId of newItems) {
+          try {
+            await addToWishlist(productId)
+          } catch (error) {
+            console.error(`Failed to merge item ${productId}:`, error)
+          }
+        }
+        // Force a re-fetch of the items from the DB to ensure sync
+        const dbItems = await getWishlistItems()
+        setItems(dbItems)
+      }
+
+      window.localStorage.removeItem(STORAGE_KEY)
+    }
+
+    merge()
+  }, [isAuthenticated, isInitialized]) // Depend on initialized to ensure we have the current DB state
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -103,20 +155,28 @@ export const WishlistProvider = ({
   }, [buildLoginRedirect, router])
 
   const toggleWishlist = useCallback(
-    (productId: string) => {
+    async (productId: string) => {
       if (!isAuthenticated) {
         redirectToLogin()
         return
       }
 
-      setItems((prev) => {
-        if (prev.includes(productId)) {
-          return prev.filter((id) => id !== productId)
+      const isRemoving = items.includes(productId)
+
+      try {
+        if (isRemoving) {
+          await removeFromWishlist(productId)
+          setItems((prev) => prev.filter((id) => id !== productId))
+        } else {
+          await addToWishlist(productId)
+          setItems((prev) => [...prev, productId])
         }
-        return [...prev, productId]
-      })
+      } catch (error) {
+        console.error("Wishlist operation failed:", error)
+        throw error // Re-throw so the button can handle loading state
+      }
     },
-    [isAuthenticated, redirectToLogin]
+    [isAuthenticated, items, redirectToLogin]
   )
 
   const value = useMemo<WishlistContextValue>(
@@ -124,8 +184,9 @@ export const WishlistProvider = ({
       items,
       isInWishlist: (productId: string) => items.includes(productId),
       toggleWishlist,
+      isInitialized,
     }),
-    [items, toggleWishlist]
+    [items, toggleWishlist, isInitialized]
   )
 
   return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>

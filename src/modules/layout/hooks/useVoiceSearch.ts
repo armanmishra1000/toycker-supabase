@@ -18,6 +18,7 @@ type SpeechRecognitionErrorEvent = {
 
 type SpeechRecognitionEvent = {
   results: SpeechRecognitionResult[]
+  resultIndex: number
 }
 
 type SpeechRecognitionShape = {
@@ -121,22 +122,36 @@ export const useVoiceSearch = ({
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const text = Array.from(event.results)
-        .map((result) => result[0]?.transcript ?? "")
-        .join(" ")
-        .trim()
+      let finalTranscript = ""
+      let interimTranscript = ""
 
-      setTranscript(text)
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript
+        } else {
+          interimTranscript += event.results[i][0].transcript
+        }
+      }
 
-      const lastResult = event.results[event.results.length - 1]
-      if (lastResult?.isFinal && text) {
-        onResultRef.current?.(text)
+      const currentText = finalTranscript || interimTranscript
+      setTranscript(currentText)
+
+      if (currentText && (finalTranscript || interimTranscript.length > 3)) {
+        if (inactivityTimeoutRef.current) window.clearTimeout(inactivityTimeoutRef.current)
+
+        if (finalTranscript) {
+          onResultRef.current?.(finalTranscript)
+        } else {
+          inactivityTimeoutRef.current = window.setTimeout(() => {
+            onResultRef.current?.(currentText)
+          }, 500)
+        }
       }
 
       clearInactivityTimer()
       inactivityTimeoutRef.current = window.setTimeout(() => {
         recognition.stop()
-      }, 8000)
+      }, 2500)
     }
 
     recognitionRef.current = recognition
@@ -160,7 +175,6 @@ export const useVoiceSearch = ({
       recognitionRef.current.start()
     } catch (err) {
       if (err instanceof DOMException && err.name === "InvalidStateError") {
-        // Already started; ignore
         return
       }
 

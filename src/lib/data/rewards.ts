@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { RewardWallet, RewardTransaction } from "@/lib/supabase/types"
+import { RewardWallet, RewardTransaction, RewardTransactionWithOrder } from "@/lib/supabase/types"
 import { revalidateTag } from "next/cache"
 import { cache } from "react"
 
@@ -37,23 +37,65 @@ export const getRewardWallet = cache(async (): Promise<RewardWallet | null> => {
  * Get transaction history for the current user's wallet.
  * Returns empty array if no wallet exists.
  */
-export async function getRewardTransactions(): Promise<RewardTransaction[]> {
+export async function getRewardTransactions(): Promise<RewardTransactionWithOrder[]> {
     const wallet = await getRewardWallet()
     if (!wallet) return []
 
     const supabase = await createClient()
-    const { data, error } = await supabase
+
+    // 1. Fetch transactions
+    const { data: transactions, error: txError } = await supabase
         .from("reward_transactions")
         .select("*")
         .eq("wallet_id", wallet.id)
         .order("created_at", { ascending: false })
 
-    if (error) {
-        console.error("Error fetching reward transactions:", error)
+    console.log(`DEBUG: Found ${transactions?.length || 0} transactions for wallet: ${wallet.id}`)
+
+    if (txError) {
+        console.error("DEBUG: Error fetching reward transactions:", {
+            message: txError.message,
+            details: txError.details,
+            hint: txError.hint,
+            code: txError.code
+        })
         return []
     }
 
-    return data as RewardTransaction[]
+    if (!transactions || transactions.length === 0) return []
+
+    // 2. Collect unique order IDs
+    const orderIds = Array.from(new Set(
+        transactions
+            .filter(tx => tx.order_id)
+            .map(tx => tx.order_id)
+    ))
+
+    // 3. Fetch order display IDs
+    let ordersMap: Record<string, number> = {}
+    if (orderIds.length > 0) {
+        const { data: orders, error: orderError } = await supabase
+            .from("orders")
+            .select("id, display_id")
+            .in("id", orderIds)
+
+        if (orderError) {
+            console.error("Error fetching order details for rewards:", orderError)
+        } else if (orders) {
+            ordersMap = orders.reduce((acc, order) => {
+                acc[order.id] = order.display_id
+                return acc
+            }, {} as Record<string, number>)
+        }
+    }
+
+    // 4. Map display IDs back to transactions
+    return transactions.map(tx => ({
+        ...tx,
+        orders: tx.order_id && ordersMap[tx.order_id]
+            ? { display_id: ordersMap[tx.order_id] }
+            : null
+    })) as RewardTransactionWithOrder[]
 }
 
 /**
@@ -135,7 +177,14 @@ export async function creditRewards(
         })
 
     if (txError) {
-        console.error("Error recording reward transaction:", txError)
+        console.error("DEBUG: Error recording reward transaction (EARNED):", {
+            error: txError,
+            wallet_id: wallet.id,
+            order_id: orderId,
+            userId
+        })
+    } else {
+        console.log("DEBUG: Successfully recorded reward transaction (EARNED) for wallet:", wallet.id)
     }
 
     revalidateTag("rewards")
@@ -184,7 +233,14 @@ export async function deductRewards(
         })
 
     if (txError) {
-        console.error("Error recording spend transaction:", txError)
+        console.error("DEBUG: Error recording reward transaction (SPENT):", {
+            error: txError,
+            wallet_id: wallet.id,
+            order_id: orderId,
+            userId
+        })
+    } else {
+        console.log("DEBUG: Successfully recorded reward transaction (SPENT) for wallet:", wallet.id)
     }
 
     revalidateTag("rewards")

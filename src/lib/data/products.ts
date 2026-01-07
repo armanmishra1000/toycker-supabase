@@ -1,6 +1,6 @@
 "use server"
 
-import { unstable_cache } from "next/cache"
+import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { Product } from "@/lib/supabase/types"
 import { SortOptions } from "@modules/store/components/refinement-list/types"
@@ -42,34 +42,24 @@ const normalizeProductImage = (product: Product): Product => {
   }
 }
 
-// For product listings (cards, grids) - minimal columns for egress optimization
-const PRODUCT_LIST_SELECT = `
-  id, name, handle, price, currency_code, image_url, thumbnail, images, status, created_at
+const PRODUCT_SELECT = `
+  *, 
+  variants:product_variants(*), 
+  options:product_options(*, values:product_option_values(*))
 `
 
-// For product detail page - includes variants and options
-const PRODUCT_DETAIL_SELECT = `
-  id, name, handle, description, price, currency_code, image_url, thumbnail, images, status, metadata, created_at,
-  variants:product_variants(id, title, sku, price, inventory_quantity),
-  options:product_options(id, title, values:product_option_values(id, value))
-`
-
-// Cache TTL: 24 hours in seconds
-const PRODUCTS_CACHE_TTL = 86400
-
-// Internal function for listProducts
-const listProductsInternal = async (options: {
+export const listProducts = cache(async function listProducts(options: {
   regionId?: string
   queryParams?: {
     limit?: number
     collection_id?: string[]
   }
-} = {}): Promise<{ response: { products: Product[]; count: number } }> => {
+} = {}): Promise<{ response: { products: Product[]; count: number } }> {
   const supabase = await createClient()
 
   let query = supabase
     .from("products")
-    .select(PRODUCT_LIST_SELECT, { count: "exact" })
+    .select(PRODUCT_SELECT, { count: "exact" })
 
   if (options.queryParams?.limit) {
     query = query.limit(options.queryParams.limit)
@@ -99,54 +89,33 @@ const listProductsInternal = async (options: {
 
   const products = (data || []).map((p) => normalizeProductImage(p as Product))
   return { response: { products, count: count || 0 } }
-}
+})
 
-export const listProducts = unstable_cache(
-  listProductsInternal,
-  ["products", "list"],
-  { revalidate: PRODUCTS_CACHE_TTL, tags: ["products"] }
-)
-
-// Internal function for retrieveProduct
-const retrieveProductInternal = async (id: string): Promise<Product | null> => {
+export const retrieveProduct = cache(async function retrieveProduct(id: string): Promise<Product | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
-    .select(PRODUCT_DETAIL_SELECT)
+    .select(PRODUCT_SELECT)
     .eq("id", id)
     .maybeSingle()
 
   if (error || !data) return null
   return normalizeProductImage(data as Product)
-}
+})
 
-export const retrieveProduct = unstable_cache(
-  retrieveProductInternal,
-  ["products", "detail"],
-  { revalidate: PRODUCTS_CACHE_TTL, tags: ["products"] }
-)
-
-// Internal function for getProductByHandle
-const getProductByHandleInternal = async (handle: string): Promise<Product | null> => {
+export const getProductByHandle = cache(async function getProductByHandle(handle: string): Promise<Product | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("products")
-    .select(PRODUCT_DETAIL_SELECT)
+    .select(PRODUCT_SELECT)
     .eq("handle", handle)
     .maybeSingle()
 
   if (error || !data) return null
   return normalizeProductImage(data as Product)
-}
+})
 
-export const getProductByHandle = unstable_cache(
-  getProductByHandleInternal,
-  ["products", "handle"],
-  { revalidate: PRODUCTS_CACHE_TTL, tags: ["products"] }
-)
-
-// Internal function for listPaginatedProducts
-const listPaginatedProductsInternal = async ({
+export const listPaginatedProducts = cache(async function listPaginatedProducts({
   page = 1,
   limit = 12,
   sortBy = "featured",
@@ -161,15 +130,19 @@ const listPaginatedProductsInternal = async ({
   availability?: string
   priceFilter?: { min?: number; max?: number }
   ageFilter?: string
-}) => {
+}) {
   const supabase = await createClient()
   const offset = (page - 1) * limit
 
   let query = supabase
     .from("products")
-    .select(PRODUCT_LIST_SELECT, { count: "exact" })
+    .select(PRODUCT_SELECT, { count: "exact" })
 
-  if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])
+  if (queryParams?.id) {
+    const ids = Array.isArray(queryParams.id) ? queryParams.id : [queryParams.id]
+    query = query.in("id", ids)
+  }
+
   if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])
 
   if (queryParams?.collection_id) {
@@ -214,10 +187,4 @@ const listPaginatedProductsInternal = async ({
     },
     pagination: { page, limit },
   }
-}
-
-export const listPaginatedProducts = unstable_cache(
-  listPaginatedProductsInternal,
-  ["products", "paginated"],
-  { revalidate: PRODUCTS_CACHE_TTL, tags: ["products"] }
-)
+})

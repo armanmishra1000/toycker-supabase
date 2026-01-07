@@ -8,6 +8,7 @@ import getShortDescription from "@modules/products/utils/get-short-description"
 import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
+import QuantitySelector from "@modules/common/components/quantity-selector"
 import { useOptionalWishlist } from "@modules/products/context/wishlist"
 import { isEqual } from "lodash"
 import {
@@ -26,8 +27,6 @@ import {
   Heart,
   Loader2,
   MessageCircleQuestion,
-  Minus,
-  Plus,
   Share2,
 } from "lucide-react"
 import { useCartSidebar } from "@modules/layout/context/cart-sidebar-context"
@@ -57,16 +56,16 @@ const optionsAsKeymap = (
   }, {})
 }
 
-export default function ProductActions({ product, disabled, showSupportActions = true, syncVariantParam = true, onActionComplete, clubDiscountPercentage }: ProductActionsProps) {
+export default function ProductActions({ product, disabled, showSupportActions = true, syncVariantParam = false, onActionComplete, clubDiscountPercentage }: ProductActionsProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [giftWrap, setGiftWrap] = useState(false)
   const wishlist = useOptionalWishlist()
-  const [localWishlistSaved, setLocalWishlistSaved] = useState(false)
   const [isQuestionOpen, setIsQuestionOpen] = useState(false)
   const [questionStatus, setQuestionStatus] = useState<"idle" | "success">(
     "idle"
@@ -94,15 +93,14 @@ export default function ProductActions({ product, disabled, showSupportActions =
     return (variant.inventory_quantity ?? 0) > 0
   }, [])
 
-  // If there is only 1 variant, preselect the options
-  useEffect(() => {
-    if (product.variants?.length === 1) {
-      const variantOptions = optionsAsKeymap(product.variants[0].options)
-      setOptions(variantOptions ?? {})
-    }
-  }, [product.variants])
+  // No-op - consolidated below
 
   const selectedVariant = useMemo(() => {
+    // Direct variant selection by ID (for simple variant dropdown)
+    if (selectedVariantId && product.variants) {
+      return product.variants.find((v) => v.id === selectedVariantId)
+    }
+
     // If it's a simple product, use the first variant (or product itself if mocked)
     if (isSimple && product.variants && product.variants.length > 0) {
       return product.variants[0]
@@ -112,14 +110,19 @@ export default function ProductActions({ product, disabled, showSupportActions =
       return undefined
     }
 
-    return product.variants.find((v: any) => {
+    return product.variants.find((v) => {
       const variantOptions = optionsAsKeymap(v.options)
       return isEqual(variantOptions, options)
     })
-  }, [product.variants, options, isSimple])
+  }, [product.variants, options, isSimple, selectedVariantId])
+
+  // Check if there are any options with actual values
+  const hasValidOptions = useMemo(() => {
+    return (product.options || []).some(option => (option.values?.length ?? 0) > 0)
+  }, [product.options])
 
   useEffect(() => {
-    if (selectedVariant || isSimple) {
+    if (isSimple) {
       return
     }
 
@@ -131,21 +134,24 @@ export default function ProductActions({ product, disabled, showSupportActions =
     const preferred = variants.find((variant: any) => isVariantAvailable(variant)) ?? variants[0]
     const variantOptions = optionsAsKeymap(preferred.options)
 
-    setOptions((prev) => {
-      if (Object.keys(prev).length > 0) {
-        return prev
-      }
-      return variantOptions ?? {}
-    })
-  }, [isVariantAvailable, product.variants, selectedVariant, isSimple])
-
-  useEffect(() => {
-    if (wishlist || typeof window === "undefined") {
-      return
+    // Only set if nothing is perfectly selected yet
+    if (!selectedVariant) {
+      setOptions(variantOptions ?? {})
+      setSelectedVariantId(preferred.id)
     }
-    const saved = window.localStorage.getItem(`wishlist-${product.id}`)
-    setLocalWishlistSaved(saved === "true")
-  }, [product.id, wishlist])
+  }, [isVariantAvailable, product.variants, selectedVariant, isSimple, hasValidOptions])
+
+  // Sync options when selectedVariantId changes manually (e.g. from Beetle color swatches)
+  useEffect(() => {
+    if (selectedVariantId && !hasValidOptions) {
+      const variant = product.variants?.find(v => v.id === selectedVariantId)
+      if (variant) {
+        const variantOptions = optionsAsKeymap(variant.options)
+        setOptions(variantOptions ?? {})
+      }
+    }
+  }, [selectedVariantId, hasValidOptions, product.variants])
+
 
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
@@ -202,6 +208,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
+    // If no variants exist, use product stock
+    if (!product.variants || product.variants.length === 0) {
+      return (product.stock_count || 0) > 0
+    }
+
     // If we don't manage inventory, we can always add to cart
     if (selectedVariant && !selectedVariant.manage_inventory) {
       return true
@@ -222,17 +233,22 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
     // Otherwise, we can't add to cart
     return false
-  }, [selectedVariant])
+  }, [selectedVariant, product.variants, product.stock_count])
 
   const maxQuantity = useMemo(() => {
+    // If no variants exist, use product stock
+    if (!product.variants || product.variants.length === 0) {
+      return Math.max(product.stock_count || 0, 0)
+    }
+
     if (!selectedVariant) {
-      return 10
+      return 0 // Changed from 10 to 0 to avoid "9 pieces left" bug when nothing is selected
     }
     if (!selectedVariant.manage_inventory || selectedVariant.allow_backorder) {
       return 10
     }
     return Math.max(selectedVariant.inventory_quantity ?? 0, 0)
-  }, [selectedVariant])
+  }, [selectedVariant, product.variants, product.stock_count])
 
   const updateQuantity = (direction: "inc" | "dec") => {
     setQuantity((prev) => {
@@ -245,22 +261,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
     })
   }
 
-  const toggleLocalWishlist = useCallback(() => {
-    if (typeof window === "undefined") {
-      return
-    }
-    const next = !localWishlistSaved
-    window.localStorage.setItem(`wishlist-${product.id}`, String(next))
-    setLocalWishlistSaved(next)
-  }, [product.id, localWishlistSaved])
-
   const handleWishlistClick = useCallback(() => {
     if (wishlist) {
       wishlist.toggleWishlist(product.id)
-      return
     }
-    toggleLocalWishlist()
-  }, [product.id, toggleLocalWishlist, wishlist])
+  }, [product.id, wishlist])
 
   const buildLineItemMetadata = useCallback(() => {
     if (!giftWrap) {
@@ -298,14 +303,25 @@ export default function ProductActions({ product, disabled, showSupportActions =
   ])
 
   const handleAddToCartClick = () => {
-    if (!selectedVariant?.id || isAdding) {
+    if (isAdding || (!selectedVariant?.id && product.variants && product.variants.length > 0)) {
       return
     }
 
     startAddToCart(async () => {
       try {
         openCart()
-        await addVariantToCart()
+        if (selectedVariant?.id) {
+          await addVariantToCart()
+        } else {
+          await optimisticAdd({
+            product,
+            variant: undefined,
+            quantity,
+            countryCode,
+            metadata: buildLineItemMetadata(),
+          })
+          onActionComplete?.()
+        }
       } catch (error) {
         console.error("Failed to add to cart", error)
       }
@@ -313,14 +329,15 @@ export default function ProductActions({ product, disabled, showSupportActions =
   }
 
   const handleBuyNowClick = async () => {
-    if (!selectedVariant?.id) {
+    if (isBuying || (!selectedVariant?.id && product.variants && product.variants.length > 0)) {
       return
     }
 
     setIsBuying(true)
     try {
       await createBuyNowCart({
-        variantId: selectedVariant.id,
+        variantId: selectedVariant?.id || null,
+        productId: product.id,
         quantity,
         countryCode,
         metadata: buildLineItemMetadata(),
@@ -382,30 +399,27 @@ export default function ProductActions({ product, disabled, showSupportActions =
     selectedVariant ? priceMeta.variantPrice : priceMeta.cheapestPrice
   )
 
-  const requiresSelection = !isSimple && (product.options?.length ?? 0) > 0 && !selectedVariant
+
+  const requiresSelection = !isSimple && hasValidOptions && !selectedVariant
 
   const canTransactBase =
     inStock &&
-    !!selectedVariant &&
+    (!!selectedVariant || (!product.variants || product.variants.length === 0)) &&
     !disabled &&
-    isValidVariant
+    (isValidVariant || (!product.variants || product.variants.length === 0))
 
   const isBusy = isAdding || isBuying
 
   const addToCartLabel = requiresSelection
     ? "Select options"
-    : !isValidVariant
-      ? "Select options"
-      : !inStock
-        ? "Out of stock"
-        : "Add to Cart"
+    : !inStock
+      ? "Out of stock"
+      : "Add to Cart"
 
   const disableAddButton = !canTransactBase || isAdding
   const disableBuyNowButton = !canTransactBase || isBuying
 
-  const isWishlistActive = wishlist
-    ? wishlist.isInWishlist(product.id)
-    : localWishlistSaved
+  const isWishlistActive = wishlist?.isInWishlist(product.id) ?? false
 
   return (
     <section className="flex flex-col gap-6">
@@ -415,11 +429,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
             {product.title}
           </h1>
           {(() => {
-            const blurb = getShortDescription(product, { fallbackToDescription: false })
-            if (!blurb) {
-              return null
-            }
-            return <p className="text-base text-slate-500">{blurb}</p>
+            // Deprecated location - keeping empty to effectively remove from top if needed, 
+            // or better yet, just remove this block if I am sure. 
+            // The user wants it above "Inclusive of all taxes".
+            // I will remove this block and place it down below.
+            return null
           })()}
         </div>
 
@@ -452,10 +466,15 @@ export default function ProductActions({ product, disabled, showSupportActions =
             </div>
           )}
         </div>
+        {(() => {
+          const blurb = getShortDescription(product, { fallbackToDescription: false })
+          if (!blurb) return null
+          return <p className="text-sm text-slate-500 mb-1">{blurb}</p>
+        })()}
         <p className="text-sm text-slate-500">Inclusive of all taxes</p>
       </div>
 
-      {!isSimple && (product.options?.length ?? 0) > 0 && (product.variants?.length ?? 0) > 1 && (
+      {!isSimple && hasValidOptions && (product.variants?.length ?? 0) > 1 && (
         <div className="flex flex-col gap-y-4">
           {(product.options || []).map((option) => {
             const normalizedTitle = option.title?.toLowerCase() ?? ""
@@ -476,6 +495,85 @@ export default function ProductActions({ product, disabled, showSupportActions =
           })}
         </div>
       )}
+
+      {/* Color swatch variant selector when options don't exist OR have no values, but variants do */}
+      {!isSimple && !hasValidOptions && (product.variants?.length ?? 0) > 1 && (() => {
+        const colorSwatchMap: Record<string, string> = {
+          red: "#E94235",
+          orange: "#FF8A3C",
+          yellow: "#F6E36C",
+          green: "#3BB273",
+          blue: "#3A7BEB",
+          navy: "#1D3C78",
+          purple: "#8E44AD",
+          pink: "#FF5D8F",
+          black: "#111111",
+          white: "#FAFAFA",
+          grey: "#D9D9D9",
+          gray: "#D9D9D9",
+          brown: "#9B5B2A",
+          gold: "#FFD700",
+          silver: "#C0C0C0",
+          beige: "#F5F5DC",
+          cream: "#FFFDD0",
+          maroon: "#800000",
+          teal: "#008080",
+          coral: "#FF7F50",
+          olive: "#808000",
+          mint: "#98FF98",
+          lavender: "#E6E6FA",
+          cyan: "#00FFFF",
+          turquoise: "#40E0D0",
+          sky: "#87CEEB",
+          indigo: "#4B0082",
+          violet: "#EE82EE",
+          magenta: "#FF00FF",
+          lime: "#00FF00",
+          charcoal: "#36454F",
+          slate: "#708090",
+          crimson: "#DC143C",
+        }
+
+        return (
+          <div className="flex flex-col gap-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-900">Color</span>
+              <span className="text-sm text-gray-500">
+                {selectedVariant?.title ?? "Choose"}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {product.variants?.map((variant) => {
+                const colorName = variant.title?.toLowerCase().trim() || ""
+                const colorHex = colorSwatchMap[colorName] || null
+                const isSelected = selectedVariantId === variant.id
+
+                return (
+                  <button
+                    key={variant.id}
+                    onClick={() => setSelectedVariantId(variant.id)}
+                    disabled={!!disabled || isAdding || isBuying}
+                    className={`relative flex h-12 w-12 items-center justify-center rounded-full border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
+                      ${isSelected ? "border-[#E7353A] ring-2 ring-[#FDD5DB]" : "border-gray-200 hover:border-gray-400"}`}
+                    title={variant.title}
+                  >
+                    <span
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full"
+                      style={{ backgroundColor: colorHex || "#f4f4f4" }}
+                    >
+                      {!colorHex && (
+                        <span className="text-[10px] font-bold text-gray-700">
+                          {variant.title?.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       <div className="space-y-3">
         <span className="text-sm font-medium text-slate-700">Add-ons</span>
@@ -510,32 +608,20 @@ export default function ProductActions({ product, disabled, showSupportActions =
         </label>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <p className="text-sm font-medium text-slate-700">Quantity</p>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => updateQuantity("dec")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:bg-slate-50"
-            aria-label="Decrease quantity"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <div className="flex h-12 min-w-[64px] items-center justify-center rounded-full border border-slate-200 text-lg font-semibold">
-            {quantity}
-          </div>
-          <button
-            type="button"
-            onClick={() => updateQuantity("inc")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:bg-slate-50"
-            aria-label="Increase quantity"
-            disabled={maxQuantity === 0 || (maxQuantity !== 0 && quantity >= maxQuantity)}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+        <div className="flex items-center gap-4">
+          <QuantitySelector
+            quantity={quantity}
+            onChange={setQuantity}
+            onIncrement={() => updateQuantity("inc")}
+            onDecrement={() => updateQuantity("dec")}
+            max={maxQuantity === 0 ? 1 : maxQuantity}
+            className="w-fit"
+          />
           {maxQuantity !== 0 && (
-            <p className="text-xs text-slate-500">
-              {Math.max(maxQuantity - quantity, 0)} pieces left in stock
+            <p className="text-xs text-slate-500 font-medium">
+              {Math.max(maxQuantity - quantity, 0)} items left in stock
             </p>
           )}
         </div>

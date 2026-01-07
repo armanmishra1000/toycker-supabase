@@ -22,30 +22,13 @@ interface DatabaseCartItem {
   id: string
   cart_id: string
   product_id: string
-  variant_id: string
+  variant_id: string | null
   quantity: number
   created_at: string
   updated_at: string
   product: Product | null
   variant: ProductVariant | null
   metadata?: Record<string, unknown>
-}
-
-/** Raw cart item from selective query - Supabase may return array or object depending on query */
-type ProductPartial = { id: string; name: string; handle: string; image_url: string | null; images: unknown[] }
-type VariantPartial = { id: string; title: string; sku: string | null; price: number }
-
-interface CartItemRaw {
-  id: string
-  cart_id: string
-  product_id: string
-  variant_id: string
-  quantity: number
-  created_at: string
-  updated_at: string
-  metadata?: Record<string, unknown>
-  product: ProductPartial | ProductPartial[] | null
-  variant: VariantPartial | VariantPartial[] | null
 }
 
 /** Shipping method stored in cart */
@@ -56,13 +39,10 @@ interface CartShippingMethod {
   min_order_free_shipping?: number | null
 }
 
-const mapCartItems = (items: CartItemRaw[], clubDiscountPercentage = 0): CartItem[] => {
+const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): CartItem[] => {
   return items.map((item) => {
-    // Handle both array and object returns from Supabase
-    const productRaw = item.product
-    const variantRaw = item.variant
-    const product = Array.isArray(productRaw) ? productRaw[0] : productRaw
-    const variant = Array.isArray(variantRaw) ? variantRaw[0] : variantRaw
+    const product = item.product
+    const variant = item.variant
 
     let thumbnail = product?.image_url
     if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
@@ -75,7 +55,7 @@ const mapCartItems = (items: CartItemRaw[], clubDiscountPercentage = 0): CartIte
       }
     }
 
-    const originalPrice = Number(variant?.price || 0)
+    const originalPrice = Number(variant?.price || product?.price || 0)
     const hasClubDiscount = clubDiscountPercentage > 0
     const discountedPrice = hasClubDiscount
       ? Math.round(originalPrice * (1 - clubDiscountPercentage / 100))
@@ -93,8 +73,8 @@ const mapCartItems = (items: CartItemRaw[], clubDiscountPercentage = 0): CartIte
       original_total: originalPrice * item.quantity,
       subtotal: discountedPrice * item.quantity,
       has_club_discount: hasClubDiscount,
-      product: product as Product | undefined,
-      variant: variant as ProductVariant | undefined
+      product: product ?? undefined,
+      variant: variant ?? undefined
     }
   })
 }
@@ -107,11 +87,11 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
   const { data: cartData, error } = await supabase
     .from("carts")
     .select(`
-      id, user_id, email, currency_code, shipping_address, billing_address, shipping_methods, payment_collection, metadata, created_at, updated_at,
+      *,
       items:cart_items(
-        id, cart_id, product_id, variant_id, quantity, metadata, created_at, updated_at,
-        product:products(id, name, handle, image_url, images),
-        variant:product_variants(id, title, sku, price)
+        *,
+        product:products(*),
+        variant:product_variants(*)
       )
     `)
     .eq("id", id)
@@ -250,7 +230,7 @@ export async function addToCart({
   const cart = await getOrSetCart()
   const supabase = await createClient()
 
-  let targetVariantId = variantId
+  let targetVariantId = variantId === productId ? undefined : variantId
   if (!targetVariantId) {
     const { data: variants } = await supabase
       .from("product_variants")
@@ -263,16 +243,20 @@ export async function addToCart({
     }
   }
 
-  if (!targetVariantId) {
-    throw new Error("Product has no variants")
-  }
-
-  const { data: existingItem } = await supabase
+  // Find if item already exists in cart. For single products (no variants), targetVariantId will be null.
+  const query = supabase
     .from("cart_items")
     .select("*")
     .eq("cart_id", cart.id)
-    .eq("variant_id", targetVariantId)
-    .maybeSingle()
+    .eq("product_id", productId)
+
+  if (targetVariantId) {
+    query.eq("variant_id", targetVariantId)
+  } else {
+    query.is("variant_id", null)
+  }
+
+  const { data: existingItem } = await query.maybeSingle()
 
   if (existingItem) {
     const currentQuantity = typeof existingItem.quantity === 'number' ? existingItem.quantity : 0
@@ -332,6 +316,11 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
 
   const supabase = await createClient()
 
+  const shippingPhone = formData.get("shipping_address.phone") as string
+  if (!shippingPhone || shippingPhone.trim() === "") {
+    return { message: "Phone number is required", success: false }
+  }
+
   const data = {
     email: formData.get("email") as string,
     shipping_address: {
@@ -367,10 +356,49 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
     return { message: error.message, success: false }
   }
 
+  // Claim cart for user if not already linked
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user && !cart.user_id) {
+    await supabase.from("carts").update({ user_id: user.id }).eq("id", cart.id)
+  }
+
+  // Save address to profile if requested
+  const saveToProfile = formData.get("save_address") === "on"
+  if (saveToProfile && user) {
+    try {
+      // Check if this exact address already exists for the user to avoid duplicates
+      const { data: existingAddresses, error: fetchError } = await supabase
+        .from("addresses")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("address_1", data.shipping_address.address_1)
+        .eq("postal_code", data.shipping_address.postal_code)
+        .maybeSingle()
+
+      if (!fetchError && !existingAddresses) {
+        await supabase.from("addresses").insert({
+          user_id: user.id,
+          first_name: data.shipping_address.first_name,
+          last_name: data.shipping_address.last_name,
+          address_1: data.shipping_address.address_1,
+          company: data.shipping_address.company,
+          postal_code: data.shipping_address.postal_code,
+          city: data.shipping_address.city,
+          country_code: data.shipping_address.country_code,
+          province: data.shipping_address.province,
+          phone: data.shipping_address.phone,
+        })
+      }
+    } catch (e) {
+      console.error("Failed to save address to profile:", e)
+    }
+  }
+
   // Update shipping method automatically
   await autoSelectStandardShipping(cart.id)
 
   revalidateTag("cart")
+  revalidateTag("customers")
   return { message: "Saved", success: true }
 }
 
@@ -554,6 +582,16 @@ export async function placeOrder() {
 
   if (orderError) throw new Error(orderError.message)
 
+  // Log "Order Placed" event
+  const { logOrderEvent } = await import("@lib/data/admin")
+  await logOrderEvent(
+    order.id,
+    "order_placed",
+    "Order Placed",
+    "Customer placed this order.",
+    "customer"
+  )
+
   // Handle rewards for club members
   if (order.user_id) {
     const { checkAndActivateMembership, getClubSettings } = await import("@lib/data/club")
@@ -599,6 +637,24 @@ export async function placeOrder() {
       }).eq("id", order.id)
     }
 
+    // --- Persist Lifetime Club Savings ---
+    if (cart.club_savings && cart.club_savings > 0) {
+      const currentSavings = Number(user?.user_metadata?.total_club_savings || 0)
+      const newSavings = currentSavings + cart.club_savings
+
+      await supabase.auth.updateUser({
+        data: {
+          total_club_savings: newSavings
+        }
+      })
+
+      // Sync to profiles table for admin accessibility
+      await supabase.from("profiles").update({
+        total_club_savings: newSavings
+      }).eq("id", order.user_id)
+    }
+    // -------------------------------------
+
     revalidateTag("rewards")
   }
 
@@ -610,11 +666,13 @@ export async function placeOrder() {
 
 export async function createBuyNowCart({
   variantId,
+  productId,
   quantity,
   countryCode,
   metadata
 }: {
-  variantId: string
+  variantId?: string | null
+  productId?: string
   quantity: number
   countryCode: string
   metadata?: Record<string, unknown>
@@ -632,13 +690,18 @@ export async function createBuyNowCart({
 
   if (error) throw new Error(error.message)
 
-  const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
+  let targetProductId = productId || ""
 
-  if (variant && variant.product_id) {
+  if (variantId && !targetProductId) {
+    const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
+    if (variant) targetProductId = variant.product_id
+  }
+
+  if (targetProductId) {
     await supabase.from("cart_items").insert({
       cart_id: newCartId,
-      product_id: variant.product_id,
-      variant_id: variantId,
+      product_id: targetProductId,
+      variant_id: variantId || null,
       quantity: quantity,
       metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null
     })

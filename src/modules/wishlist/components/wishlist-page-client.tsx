@@ -1,6 +1,3 @@
-"use client"
-
-import { WishlistProvider } from "@modules/products/context/wishlist"
 import WishlistContent from "@modules/wishlist/components/wishlist-content"
 
 type WishlistPageClientProps = {
@@ -8,19 +5,18 @@ type WishlistPageClientProps = {
   loginPath: string
   isCustomerLoggedIn: boolean
   clubDiscountPercentage?: number
+  initialItems?: string[]
 }
 
-const WishlistPageClient = ({ countryCode, loginPath, isCustomerLoggedIn, clubDiscountPercentage }: WishlistPageClientProps) => {
+const WishlistPageClient = ({
+  countryCode,
+  clubDiscountPercentage,
+}: WishlistPageClientProps) => {
   return (
-    <WishlistProvider
-      isAuthenticated={isCustomerLoggedIn}
-      loginPath={loginPath}
-    >
-      <WishlistContent
-        countryCode={countryCode}
-        clubDiscountPercentage={clubDiscountPercentage}
-      />
-    </WishlistProvider>
+    <WishlistContent
+      countryCode={countryCode}
+      clubDiscountPercentage={clubDiscountPercentage}
+    />
   )
 }
 

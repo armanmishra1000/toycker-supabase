@@ -11,9 +11,9 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "base", isLoading, children, disabled, ...props }, ref) => {
     const variants = {
-      primary: "bg-gray-900 text-white hover:bg-gray-800 shadow-sm hover:shadow-md",
-      secondary: "bg-white text-gray-900 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 shadow-sm hover:shadow-md",
-      danger: "bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md",
+      primary: "bg-gray-900 text-white hover:bg-gray-800 shadow-sm ",
+      secondary: "bg-white text-gray-900 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 shadow-sm ",
+      danger: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
       transparent: "bg-transparent text-gray-900 hover:bg-gray-100",
     }
 
@@ -28,7 +28,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || isLoading}
         className={cn(
-          "inline-flex items-center justify-center rounded-full font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 disabled:pointer-events-none disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]",
+          "inline-flex items-center justify-center rounded-full font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 disabled:pointer-events-none disabled:opacity-50",
           variants[variant],
           sizes[size],
           className

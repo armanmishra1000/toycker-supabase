@@ -1,6 +1,6 @@
 "use client"
 
-import { addToCart, deleteLineItem } from "@lib/data/cart"
+import { addToCart, deleteLineItem, updateLineItem } from "@lib/data/cart"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
 import { Cart, Product, ProductVariant, CartItem } from "@/lib/supabase/types"
 import isEqual from "lodash/isEqual"
@@ -16,10 +16,11 @@ import {
 } from "react"
 import { useLayoutData } from "@modules/layout/context/layout-data-context"
 import { useOptionalToast } from "@modules/common/context/toast-context"
+import { useCartPersistence } from "@lib/hooks/use-cart-persistence"
 
 type OptimisticAddInput = {
   product: Product
-  variant: ProductVariant
+  variant?: ProductVariant // Make optional
   quantity: number
   countryCode?: string
   metadata?: Record<string, string | number | boolean | null>
@@ -28,12 +29,15 @@ type OptimisticAddInput = {
 type CartStoreContextValue = {
   cart: Cart | null
   setFromServer: (cart: Cart | null) => void
+  clearCart: () => void
   optimisticAdd: (input: OptimisticAddInput) => Promise<void>
   optimisticRemove: (lineId: string) => Promise<void>
+  optimisticUpdateQuantity: (lineId: string, quantity: number) => Promise<void>
   reloadFromServer: () => Promise<void>
   isSyncing: boolean
   lastError: string | null
   isRemoving: (lineId: string) => boolean
+  isUpdating: (lineId: string) => boolean
 }
 
 const CartStoreContext = createContext<CartStoreContextValue | undefined>(undefined)
@@ -54,25 +58,25 @@ const mergeLineItems = (
 
 const buildOptimisticLineItem = (
   product: Product,
-  variant: ProductVariant,
+  variant: ProductVariant | undefined,
   quantity: number,
   _cartRef: Cart,
   metadata?: Record<string, string | number | boolean | null>,
 ): CartItem => {
-  const tempId = `temp-${variant.id}-${Date.now()}`
-  const price = variant.price
+  const tempId = `temp-${variant?.id || product.id}-${Date.now()}`
+  const price = variant?.price || product.price
   const total = price * quantity
 
   return {
     id: tempId,
-    title: variant.title || product.name,
+    title: variant?.title || product.name,
     thumbnail: product.thumbnail || product.image_url || undefined,
     quantity,
-    variant_id: variant.id,
+    variant_id: variant?.id || null,
     product_id: product.id,
     cart_id: "temp",
     metadata: (metadata as Record<string, unknown>) ?? {},
-    variant: variant,
+    variant: variant || undefined,
     product: product,
     product_title: product.name,
     product_handle: product.handle ?? undefined,
@@ -124,6 +128,13 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     previousCartRef.current = nextCart
   }, [])
 
+  const clearCart = useCallback(() => {
+    setCart(null)
+    previousCartRef.current = null
+    setRemovingIds(new Set())
+    setUpdatingIds(new Set())
+  }, [])
+
   const isRemoving = useCallback(
     (lineId: string) => removingIds.has(lineId),
     [removingIds],
@@ -151,7 +162,6 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           if (refreshed.ok) {
             const payload = (await refreshed.json()) as { cart: Cart | null }
             setFromServer(payload.cart)
-            showToast?.("Item removed from cart", "success")
           }
         } catch (error) {
           const errorMessage = (error as Error)?.message ?? "Failed to remove item"
@@ -184,7 +194,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
 
       const refreshFromApi = async () => {
         try {
-        const response = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
+          const response = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
           if (response.ok) {
             const payload = (await response.json()) as { cart: Cart | null }
             if (payload.cart) {
@@ -208,7 +218,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       ) => isEqual(left ?? {}, right ?? {})
 
       const existing = baseCart.items?.find(
-        (item) => item.variant_id === variant.id && areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
+        (item) => item.variant_id === (variant?.id || null) && areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
       )
       let nextItems: CartItem[]
 
@@ -239,12 +249,13 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           const serverCart = await addToCart({
             productId: product.id,
             quantity,
+            variantId: variant?.id,
           })
 
           if (serverCart) {
             setFromServer(serverCart)
             await refreshFromApi()
-            showToast?.("Item added to cart", "success")
+            // Toast removed - silent add for better UX
             return
           }
         } catch (error) {
@@ -272,7 +283,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       }
       const payload = (await response.json()) as { cart: Cart | null }
       setFromServer(payload.cart)
-      showToast?.("Cart reloaded", "success")
+      // Toast removed - silent reload for better UX
     } catch (error) {
       const errorMessage = (error as Error)?.message ?? "Failed to reload cart"
       setLastError(errorMessage)
@@ -282,18 +293,101 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [setFromServer, showToast])
 
+  // Enable localStorage persistence and cross-tab sync
+  useCartPersistence(cart, reloadFromServer)
+
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
+
+  const isUpdating = useCallback(
+    (lineId: string) => updatingIds.has(lineId),
+    [updatingIds]
+  )
+
+  const optimisticUpdateQuantity = useCallback(
+    async (lineId: string, quantity: number) => {
+      if (!cart) {
+        setLastError("No cart found")
+        return
+      }
+
+      setLastError(null)
+      setUpdatingIds((prev) => {
+        const next = new Set(prev)
+        next.add(lineId)
+        return next
+      })
+
+      const previousCart = cart
+
+      const nextItems = cart.items?.map((item) => {
+        if (item.id === lineId) {
+          const unitPrice = item.unit_price ?? 0
+          const originalUnitPrice = item.original_unit_price ?? unitPrice
+          return {
+            ...item,
+            quantity,
+            total: unitPrice * quantity,
+            original_total: originalUnitPrice * quantity,
+            updated_at: new Date().toISOString(),
+          }
+        }
+        return item
+      })
+
+      if (nextItems) {
+        setCart(mergeLineItems(cart, nextItems))
+      }
+
+      try {
+        await updateLineItem({ lineId, quantity })
+        const response = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
+        if (response.ok) {
+          const payload = (await response.json()) as { cart: Cart | null }
+          setFromServer(payload.cart)
+        }
+      } catch (error) {
+        const errorMessage = (error as Error)?.message ?? "Failed to update quantity"
+        setLastError(errorMessage)
+        showToast?.(errorMessage, "error")
+        setCart(previousCart)
+      } finally {
+        setUpdatingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(lineId)
+          return next
+        })
+      }
+    },
+    [cart, setFromServer, showToast]
+  )
+
   const value = useMemo(
     () => ({
       cart,
       setFromServer,
+      clearCart,
       optimisticAdd,
       optimisticRemove,
+      optimisticUpdateQuantity,
       reloadFromServer,
       isSyncing,
       lastError,
       isRemoving,
+      isUpdating,
     }),
-    [cart, isSyncing, lastError, optimisticAdd, optimisticRemove, reloadFromServer, setFromServer, isRemoving],
+    [
+      cart,
+      isSyncing,
+      lastError,
+      optimisticAdd,
+      optimisticRemove,
+      optimisticUpdateQuantity,
+      reloadFromServer,
+      setFromServer,
+      clearCart,
+      isRemoving,
+      isUpdating,
+    ]
   )
 
   return <CartStoreContext.Provider value={value}>{children}</CartStoreContext.Provider>

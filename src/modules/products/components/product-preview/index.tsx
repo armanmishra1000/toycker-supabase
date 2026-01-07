@@ -10,7 +10,7 @@ import WishlistButton from "@modules/products/components/wishlist-button"
 import { useOptionalCartSidebar } from "@modules/layout/context/cart-sidebar-context"
 import { useCartStore } from "@modules/cart/context/cart-store-context"
 import SafeRichText from "@modules/common/components/safe-rich-text"
-import { Loader2, ShoppingCart } from "lucide-react"
+import { Loader2, ShoppingCart, Eye } from "lucide-react"
 import ProductQuickViewModal from "./quick-view-modal"
 import { getProductPrice } from "@lib/util/get-product-price"
 
@@ -41,6 +41,19 @@ export default function ProductPreview({
   const cartSidebar = useOptionalCartSidebar()
   const openCart = cartSidebar?.openCart
   const { optimisticAdd } = useCartStore()
+
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    product.variants?.[0]?.id || null
+  )
+
+  const selectedVariant = useMemo(() => {
+    if (!selectedVariantId) return product.variants?.[0]
+    return product.variants?.find((v) => v.id === selectedVariantId)
+  }, [product.variants, selectedVariantId])
+
+  const hasValidOptions = useMemo(() => {
+    return (product.options || []).some(option => (option.values?.length ?? 0) > 0)
+  }, [product.options])
 
   // Use the central utility to calculate display price
   const { cheapestPrice } = useMemo(() => {
@@ -75,15 +88,31 @@ export default function ProductPreview({
   )
 
   const descriptionPreview = isListView && product.description ? product.description : undefined
-  const buttonLabel = status === "added" ? "Added!" : status === "error" ? "Try again" : "Add to cart"
+  // Determine if product requires option selection
+  const hasVariants = (product.variants?.length ?? 0) > 0 || (product.options?.length ?? 0) > 0
+
+  const buttonLabel = status === "added"
+    ? "Added!"
+    : status === "error"
+      ? "Try again"
+      : hasVariants
+        ? "View Options"
+        : "Add to cart"
 
   const openQuickView = async (event: MouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
     setIsQuickViewLoading(true)
-    // Quick view logic...
-    setIsQuickViewLoading(false)
     setIsQuickViewOpen(true)
+    setIsQuickViewLoading(false)
+  }
+
+  const handleAction = (event: MouseEvent) => {
+    if (hasVariants) {
+      openQuickView(event)
+      return
+    }
+    handleAddToCart(event)
   }
 
   const handleAddToCart = (event: MouseEvent) => {
@@ -96,7 +125,7 @@ export default function ProductPreview({
       try {
         await optimisticAdd({
           product,
-          variant: product.variants?.[0] || (product as any),
+          variant: selectedVariant || product.variants?.[0],
           quantity: 1,
           countryCode: "in",
         })
@@ -153,7 +182,7 @@ export default function ProductPreview({
 
               <button
                 type="button"
-                onClick={handleAddToCart}
+                onClick={handleAction}
                 className={cn(
                   "inline-flex items-center justify-center text-xs font-semibold text-white transition-all gap-0 sm:gap-2 rounded-full h-10 w-10 px-0 sm:h-9 sm:w-auto sm:px-4 bg-[#111827] hover:bg-primary shadow-sm hover:shadow-md active:scale-95"
                 )}
@@ -162,6 +191,8 @@ export default function ProductPreview({
               >
                 {isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : hasVariants ? (
+                  <Eye className="h-4 w-4 sm:hidden" aria-hidden="true" />
                 ) : (
                   <ShoppingCart className="h-4 w-4 sm:hidden" aria-hidden="true" />
                 )}

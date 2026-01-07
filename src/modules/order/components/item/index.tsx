@@ -1,9 +1,6 @@
 import { CartItem } from "@/lib/supabase/types"
 import { Text } from "@modules/common/components/text"
-
-import LineItemOptions from "@modules/common/components/line-item-options"
-import LineItemPrice from "@modules/common/components/line-item-price"
-import Thumbnail from "@modules/products/components/thumbnail"
+import { convertToLocale } from "@lib/util/money"
 
 type ItemProps = {
   item: CartItem
@@ -12,37 +9,44 @@ type ItemProps = {
 
 const Item = ({ item, currencyCode }: ItemProps) => {
   return (
-    <tr className="w-full border-b border-gray-200 last:border-0" data-testid="product-row">
-      <td className="!pl-0 p-4 w-24">
-        <div className="flex w-16">
-          <Thumbnail thumbnail={item.thumbnail} size="square" />
-        </div>
-      </td>
-
-      <td className="text-left align-top py-4">
-        <Text
-          className="text-base font-medium text-ui-fg-base"
-          data-testid="product-name"
-        >
-          {item.product_title}
-        </Text>
-        <LineItemOptions variant={item.variant} data-testid="product-variant" />
-      </td>
-
-      <td className="!pr-0 py-4 align-top">
-        <span className="!pr-0 flex flex-col items-end h-full justify-center gap-y-1">
-          <div className="flex gap-x-2 items-center">
-            <Text className="text-ui-fg-muted text-sm">
-              Qty: <span data-testid="product-quantity">{item.quantity}</span>
+    <tr className="group border-b border-slate-50 last:border-0" data-testid="product-row">
+      <td className="py-6 pl-6 sm:pl-10">
+        <div className="flex gap-x-4 items-center">
+          <div className="w-16 h-20 sm:w-20 sm:h-28 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-sm transition-transform group-hover:scale-105 border border-slate-100">
+            {item.thumbnail ? (
+              <img
+                src={item.thumbnail}
+                alt={item.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
+                📦
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-y-1">
+            <Text className="font-bold text-slate-900 leading-tight">
+              {item.product_title || item.title}
+            </Text>
+            {item.variant?.title && (
+              <Text className="text-xs sm:text-sm text-slate-500 font-medium">
+                {item.variant.title}
+              </Text>
+            )}
+            <Text className="text-xs sm:text-sm text-slate-400 font-bold uppercase tracking-tighter">
+              Qty: {item.quantity}
             </Text>
           </div>
-
-          <LineItemPrice
-            item={item}
-            style="tight"
-            currencyCode={currencyCode}
-          />
-        </span>
+        </div>
+      </td>
+      <td className="py-6 pr-6 sm:pr-10 text-right align-middle">
+        <Text className="font-black text-slate-900 text-lg">
+          {convertToLocale({
+            amount: item.total,
+            currency_code: currencyCode,
+          })}
+        </Text>
       </td>
     </tr>
   )

@@ -70,15 +70,15 @@ export const contactLocations: ContactLocation[] = [
     title: "BRANCH 2 - ADAJAN",
     label: "Branch 2",
     addressLines: [
-      "109, 1st Floor, Infinity Tower",
-      "Nr. G.D. Goenka School, LP Savani Road",
-      "Adajan, Surat 395009",
+      "Gujarat Gas circle, krishna Nagar Society,",
+      "Premjinagar Society-1, Gita Nagar,",
+      "Adajan, Surat",
     ],
     phone: {
       display: "+91 90991 44170",
       href: "tel:+919099144170",
     },
-    mapQuery: "Toycker Branch Adajan Surat",
-    virtualTourUrl: "https://maps.google.com/?q=Toycker+Adajan+Surat",
+    mapQuery: "Gujarat Gas circle, krishna Nagar Society, Premjinagar Society-1, Gita Nagar, Adajan, Surat",
+    virtualTourUrl: "https://maps.app.goo.gl/eGNbyMecEDwgeJ3FA",
   },
 ]

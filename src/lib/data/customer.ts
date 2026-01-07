@@ -2,7 +2,8 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { revalidateTag } from "next/cache"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { revalidateTag, revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { CustomerProfile, Address } from "@/lib/supabase/types"
 
@@ -14,9 +15,10 @@ export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> 
     return null
   }
 
+
   const { data: addresses } = await supabase
     .from("addresses")
-    .select("id, first_name, last_name, address_1, address_2, city, province, postal_code, country_code, phone, company")
+    .select("id, first_name, last_name, address_1, address_2, city, province, postal_code, country_code, phone, company, is_default_billing, is_default_shipping")
     .eq("user_id", user.id)
 
   return {
@@ -24,7 +26,7 @@ export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> 
     email: user.email!,
     first_name: user.user_metadata?.first_name || "",
     last_name: user.user_metadata?.last_name || "",
-    phone: user.phone || "",
+    phone: user.user_metadata?.phone || user.phone || "",
     created_at: user.created_at,
     addresses: (addresses as Address[]) || [],
     is_club_member: user.user_metadata?.is_club_member || false,
@@ -42,7 +44,8 @@ export async function signup(_currentState: unknown, formData: FormData) {
 
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signUp({
+  // We rely on Supabase's built-in email collision check instead of a slow admin list
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -51,15 +54,33 @@ export async function signup(_currentState: unknown, formData: FormData) {
         last_name,
         phone,
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/auth/confirm`,
     },
   })
+
+  console.log("Signup triggered for:", email, "Redirecting to:", `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/auth/confirm`)
 
   if (error) {
     return error.message
   }
 
+  // Supabase "success" handling:
+  // 1. If email is already in use, `identities` will be an empty array
+  if (data.user && data.user.identities && data.user.identities.length === 0) {
+    return "Email already in use. Please sign in instead."
+  }
+
+  // 2. If email confirmation is enabled and the user is new, `session` will be null
+  if (data.user && !data.session) {
+    console.log("Signup successful, requiring confirmation. Returning success message.")
+    return "Check your email for the confirmation link to complete your signup."
+  }
+
+  revalidatePath("/", "layout")
+  revalidatePath("/account", "layout")
   revalidateTag("customers")
+
+  // redirect MUST NOT be in try-catch (it's not here, but being safe)
   redirect("/account")
 }
 
@@ -71,7 +92,7 @@ export async function login(_currentState: unknown, formData: FormData) {
 
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -80,28 +101,34 @@ export async function login(_currentState: unknown, formData: FormData) {
     return error.message
   }
 
-  revalidateTag("customers")
+  let isAdmin = false
 
   // Check if user is an admin and redirect accordingly
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (user) {
+  if (data.user) {
     const ADMIN_EMAILS = ["admin@toycker.com", "tutanymo@fxzig.com"]
-    const isHardcodedAdmin = ADMIN_EMAILS.includes(user.email || "")
+    const isHardcodedAdmin = ADMIN_EMAILS.includes(data.user.email || "")
 
     if (isHardcodedAdmin) {
-      redirect("/admin")
-    }
+      isAdmin = true
+    } else {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .single()
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    if (profile?.role === "admin") {
-      redirect("/admin")
+      if (profile?.role === "admin") {
+        isAdmin = true
+      }
     }
+  }
+
+  revalidatePath("/", "layout")
+  revalidatePath("/account", "layout")
+  revalidateTag("customers")
+
+  if (isAdmin) {
+    redirect("/admin")
   }
 
   redirect(returnUrl || "/account")
@@ -113,7 +140,7 @@ export async function signout() {
 
   revalidateTag("customers")
   revalidateTag("cart")
-  redirect("/")
+  redirect("/account")
 }
 
 export async function updateCustomer(data: Partial<CustomerProfile>) {
@@ -136,6 +163,7 @@ export async function updateCustomer(data: Partial<CustomerProfile>) {
   }
 
   revalidateTag("customers")
+  revalidatePath("/", "layout")
 }
 
 export async function addCustomerAddress(
@@ -161,6 +189,8 @@ export async function addCustomerAddress(
     province: formData.get("province") as string,
     postal_code: formData.get("postal_code") as string,
     phone: formData.get("phone") as string,
+    is_default_billing: formData.get("isDefaultBilling") === "true",
+    is_default_shipping: formData.get("isDefaultShipping") === "true",
   }
 
   const { error } = await supabase.from("addresses").insert(address)
@@ -170,6 +200,7 @@ export async function addCustomerAddress(
   }
 
   revalidateTag("customers")
+  revalidatePath("/", "layout")
   return { success: true, error: null }
 }
 
@@ -191,6 +222,8 @@ export async function updateCustomerAddress(
     province: formData.get("province") as string,
     postal_code: formData.get("postal_code") as string,
     phone: formData.get("phone") as string,
+    is_default_billing: formData.get("isDefaultBilling") === "true",
+    is_default_shipping: formData.get("isDefaultShipping") === "true",
   }
 
   const { error } = await supabase
@@ -203,6 +236,7 @@ export async function updateCustomerAddress(
   }
 
   revalidateTag("customers")
+  revalidatePath("/", "layout")
   return { success: true, error: null }
 }
 

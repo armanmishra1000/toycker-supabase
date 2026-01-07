@@ -1,73 +1,119 @@
-import { Buffer } from "node:buffer"
-import { getImageUrl } from "@lib/util/get-image-url"
-import type { SearchResultsPayload } from "@lib/data/search"
-import { listProducts } from "@lib/data/products"
+import sharp from "sharp"
+import { pipeline, env, RawImage } from "@xenova/transformers"
+import { createClient } from "@/lib/supabase/server"
+import { searchEntities, SearchResultsPayload } from "./search"
 
-type ImageSearchArgs = {
+// Configuration for Transformers.js
+const EMBEDDING_MODEL = "Xenova/clip-vit-base-patch32"
+
+// Serverless optimization: Use /tmp for model caching if available (Vercel)
+if (process.env.NODE_ENV === 'production') {
+  env.cacheDir = "/tmp/transformers-cache"
+}
+
+env.allowLocalModels = false
+env.useBrowserCache = false
+
+// Singleton for the pipeline
+let imagePipeline: any = null
+
+async function getPipeline() {
+  const start = Date.now()
+  if (!imagePipeline) {
+    console.log(`[ImageSearch] Loading model: ${EMBEDDING_MODEL}...`)
+    imagePipeline = await pipeline("image-feature-extraction", EMBEDDING_MODEL, {
+      quantized: true, // Reduced model size for serverless (150MB vs 300MB)
+    })
+    console.log(`[ImageSearch] Model loaded in ${Date.now() - start}ms`)
+  }
+  return imagePipeline
+}
+
+export const isImageSearchEnabled = true
+
+type SearchByImageArgs = {
   fileBuffer: Buffer
   countryCode: string
   limit?: number
 }
 
-const FALLBACK_LIMIT = 6
-
-export const isImageSearchEnabled = Boolean(process.env.IMAGE_SEARCH_PROVIDER)
-
-export const searchByImage = async ({
+export async function searchByImage({
   fileBuffer,
   countryCode,
-  limit = FALLBACK_LIMIT,
-}: ImageSearchArgs): Promise<SearchResultsPayload> => {
-  // Basic prototype: if no provider configured, return top products fallback to keep UX fast.
-  // Use byteLength to avoid unused variable warnings and allow future provider integration.
-  const _size = fileBuffer.byteLength
+  limit = 6,
+}: SearchByImageArgs): Promise<SearchResultsPayload> {
+  try {
+    const pipe = await getPipeline()
 
-  if (!countryCode) {
-    throw new Error("countryCode is required for image search")
-  }
+    // Extract raw pixel data using sharp.
+    // This is more robust in Node/Windows environments.
+    const { data, info } = await sharp(fileBuffer)
+      .raw()
+      .toBuffer({ resolveWithObject: true })
 
-  // When a provider is configured, plug in provider call here. For now, reuse products list as fast fallback.
-  const { response } = await listProducts(
-    {
-      queryParams: {
-        limit,
-      },
+    const image = new RawImage(new Uint8Array(data), info.width, info.height, info.channels)
+
+    // Generate Embedding
+    const output = await pipe(image, { pooling: "mean", normalize: true })
+
+    // output.data is the Float32Array
+    const embedding = Array.from(output.data)
+
+    // Query Supabase
+    const supabase = await createClient()
+
+    const { data: productIds, error } = await supabase.rpc("match_products", {
+      query_embedding: embedding,
+      match_threshold: 0.5, // Logic: > 0.5 similarity
+      match_count: limit
+    })
+
+    if (error) {
+      console.error("Vector search error:", error)
+      throw new Error("Vector search failed")
     }
-  )
 
-  return {
-    products: response.products.map((product) => {
-      const firstVariant = Array.isArray(product.variants)
-        ? (product.variants[0] as
-          | (typeof product.variants[number] & {
-            prices?: Array<{ amount: number; currency_code: string }>
-          })
-          | undefined)
-        : undefined
+    if (!productIds || productIds.length === 0) {
+      return { products: [], categories: [], collections: [], suggestions: [] }
+    }
 
-      const firstPrice = firstVariant?.prices?.[0]
+    const ids = productIds.map((p: any) => p.id)
 
-      const price = firstPrice
-        ? {
-          amount: firstPrice.amount,
-          currencyCode: firstPrice.currency_code,
-          formatted: firstPrice.amount.toLocaleString(undefined, {
-            style: "currency",
-            currency: firstPrice.currency_code,
-          }),
-        }
-        : undefined
+    // Fetch full product details
+    // We reuse searchEntities logic or fetch directly?
+    // searchEntities is text based. Let's reuse basic listing but filtering by IDs.
 
-      return {
-        id: product.id,
-        title: product.title,
-        handle: product.handle,
-        thumbnail: product.thumbnail || (product.images?.[0] ? getImageUrl(product.images[0]) : null) || null,
-        price,
-      }
-    }),
-    categories: [],
-    collections: [],
-    suggestions: [],
+    // Since we optimized searchEntities to be text based, we can't easily reuse it "as is" without refactoring.
+    // Let's just fetch the products by IDs properly.
+
+    const { data: products } = await supabase
+      .from("products")
+      .select("id, name, handle, image_url, price, currency_code, thumbnail")
+      .in("id", ids)
+
+    // Normalize
+    const normalizedProducts = (products || []).map((p: any) => ({
+      id: p.id,
+      title: p.name,
+      handle: p.handle,
+      thumbnail: p.image_url || p.thumbnail,
+      price: {
+        amount: p.price,
+        currencyCode: p.currency_code,
+        formatted: `₹${p.price}`,
+      },
+    }))
+
+    return {
+      products: normalizedProducts,
+      categories: [],
+      collections: [],
+      suggestions: [],
+    }
+
+  } catch (err) {
+    console.error("Image search failed:", err)
+    // Fallback or rethrow
+    throw err
   }
 }

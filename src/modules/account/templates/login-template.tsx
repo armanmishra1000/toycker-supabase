@@ -1,18 +1,44 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Suspense, useMemo, useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 
 import Register from "@modules/account/components/register"
 import Login from "@modules/account/components/login"
 import AuthShell from "@modules/account/components/auth-shell"
+import ErrorMessage from "@modules/checkout/components/error-message"
 
 export enum LOGIN_VIEW {
   SIGN_IN = "sign-in",
   REGISTER = "register",
 }
 
-const LoginTemplate = ({ returnUrl }: { returnUrl?: string }) => {
-  const [currentView, setCurrentView] = useState("sign-in")
+const LoginTemplateContent = ({ returnUrl }: { returnUrl?: string }) => {
+  const [currentView, setCurrentView] = useState<LOGIN_VIEW>(LOGIN_VIEW.SIGN_IN)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // Clear error from URL when view changes to avoid confusing persistent errors
+  useEffect(() => {
+    if (searchParams.has("auth_error") || searchParams.has("signup_success")) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete("auth_error")
+      params.delete("signup_success")
+      const newUrl = params.toString() ? `?${params.toString()}` : ""
+      router.replace(`${window.location.pathname}${newUrl}`, { scroll: false })
+    }
+  }, [currentView, router, searchParams])
+
+  const authError = searchParams.get("auth_error")
+  const signupSuccess = searchParams.get("signup_success")
+
+  const errorMsg = authError === "invaild_or_expired_link"
+    ? "The confirmation link is invalid or has expired. Please try signing up again or contact support."
+    : null
+
+  const infoMsg = signupSuccess === "true"
+    ? "Check your email for the confirmation link to complete your signup."
+    : null
 
   const copy = useMemo(
     () =>
@@ -35,12 +61,30 @@ const LoginTemplate = ({ returnUrl }: { returnUrl?: string }) => {
       title={copy.title}
       subtitle={copy.subtitle}
     >
+      {errorMsg && (
+        <div className="mb-4">
+          <ErrorMessage error={errorMsg} />
+        </div>
+      )}
+      {infoMsg && (
+        <div className="mb-4">
+          <ErrorMessage error={infoMsg} variant="info" />
+        </div>
+      )}
       {currentView === "sign-in" ? (
         <Login setCurrentView={setCurrentView} returnUrl={returnUrl} />
       ) : (
         <Register setCurrentView={setCurrentView} /> // Todo: Register might also need returnUrl
       )}
     </AuthShell>
+  )
+}
+
+const LoginTemplate = (props: { returnUrl?: string }) => {
+  return (
+    <Suspense fallback={<div className="w-full h-full flex items-center justify-center p-8">Loading...</div>}>
+      <LoginTemplateContent {...props} />
+    </Suspense>
   )
 }
 

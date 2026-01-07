@@ -5,7 +5,7 @@ import { cn } from "@lib/util/cn"
 import { updateLineItem } from "@lib/data/cart"
 import { CartItem } from "@/lib/supabase/types"
 import { getImageUrl } from "@lib/util/get-image-url"
-import CartItemSelect from "@modules/cart/components/cart-item-select"
+import QuantitySelector from "@modules/common/components/quantity-selector"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import DeleteButton from "@modules/common/components/delete-button"
 import LineItemOptions from "@modules/common/components/line-item-options"
@@ -17,6 +17,7 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import Image from "next/image"
 import { isGiftWrapLine } from "@modules/cart/utils/gift-wrap"
 import { useState } from "react"
+import { useCartStore } from "@modules/cart/context/cart-store-context"
 
 type ItemProps = {
   item: CartItem
@@ -25,27 +26,19 @@ type ItemProps = {
 }
 
 const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
-  const [updating, setUpdating] = useState(false)
+  const { optimisticUpdateQuantity, isUpdating, isRemoving } = useCartStore()
   const [error, setError] = useState<string | null>(null)
 
   const giftWrapLine = isGiftWrapLine(item.metadata)
   const displayTitle = giftWrapLine ? "Gift Wrap" : item.product_title
   const canNavigate = Boolean(item.product_handle && !giftWrapLine)
 
-  const changeQuantity = async (quantity: number) => {
-    setError(null)
-    setUpdating(true)
-
-    await updateLineItem({
-      lineId: item.id,
-      quantity,
-    })
-      .catch((err) => {
-        setError(err.message)
-      })
-      .finally(() => {
-        setUpdating(false)
-      })
+  const handleQuantityChange = async (newQuantity: number) => {
+    try {
+      await optimisticUpdateQuantity(item.id, newQuantity)
+    } catch (err: any) {
+      setError(err.message || "Failed to update quantity")
+    }
   }
 
   // TODO: Update this to grab the actual max inventory
@@ -53,7 +46,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const maxQuantity = giftWrapLine
     ? 10
     : item.variant?.manage_inventory
-      ? 10
+      ? item.variant.inventory_quantity ?? 10
       : maxQtyFromInventory
 
   const thumbnailWrapperClass = cn("flex flex-shrink-0 rounded-xl overflow-hidden shadow-sm", {
@@ -150,19 +143,15 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           <div className="flex md:hidden items-center gap-2 mt-3">
             <div className="flex items-center gap-2 flex-1">
               <span className="text-xs text-slate-500">Qty:</span>
-              <CartItemSelect
-                value={item.quantity}
-                onChange={(value: any) => changeQuantity(parseInt(value.target.value))}
-                className="w-14 h-8 px-2 py-1 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-200"
+              <QuantitySelector
+                quantity={item.quantity}
+                onChange={handleQuantityChange}
+                max={maxQuantity}
+                loading={isUpdating(item.id)}
+                disabled={isRemoving(item.id)}
+                size="small"
                 data-testid="product-select-button"
-              >
-                {Array.from({ length: Math.min(maxQuantity, 10) }, (_, i) => (
-                  <option value={i + 1} key={i + 1}>
-                    {i + 1}
-                  </option>
-                ))}
-              </CartItemSelect>
-              {updating && <Spinner />}
+              />
             </div>
             <div className="flex-shrink-0 ml-auto">
               <DeleteButton id={item.id} data-testid="product-delete-button" />
@@ -174,18 +163,14 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
       {/* Quantity Column - Desktop only */}
       {type === "full" && (
         <div className="hidden lg:flex items-center justify-center">
-          <CartItemSelect
-            value={item.quantity}
-            onChange={(value: any) => changeQuantity(parseInt(value.target.value))}
-            className="w-18 h-10 px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-200"
+          <QuantitySelector
+            quantity={item.quantity}
+            onChange={handleQuantityChange}
+            max={maxQuantity}
+            loading={isUpdating(item.id)}
+            disabled={isRemoving(item.id)}
             data-testid="product-select-button"
-          >
-            {Array.from({ length: Math.min(maxQuantity, 10) }, (_, i) => (
-              <option value={i + 1} key={i + 1}>
-                {i + 1}
-              </option>
-            ))}
-          </CartItemSelect>
+          />
         </div>
       )}
 

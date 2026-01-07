@@ -23,6 +23,7 @@ export default function ProductVariantEditor({
             title: v.title,
             sku: v.sku || "",
             price: v.price,
+            compare_at_price: v.compare_at_price || null,
             inventory_quantity: v.inventory_quantity,
         }))
     )
@@ -34,6 +35,7 @@ export default function ProductVariantEditor({
                 title: "",
                 sku: "",
                 price: 0,
+                compare_at_price: null,
                 inventory_quantity: 0,
             },
         ])
@@ -59,7 +61,7 @@ export default function ProductVariantEditor({
         }
     }
 
-    const handleChange = (index: number, field: keyof VariantFormData, value: string | number) => {
+    const handleChange = (index: number, field: keyof VariantFormData, value: string | number | null) => {
         const newVariants = [...variants]
         newVariants[index] = { ...newVariants[index], [field]: value }
         setVariants(newVariants)
@@ -87,7 +89,8 @@ export default function ProductVariantEditor({
                             <tr>
                                 <th className="px-4 py-3 min-w-[150px]">Title / Option</th>
                                 <th className="px-4 py-3 w-[150px]">SKU</th>
-                                <th className="px-4 py-3 w-[120px]">Price</th>
+                                <th className="px-4 py-3 w-[120px]">Selling Price</th>
+                                <th className="px-4 py-3 w-[120px]">MRP</th>
                                 <th className="px-4 py-3 w-[100px]">Stock</th>
                                 <th className="px-4 py-3 w-[50px]"></th>
                             </tr>
@@ -126,6 +129,15 @@ export default function ProductVariantEditor({
                                         <input
                                             type="number"
                                             className="w-full border-gray-300 rounded-md text-sm focus:ring-black focus:border-black"
+                                            placeholder="Optional"
+                                            value={variant.compare_at_price || ""}
+                                            onChange={(e) => handleChange(index, "compare_at_price", e.target.value === "" ? null : parseFloat(e.target.value))}
+                                        />
+                                    </td>
+                                    <td className="p-2">
+                                        <input
+                                            type="number"
+                                            className="w-full border-gray-300 rounded-md text-sm focus:ring-black focus:border-black"
                                             placeholder="0"
                                             value={variant.inventory_quantity}
                                             onChange={(e) => handleChange(index, "inventory_quantity", e.target.value === "" ? 0 : parseInt(e.target.value))}
@@ -145,7 +157,7 @@ export default function ProductVariantEditor({
                             ))}
                             {variants.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="p-8 text-center text-gray-400 italic">
+                                    <td colSpan={6} className="p-8 text-center text-gray-400 italic">
                                         No variants yet. Add one to get started.
                                     </td>
                                 </tr>

@@ -2,9 +2,26 @@ import { Disclosure } from "@headlessui/react"
 import { Button } from "@modules/common/components/button"
 import { cn } from "@lib/util/cn"
 import { useEffect } from "react"
+import { useFormStatus } from "react-dom"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
-import { useFormStatus } from "react-dom"
+
+// Separate component to use useFormStatus inside form context
+const SubmitButton = () => {
+  const { pending } = useFormStatus()
+
+  return (
+    <Button
+      isLoading={pending}
+      className="rounded-xl bg-primary border-primary shadow-none hover:bg-foreground transition-all text-base"
+      type="submit"
+      data-testid="save-button"
+      size="base"
+    >
+      Save changes
+    </Button>
+  )
+}
 
 type AccountInfoProps = {
   label: string
@@ -31,18 +48,21 @@ const AccountInfo = ({
 }: AccountInfoProps) => {
   const { state, close, toggle } = useToggleState()
 
-  const { pending } = useFormStatus()
-
   const handleToggle = () => {
     clearState()
-    setTimeout(() => toggle(), 100)
+    toggle()
   }
 
   useEffect(() => {
     if (isSuccess) {
       close()
+      // Auto-clear success message after 3 seconds
+      const timer = setTimeout(() => {
+        clearState()
+      }, 3000)
+      return () => clearTimeout(timer)
     }
-  }, [isSuccess, close])
+  }, [isSuccess, close, clearState])
 
   if (!editable) {
     return (
@@ -82,7 +102,11 @@ const AccountInfo = ({
           <Button
             variant="secondary"
             className="w-[100px] min-h-[35px] py-1 rounded-xl"
-            onClick={handleToggle}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleToggle()
+            }}
             type={state ? "reset" : "button"}
             data-testid="edit-button"
             data-active={state}
@@ -106,7 +130,7 @@ const AccountInfo = ({
           data-testid="success-message"
         >
           <div className="p-2 my-4 bg-green-100 text-green-700 rounded text-xs font-medium">
-            <span>{label} updated succesfully</span>
+            <span>{label} updated successfully</span>
           </div>
         </Disclosure.Panel>
       </Disclosure>
@@ -134,7 +158,7 @@ const AccountInfo = ({
         <Disclosure.Panel
           static
           className={cn(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-visible",
+            "transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden",
             {
               "max-h-[1000px] opacity-100": state,
               "max-h-0 opacity-0": !state,
@@ -144,14 +168,7 @@ const AccountInfo = ({
           <div className="flex flex-col gap-y-2 py-4">
             <div>{children}</div>
             <div className="flex items-center justify-end mt-2">
-              <Button
-                isLoading={pending}
-                className="w-full small:max-w-[180px] rounded-xl py-4 bg-primary border-primary shadow-none hover:bg-foreground transition-all text-base"
-                type="submit"
-                data-testid="save-button"
-              >
-                Save changes
-              </Button>
+              <SubmitButton />
             </div>
           </div>
         </Disclosure.Panel>

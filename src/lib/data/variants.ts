@@ -1,10 +1,11 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { ProductVariant } from "@/lib/supabase/types"
 
 export const retrieveVariant = async (
   variant_id: string
-): Promise<any | null> => {
+): Promise<ProductVariant | null> => {
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -18,5 +19,5 @@ export const retrieveVariant = async (
     return null
   }
 
-  return data
+  return data as ProductVariant | null
 }

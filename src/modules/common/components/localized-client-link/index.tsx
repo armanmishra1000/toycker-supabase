@@ -30,7 +30,7 @@ const LocalizedClientLink = ({
     <Link
       {...props}
       href={resolvedHref}
-      className={cn("click-feedback", className)}
+      className={className}
     >
       {children}
     </Link>
