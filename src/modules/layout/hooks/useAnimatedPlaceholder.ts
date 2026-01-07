@@ -20,13 +20,18 @@ export const useAnimatedPlaceholder = ({
   const [isDeleting, setIsDeleting] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
+  const phrasesRef = useRef(phrases)
   useEffect(() => {
-    if (!enabled || phrases.length === 0) {
-      setCurrentText(phrases[0] || "")
+    phrasesRef.current = phrases
+  }, [phrases])
+
+  useEffect(() => {
+    if (!enabled || phrasesRef.current.length === 0) {
+      setCurrentText(phrasesRef.current[0] || "")
       return
     }
 
-    const currentPhrase = phrases[currentPhraseIndex]
+    const currentPhrase = phrasesRef.current[currentPhraseIndex]
 
     const animate = () => {
       if (!isDeleting && currentText === currentPhrase) {
@@ -35,7 +40,7 @@ export const useAnimatedPlaceholder = ({
         }, pauseDuration)
       } else if (isDeleting && currentText === "") {
         setIsDeleting(false)
-        setCurrentPhraseIndex((prev) => (prev + 1) % phrases.length)
+        setCurrentPhraseIndex((prev) => (prev + 1) % phrasesRef.current.length)
       } else if (isDeleting) {
         timeoutRef.current = setTimeout(() => {
           setCurrentText(currentPhrase.substring(0, currentText.length - 1))
@@ -54,7 +59,7 @@ export const useAnimatedPlaceholder = ({
         clearTimeout(timeoutRef.current)
       }
     }
-  }, [currentText, currentPhraseIndex, isDeleting, phrases, typingSpeed, deletingSpeed, pauseDuration, enabled])
+  }, [currentText, currentPhraseIndex, isDeleting, typingSpeed, deletingSpeed, pauseDuration, enabled])
 
   return currentText
 }

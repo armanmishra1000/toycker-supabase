@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   title: "Checkout",
 }
 
+import { CheckoutProvider } from "@modules/checkout/context/checkout-context"
+
 export default async function Checkout() {
   const cart = await retrieveCart()
 
@@ -30,36 +32,38 @@ export default async function Checkout() {
   const paymentMethods = await listCartPaymentMethods(cart.region_id ?? "")
 
   return (
-    <div className="content-container px-4 py-6 sm:px-6 sm:py-8">
-      {/* Heading */}
-      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4 sm:mb-6">Checkout</h1>
+    <CheckoutProvider>
+      <div className="content-container px-4 py-6 sm:px-6 sm:py-8">
+        {/* Heading */}
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4 sm:mb-6">Checkout</h1>
 
-      {/* Breadcrumbs */}
-      <Breadcrumbs
-        items={[
-          { label: "Cart", href: "/cart" },
-          { label: "Checkout" },
-        ]}
-        className="mb-6 sm:mb-8"
-      />
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: "Cart", href: "/cart" },
+            { label: "Checkout" },
+          ]}
+          className="mb-6 sm:mb-8"
+        />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_420px] gap-4 sm:gap-6">
-        {/* Left Column: Shipping Address + Payment Method */}
-        <div className="w-full">
-          <CheckoutForm
-            cart={cart}
-            customer={customer}
-            paymentMethods={paymentMethods ?? []}
-          />
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_420px] gap-4 sm:gap-6">
+          {/* Left Column: Shipping Address + Payment Method */}
+          <div className="w-full">
+            <CheckoutForm
+              cart={cart}
+              customer={customer}
+              paymentMethods={paymentMethods ?? []}
+            />
+          </div>
 
-        {/* Right Column: Order Summary + Complete Order */}
-        <div className="w-full">
-          <PaymentWrapper cart={cart}>
-            <CheckoutSummary cart={cart} />
-          </PaymentWrapper>
+          {/* Right Column: Order Summary + Complete Order */}
+          <div className="w-full">
+            <PaymentWrapper cart={cart}>
+              <CheckoutSummary cart={cart} />
+            </PaymentWrapper>
+          </div>
         </div>
       </div>
-    </div>
+    </CheckoutProvider>
   )
 }

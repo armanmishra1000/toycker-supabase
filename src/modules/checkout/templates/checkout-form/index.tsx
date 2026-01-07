@@ -31,10 +31,10 @@ export default async function CheckoutForm({
         />
       </div>
 
-      {/* Delivery Method Section - Display Only */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+      {/* Delivery Method Section - Hidden as requested, auto-select logic remains in background */}
+      {/* <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
         <ShippingInfo cart={cart} />
-      </div>
+      </div> */}
 
       {/* Payment Method Section */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
