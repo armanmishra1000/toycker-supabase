@@ -7,23 +7,25 @@ import Link from "next/link"
 import DeleteCustomerButton from "@modules/admin/components/delete-customer-button"
 import { UsersIcon } from "@heroicons/react/24/outline"
 import { formatIST } from "@/lib/util/date"
+import { cn } from "@lib/util/cn"
 
 export default async function AdminCustomers({
   searchParams
 }: {
-  searchParams: Promise<{ page?: string; search?: string }>
+  searchParams: Promise<{ page?: string; search?: string; type?: string }>
 }) {
-  const { page = "1", search = "" } = await searchParams
+  const { page = "1", search = "", type = "all" } = await searchParams
   const pageNumber = parseInt(page, 10) || 1
 
   const { customers, count, totalPages, currentPage } = await getAdminCustomers({
     page: pageNumber,
     limit: 20,
-    search: search || undefined
+    search: search || undefined,
+    type: type as any
   })
 
   const hasSearch = search && search.trim().length > 0
-  const buildUrl = (newPage?: number, clearSearch = false) => {
+  const buildUrl = (newPage?: number, newType?: string, clearSearch = false) => {
     const params = new URLSearchParams()
     if (newPage && newPage > 1) {
       params.set("page", newPage.toString())
@@ -31,24 +33,60 @@ export default async function AdminCustomers({
     if (!clearSearch && hasSearch) {
       params.set("search", search)
     }
+    const finalType = newType || type
+    if (finalType && finalType !== "all") {
+      params.set("type", finalType)
+    }
     const queryString = params.toString()
     return queryString ? `/admin/customers?${queryString}` : "/admin/customers"
   }
+
+  const tabs = [
+    { id: "all", label: "All" },
+    { id: "admin", label: "Administrators" },
+    { id: "club", label: "Club Members" },
+    { id: "customer", label: "Customers" },
+  ]
 
   return (
     <div className="space-y-6">
       <AdminPageHeader title="Customers" subtitle="Manage your customer details and history." />
 
       {/* Search Bar */}
-      <AdminSearchInput defaultValue={search} basePath="/admin/customers" placeholder="Search customers by name or email..." />
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
+        <div className="flex-1 w-full">
+          <AdminSearchInput defaultValue={search} basePath="/admin/customers" placeholder="Search customers..." />
+        </div>
+      </div>
 
       {/* Results Count */}
       <div className="text-sm text-gray-500">
-        Showing {count > 0 ? ((currentPage - 1) * 20) + 1 : 0} to {Math.min(currentPage * 20, count)} of {count} customers
+        Showing {count > 0 ? ((currentPage - 1) * 20) + 1 : 0} to {Math.min(currentPage * 20, count)} of {count} {type === 'all' ? '' : type + ' '}customers
       </div>
 
       <div className="p-0 border-none shadow-sm bg-transparent">
         <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
+          {/* Tabs - Integrated into Card */}
+          <div className="flex px-4 border-b border-gray-200">
+            {tabs.map((tab) => {
+              const isActive = type === tab.id
+              return (
+                <Link
+                  key={tab.id}
+                  href={buildUrl(1, tab.id)}
+                  className={cn(
+                    "px-4 py-3 text-sm font-medium border-b-2 transition-all relative top-[1px]",
+                    isActive
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200"
+                  )}
+                >
+                  {tab.label}
+                </Link>
+              )
+            })}
+          </div>
+
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-[#f9fafb]">
               <tr>
@@ -95,12 +133,12 @@ export default async function AdminCustomers({
                       {hasSearch ? (
                         <p className="text-xs text-gray-400 mt-1">
                           Try adjusting your search or{" "}
-                          <Link href={buildUrl()} className="text-indigo-600 hover:underline">
+                          <Link href={buildUrl(1, type, true)} className="text-indigo-600 hover:underline">
                             clear the search
                           </Link>
                         </p>
                       ) : (
-                        <p className="text-xs text-gray-400 mt-1">No customers yet.</p>
+                        <p className="text-xs text-gray-400 mt-1">No customers in this category yet.</p>
                       )}
                     </div>
                   </td>
