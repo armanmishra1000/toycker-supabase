@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { CustomerProfile, Address } from "@/lib/supabase/types"
+import { getBaseURL } from "@/lib/util/env"
 
 export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> => {
   const supabase = await createClient()
@@ -54,11 +55,11 @@ export async function signup(_currentState: unknown, formData: FormData) {
         last_name,
         phone,
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/auth/confirm`,
+      emailRedirectTo: `${getBaseURL()}/auth/confirm`,
     },
   })
 
-  console.log("Signup triggered for:", email, "Redirecting to:", `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/auth/confirm`)
+  console.log("Signup triggered for:", email, "Redirecting to:", `${getBaseURL()}/auth/confirm`)
 
   if (error) {
     return error.message

@@ -34,7 +34,14 @@ export async function updateSession(request: NextRequest) {
   )
 
   // refreshing the auth token
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Early redirect for checkout if not authenticated
+  if (request.nextUrl.pathname.startsWith('/checkout') && !user) {
+    const redirectUrl = new URL('/login', request.url)
+    redirectUrl.searchParams.set('returnUrl', '/checkout?step=address')
+    return NextResponse.redirect(redirectUrl)
+  }
 
   return supabaseResponse
 }

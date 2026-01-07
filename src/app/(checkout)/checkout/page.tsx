@@ -15,17 +15,17 @@ export const metadata: Metadata = {
 import { CheckoutProvider } from "@modules/checkout/context/checkout-context"
 
 export default async function Checkout() {
-  const cart = await retrieveCart()
-
-  if (!cart) {
-    return notFound()
-  }
-
   const customer = await retrieveCustomer()
 
   // Require login for checkout
   if (!customer) {
-    redirect(`/login?returnUrl=${encodeURIComponent('/checkout?step=address')}`)
+    redirect(`/login?returnUrl=${encodeURIComponent("/checkout?step=address")}`)
+  }
+
+  const cart = await retrieveCart()
+
+  if (!cart) {
+    return notFound()
   }
 
   // Fetch payment methods at page level for right column
