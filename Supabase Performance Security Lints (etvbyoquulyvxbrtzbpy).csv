@@ -1,0 +1,2 @@
+name,title,level,facing,categories,description,detail,remediation,metadata,cache_key
+rls_disabled_in_public,RLS Disabled in Public,ERROR,EXTERNAL,"[""SECURITY""]",Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST,"Table \`public.product_categories\` is public, but RLS has not been enabled.",https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public,"{""name"":""product_categories"",""type"":""table"",""schema"":""public""}",rls_disabled_in_public_public_product_categories

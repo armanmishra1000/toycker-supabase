@@ -16,6 +16,7 @@ import RecentlyViewedTracker from "@modules/products/components/recently-viewed-
 import { getProductReviews } from "@/lib/actions/reviews"
 
 import { retrieveCustomer } from "@lib/data/customer"
+import { getYoutubeId, getYoutubeEmbedUrl } from "@/lib/util/youtube"
 
 type ProductTemplateProps = {
   product: Product
@@ -69,30 +70,17 @@ const ProductTemplate = async ({
             <div className="mt-6">
               <OrderInformation />
               {(() => {
-                if (!product.video_url) return null
-                
-                // Simple ID extraction for standard formats
-                let videoId = ""
-                try {
-                   const url = new URL(product.video_url)
-                   if (url.hostname.includes("youtube.com")) {
-                     videoId = url.searchParams.get("v") || ""
-                   } else if (url.hostname.includes("youtu.be")) {
-                     videoId = url.pathname.slice(1)
-                   }
-                } catch (e) {
-                  // Fallback if full URL parsing fails or is just an ID
-                  videoId = product.video_url 
-                }
+                const videoId = getYoutubeId(product.video_url)
+                const embedUrl = getYoutubeEmbedUrl(videoId)
 
-                if (!videoId) return null
+                if (!embedUrl) return null
 
                 return (
                   <div className="mt-6 aspect-video w-full overflow-hidden rounded-xl border border-slate-200">
                     <iframe
                       width="100%"
                       height="100%"
-                      src={`https://www.youtube.com/embed/${videoId}`}
+                      src={embedUrl}
                       title="Product Video"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
