@@ -23,7 +23,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" data-mode="light" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <NextTopLoader color="#830404ff" showSpinner={false} height={3} />
+        {/* <NextTopLoader color="#059669" showSpinner={false} height={3} /> */}
         <Providers
           isAuthenticated={Boolean(customer)}
           initialWishlistItems={wishlistItems}
