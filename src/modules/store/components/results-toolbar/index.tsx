@@ -24,11 +24,7 @@ type ResultsToolbarProps = {
   sortBy: SortOptions
 }
 
-const viewModes: { value: ViewMode; label: string; icon: ComponentType<{ className?: string }> }[] = [
-  { value: "grid-4", label: "4 column", icon: LayoutGrid },
-  { value: "grid-5", label: "5 column", icon: PanelsTopLeft },
-  { value: "list", label: "List", icon: Rows },
-]
+
 
 const ResultsToolbar = ({ totalCount, viewMode, sortBy }: ResultsToolbarProps) => {
   const router = useRouter()
@@ -76,54 +72,123 @@ const ResultsToolbar = ({ totalCount, viewMode, sortBy }: ResultsToolbarProps) =
   })()
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
-      <div className="flex flex-wrap items-center gap-3">
-        {filterDrawer ? (
-          <button
-            type="button"
-            onClick={filterDrawer.open}
-            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm md:px-3 md:py-2 md:text-xs font-semibold text-gray-900 transition hover:border-gray-300 shadow-sm md:shadow-none"
-          >
-            <SlidersHorizontal className="h-4 w-4" aria-hidden />
-            <span>Filters</span>
-            {filterDrawer.activeCount > 0 && (
-              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-gray-500">
-                {filterDrawer.activeCount}
-              </span>
-            )}
-          </button>
-        ) : null}
-        <p className="text-sm text-gray-900">
-          {countText}
-        </p>
-      </div>
+    <div className="flex flex-col gap-3 border-b border-gray-100 pb-4 md:gap-4">
+      {/* Primary Toolbar Actions */}
+      <div className="flex items-center justify-between w-full gap-4">
+        <div className="flex items-center gap-3">
+          {filterDrawer ? (
+            <button
+              type="button"
+              onClick={filterDrawer.open}
+              className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm md:px-3 md:py-2 md:text-xs font-semibold text-gray-900 transition hover:border-gray-300 shadow-sm md:shadow-none"
+            >
+              <SlidersHorizontal className="h-4 w-4" aria-hidden />
+              <span>Filters</span>
+              {filterDrawer.activeCount > 0 && (
+                <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-gray-500">
+                  {filterDrawer.activeCount}
+                </span>
+              )}
+            </button>
+          ) : null}
 
-      <div className="flex w-full flex-1 flex-wrap items-center justify-end gap-2 text-sm text-gray-900 small:flex-nowrap">
-        <div className="flex items-center gap-2" aria-label="Toggle product layout">
-          {viewModes.map((mode) => {
-            const isActive = effectiveViewMode === mode.value
-            const Icon = mode.icon
-            return (
-              <button
-                key={mode.value}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => handleViewChange(mode.value)}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm md:px-3 md:py-2 md:text-xs font-semibold transition-all shadow-sm md:shadow-none hidden md:inline-flex",
-                  isActive
-                    ? "border-transparent bg-gray-900 text-white shadow-sm"
-                    : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-900"
-                )}
-              >
-                <Icon className="h-4 w-4" aria-hidden />
-                <span>{mode.label}</span>
-              </button>
-            )
-          })}
+          {/* Desktop Count Display */}
+          <div className="hidden md:block">
+            <p className="text-sm text-gray-900 font-medium">
+              {countText}
+            </p>
+          </div>
         </div>
 
-        <SortDropdown value={effectiveSortBy} onChange={handleSortChange} />
+        <div className="flex items-center gap-2">
+          {/* View Mode Toggle (Desktop only) */}
+          {/* View Mode Toggle */}
+          <div className="hidden md:flex items-center gap-2" aria-label="Toggle product layout">
+            {/* 4 Column (Medium/1280px+) */}
+            <button
+              type="button"
+              onClick={() => handleViewChange("grid-4")}
+              className={cn(
+                "hidden medium:inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold transition-all hover:shadow-sm",
+                effectiveViewMode === "grid-4"
+                  ? "border-transparent bg-gray-900 text-white shadow-sm"
+                  : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-900"
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" aria-hidden />
+              <span>4 column</span>
+            </button>
+
+            {/* 5 Column (Medium/1280px+) */}
+            <button
+              type="button"
+              onClick={() => handleViewChange("grid-5")}
+              className={cn(
+                "hidden medium:inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold transition-all hover:shadow-sm",
+                effectiveViewMode === "grid-5"
+                  ? "border-transparent bg-gray-900 text-white shadow-sm"
+                  : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-900"
+              )}
+            >
+              <PanelsTopLeft className="h-4 w-4" aria-hidden />
+              <span>5 column</span>
+            </button>
+
+            {/* 3 Column (Small/1024px only) */}
+            <button
+              type="button"
+              onClick={() => handleViewChange("grid-4")}
+              className={cn(
+                "hidden small:inline-flex medium:hidden items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold transition-all hover:shadow-sm",
+                effectiveViewMode !== "list"
+                  ? "border-transparent bg-gray-900 text-white shadow-sm"
+                  : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-900"
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" aria-hidden />
+              <span>3 column</span>
+            </button>
+
+            {/* 2 Column (MD/768px only) */}
+            <button
+              type="button"
+              onClick={() => handleViewChange("grid-4")}
+              className={cn(
+                "hidden md:inline-flex small:hidden items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold transition-all hover:shadow-sm",
+                effectiveViewMode !== "list"
+                  ? "border-transparent bg-gray-900 text-white shadow-sm"
+                  : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-900"
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" aria-hidden />
+              <span>2 column</span>
+            </button>
+
+            {/* List Toggle (Standard) */}
+            <button
+              type="button"
+              onClick={() => handleViewChange("list")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-semibold transition-all hover:shadow-sm",
+                effectiveViewMode === "list"
+                  ? "border-transparent bg-gray-900 text-white shadow-sm"
+                  : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-900"
+              )}
+            >
+              <Rows className="h-4 w-4" aria-hidden />
+              <span>List</span>
+            </button>
+          </div>
+
+          <SortDropdown value={effectiveSortBy} onChange={handleSortChange} />
+        </div>
+      </div>
+
+      {/* Mobile Count Display (Below filters) */}
+      <div className="md:hidden">
+        <p className="text-sm text-gray-500 font-medium">
+          {countText}
+        </p>
       </div>
     </div>
   )

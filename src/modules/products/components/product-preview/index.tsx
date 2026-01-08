@@ -10,7 +10,7 @@ import WishlistButton from "@modules/products/components/wishlist-button"
 import { useOptionalCartSidebar } from "@modules/layout/context/cart-sidebar-context"
 import { useCartStore } from "@modules/cart/context/cart-store-context"
 import SafeRichText from "@modules/common/components/safe-rich-text"
-import { Loader2, ShoppingCart, Eye } from "lucide-react"
+import { Loader2, ShoppingCart, Eye, ShoppingBag } from "lucide-react"
 import ProductQuickViewModal from "./quick-view-modal"
 import { getProductPrice } from "@lib/util/get-product-price"
 
@@ -161,17 +161,54 @@ export default function ProductPreview({
               isFeatured={isFeatured}
               className="h-full w-full rounded-2xl border-none bg-transparent p-0 shadow-none object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
-            <div className="absolute right-3 top-3 translate-x-4 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 z-10">
+            {/* Desktop Hover Actions (Top Right) */}
+            <div className="absolute right-3 top-3 translate-x-4 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 z-10 hidden sm:block">
               <WishlistButton
                 productId={product.id}
                 productTitle={product.name}
               />
             </div>
+
+            {/* Mobile Actions Overlay (Bottom Right) */}
+            <div className="absolute right-2 bottom-2 flex flex-col gap-2 z-20 sm:hidden">
+              <WishlistButton
+                productId={product.id}
+                productTitle={product.name}
+              />
+              <button
+                type="button"
+                onClick={handleAction}
+                disabled={isPending}
+                className="rounded-full bg-white/90 p-2 text-ui-fg-muted transition hover:text-ui-fg-base w-12 h-12 flex justify-center items-center shadow-sm disabled:cursor-not-allowed"
+              >
+                {isPending ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                ) : (
+                  <ShoppingBag className="w-6 h-6 text-slate-900" />
+                )}
+              </button>
+            </div>
             {/* Overlay for hover effect */}
             <div className="pointer-events-none absolute inset-0 rounded-2xl bg-black/0 transition-colors duration-300 group-hover:bg-black/5" />
+
+            {/* Hover Action Button */}
+            <div className="absolute inset-x-0 bottom-0 p-3 translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hidden sm:block z-20">
+              <button
+                type="button"
+                onClick={handleAction}
+                className="w-full bg-white text-slate-900 border border-gray-100 rounded-full py-3 text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+                disabled={isPending}
+              >
+                {isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  buttonLabel
+                )}
+              </button>
+            </div>
           </div>
 
-          <div className={cn("flex flex-1 flex-col gap-2 mt-3")}>
+          <div className={cn("flex flex-1 flex-col gap-1 mt-3")}>
             <div className="space-y-1">
               <Text className={titleClassName} data-testid="product-title">
                 {product.name}
@@ -185,27 +222,8 @@ export default function ProductPreview({
               )}
             </div>
 
-            <div className="mt-auto flex items-center justify-between gap-4">
+            <div className="mt-auto flex items-start justify-between gap-2">
               <PreviewPrice price={cheapestPrice} />
-
-              <button
-                type="button"
-                onClick={handleAction}
-                className={cn(
-                  "inline-flex items-center justify-center text-xs font-semibold text-white transition-all gap-0 sm:gap-2 rounded-full h-10 w-10 px-0 sm:h-9 sm:w-auto sm:px-4 bg-[#111827] hover:bg-primary shadow-sm hover:shadow-md active:scale-95"
-                )}
-                aria-label={buttonLabel}
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                ) : hasVariants ? (
-                  <Eye className="h-4 w-4 sm:hidden" aria-hidden="true" />
-                ) : (
-                  <ShoppingCart className="h-4 w-4 sm:hidden" aria-hidden="true" />
-                )}
-                <span className="hidden sm:inline">{buttonLabel}</span>
-              </button>
             </div>
           </div>
         </LocalizedClientLink>

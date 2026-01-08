@@ -253,7 +253,7 @@ export default function Footer() {
       </div>
 
       <DecorativeGround year={year} />
-      <div className="bg-primary">
+      <div className="bg-primary pb-16 md:pb-0">
         <div className="mx-auto px-4 max-w-[1440px]">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 text-center text-sm text-white drop-shadow">
             <p>© {year} Toycker. All Rights Reserved by Toycker Studio</p>

@@ -227,9 +227,8 @@ const ReviewCard = ({ review }: { review: Review }) => {
         />
 
         <div
-          className={`relative z-10 flex h-full flex-col justify-between p-6 transition-opacity duration-500 ${
-            isPlaying ? "opacity-0" : "group-hover:opacity-0"
-          }`}
+          className={`relative z-10 flex h-full flex-col justify-between p-6 transition-opacity duration-500 ${isPlaying ? "opacity-0" : "group-hover:opacity-0"
+            }`}
         >
           <div className="flex items-center justify-between text-sm font-semibold tracking-wide">
             {review.tag && (
@@ -481,210 +480,209 @@ const ReviewMediaHub = () => {
   return (
     <>
       <section className="w-full" aria-labelledby="review-media-hub-heading">
-      <div className="mx-auto max-w-screen-2xl px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#c45700]">Customer say!</p>
-            <h2 id="review-media-hub-heading" className="mt-3 text-4xl font-semibold text-[#111827]">
-              Trusted by parents and creators across India
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={openAudioModal}
-            className="hidden items-center gap-2 rounded-full border border-[#111827] px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#111827] hover:text-white lg:inline-flex"
-          >
-            Listen to audio stories
-          </button>
-        </div>
-
-        <div className="relative">
-          <Swiper
-            modules={[Navigation]}
-            spaceBetween={32}
-            slidesPerView={1}
-            breakpoints={{
-              640: { slidesPerView: 1.2 },
-              768: { slidesPerView: 2 },
-              1280: { slidesPerView: 3 },
-            }}
-            navigation={{
-              prevEl: prevRef.current,
-              nextEl: nextRef.current,
-            }}
-            onSwiper={(swiper) => {
-              swiperRef.current = swiper
-            }}
-            className="!overflow-hidden"
-          >
-            {REVIEWS.map((review) => (
-              <SwiperSlide key={review.id} className="!h-auto">
-                <ReviewCard review={review} />
-              </SwiperSlide>
-            ))}
-          </Swiper>
-
-          <div className="pointer-events-none absolute -bottom-20 left-0 right-0 flex justify-between px-4 pb-4 z-10 sm:left-auto sm:flex-none sm:justify-normal sm:gap-4 sm:pr-4">
+        <div className="mx-auto max-w-screen-2xl px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#c45700]">Customer say!</p>
+              <h2 id="review-media-hub-heading" className="mt-3 text-4xl font-semibold text-[#111827]">
+                Trusted by parents and creators across India
+              </h2>
+            </div>
             <button
               type="button"
-              ref={prevRef}
-              aria-label="Previous reviews"
-              className="pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition cursor-pointer"
+              onClick={openAudioModal}
+              className="hidden items-center gap-2 rounded-full border border-[#111827] px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#111827] hover:text-white lg:inline-flex"
             >
-              <ChevronLeft className="h-5 w-5" />
+              Listen to audio stories
             </button>
+          </div>
+
+          <div className="relative">
+            <Swiper
+              modules={[Navigation]}
+              spaceBetween={32}
+              slidesPerView={1}
+              breakpoints={{
+                640: { slidesPerView: 1.2 },
+                768: { slidesPerView: 2 },
+                1280: { slidesPerView: 3 },
+              }}
+              navigation={{
+                prevEl: prevRef.current,
+                nextEl: nextRef.current,
+              }}
+              onSwiper={(swiper) => {
+                swiperRef.current = swiper
+              }}
+              className="!overflow-hidden"
+            >
+              {REVIEWS.map((review) => (
+                <SwiperSlide key={review.id} className="!h-auto">
+                  <ReviewCard review={review} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            <div className="pointer-events-none absolute -bottom-20 left-0 right-0 flex justify-between px-4 pb-4 z-10 sm:left-auto sm:flex-none sm:justify-normal sm:gap-4 sm:pr-4">
+              <button
+                type="button"
+                ref={prevRef}
+                aria-label="Previous reviews"
+                className="pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition cursor-pointer"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                ref={nextRef}
+                aria-label="Next reviews"
+                className="pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition cursor-pointer"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-24 flex justify-center sm:mt-20 lg:hidden">
             <button
               type="button"
-              ref={nextRef}
-              aria-label="Next reviews"
-              className="pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition cursor-pointer"
+              onClick={openAudioModal}
+              className="inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-full border border-[#111827] px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#111827] hover:text-white"
             >
-              <ChevronRight className="h-5 w-5" />
+              Listen to audio stories
             </button>
           </div>
         </div>
 
-        <div className="mt-24 flex justify-center sm:mt-20 lg:hidden">
-          <button
-            type="button"
-            onClick={openAudioModal}
-            className="inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-full border border-[#111827] px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#111827] hover:text-white"
-          >
-            Listen to audio stories
-          </button>
-        </div>
-      </div>
-
-      {isAudioModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-black/45 p-0 sm:items-center sm:justify-center sm:px-4 sm:py-8"
-          onClick={closeAudioModal}
-        >
+        {isAudioModalOpen && (
           <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="audio-modal-title"
-            className="relative h-full w-full max-w-none overflow-y-auto rounded-none border-none bg-gradient-to-b from-white via-[#fff8ec] to-white p-5 sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-[32px] sm:border sm:border-white/60 sm:p-7 md:p-8"
-            onClick={(event) => event.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-stretch justify-stretch bg-black/45 p-0 sm:items-center sm:justify-center sm:px-4 sm:py-8"
+            onClick={closeAudioModal}
           >
-            <button
-              type="button"
-              onClick={closeAudioModal}
-              className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#111827] transition hover:bg-[#111827] hover:text-white sm:right-6 sm:top-6"
-              aria-label="Close audio reviews"
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="audio-modal-title"
+              className="relative h-full w-full max-w-none overflow-y-auto rounded-none border-none bg-gradient-to-b from-white via-[#fff8ec] to-white p-5 sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-[32px] sm:border sm:border-white/60 sm:p-7 md:p-8"
+              onClick={(event) => event.stopPropagation()}
             >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="flex flex-col gap-4 pt-12 sm:flex-row sm:items-start sm:justify-between sm:pt-2">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#c45700]">Audio reviews</p>
-                <h3 id="audio-modal-title" className="mt-2 text-3xl font-semibold text-[#111827]">
-                  Hear Toycker stories on demand
-                </h3>
-                <p className="mt-2 text-sm text-[#6b7280]">
-                  Stream quick clips from parents and creators describing their Dodge Mini Metal Car builds.
-                </p>
+              <button
+                type="button"
+                onClick={closeAudioModal}
+                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e5e7eb] bg-white text-[#111827] transition hover:bg-[#111827] hover:text-white sm:right-6 sm:top-6"
+                aria-label="Close audio reviews"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="flex flex-col gap-4 pt-12 sm:flex-row sm:items-start sm:justify-between sm:pt-2">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#c45700]">Audio reviews</p>
+                  <h3 id="audio-modal-title" className="mt-2 text-3xl font-semibold text-[#111827]">
+                    Hear Toycker stories on demand
+                  </h3>
+                  <p className="mt-2 text-sm text-[#6b7280]">
+                    Stream quick clips from parents and creators describing their Dodge Mini Metal Car builds.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {AUDIO_REVIEWS.map((audio) => {
+                  const progress = audioProgress[audio.id] ?? 0
+                  const safeProgress = Math.min(Math.max(progress, 0), 1)
+                  const currentTime = audioCurrentTime[audio.id] ?? 0
+                  const totalDuration = audioDurations[audio.id]
+                  const formattedTotal = totalDuration ? formatTime(totalDuration) : audio.durationLabel
+                  const sliderMax = totalDuration ?? 1
+
+                  return (
+                    <article
+                      key={audio.id}
+                      className="flex flex-col gap-5 rounded-3xl border border-[#ffe2b8] bg-gradient-to-br from-white via-[#fff8ec] to-[#ffeeda] p-5 text-[#1f2937]"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-[#ffd7a0] bg-white">
+                          <Image src={audio.coverImage} alt={audio.title} fill sizes="80px" className="object-cover" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-lg font-semibold text-[#1f2937]">{audio.title}</p>
+                          <p className="text-sm text-[#7c5c2e]">{audio.author}</p>
+                          <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#fff1dc] px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[#b45309]">
+                            {audio.durationLabel}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <button
+                          type="button"
+                          onClick={() => handleAudioToggle(audio.id)}
+                          className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${activeAudioId === audio.id
+                              ? "border-transparent bg-[#ff8a00] text-white shadow-[0_12px_30px_rgba(255,138,0,0.35)]"
+                              : "border-[#ffd7a0] bg-white text-[#b45309] hover:bg-[#fff5e5]"
+                            }`}
+                          aria-label={`${activeAudioId === audio.id ? "Pause" : "Play"} ${audio.title}`}
+                        >
+                          {activeAudioId === audio.id ? (
+                            <>
+                              <Pause className="h-4 w-4" />
+                              Pause story
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-4 w-4" />
+                              Play story
+                            </>
+                          )}
+                        </button>
+
+                        <div className="flex items-center gap-3 text-[#9a7a4d]">
+                          <span className="text-xs font-semibold">{formatTime(currentTime)}</span>
+                          <div
+                            role="slider"
+                            aria-label={`Timeline for ${audio.title}`}
+                            aria-valuemin={0}
+                            aria-valuemax={sliderMax}
+                            aria-valuenow={currentTime}
+                            aria-valuetext={`${formatTime(currentTime)} of ${formattedTotal}`}
+                            tabIndex={0}
+                            onClick={(event) => handleProgressClick(event, audio.id)}
+                            onKeyDown={(event) => handleSliderKeyDown(event, audio.id)}
+                            className="relative h-2 flex-1 cursor-pointer rounded-full bg-[#ffe2b8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffbb3d]"
+                          >
+                            <div
+                              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#ffdd55] to-[#ff8a00]"
+                              style={{ width: `${safeProgress * 100}%` }}
+                            />
+                            <span
+                              className="absolute top-1/2 h-3 w-3 -translate-y-1/2 -translate-x-1/2 rounded-full border border-white bg-[#ffbb3d] shadow"
+                              style={{ left: `${safeProgress * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-[#b45309]">{formattedTotal}</span>
+                        </div>
+                      </div>
+
+                      <audio
+                        ref={(node) => {
+                          audioRefs.current[audio.id] = node
+                        }}
+                        src={audio.audioSrc}
+                        preload="metadata"
+                        onLoadedMetadata={() => handleAudioLoaded(audio.id)}
+                        onTimeUpdate={() => handleAudioTimeUpdate(audio.id)}
+                        onEnded={() => handleAudioEnd(audio.id)}
+                        className="hidden"
+                      >
+                        <track kind="captions" />
+                      </audio>
+                    </article>
+                  )
+                })}
               </div>
             </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {AUDIO_REVIEWS.map((audio) => {
-                const progress = audioProgress[audio.id] ?? 0
-                const safeProgress = Math.min(Math.max(progress, 0), 1)
-                const currentTime = audioCurrentTime[audio.id] ?? 0
-                const totalDuration = audioDurations[audio.id]
-                const formattedTotal = totalDuration ? formatTime(totalDuration) : audio.durationLabel
-                const sliderMax = totalDuration ?? 1
-
-                return (
-                  <article
-                    key={audio.id}
-                    className="flex flex-col gap-5 rounded-3xl border border-[#ffe2b8] bg-gradient-to-br from-white via-[#fff8ec] to-[#ffeeda] p-5 text-[#1f2937]"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-[#ffd7a0] bg-white">
-                        <Image src={audio.coverImage} alt={audio.title} fill sizes="80px" className="object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-lg font-semibold text-[#1f2937]">{audio.title}</p>
-                        <p className="text-sm text-[#7c5c2e]">{audio.author}</p>
-                        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#fff1dc] px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[#b45309]">
-                          {audio.durationLabel}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <button
-                        type="button"
-                        onClick={() => handleAudioToggle(audio.id)}
-                        className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                          activeAudioId === audio.id
-                            ? "border-transparent bg-[#ff8a00] text-white shadow-[0_12px_30px_rgba(255,138,0,0.35)]"
-                            : "border-[#ffd7a0] bg-white text-[#b45309] hover:bg-[#fff5e5]"
-                        }`}
-                        aria-label={`${activeAudioId === audio.id ? "Pause" : "Play"} ${audio.title}`}
-                      >
-                        {activeAudioId === audio.id ? (
-                          <>
-                            <Pause className="h-4 w-4" />
-                            Pause story
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-4 w-4" />
-                            Play story
-                          </>
-                        )}
-                      </button>
-
-                      <div className="flex items-center gap-3 text-[#9a7a4d]">
-                        <span className="text-xs font-semibold">{formatTime(currentTime)}</span>
-                        <div
-                          role="slider"
-                          aria-label={`Timeline for ${audio.title}`}
-                          aria-valuemin={0}
-                          aria-valuemax={sliderMax}
-                          aria-valuenow={currentTime}
-                          aria-valuetext={`${formatTime(currentTime)} of ${formattedTotal}`}
-                          tabIndex={0}
-                          onClick={(event) => handleProgressClick(event, audio.id)}
-                          onKeyDown={(event) => handleSliderKeyDown(event, audio.id)}
-                          className="relative h-2 flex-1 cursor-pointer rounded-full bg-[#ffe2b8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffbb3d]"
-                        >
-                          <div
-                            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#ffdd55] to-[#ff8a00]"
-                            style={{ width: `${safeProgress * 100}%` }}
-                          />
-                          <span
-                            className="absolute top-1/2 h-3 w-3 -translate-y-1/2 -translate-x-1/2 rounded-full border border-white bg-[#ffbb3d] shadow"
-                            style={{ left: `${safeProgress * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-semibold text-[#b45309]">{formattedTotal}</span>
-                      </div>
-                    </div>
-
-                    <audio
-                      ref={(node) => {
-                        audioRefs.current[audio.id] = node
-                      }}
-                      src={audio.audioSrc}
-                      preload="metadata"
-                      onLoadedMetadata={() => handleAudioLoaded(audio.id)}
-                      onTimeUpdate={() => handleAudioTimeUpdate(audio.id)}
-                      onEnded={() => handleAudioEnd(audio.id)}
-                      className="hidden"
-                    >
-                      <track kind="captions" />
-                    </audio>
-                  </article>
-                )
-              })}
-            </div>
           </div>
-        </div>
-      )}
+        )}
       </section>
     </>
   )
