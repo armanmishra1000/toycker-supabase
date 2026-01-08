@@ -11,6 +11,7 @@ interface IconButtonProps {
   href?: string
   ariaLabel?: string
   onClick?: () => void
+  prefetch?: boolean
   ariaPressed?: boolean
 }
 
@@ -21,6 +22,7 @@ const IconButton = ({
   href,
   ariaLabel,
   onClick,
+  prefetch,
   ariaPressed,
 }: IconButtonProps) => {
   const content = (
@@ -43,6 +45,7 @@ const IconButton = ({
         href={href}
         className="group relative"
         aria-label={ariaLabel || label}
+        prefetch={prefetch}
       >
         {content}
       </LocalizedClientLink>

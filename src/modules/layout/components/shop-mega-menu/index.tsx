@@ -34,11 +34,10 @@ const ShopMegaMenu = ({
     <div
       role="region"
       aria-label="Shop menu"
-      className={`absolute left-0 top-[calc(100%+0rem)] z-30 w-[min(1408px,99vw)] lg:w-[min(1408px,97vw)] max-w-[1440px] rounded-br-xl rounded-bl-xl border border-gray-200/70 bg-white  transition-all duration-200 ease-out ${
-        isOpen
-          ? "pointer-events-auto translate-y-0 opacity-100"
-          : "pointer-events-none translate-y-2 opacity-0"
-      }`}
+      className={`absolute left-0 top-[calc(100%+0rem)] z-30 w-[min(1408px,99vw)] lg:w-[min(1408px,97vw)] max-w-[1440px] rounded-br-xl rounded-bl-xl border border-gray-200/70 bg-white  transition-all duration-200 ease-out ${isOpen
+        ? "pointer-events-auto translate-y-0 opacity-100"
+        : "pointer-events-none translate-y-2 opacity-0"
+        }`}
       style={{ left: `-${adjustedLeft}px` }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -48,9 +47,8 @@ const ShopMegaMenu = ({
         {sections.map((section) => (
           <div
             key={section.id}
-            className={`${
-              section.accent === "muted" ? "bg-sky-50" : "bg-white"
-            } ${basePanelClasses}`}
+            className={`${section.accent === "muted" ? "bg-sky-50" : "bg-white"
+              } ${basePanelClasses}`}
           >
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               {section.title}
@@ -60,7 +58,7 @@ const ShopMegaMenu = ({
                 <li key={item.id}>
                   <LocalizedClientLink
                     href={item.href}
-                    prefetchIntent="hover"
+                    prefetch={true}
                     className="text-base font-medium text-slate-900 transition-colors duration-150 hover:text-primary"
                   >
                     {item.label}
@@ -81,7 +79,7 @@ const ShopMegaMenu = ({
                   <LocalizedClientLink
                     key={link.id}
                     href={link.href}
-                    prefetchIntent="hover"
+                    prefetch={true}
                     className="inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2 text-base font-semibold text-white shadow-sm transition hover:bg-primary/90"
                   >
                     {link.label}
@@ -93,7 +91,7 @@ const ShopMegaMenu = ({
                 <LocalizedClientLink
                   key={link.id}
                   href={link.href}
-                  prefetchIntent="hover"
+                  prefetch={true}
                   className="block text-base font-medium text-slate-900 transition-colors hover:text-primary"
                 >
                   {link.label}
@@ -104,7 +102,7 @@ const ShopMegaMenu = ({
 
           <LocalizedClientLink
             href="/products/dj-coco-light-music-toy"
-            prefetchIntent="hover"
+            prefetch={true}
             className="mt-6 block overflow-hidden rounded-2xl bg-white/70 p-3 text-center shadow-inner transition hover:bg-white"
             aria-label="View DJ Coco Light Music Toy"
           >

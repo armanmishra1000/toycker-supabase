@@ -4,15 +4,16 @@ import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidateTag, revalidatePath } from "next/cache"
+import { getAuthUser } from "./auth"
 import { redirect } from "next/navigation"
 import { CustomerProfile, Address } from "@/lib/supabase/types"
 import { getBaseURL } from "@/lib/util/env"
 
 export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> => {
+  const user = await getAuthUser()
   const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
 
-  if (error || !user) {
+  if (!user) {
     return null
   }
 
