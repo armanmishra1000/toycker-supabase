@@ -284,7 +284,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
       throw new Error("Missing selected variant")
     }
 
-    await optimisticAdd({
+    optimisticAdd({
       product,
       variant: selectedVariant,
       quantity,
@@ -307,13 +307,16 @@ export default function ProductActions({ product, disabled, showSupportActions =
       return
     }
 
+    const startTime = performance.now()
+    console.log("[Add to Cart] Starting...")
+
     startAddToCart(async () => {
       try {
         openCart()
         if (selectedVariant?.id) {
-          await addVariantToCart()
+          addVariantToCart()
         } else {
-          await optimisticAdd({
+          optimisticAdd({
             product,
             variant: undefined,
             quantity,
@@ -322,6 +325,8 @@ export default function ProductActions({ product, disabled, showSupportActions =
           })
           onActionComplete?.()
         }
+        const endTime = performance.now()
+        console.log(`[Add to Cart] Completed in ${(endTime - startTime).toFixed(2)}ms`)
       } catch (error) {
         console.error("Failed to add to cart", error)
       }

@@ -119,16 +119,24 @@ export default function ProductPreview({
     event.preventDefault()
     event.stopPropagation()
 
+    const startTime = performance.now()
+    console.log(`[Product Card Add] Starting for ${product.name}...`)
+
     startTransition(async () => {
       setStatus("added")
       openCart?.()
       try {
-        await optimisticAdd({
+        // Not awaiting to keep UI snappy
+        optimisticAdd({
           product,
           variant: selectedVariant || product.variants?.[0],
           quantity: 1,
           countryCode: "in",
         })
+
+        const endTime = performance.now()
+        console.log(`[Product Card Add] Completed in ${(endTime - startTime).toFixed(2)}ms`)
+
         setTimeout(() => setStatus("idle"), 2000)
       } catch (error) {
         console.error("Failed to add to cart", error)

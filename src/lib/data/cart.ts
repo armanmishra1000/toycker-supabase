@@ -9,6 +9,7 @@ import { randomUUID } from "crypto"
 import { redirect } from "next/navigation"
 import { generatePayUHash, PayUHashParams } from "@/lib/payu"
 import { getBaseURL } from "@/lib/util/env"
+import { getAuthUser } from "./auth"
 
 // Addresses interface for type safety
 interface AddressFormData {
@@ -79,7 +80,15 @@ const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): Ca
   })
 }
 
-export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> => {
+export async function retrieveCart(cartId?: string): Promise<Cart | null> {
+  return cachedRetrieveCart(cartId)
+}
+
+const cachedRetrieveCart = cache(async (cartId?: string): Promise<Cart | null> => {
+  return retrieveCartRaw(cartId)
+})
+
+export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   const id = cartId || (await getCartId())
   if (!id) return null
 
@@ -106,7 +115,7 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
   let clubDiscountPercentage = 0
   let availableRewards = 0
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (user) {
     isClubMember = user.user_metadata?.is_club_member === true
     if (isClubMember) {
@@ -180,7 +189,7 @@ export const retrieveCart = cache(async (cartId?: string): Promise<Cart | null> 
   }
 
   return cart
-})
+}
 
 
 export async function getOrSetCart(): Promise<Cart> {
@@ -188,7 +197,7 @@ export async function getOrSetCart(): Promise<Cart> {
   if (existingCart) return existingCart
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
 
   const newCartId = randomUUID()
 
@@ -227,7 +236,7 @@ export async function addToCart({
   quantity: number
   variantId?: string
 }) {
-  const cart = await getOrSetCart()
+  const cartId = (await getCartId()) || (await getOrSetCart()).id
   const supabase = await createClient()
 
   let targetVariantId = variantId === productId ? undefined : variantId
@@ -247,7 +256,7 @@ export async function addToCart({
   const query = supabase
     .from("cart_items")
     .select("*")
-    .eq("cart_id", cart.id)
+    .eq("cart_id", cartId)
     .eq("product_id", productId)
 
   if (targetVariantId) {
@@ -268,7 +277,7 @@ export async function addToCart({
     await supabase
       .from("cart_items")
       .insert({
-        cart_id: cart.id,
+        cart_id: cartId,
         product_id: productId,
         variant_id: targetVariantId,
         quantity,
@@ -276,7 +285,7 @@ export async function addToCart({
   }
 
   revalidateTag("cart")
-  return retrieveCart(cart.id)
+  return retrieveCartRaw(cartId)
 }
 
 export async function updateLineItem({
@@ -293,8 +302,9 @@ export async function updateLineItem({
     .eq("id", lineId)
 
   revalidateTag("cart")
-  return retrieveCart()
+  return retrieveCartRaw()
 }
+
 
 export async function deleteLineItem(lineId: string) {
   const supabase = await createClient()
@@ -304,7 +314,7 @@ export async function deleteLineItem(lineId: string) {
     .eq("id", lineId)
 
   revalidateTag("cart")
-  return retrieveCart()
+  return retrieveCartRaw()
 }
 
 
@@ -610,7 +620,7 @@ export async function placeOrder() {
     }
 
     // Credit new rewards for club members (check membership status after potential activation)
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getAuthUser()
     const isClubMember = user?.user_metadata?.is_club_member === true || activated
 
     if (isClubMember && settings.rewards_percentage > 0) {

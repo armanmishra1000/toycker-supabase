@@ -98,7 +98,9 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
   const previousCartRef = useRef<Cart | null>(layoutCart ?? null)
   const addQueueRef = useRef<Promise<void>>(Promise.resolve())
   const removeQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const updateQueueRef = useRef<Promise<void>>(Promise.resolve())
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set())
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
 
   const buildEmptyCart = useCallback(
     (currencyCode: string): Cart => ({
@@ -157,11 +159,9 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
 
       const runServerRemove = async () => {
         try {
-          await deleteLineItem(lineId)
-          const refreshed = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
-          if (refreshed.ok) {
-            const payload = (await refreshed.json()) as { cart: Cart | null }
-            setFromServer(payload.cart)
+          const serverCart = await deleteLineItem(lineId)
+          if (serverCart) {
+            setFromServer(serverCart)
           }
         } catch (error) {
           const errorMessage = (error as Error)?.message ?? "Failed to remove item"
@@ -180,7 +180,6 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       removeQueueRef.current = removeQueueRef.current
         .catch(() => undefined)
         .then(() => runServerRemove())
-      await removeQueueRef.current
     },
     [cart, setFromServer, showToast],
   )
@@ -192,19 +191,6 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
 
       const previousCart = cart
 
-      const refreshFromApi = async () => {
-        try {
-          const response = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
-          if (response.ok) {
-            const payload = (await response.json()) as { cart: Cart | null }
-            if (payload.cart) {
-              setFromServer(payload.cart)
-            }
-          }
-        } catch (error) {
-          console.error("Failed to refresh cart after add", error)
-        }
-      }
 
       const baseCart: Cart =
         cart ??
@@ -254,7 +240,6 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
 
           if (serverCart) {
             setFromServer(serverCart)
-            await refreshFromApi()
             // Toast removed - silent add for better UX
             return
           }
@@ -268,7 +253,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       }
 
       addQueueRef.current = addQueueRef.current.then(() => runServerAdd())
-      await addQueueRef.current
+      // Removed await to make transition instantaneous
     },
     [buildEmptyCart, cart, layoutCart?.currency_code, setFromServer, showToast],
   )
@@ -296,7 +281,8 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
   // Enable localStorage persistence and cross-tab sync
   useCartPersistence(cart, reloadFromServer)
 
-  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
+
+
 
   const isUpdating = useCallback(
     (lineId: string) => updatingIds.has(lineId),
@@ -338,25 +324,29 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         setCart(mergeLineItems(cart, nextItems))
       }
 
-      try {
-        await updateLineItem({ lineId, quantity })
-        const response = await fetch(`/api/cart?ts=${Date.now()}`, { cache: "no-store" })
-        if (response.ok) {
-          const payload = (await response.json()) as { cart: Cart | null }
-          setFromServer(payload.cart)
+      const runServerUpdate = async () => {
+        try {
+          const serverCart = await updateLineItem({ lineId, quantity })
+          if (serverCart) {
+            setFromServer(serverCart)
+          }
+        } catch (error) {
+          const errorMessage = (error as Error)?.message ?? "Failed to update quantity"
+          setLastError(errorMessage)
+          showToast?.(errorMessage, "error")
+          setCart(previousCart)
+        } finally {
+          setUpdatingIds((prev) => {
+            const next = new Set(prev)
+            next.delete(lineId)
+            return next
+          })
         }
-      } catch (error) {
-        const errorMessage = (error as Error)?.message ?? "Failed to update quantity"
-        setLastError(errorMessage)
-        showToast?.(errorMessage, "error")
-        setCart(previousCart)
-      } finally {
-        setUpdatingIds((prev) => {
-          const next = new Set(prev)
-          next.delete(lineId)
-          return next
-        })
       }
+
+      updateQueueRef.current = updateQueueRef.current
+        .catch(() => undefined)
+        .then(() => runServerUpdate())
     },
     [cart, setFromServer, showToast]
   )
