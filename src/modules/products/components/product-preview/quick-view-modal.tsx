@@ -52,7 +52,9 @@ const ProductQuickViewModal = ({
         })
 
         if (!response.ok) {
-          setHydratedProduct(product)
+          if (!controller.signal.aborted) {
+            setHydratedProduct(product)
+          }
           return
         }
 
@@ -60,16 +62,22 @@ const ProductQuickViewModal = ({
           products?: Product[]
         }
 
-        const nextProduct = payload.products?.[0]
-        setHydratedProduct(nextProduct ?? product)
+        if (!controller.signal.aborted) {
+          const nextProduct = payload.products?.[0]
+          setHydratedProduct(nextProduct ?? product)
+        }
       } catch (error) {
-        if ((error as Error).name === "AbortError") return
+        if ((error as any).name === "AbortError" || controller.signal.aborted) {
+          return
+        }
         setHydratedProduct(product)
       }
     }
 
     loadProduct()
-    return () => controller.abort()
+    return () => {
+      controller.abort()
+    }
   }, [isOpen, product])
 
   const resolvedProduct = hydratedProduct ?? product
@@ -111,7 +119,7 @@ const ProductQuickViewModal = ({
       data-testid="product-quick-view-modal"
     >
       <div className="relative flex h-full max-h-screen w-full flex-col overflow-hidden">
-        
+
 
         <div className="flex-1 overflow-y-auto md:overflow-visible">
           <div className="flex flex-col gap-0 md:grid md:grid-cols-[1.05fr,1fr] xl:grid-cols-[1.1fr,0.9fr] md:gap-6">
@@ -121,14 +129,14 @@ const ProductQuickViewModal = ({
 
             <div className="flex flex-col md:max-h-[57vh] md:overflow-hidden pb-4 md:pb-0 px-4 md:px-0">
               <div className="flex justify-end p-1 pr-1">
-<button
-          type="button"
-          onClick={onClose}
-          className="z-30 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
-          aria-label="Close quick view"
-        >
-          <X className="h-5 w-5" />
-        </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="z-30 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
+                  aria-label="Close quick view"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
               <div className="md:flex-1 md:overflow-y-auto pr-1 pt-3 md:pt-1">
                 <ProductActions
