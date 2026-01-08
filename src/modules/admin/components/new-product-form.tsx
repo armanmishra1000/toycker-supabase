@@ -1,16 +1,18 @@
 "use client"
 
-import { ProductVariant, VariantFormData } from "@/lib/supabase/types"
+import { VariantFormData } from "@/lib/supabase/types"
 import { createProduct } from "@/lib/data/admin"
 import AdminCard from "./admin-card"
 import { SubmitButton } from "./submit-button"
-import ImageUpload from "./image-upload"
 import RichTextEditor from "./rich-text-editor"
 import CollectionCheckboxList from "./collection-checkbox-list"
 import { TrashIcon, PlusIcon, LayersIcon, PackageIcon } from "lucide-react"
-import MediaGallery from "./media-manager"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { cn } from "@lib/util/cn"
+import { getYoutubeId, getYoutubeEmbedUrl } from "@/lib/util/youtube"
+import CategoryCheckboxList from "./category-checkbox-list"
+import MediaGallery from "./media-manager"
+import { Tag, Globe, Layers, Edit2 } from "lucide-react"
 
 type NewProductFormProps = {
   collections: any[]
@@ -23,6 +25,10 @@ export default function NewProductForm({ collections, categories }: NewProductFo
   const [name, setName] = useState("")
   const [handle, setHandle] = useState("")
   const [isHandleManuallyEdited, setIsHandleManuallyEdited] = useState(false)
+  const [isEditingHandle, setIsEditingHandle] = useState(false)
+  const [videoUrl, setVideoUrl] = useState("")
+  const videoId = getYoutubeId(videoUrl)
+  const embedUrl = getYoutubeEmbedUrl(videoId)
 
   const slugify = (text: string) => {
     return text
@@ -81,16 +87,77 @@ export default function NewProductForm({ collections, categories }: NewProductFo
           <div className="space-y-4">
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Product Title</label>
-              <input
-                name="name"
-                type="text"
-                placeholder="e.g. 1:16 Racing Sport Mood Car"
-                required
-                value={name}
-                onChange={handleNameChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0"
-              />
+              <div className="space-y-2">
+                <input
+                  name="name"
+                  type="text"
+                  placeholder="e.g. 1:16 Racing Sport Mood Car"
+                  required
+                  value={name}
+                  onChange={handleNameChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0"
+                />
+                <input type="hidden" name="handle" value={handle} />
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 group min-h-[1.5rem] px-1">
+                    <Globe className="h-2.5 w-2.5 text-gray-400" />
+
+                    {!isEditingHandle ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono font-bold text-gray-500">
+                          /products/<span className="text-black">{handle || "..."}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingHandle(true)}
+                          className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-tight flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Edit2 className="h-2.5 w-2.5" />
+                          Edit
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] font-bold">/</span>
+                          <input
+                            autoFocus
+                            type="text"
+                            value={handle}
+                            onChange={handleHandleChange}
+                            className="h-6 bg-white border-black rounded px-4 pl-4 text-[10px] font-mono font-bold text-black focus:ring-1 focus:ring-black min-w-[150px]"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                setIsEditingHandle(false)
+                              }
+                            }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingHandle(false)}
+                          className="px-2 h-6 bg-black text-white text-[9px] font-black rounded uppercase tracking-widest hover:bg-gray-800 transition-colors shadow-sm"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {!isEditingHandle && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-gray-200 rounded-lg bg-gray-50/50 w-fit">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Live Preview:</span>
+                      <span className="text-[10px] font-mono text-gray-500 truncate">
+                        /products/<span className="text-black font-bold">{handle || "..."}</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
               <RichTextEditor name="description" placeholder="Tell the product's story..." />
@@ -123,10 +190,24 @@ export default function NewProductForm({ collections, categories }: NewProductFo
               <input
                 name="video_url"
                 type="url"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium focus:border-black focus:ring-0 transition-all bg-gray-50/30"
                 placeholder="https://youtube.com/watch?v=..."
               />
             </div>
+            {embedUrl && (
+              <div className="mt-4 aspect-video rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                <iframe
+                  className="w-full h-full"
+                  src={embedUrl}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
           </div>
         </AdminCard>
 
@@ -313,40 +394,28 @@ export default function NewProductForm({ collections, categories }: NewProductFo
         )}
 
         <AdminCard title="Organization">
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Category</label>
-              <select
-                name="category_id"
-                defaultValue=""
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-bold focus:border-black focus:ring-0 bg-white cursor-pointer"
-              >
-                <option value="">No category</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-50">
+                <Tag className="w-4 h-4 text-black" />
+                <label className="block text-xs font-black text-black uppercase tracking-widest">Categories</label>
+              </div>
+              <CategoryCheckboxList
+                categories={categories}
+                selectedIds={[]}
+                name="category_ids"
+              />
             </div>
+
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Collections</label>
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-50">
+                <Layers className="w-4 h-4 text-black" />
+                <label className="block text-xs font-black text-black uppercase tracking-widest">Collections</label>
+              </div>
               <CollectionCheckboxList
                 collections={collections}
                 selectedIds={[]}
                 name="collection_ids"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">URL Handle</label>
-              <input
-                name="handle"
-                type="text"
-                placeholder="toy-slug-here"
-                required
-                value={handle}
-                onChange={handleHandleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-bold focus:border-black focus:ring-0"
               />
             </div>
           </div>
