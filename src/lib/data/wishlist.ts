@@ -2,10 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidateTag } from "next/cache"
+import { getAuthUser } from "./auth"
 
 export async function getWishlistItems() {
+    const user = await getAuthUser()
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
         return []

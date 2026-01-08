@@ -2,7 +2,6 @@
 
 import Link, { type LinkProps } from "next/link"
 import React from "react"
-import { cn } from "@lib/util/cn"
 
 /**
  * Simplified link component for single-region store.
@@ -12,7 +11,7 @@ type LocalizedClientLinkProps = Omit<LinkProps, "href"> & {
   children?: React.ReactNode
   href: string
   className?: string
-  prefetchIntent?: "viewport" | "hover" | "none" // Kept for compatibility but not actively used
+  prefetch?: boolean
   onMouseEnter?: React.MouseEventHandler<HTMLAnchorElement>
   onFocus?: React.FocusEventHandler<HTMLAnchorElement>
 }
@@ -20,7 +19,7 @@ type LocalizedClientLinkProps = Omit<LinkProps, "href"> & {
 const LocalizedClientLink = ({
   children,
   href,
-  prefetchIntent,
+  prefetch,
   className,
   ...props
 }: LocalizedClientLinkProps) => {
@@ -31,6 +30,7 @@ const LocalizedClientLink = ({
       {...props}
       href={resolvedHref}
       className={className}
+      prefetch={prefetch}
     >
       {children}
     </Link>

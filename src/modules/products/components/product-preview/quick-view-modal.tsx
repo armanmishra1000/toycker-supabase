@@ -119,6 +119,15 @@ const ProductQuickViewModal = ({
       data-testid="product-quick-view-modal"
     >
       <div className="relative flex h-full max-h-screen w-full flex-col overflow-hidden">
+        {/* Mobile-only Close Button (Top Right) */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm text-slate-900 shadow-lg border border-white/20 transition hover:bg-white md:hidden"
+          aria-label="Close quick view"
+        >
+          <X className="h-6 w-6" />
+        </button>
 
 
         <div className="flex-1 overflow-y-auto md:overflow-visible">
@@ -128,7 +137,7 @@ const ProductQuickViewModal = ({
             </div>
 
             <div className="flex flex-col md:max-h-[57vh] md:overflow-hidden pb-4 md:pb-0 px-4 md:px-0">
-              <div className="flex justify-end p-1 pr-1">
+              <div className="hidden md:flex justify-end p-1 pr-1">
                 <button
                   type="button"
                   onClick={onClose}

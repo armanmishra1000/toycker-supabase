@@ -164,7 +164,7 @@ const FilterDrawer = ({
     <FilterDrawerContext.Provider value={value}>
       {children}
       <Transition show={isOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-[90]" onClose={close}>
+        <Dialog as="div" className="relative z-[110]" onClose={close}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-200"
@@ -177,7 +177,7 @@ const FilterDrawer = ({
             <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
           </Transition.Child>
 
-          <div className="fixed inset-0 flex">
+          <div className="fixed inset-0 flex justify-start">
             <Transition.Child
               as={Fragment}
               enter="transform transition ease-out duration-300"
@@ -187,7 +187,7 @@ const FilterDrawer = ({
               leaveFrom="translate-x-0"
               leaveTo="-translate-x-full"
             >
-              <DialogPanel className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
+              <DialogPanel className="flex h-full w-full sm:max-w-md flex-col bg-white shadow-2xl">
                 <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
                   <DialogTitle className="text-lg font-bold text-slate-900">
                     {title}
@@ -208,7 +208,7 @@ const FilterDrawer = ({
                     onFiltersChange={setPendingFilters}
                   />
                 </div>
-                <div className="border-t border-gray-100 px-5 py-4">
+                <div className="border-t border-gray-100 px-5 py-4 md:pb-4">
                   <button
                     type="button"
                     onClick={applyFilters}
@@ -220,7 +220,7 @@ const FilterDrawer = ({
                 </div>
               </DialogPanel>
             </Transition.Child>
-            <div className="w-full" onClick={close} aria-hidden />
+            <div className="hidden sm:block flex-1" onClick={close} aria-hidden />
           </div>
         </Dialog>
       </Transition>

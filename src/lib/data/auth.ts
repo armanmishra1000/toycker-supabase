@@ -1,59 +1,18 @@
-"use server"
-
+import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 
-export async function signIn(formData: FormData) {
-  const email = formData.get("email") as string
-  const password = formData.get("password") as string
+/**
+ * Deduplicated auth user fetcher. 
+ * React cache() ensures this only hits the network once per request, 
+ * even if called in middleware, root layout, and page.
+ */
+export const getAuthUser = cache(async () => {
   const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error) {
-    return error.message
+  if (error || !user) {
+    return null
   }
 
-  redirect("/account")
-}
-
-export async function signUp(formData: FormData) {
-  const email = formData.get("email") as string
-  const password = formData.get("password") as string
-  const supabase = await createClient()
-
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback`,
-    },
-  })
-
-  if (error) {
-    return error.message
-  }
-
-  redirect("/account")
-}
-
-export async function signOut() {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect("/")
-}
-
-export async function getSession() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  return session
-}
-
-export async function getUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
   return user
-}
+})

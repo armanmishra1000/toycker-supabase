@@ -1,9 +1,9 @@
 "use client"
 
-import { 
-  TruckIcon, 
-  MapPinIcon, 
-  QuestionMarkCircleIcon 
+import {
+  TruckIcon,
+  MapPinIcon,
+  QuestionMarkCircleIcon
 } from "@heroicons/react/24/outline"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
@@ -18,8 +18,8 @@ interface AnnouncementItem {
 const AnnouncementBar = () => {
   // Left section items - Delivery only
   const leftItems: AnnouncementItem[] = [
-    { 
-      id: "delivery", 
+    {
+      id: "delivery",
       text: "Get free home delivery (Order More than ₹500)",
       icon: TruckIcon,
       ariaLabel: "Free home delivery offer"
@@ -28,15 +28,15 @@ const AnnouncementBar = () => {
 
   // Right section items - Location, Help
   const rightItems: AnnouncementItem[] = [
-    { 
-      id: "location", 
+    {
+      id: "location",
       text: "Surat, Gujarat",
       icon: MapPinIcon,
       href: "https://maps.app.goo.gl/vJjW43BJnUTFwrTj8",
       ariaLabel: "Current location"
     },
-    { 
-      id: "help", 
+    {
+      id: "help",
       text: "Help",
       icon: QuestionMarkCircleIcon,
       href: "/contact",
@@ -47,7 +47,7 @@ const AnnouncementBar = () => {
   const renderItem = (item: AnnouncementItem) => {
     const Icon = item.icon
     const content = (
-      <div 
+      <div
         className="flex items-center gap-2"
         aria-label={item.ariaLabel}
       >

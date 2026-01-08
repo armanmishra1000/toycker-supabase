@@ -141,7 +141,7 @@ const Header = ({
               </button>
 
               {/* Logo - Inline */}
-              <LocalizedClientLink href="/" className="flex-shrink-0">
+              <LocalizedClientLink href="/" className="flex-shrink-0" prefetch={true}>
                 <div className="relative w-auto h-12">
                   <Image
                     src="/assets/images/toycker.png"
@@ -179,7 +179,7 @@ const Header = ({
 
               {/* Login Button - Desktop Only */}
               <div className="hidden lg:block ">
-                <LocalizedClientLink href="/account" className="group relative">
+                <LocalizedClientLink href="/account" className="group relative" prefetch={true}>
                   <button
                     className="w-10 h-10 bg-foreground rounded-full transition-colors relative flex justify-center items-center"
                     aria-label="Login to account"
@@ -196,6 +196,7 @@ const Header = ({
                   label="Wishlist"
                   count={wishlistCount}
                   href="/wishlist"
+                  prefetch={true}
                   ariaLabel={`Wishlist (${wishlistCount} items)`}
                 />
               </div>
