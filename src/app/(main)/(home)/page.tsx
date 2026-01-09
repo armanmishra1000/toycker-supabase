@@ -13,31 +13,25 @@ import LazyLoadSection from "@modules/common/components/lazy-load-section"
 import { listHomeBanners } from "@lib/data/home-banners"
 import { listExclusiveCollections } from "@lib/data/exclusive-collections"
 import { getRegion } from "@lib/data/regions"
+import { getClubSettings } from "@lib/data/club"
 
 export const metadata: Metadata = {
   title: "Toycker | Premium Toys for Kids",
   description: "Discover a wide range of premium toys for kids of all ages.",
 }
 
-// Removed 'export const revalidate = 60' to make page truly static
-// Page is now pre-rendered at build time and served from CDN edge
-
 export default async function Home() {
   const countryCode = "in"
 
-  // Static data fetching only - NO dynamic APIs (cookies, headers, etc.)
-  // Club discount moved to environment variable for true static rendering
+  // Fetch club settings from database (admin panel)
+  const clubSettings = await getClubSettings()
+  const clubDiscountPercentage = clubSettings?.discount_percentage
+
   const [banners, exclusiveItems, region] = await Promise.all([
     listHomeBanners(),
     listExclusiveCollections({ regionId: "reg_india" }),
     getRegion(),
   ])
-
-  // Production-grade: Use environment variable instead of database query
-  // This makes the page truly static and cacheable at CDN edge
-  const clubDiscountPercentage = parseInt(
-    process.env.NEXT_PUBLIC_CLUB_DISCOUNT_PERCENTAGE || '10'
-  )
 
   return (
     <>
