@@ -8,7 +8,7 @@ const POPULAR_SECTION_LIMIT = 10
 type PopularToySetProps = {
   regionId: string
   countryCode: string
-  isCustomerLoggedIn: boolean
+  isCustomerLoggedIn?: boolean
   collectionId?: string
   clubDiscountPercentage?: number
 }

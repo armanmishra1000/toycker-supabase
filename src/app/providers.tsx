@@ -11,15 +11,9 @@ import { ShippingPriceProvider } from "@modules/common/context/shipping-price-co
 
 import { WishlistProvider } from "@modules/products/context/wishlist"
 
-const Providers = ({
-  children,
-  isAuthenticated = false,
-  initialWishlistItems = [],
-}: {
-  children: ReactNode
-  isAuthenticated?: boolean
-  initialWishlistItems?: string[]
-}) => {
+const Providers = ({ children }: { children: ReactNode }) => {
+  // Auth and wishlist data now fetched client-side by respective providers
+  // This allows root layout to be static instead of forcing dynamic rendering
   return (
     <LayoutDataProvider>
       <ToastProvider>
@@ -27,10 +21,7 @@ const Providers = ({
         <CartStoreProvider>
           <ShippingPriceProvider>
             <CartSidebarProvider>
-              <WishlistProvider
-                isAuthenticated={isAuthenticated}
-                initialItems={initialWishlistItems}
-              >
+              <WishlistProvider>
                 {children}
               </WishlistProvider>
             </CartSidebarProvider>
@@ -42,3 +33,4 @@ const Providers = ({
 }
 
 export default Providers
+

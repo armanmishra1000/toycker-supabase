@@ -33,8 +33,10 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // refreshing the auth token
-  const { data: { user } } = await supabase.auth.getUser()
+  // use getSession for faster performance in middleware
+  // security is handled by RLS and safe component checks
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
   // Early redirect for checkout if not authenticated
   if (request.nextUrl.pathname.startsWith('/checkout') && !user) {

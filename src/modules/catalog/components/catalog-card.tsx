@@ -1,6 +1,7 @@
 "use client"
 
 import { ArrowUpRight } from "lucide-react"
+import Image from "next/image"
 import { cn } from "@lib/util/cn"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import type { CatalogCardItem, CatalogViewMode } from "@modules/catalog/types"
@@ -23,12 +24,12 @@ const CatalogCard = ({ item, viewMode = "grid-4" }: CatalogCardProps) => {
     >
       <div className={cn("relative w-full overflow-hidden", aspectClass)}>
         {hasImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={item.image!.src}
             alt={imageAlt ?? ""}
-            loading="lazy"
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+            fill
+            className="object-cover transition duration-500 group-hover:scale-[1.04]"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           />
         ) : (
           <div

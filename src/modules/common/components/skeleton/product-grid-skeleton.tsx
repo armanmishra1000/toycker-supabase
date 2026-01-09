@@ -10,18 +10,51 @@ type ProductGridSkeletonProps = {
     className?: string
 }
 
-const ProductCardSkeleton = () => (
-    <div className="flex flex-col">
-        {/* Image placeholder */}
-        <div className="relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden">
-            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200" />
+const ProductCardSkeleton = () => {
+    const block = "animate-pulse bg-slate-200"
+
+    return (
+        <div className="group relative flex flex-col h-full">
+            {/* Image container - matches exact styling from product card */}
+            <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-100">
+                <div className={`${block} h-full w-full rounded-2xl`} />
+
+                {/* Wishlist button placeholder (top right) - shows on hover */}
+                <div className="absolute right-3 top-3 h-10 w-10 rounded-full bg-white/30 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block"></div>
+
+                {/* Hover overlay placeholder */}
+                <div className="absolute inset-0 rounded-2xl bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                {/* Hover action button placeholder (bottom) */}
+                <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
+                    <div className={`${block} h-12 w-full rounded-full bg-white/80`} />
+                </div>
+            </div>
+
+            {/* Product details - matches actual card spacing */}
+            <div className="flex flex-col gap-1 mt-3 flex-1">
+                {/* Product title */}
+                <div className={`${block} h-5 w-4/5 rounded`} />
+
+                {/* Price section - matches actual layout */}
+                <div className="mt-auto space-y-1.5 pt-2">
+                    {/* Current price and original price row */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {/* Current price */}
+                        <div className={`${block} h-6 w-20 rounded`} />
+                        {/* Original price (strikethrough) */}
+                        <div className={`${block} h-5 w-20 rounded opacity-50`} />
+                        {/* Discount badge */}
+                        <div className={`${block} h-5 w-16 rounded-full`} />
+                    </div>
+
+                    {/* Club price */}
+                    <div className={`${block} h-5 w-32 rounded`} />
+                </div>
+            </div>
         </div>
-        {/* Title placeholder */}
-        <div className="mt-3 h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-        {/* Price placeholder */}
-        <div className="mt-2 h-5 bg-gray-200 rounded animate-pulse w-1/3" />
-    </div>
-)
+    )
+}
 
 export default function ProductGridSkeleton({
     title,

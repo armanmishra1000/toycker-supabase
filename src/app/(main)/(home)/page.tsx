@@ -9,32 +9,35 @@ import PopularToySet from "@modules/home/components/popular-toy-set"
 import ExclusiveCollections from "@modules/home/components/exclusive-collections"
 import BestSelling from "@modules/home/components/best-selling"
 import ProductGridSkeleton from "@modules/common/components/skeleton/product-grid-skeleton"
+import LazyLoadSection from "@modules/common/components/lazy-load-section"
 import { listHomeBanners } from "@lib/data/home-banners"
 import { listExclusiveCollections } from "@lib/data/exclusive-collections"
 import { getRegion } from "@lib/data/regions"
-import { retrieveCustomer } from "@lib/data/customer"
-import { getClubSettings } from "@lib/data/club"
 
 export const metadata: Metadata = {
   title: "Toycker | Premium Toys for Kids",
   description: "Discover a wide range of premium toys for kids of all ages.",
 }
 
-export const revalidate = 60
+// Removed 'export const revalidate = 60' to make page truly static
+// Page is now pre-rendered at build time and served from CDN edge
 
 export default async function Home() {
   const countryCode = "in"
 
-  const [banners, exclusiveItems, region, customer, clubSettings] = await Promise.all([
+  // Static data fetching only - NO dynamic APIs (cookies, headers, etc.)
+  // Club discount moved to environment variable for true static rendering
+  const [banners, exclusiveItems, region] = await Promise.all([
     listHomeBanners(),
     listExclusiveCollections({ regionId: "reg_india" }),
     getRegion(),
-    retrieveCustomer(),
-    getClubSettings()
   ])
 
-  const isCustomerLoggedIn = Boolean(customer)
-  const clubDiscountPercentage = clubSettings?.discount_percentage
+  // Production-grade: Use environment variable instead of database query
+  // This makes the page truly static and cacheable at CDN edge
+  const clubDiscountPercentage = parseInt(
+    process.env.NEXT_PUBLIC_CLUB_DISCOUNT_PERCENTAGE || '10'
+  )
 
   return (
     <>
@@ -43,33 +46,44 @@ export default async function Home() {
       <CategoryMarquee />
 
       {/* Product sections - stream in with skeleton fallbacks */}
-      <Suspense fallback={<ProductGridSkeleton title="Explore" subtitle="Explore Popular Toy Set" count={10} className="bg-primary/10" />}>
-        <PopularToySet
-          regionId={region.id}
-          countryCode={countryCode}
-          isCustomerLoggedIn={isCustomerLoggedIn}
+      <LazyLoadSection minHeight="600px">
+        <Suspense fallback={<ProductGridSkeleton title="Explore" subtitle="Explore Popular Toy Set" count={10} className="bg-primary/10" />}>
+          <PopularToySet
+            regionId={region.id}
+            countryCode={countryCode}
+            clubDiscountPercentage={clubDiscountPercentage}
+          />
+        </Suspense>
+      </LazyLoadSection>
+
+      <LazyLoadSection minHeight="400px">
+        <ShopByAge />
+      </LazyLoadSection>
+
+      <LazyLoadSection minHeight="500px">
+        <ExclusiveCollections
+          items={exclusiveItems}
           clubDiscountPercentage={clubDiscountPercentage}
         />
-      </Suspense>
+      </LazyLoadSection>
 
-      <ShopByAge />
+      <LazyLoadSection minHeight="600px">
+        <Suspense fallback={<ProductGridSkeleton title="Curated" subtitle="Best Selling Picks" count={10} className="bg-white" />}>
+          <BestSelling
+            regionId={region.id}
+            countryCode={countryCode}
+            clubDiscountPercentage={clubDiscountPercentage}
+          />
+        </Suspense>
+      </LazyLoadSection>
 
-      <ExclusiveCollections
-        items={exclusiveItems}
-        clubDiscountPercentage={clubDiscountPercentage}
-      />
+      <LazyLoadSection minHeight="500px">
+        <ReviewMediaHub />
+      </LazyLoadSection>
 
-      <Suspense fallback={<ProductGridSkeleton title="Curated" subtitle="Best Selling Picks" count={10} className="bg-white" />}>
-        <BestSelling
-          regionId={region.id}
-          countryCode={countryCode}
-          isCustomerLoggedIn={isCustomerLoggedIn}
-          clubDiscountPercentage={clubDiscountPercentage}
-        />
-      </Suspense>
-
-      <ReviewMediaHub />
-      <WhyChooseUs />
+      <LazyLoadSection minHeight="400px">
+        <WhyChooseUs />
+      </LazyLoadSection>
     </>
   )
 }

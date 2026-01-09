@@ -4,8 +4,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import NextTopLoader from "nextjs-toploader"
 import Providers from "./providers"
 import "@/styles/globals.css"
-import { retrieveCustomer } from "@lib/data/customer"
-import { getWishlistItems } from "@lib/data/wishlist"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -14,20 +12,14 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout(props: { children: React.ReactNode }) {
-  const [customer, wishlistItems] = await Promise.all([
-    retrieveCustomer(),
-    getWishlistItems(),
-  ])
-
+export default function RootLayout(props: { children: React.ReactNode }) {
+  // Removed server-side data fetching to enable static rendering
+  // Auth and wishlist data now fetched client-side by providers
   return (
     <html lang="en" data-mode="light" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <NextTopLoader color="#059669" showSpinner={false} height={3} />
-        <Providers
-          isAuthenticated={Boolean(customer)}
-          initialWishlistItems={wishlistItems}
-        >
+        <Providers>
           <main className="relative">{props.children}</main>
         </Providers>
         <SpeedInsights />

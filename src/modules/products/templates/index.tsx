@@ -6,6 +6,7 @@ import ProductTabs from "@modules/products/components/product-tabs"
 import RelatedProducts from "@modules/products/components/related-products"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import Breadcrumbs from "@modules/common/components/breadcrumbs"
+import LazyLoadSection from "@modules/common/components/lazy-load-section"
 import { notFound } from "next/navigation"
 import { Product, Region } from "@/lib/supabase/types"
 
@@ -92,23 +93,35 @@ const ProductTemplate = async ({
             </div>
           </div>
         </div >
+
+        {/* Lazy load product details sections */}
         <div className="mt-8 space-y-5">
-          <ProductTabs product={product} />
-          <CustomerReviews productId={product.id} reviews={reviews} customer={customer} />
+          <LazyLoadSection minHeight="300px">
+            <ProductTabs product={product} />
+          </LazyLoadSection>
+
+          <LazyLoadSection minHeight="400px">
+            <CustomerReviews productId={product.id} reviews={reviews} customer={customer} />
+          </LazyLoadSection>
         </div>
       </div >
-      <div
-        className="content-container my-16"
-        data-testid="related-products-container"
-      >
-        <Suspense fallback={<SkeletonRelatedProducts />}>
-          <RelatedProducts
-            product={product}
-            countryCode={countryCode}
-            clubDiscountPercentage={clubDiscountPercentage}
-          />
-        </Suspense>
-      </div>
+
+      {/* Lazy load related products */}
+      <LazyLoadSection minHeight="500px">
+        <div
+          className="content-container my-16"
+          data-testid="related-products-container"
+        >
+          <Suspense fallback={<SkeletonRelatedProducts />}>
+            <RelatedProducts
+              product={product}
+              countryCode={countryCode}
+              clubDiscountPercentage={clubDiscountPercentage}
+            />
+          </Suspense>
+        </div>
+      </LazyLoadSection>
+
       <RecentlyViewedTracker productId={product.id} />
     </>
   )

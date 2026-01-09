@@ -19,7 +19,7 @@ type LocalizedClientLinkProps = Omit<LinkProps, "href"> & {
 const LocalizedClientLink = ({
   children,
   href,
-  prefetch,
+  prefetch = true,
   className,
   ...props
 }: LocalizedClientLinkProps) => {

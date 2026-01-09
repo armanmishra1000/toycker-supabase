@@ -230,7 +230,13 @@ const CustomerReviews = ({
                       {files.map((file, idx) => (
                         <div key={idx} className="relative h-20 w-20 overflow-hidden rounded-xl border-2 border-gray-200 shadow-sm">
                           {file.type.startsWith("image") ? (
-                            <img src={URL.createObjectURL(file)} alt="preview" className="h-full w-full object-cover" />
+                            <Image
+                              src={URL.createObjectURL(file)}
+                              alt="preview"
+                              fill
+                              className="object-cover"
+                              sizes="80px"
+                            />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center bg-gray-100">
                               {file.type.startsWith("video") ? <Video className="h-7 w-7 text-gray-400" /> : <Mic className="h-7 w-7 text-gray-400" />}

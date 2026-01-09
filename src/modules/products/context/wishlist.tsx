@@ -11,6 +11,7 @@ import {
   useState,
 } from "react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 import {
   addToWishlist,
@@ -46,39 +47,41 @@ const readFromStorage = (): string[] => {
 
 type WishlistProviderProps = {
   children: ReactNode
-  isAuthenticated?: boolean
   loginPath?: string
-  initialItems?: string[]
 }
 
 export const WishlistProvider = ({
   children,
-  isAuthenticated = false,
   loginPath = "/account",
-  initialItems = [],
 }: WishlistProviderProps) => {
-  const [items, setItems] = useState<string[]>(initialItems)
-  const [isInitialized, setIsInitialized] = useState(initialItems.length > 0)
+  const [items, setItems] = useState<string[]>([])
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   const isInitializing = useRef(false)
   const router = useRouter()
 
+  // Fetch auth status and wishlist on mount (client-side)
   useEffect(() => {
-    if (isAuthenticated) {
-      if (initialItems.length > 0) {
-        setItems(initialItems)
-        setIsInitialized(true)
-      } else if (!isInitialized && !isInitializing.current) {
-        isInitializing.current = true
-        getWishlistItems().then((dbItems) => {
-          setItems(dbItems)
-          setIsInitialized(true)
-        })
+    if (isInitializing.current) return
+    isInitializing.current = true
+
+    const initializeWishlist = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const authenticated = !!user
+      setIsAuthenticated(authenticated)
+
+      if (authenticated) {
+        const dbItems = await getWishlistItems()
+        setItems(dbItems)
+      } else {
+        setItems(readFromStorage())
       }
-    } else {
-      setItems(readFromStorage())
       setIsInitialized(true)
     }
-  }, [isAuthenticated, initialItems.length, isInitialized])
+
+    initializeWishlist()
+  }, [])
 
   // Handle guest items merging when user logs in
   useEffect(() => {
