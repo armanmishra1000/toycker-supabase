@@ -29,6 +29,11 @@ const CheckoutSummary = ({
           </Text>
         </div>
 
+        {/* Rewards Section - Moved to top for better visibility */}
+        <div className="px-5 sm:px-6 pt-4">
+          <RewardsRedemption cart={cart} />
+        </div>
+
         {/* Product List */}
         <div className="px-5 sm:px-6 py-4 sm:py-4">
           <ItemsPreviewTemplate cart={cart} />
@@ -39,9 +44,8 @@ const CheckoutSummary = ({
           <CartTotals totals={cart} cart={cart} />
         </div>
 
-        {/* Rewards & Discount */}
+        {/* Discount Section */}
         <div className="px-5 sm:px-6 py-4 sm:py-4 border-t border-gray-100">
-          <RewardsRedemption cart={cart} />
           <DiscountCode cart={cart} />
         </div>
       </div>

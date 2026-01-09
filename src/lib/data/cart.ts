@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Cart, CartItem, ShippingOption, Address, Product, ProductVariant, PaymentCollection } from "@/lib/supabase/types"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
+export { removeCartId }
 import { randomUUID } from "crypto"
 import { redirect } from "next/navigation"
 import { generatePayUHash, PayUHashParams } from "@/lib/payu"
@@ -148,7 +149,7 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     const baseAmount = Number(method.amount || 0)
     const threshold = method.min_order_free_shipping
 
-    if (threshold !== null && threshold !== undefined && item_subtotal >= threshold) {
+    if (threshold !== null && threshold !== undefined && item_subtotal >= Number(threshold)) {
       shipping_total = 0
     } else {
       shipping_total = baseAmount
@@ -412,12 +413,13 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
   return { message: "Saved", success: true }
 }
 
-export async function autoSelectStandardShipping(cartId: string) {
+export async function autoSelectStandardShipping(cartId: string, skipRevalidate = false) {
   const { shipping_options } = await listCartOptions()
   // Auto-select first option if available (Standard Shipping)
   if (shipping_options.length > 0) {
-    await setShippingMethod({ cartId, shippingMethodId: shipping_options[0].id })
+    return await setShippingMethod({ cartId, shippingMethodId: shipping_options[0].id, skipRevalidate })
   }
+  return null
 }
 
 // Explicit submit with redirect - Skips delivery step as we auto-select
@@ -442,16 +444,26 @@ export async function submitAddresses(formData: FormData) {
   redirect("/checkout?step=payment")
 }
 
-export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: string, shippingMethodId: string }) {
+export async function setShippingMethod({
+  cartId,
+  shippingMethodId,
+  skipRevalidate = false
+}: {
+  cartId: string,
+  shippingMethodId: string,
+  skipRevalidate?: boolean
+}) {
   const supabase = await createClient()
 
   const { shipping_options } = await listCartOptions()
   const option = shipping_options.find(o => o.id === shippingMethodId)
 
   const methodData = {
+    id: shippingMethodId, // Use option ID as method ID for internal tracking
     shipping_option_id: shippingMethodId,
     name: option?.name || "Standard Shipping",
     amount: option?.amount || 0,
+    price_type: (option?.price_type || "flat") as "flat" | "calculated",
     min_order_free_shipping: option?.min_order_free_shipping ?? null
   }
 
@@ -464,7 +476,12 @@ export async function setShippingMethod({ cartId, shippingMethodId }: { cartId: 
     .eq("id", cartId)
 
   if (error) throw new Error(error.message)
-  revalidateTag("cart")
+
+  if (!skipRevalidate) {
+    revalidateTag("cart")
+  }
+
+  return methodData
 }
 
 export async function initiatePaymentSession(cartInput: { id: string }, data: { provider_id: string, data?: Record<string, unknown> }) {
@@ -602,24 +619,41 @@ export async function placeOrder() {
     "customer"
   )
 
-  // Handle rewards for club members
+  // Handle post-order logic (rewards, membership, etc.)
+  await handlePostOrderLogic(order, cart, rewards_discount)
+
+  revalidateTag("rewards")
+  // await removeCartId()
+  revalidateTag("cart")
+
+  redirect(`/order/confirmed/${order.id}`)
+}
+
+/**
+ * Reusable helper to handle post-order logic like membership activation, 
+ * rewards calculation, and event logging.
+ */
+export async function handlePostOrderLogic(order: any, cart: any, rewards_discount: number) {
+  const supabase = await createClient()
+
+  // Handle rewards and club functionality for logged-in users
   if (order.user_id) {
     const { checkAndActivateMembership, getClubSettings } = await import("@lib/data/club")
     const { creditRewards, deductRewards } = await import("@lib/data/rewards")
     const settings = await getClubSettings()
 
-    // First, deduct any rewards used
+    // 1. Deduct reward points used
     if (rewards_discount > 0) {
       await deductRewards(order.user_id, order.id, rewards_discount)
     }
 
-    // Check for club membership activation
-    const activated = await checkAndActivateMembership(order.user_id, total)
+    // 2. Check for club membership activation (if threshold reached)
+    const activated = await checkAndActivateMembership(order.user_id, order.total)
     if (activated) {
       revalidateTag("customers")
     }
 
-    // Credit new rewards for club members (check membership status after potential activation)
+    // 3. Credit new rewards for club members
     const user = await getAuthUser()
     const isClubMember = user?.user_metadata?.is_club_member === true || activated
 
@@ -627,14 +661,14 @@ export async function placeOrder() {
       const pointsEarned = await creditRewards(
         order.user_id,
         order.id,
-        item_subtotal, // Points based on subtotal, not including shipping
+        order.subtotal, // Points based on subtotal, not including shipping
         settings.rewards_percentage
       )
 
       // Update order metadata with rewards info
       await supabase.from("orders").update({
         metadata: {
-          ...order.metadata,
+          ...(order.metadata || {}),
           newly_activated_club_member: activated,
           club_discount_percentage: settings.discount_percentage,
           rewards_earned: pointsEarned,
@@ -643,11 +677,15 @@ export async function placeOrder() {
       }).eq("id", order.id)
     } else if (activated) {
       await supabase.from("orders").update({
-        metadata: { ...order.metadata, newly_activated_club_member: true, club_discount_percentage: settings.discount_percentage }
+        metadata: {
+          ...(order.metadata || {}),
+          newly_activated_club_member: true,
+          club_discount_percentage: settings.discount_percentage
+        }
       }).eq("id", order.id)
     }
 
-    // --- Persist Lifetime Club Savings ---
+    // 4. Persist Lifetime Club Savings
     if (cart.club_savings && cart.club_savings > 0) {
       const currentSavings = Number(user?.user_metadata?.total_club_savings || 0)
       const newSavings = currentSavings + cart.club_savings
@@ -663,16 +701,9 @@ export async function placeOrder() {
         total_club_savings: newSavings
       }).eq("id", order.user_id)
     }
-    // -------------------------------------
-
-    revalidateTag("rewards")
   }
-
-  await removeCartId()
-  revalidateTag("cart")
-
-  redirect(`/order/confirmed/${order.id}`)
 }
+
 
 export async function createBuyNowCart({
   variantId,

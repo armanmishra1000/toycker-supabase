@@ -1,9 +1,12 @@
 import { Cart } from "@/lib/supabase/types"
 import Input from "@modules/common/components/input"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import CountrySelect from "../country-select"
+import { useCheckout } from "../../context/checkout-context"
 
 const BillingAddress = ({ cart }: { cart: Cart | null }) => {
+  const { setBillingAddress } = useCheckout()
+
   const [formData, setFormData] = useState<Record<string, string>>({
     "billing_address.first_name": cart?.billing_address?.first_name || "",
     "billing_address.last_name": cart?.billing_address?.last_name || "",
@@ -26,6 +29,22 @@ const BillingAddress = ({ cart }: { cart: Cart | null }) => {
       [e.target.name]: e.target.value,
     })
   }
+
+  // Update checkout context whenever form data changes
+  useEffect(() => {
+    const address = {
+      first_name: formData["billing_address.first_name"],
+      last_name: formData["billing_address.last_name"],
+      address_1: formData["billing_address.address_1"],
+      address_2: formData["billing_address.company"] || null,
+      city: formData["billing_address.city"],
+      province: formData["billing_address.province"] || null,
+      postal_code: formData["billing_address.postal_code"],
+      country_code: formData["billing_address.country_code"],
+      phone: formData["billing_address.phone"] || null,
+    }
+    setBillingAddress(address)
+  }, [formData, setBillingAddress])
 
   return (
     <>

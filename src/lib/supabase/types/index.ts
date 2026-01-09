@@ -260,6 +260,7 @@ export interface ShippingMethod {
   total?: number;
   subtotal?: number;
   shipping_option_id?: string;
+  min_order_free_shipping?: number | null;
 }
 
 export interface ShippingOption {

@@ -22,17 +22,29 @@ export default async function Checkout() {
     redirect(`/login?returnUrl=${encodeURIComponent("/checkout?step=address")}`)
   }
 
-  const cart = await retrieveCart()
+  let cart = await retrieveCart()
 
   if (!cart) {
     return notFound()
+  }
+
+  // Auto-select standard shipping if none selected
+  // This ensures shipping price is shown in the summary (₹40 or FREE)
+  if (!cart.shipping_methods || cart.shipping_methods.length === 0) {
+    const { autoSelectStandardShipping } = await import("@lib/data/cart")
+    const methodData = await autoSelectStandardShipping(cart.id, true)
+    if (methodData) {
+      cart.shipping_methods = [methodData as any]
+      // Trigger a re-calculation of totals if needed, but since we are in RSC, 
+      // we'll rely on the provider/summary to handle the math based on this cart object.
+    }
   }
 
   // Fetch payment methods at page level for right column
   const paymentMethods = await listCartPaymentMethods(cart.region_id ?? "")
 
   return (
-    <CheckoutProvider>
+    <CheckoutProvider cart={cart}>
       <div className="content-container px-4 py-6 sm:px-6 sm:py-8">
         {/* Heading */}
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4 sm:mb-6">Checkout</h1>

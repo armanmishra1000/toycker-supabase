@@ -19,12 +19,14 @@ const Items = ({ order }: ItemsProps) => {
           {items?.length
             ? items
               .sort((a, b) => {
-                return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
+                const dateA = a.created_at || ""
+                const dateB = b.created_at || ""
+                return dateA > dateB ? -1 : 1
               })
-              .map((item) => {
+              .map((item, index) => {
                 return (
                   <Item
-                    key={item.id}
+                    key={item.id || `${item.product_id}-${item.variant_id}-${index}`}
                     item={item}
                     currencyCode={order.currency_code}
                   />

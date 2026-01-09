@@ -7,7 +7,7 @@ type ShippingPriceContextType = {
   setSelectedShippingPrice: (price: number | null) => void
 }
 
-const ShippingPriceContext = createContext<ShippingPriceContextType | undefined>(undefined)
+export const ShippingPriceContext = createContext<ShippingPriceContextType | undefined>(undefined)
 
 export const useShippingPrice = () => {
   const context = useContext(ShippingPriceContext)

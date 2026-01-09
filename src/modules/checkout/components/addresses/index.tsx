@@ -1,14 +1,10 @@
 "use client"
 
-import { saveAddressesBackground } from "@lib/data/cart"
-import compareAddresses from "@lib/util/compare-addresses"
-import React, { useCallback, useRef } from "react"
+import React from "react"
 import { Text } from "@modules/common/components/text"
 import { Cart, CustomerProfile, ShippingOption } from "@/lib/supabase/types"
-import { useActionState, useTransition } from "react"
-import { CheckCircle, Loader2 } from "lucide-react"
+import { Edit3 } from "lucide-react"
 import BillingAddress from "../billing_address"
-import ErrorMessage from "../error-message"
 import ShippingAddress from "../shipping-address"
 import { useCheckout } from "../../context/checkout-context"
 
@@ -20,52 +16,10 @@ const Addresses = ({
   customer: CustomerProfile | null
   availableShippingMethods?: ShippingOption[] | null
 }) => {
-  const formRef = useRef<HTMLFormElement>(null)
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const [isPending, startTransition] = useTransition()
+  const { state, toggleSameAsBilling } = useCheckout()
 
-  const [sameAsBilling, setSameAsBilling] = React.useState(
-    cart?.shipping_address && cart?.billing_address
-      ? compareAddresses(cart?.shipping_address, cart?.billing_address)
-      : true
-  )
-  const toggleSameAsBilling = () => setSameAsBilling(!sameAsBilling)
-
-  const { setSectionUpdating } = useCheckout()
-
-  // Sync local transition state with global context
-  React.useEffect(() => {
-    setSectionUpdating("addresses", isPending)
-  }, [isPending, setSectionUpdating])
-
-  const [message, formAction] = useActionState(saveAddressesBackground, null)
-
-  // Check if address is already saved
-  const addressSaved = Boolean(cart?.shipping_address?.address_1)
-
-  // Auto-save on blur with debounce
-  const handleAutoSave = useCallback(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current)
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      if (formRef.current) {
-        const formData = new FormData(formRef.current)
-        // Only save if minimum required fields are filled
-        const firstName = formData.get("shipping_address.first_name")
-        const address1 = formData.get("shipping_address.address_1")
-        const city = formData.get("shipping_address.city")
-        const postalCode = formData.get("shipping_address.postal_code")
-
-        if (firstName && address1 && city && postalCode) {
-          startTransition(() => {
-            formAction(formData)
-          })
-        }
-      }
-    }, 800) // 800ms debounce
-  }, [formAction])
+  // Check if address has been filled (for UI indicator)
+  const hasShippingAddress = Boolean(state.shippingAddress?.address_1)
 
   return (
     <div>
@@ -76,31 +30,18 @@ const Addresses = ({
           className="text-3xl flex items-center gap-2"
         >
           Shipping Address
-          {isPending ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
-              <span className="text-sm font-normal text-gray-500">Updating...</span>
-            </div>
-          ) : message?.success ? (
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-sm font-normal text-green-600">Saved</span>
-            </div>
-          ) : addressSaved ? (
-            <CheckCircle className="h-4 w-4 text-gray-300" />
-          ) : null}
         </Text>
       </div>
 
-      <form ref={formRef} action={formAction} onBlur={handleAutoSave}>
+      <div>
         <ShippingAddress
           customer={customer}
-          checked={sameAsBilling}
+          checked={state.sameAsBilling}
           onChange={toggleSameAsBilling}
           cart={cart}
         />
 
-        {!sameAsBilling && (
+        {!state.sameAsBilling && (
           <div className="mt-6">
             <Text
               as="h2"
@@ -112,12 +53,7 @@ const Addresses = ({
             <BillingAddress cart={cart} />
           </div>
         )}
-
-        <input type="hidden" name="auto_save" value="true" />
-
-        <ErrorMessage error={message?.message ?? null} data-testid="address-error-message" />
-
-      </form>
+      </div>
     </div>
   )
 }
