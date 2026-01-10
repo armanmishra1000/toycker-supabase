@@ -5,27 +5,31 @@ import { getCollectionProductsByHandle } from "@modules/home/lib/get-collection-
 const BEST_SELLING_COLLECTION_HANDLE = "best-selling"
 const BEST_SELLING_SECTION_LIMIT = 10
 
+import { getRegion } from "@lib/data/regions"
+import { getClubSettings } from "@lib/data/club"
+
 type BestSellingProps = {
-  regionId: string
-  countryCode: string
-  isCustomerLoggedIn?: boolean
   collectionId?: string
-  clubDiscountPercentage?: number
 }
 
-const BestSelling = async ({ regionId, countryCode, isCustomerLoggedIn, collectionId, clubDiscountPercentage }: BestSellingProps) => {
+const BestSelling = async ({ collectionId }: BestSellingProps) => {
+  const [region, clubSettings] = await Promise.all([
+    getRegion(),
+    getClubSettings(),
+  ])
+
   const products = await getCollectionProductsByHandle({
     handle: BEST_SELLING_COLLECTION_HANDLE,
-    regionId,
+    regionId: region.id,
     limit: BEST_SELLING_SECTION_LIMIT,
     collectionId,
   })
 
+  const clubDiscountPercentage = clubSettings.discount_percentage
+
   if (products.length === 0) {
     return null
   }
-
-  const accountPath = "/account"
 
   return (
     <section
@@ -50,7 +54,7 @@ const BestSelling = async ({ regionId, countryCode, isCustomerLoggedIn, collecti
           </div>
         </div>
 
-        <ul className="mt-10 grid gap-6 grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 lg:[&>li:nth-last-child(-n+2)]:hidden xl:[&>li:nth-last-child(-n+2)]:block">
+        <ul className="mt-10 grid gap-6 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 lg:[&>li:nth-last-child(-n+2)]:hidden xl:[&>li:nth-last-child(-n+2)]:block">
           {products.map((product) => (
             <li key={product.id}>
               <ProductPreview

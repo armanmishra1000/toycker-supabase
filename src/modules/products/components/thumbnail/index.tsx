@@ -117,7 +117,7 @@ const MediaLayer = ({
       draggable={false}
       quality={type === "gif" ? 90 : 50}
       unoptimized={type === "gif"}
-      sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, (max-width: 992px) 480px, 800px"
+      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 20vw"
       className={baseClass}
     />
   )

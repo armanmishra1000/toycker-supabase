@@ -83,7 +83,7 @@ export default function ProductGridSkeleton({
                 )}
 
                 {/* Product grid skeleton */}
-                <ul className="grid gap-6 grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+                <ul className="grid gap-6 lg:grid-cols-4 xl:grid-cols-5">
                     {Array.from({ length: count }).map((_, index) => (
                         <li key={index}>
                             <ProductCardSkeleton />

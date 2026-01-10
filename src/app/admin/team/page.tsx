@@ -138,7 +138,7 @@ export default async function AdminTeam({
                                                     </Link>
                                                 </p>
                                             ) : (
-                                                <p className="text-xs text-gray-400 mt-1">Click "Add Staff" to add team members.</p>
+                                                <p className="text-xs text-gray-400 mt-1">Click &quot;Add Staff&quot; to add team members.</p>
                                             )}
                                         </div>
                                     </td>

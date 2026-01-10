@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay } from "swiper/modules"
 import type { Swiper as SwiperInstance } from "swiper/types"
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import "swiper/css"
 
@@ -98,11 +98,102 @@ const PriceStack = ({ price, clubPrice }: { price: DisplayPrice | null, clubPric
   )
 }
 
+const ExclusiveCardSkeleton = () => (
+  <article className="flex h-full flex-col rounded-xl overflow-hidden animate-pulse">
+    <div className="relative h-[476px] w-full bg-[#e1fab8]"></div>
+    <div className="flex items-center gap-3 bg-[#dbfca7] p-3 h-24">
+      <div className="h-16 w-16 rounded-2xl bg-[#c8f187] shrink-0" />
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="h-4 w-3/4 bg-[#c8f187] rounded" />
+        <div className="h-3 w-1/2 bg-[#c8f187] rounded" />
+      </div>
+    </div>
+  </article>
+)
+
+const ExclusiveCard = ({
+  item,
+  clubDiscountPercentage,
+}: {
+  item: ExclusiveCollectionEntry
+  clubDiscountPercentage?: number
+}) => {
+  const [isLoaded, setIsLoaded] = useState(false)
+  const poster = resolvePosterSource(item)
+  const productImage = resolveProductImageSource(item)
+  const title = item.product?.name ?? "Exclusive collectible"
+  const productHandle = item.product?.handle ?? item.product_id
+  const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
+  const hasVideo = Boolean(item.video_url && item.video_url.trim().length > 0)
+
+  return (
+    <article className="flex h-full flex-col rounded-xl overflow-hidden">
+      <div className="relative overflow-hidden rounded-xl">
+        {!isLoaded && (
+          <div className="absolute inset-0 z-20">
+            <ExclusiveCardSkeleton />
+          </div>
+        )}
+
+        {hasVideo ? (
+          <video
+            className={cn("h-full w-full object-cover d-block transition-opacity duration-300",
+              isLoaded ? "opacity-100" : "opacity-0")}
+            src={item.video_url}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            poster={poster}
+            onLoadedData={() => setIsLoaded(true)}
+            onCanPlay={() => setIsLoaded(true)}
+          >
+            Your browser does not support the video tag.
+          </video>
+        ) : (
+          <div className={cn("relative h-64 w-full transition-opacity duration-300",
+            isLoaded ? "opacity-100" : "opacity-0")}>
+            <Image
+              src={poster}
+              alt={title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 20vw"
+              onLoad={() => setIsLoaded(true)}
+            />
+          </div>
+        )}
+        <LocalizedClientLink
+          href={`/products/${productHandle}`}
+          className="flex items-center gap-3 bg-[#dbfca7] p-3 text-[#3a5017] z-10"
+        >
+          <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-white/60 shrink-0">
+            {productImage ? (
+              <Image
+                src={productImage}
+                alt={title}
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="h-full w-full bg-white/40" aria-hidden="true" />
+            )}
+          </div>
+          <div className="flex min-h-[3.5rem] flex-1 flex-col justify-center overflow-hidden">
+            <p className="text-sm font-semibold leading-tight truncate">{title}</p>
+            <PriceStack price={displayPrice} clubPrice={clubPrice} />
+          </div>
+        </LocalizedClientLink>
+      </div>
+    </article>
+  )
+}
+
 const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollectionsProps) => {
   const [isMounted, setIsMounted] = useState(false)
   const swiperRef = useRef<SwiperInstance | null>(null)
-  const [isAutoplaying, setIsAutoplaying] = useState(true)
-  const [activeIndex, setActiveIndex] = useState(0)
 
   const showcaseItems = useMemo(() => items ?? [], [items])
   const hasItems = showcaseItems.length > 0
@@ -135,32 +226,10 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
         </header>
 
         {!isMounted ? (
-          <div className="grid gap-4 rounded-xl bg-[#f8ede6] p-6 sm:grid-cols-2 lg:grid-cols-3">
-            {showcaseItems.slice(0, 3).map((item) => {
-              const title = item.product?.name ?? "Featured collectible"
-              const productImage = resolveProductImageSource(item)
-              const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
-
-              return (
-                <article key={item.id} className="flex flex-col rounded-xl bg-white/80 p-4 shadow-sm">
-                  <div className="relative mb-4 h-40 w-full overflow-hidden rounded-lg">
-                    {productImage ? (
-                      <Image
-                        src={productImage}
-                        alt={title}
-                        fill
-                        sizes="(min-width: 1024px) 360px, 100vw"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-[#f2dccd]" aria-hidden="true" />
-                    )}
-                  </div>
-                  <p className="text-base font-semibold text-[#4b2b1c]">{title}</p>
-                  <PriceStack price={displayPrice} clubPrice={clubPrice} />
-                </article>
-              )
-            })}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {[...Array(5)].map((_, i) => (
+              <ExclusiveCardSkeleton key={i} />
+            ))}
           </div>
         ) : (
           <div className="relative overflow-hidden rounded-xl">
@@ -189,84 +258,31 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
                 disableOnInteraction: false,
                 pauseOnMouseEnter: true,
               }}
-              onSwiper={(swiper) => {
-                swiperRef.current = swiper
+              onSwiper={(_swiper) => {
+                swiperRef.current = _swiper
               }}
-              onSlideChange={(swiper) => {
-                setActiveIndex(swiper.realIndex)
+              onSlideChange={(_swiper) => {
+                // Handle slide change if needed
               }}
               className="exclusive-swiper pb-6"
               aria-roledescription="Exclusive collections slider"
             >
-              {showcaseItems.map((item, index) => {
-                const poster = resolvePosterSource(item)
-                const productImage = resolveProductImageSource(item)
-                const title = item.product?.name ?? "Exclusive collectible"
-                const productHandle = item.product?.handle ?? item.product_id
-                const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
-                const hasVideo = Boolean(item.video_url && item.video_url.trim().length > 0)
-
-                return (
-                  <SwiperSlide
-                    key={item.id}
-                    role="group"
-                    aria-label={`Video ${index + 1} of ${showcaseItems.length}`}
-                  >
-                    <article className="flex h-full flex-col rounded-xl overflow-hidden">
-                      <div className="relative overflow-hidden rounded-xl">
-                        {hasVideo ? (
-                          <video
-                            className="h-full w-full object-cover d-block"
-                            src={item.video_url}
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            preload="metadata"
-                            poster={poster}
-                          >
-                            Your browser does not support the video tag.
-                          </video>
-                        ) : (
-                          <Image
-                            src={poster}
-                            alt={title}
-                            fill
-                            className="object-cover"
-                            sizes="(min-width: 1024px) 360px, 100vw"
-                          />
-                        )}
-                        <LocalizedClientLink
-                          href={`/products/${productHandle}`}
-                          className="flex items-center gap-3 bg-[#dbfca7] p-3 text-[#3a5017] z-10"
-                        >
-                          <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-white/60 shrink-0">
-                            {productImage ? (
-                              <Image
-                                src={productImage}
-                                alt={title}
-                                fill
-                                sizes="64px"
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="h-full w-full bg-white/40" aria-hidden="true" />
-                            )}
-                          </div>
-                          <div className="flex min-h-[3.5rem] flex-1 flex-col justify-center overflow-hidden">
-                            <p className="text-sm font-semibold leading-tight truncate">{title}</p>
-                            <PriceStack price={displayPrice} clubPrice={clubPrice} />
-                          </div>
-                        </LocalizedClientLink>
-                      </div>
-                    </article>
-                  </SwiperSlide>
-                )
-              })}
+              {showcaseItems.map((item, index) => (
+                <SwiperSlide
+                  key={item.id}
+                  role="group"
+                  aria-label={`Video ${index + 1} of ${showcaseItems.length}`}
+                >
+                  <ExclusiveCard
+                    item={item}
+                    clubDiscountPercentage={clubDiscountPercentage}
+                  />
+                </SwiperSlide>
+              ))}
             </Swiper>
             <button
               type="button"
-              className="exclusive-nav-button absolute left-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition hover:bg-gray-50"
+              className="exclusive-nav-button absolute left-2 top-1/2 z-30 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition hover:bg-gray-50"
               aria-label="Previous video"
               onClick={() => swiperRef.current?.slidePrev()}
             >
@@ -274,7 +290,7 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
             </button>
             <button
               type="button"
-              className="exclusive-nav-button absolute right-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition hover:bg-gray-50"
+              className="exclusive-nav-button absolute right-2 top-1/2 z-30 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition hover:bg-gray-50"
               aria-label="Next video"
               onClick={() => swiperRef.current?.slideNext()}
             >

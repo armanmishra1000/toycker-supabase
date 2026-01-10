@@ -5,27 +5,31 @@ import { getCollectionProductsByHandle } from "@modules/home/lib/get-collection-
 const POPULAR_COLLECTION_HANDLE = "popular"
 const POPULAR_SECTION_LIMIT = 10
 
+import { getRegion } from "@lib/data/regions"
+import { getClubSettings } from "@lib/data/club"
+
 type PopularToySetProps = {
-  regionId: string
-  countryCode: string
-  isCustomerLoggedIn?: boolean
   collectionId?: string
-  clubDiscountPercentage?: number
 }
 
-const PopularToySet = async ({ regionId, countryCode, isCustomerLoggedIn, collectionId, clubDiscountPercentage }: PopularToySetProps) => {
+const PopularToySet = async ({ collectionId }: PopularToySetProps) => {
+  const [region, clubSettings] = await Promise.all([
+    getRegion(),
+    getClubSettings(),
+  ])
+
   const products = await getCollectionProductsByHandle({
     handle: POPULAR_COLLECTION_HANDLE,
-    regionId,
+    regionId: region.id,
     limit: POPULAR_SECTION_LIMIT,
     collectionId,
   })
 
+  const clubDiscountPercentage = clubSettings.discount_percentage
+
   if (products.length === 0) {
     return null
   }
-
-  const accountPath = "/account"
 
   return (
     <section

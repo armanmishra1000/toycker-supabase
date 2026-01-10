@@ -11,7 +11,7 @@ export async function getPresignedUploadUrl({
     maxSizeMB = 10,
 }: {
     fileType: string
-    folder?: "reviews" | "banners" | "exclusive-videos"
+    folder?: "reviews" | "banners" | "exclusive-videos" | "products"
     maxSizeMB?: number
 }) {
     try {
@@ -20,6 +20,7 @@ export async function getPresignedUploadUrl({
             reviews: ["image/jpeg", "image/png", "image/webp", "video/mp4"],
             banners: ["image/jpeg", "image/png", "image/webp"],
             "exclusive-videos": ["video/mp4", "video/webm"],
+            products: ["image/jpeg", "image/png", "image/webp"],
         }
 
         if (!allowedTypes[folder]?.includes(fileType)) {
