@@ -1,0 +1,469 @@
+
+> toycker-storefront@1.0.3 lint D:\Yash Sheliya\Toycker\toycker-supabase
+> next lint
+
+`next lint` is deprecated and will be removed in Next.js 16.
+For new projects, use create-next-app to choose your preferred linter.
+For existing projects, migrate to the ESLint CLI:
+npx @next/codemod@canary next-lint-to-eslint-cli .
+
+
+./src/app/admin/categories/new/page.tsx
+3:8  Warning: 'AdminCard' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/collections/new/page.tsx
+3:8  Warning: 'AdminCard' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/customers/[id]/page.tsx
+5:44  Warning: 'CalendarIcon' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+7:8  Warning: 'AdminPageHeader' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/home-settings/home-settings-client.tsx
+9:5  Warning: 'LayoutDashboard' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/layout.tsx
+7:3  Warning: 'BellIcon' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/page.tsx
+5:8  Warning: 'AdminBadge' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+8:27  Warning: 'UserIcon' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+8:37  Warning: 'ArrowPathIcon' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/payments/page.tsx
+11:9  Warning: 'actions' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/products/page.tsx
+1:28  Warning: 'deleteProduct' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+8:8  Warning: 'AdminCard' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/products/[id]/page.tsx
+1:31  Warning: 'updateProduct' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/reviews/reviews-table.tsx
+5:39  Warning: 'FileText' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+7:8  Warning: 'Image' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+10:6  Warning: 'Review' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/shipping/page.tsx
+12:9  Warning: 'actions' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/app/admin/team/page.tsx
+141:97  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+141:107  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/api/admin/products/export/route.ts
+10:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/app/api/cart/route.ts
+9:9  Warning: 'cacheBust' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/instrumentation-client.ts
+67:22  Warning: 'callback' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+71:23  Warning: 'type' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+71:41  Warning: 'listener' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+71:52  Warning: 'event' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/actions/storage.ts
+11:5  Warning: 'maxSizeMB' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/lib/data/admin.ts
+1227:34  Warning: 'orderError' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/lib/data/analytics.ts
+2:10  Warning: 'Product' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+124:11  Warning: 'endOfLastMonth' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/lib/data/cart.ts
+16:11  Warning: 'AddressFormData' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+712:3  Warning: 'countryCode' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/data/club.ts
+6:10  Warning: 'cache' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/lib/data/customer.ts
+5:10  Warning: 'createAdminClient' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/lib/data/fulfillment.ts
+3:47  Warning: 'cartId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+15:3  Warning: 'cartId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+16:3  Warning: 'data' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/data/image-search.ts
+4:10  Warning: 'searchEntities' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+42:3  Warning: 'countryCode' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/data/payment.ts
+6:46  Warning: 'regionId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/data/rewards.ts
+4:24  Warning: 'RewardTransaction' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+301:13  Warning: 'rewards_to_apply' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/lib/data/search.ts
+4:10  Warning: 'Product' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+4:19  Warning: 'Category' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+4:29  Warning: 'Collection' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+46:5  Warning: 'countryCode' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/supabase/server.ts
+48:18  Warning: 'cookiesToSet' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/middleware.ts
+19:48  Warning: 'options' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/account/components/address-card/add-address.tsx
+18:3  Warning: 'addresses' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/account/components/auth-shell/index.tsx
+12:49  Warning: 'footer' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/account/components/order-card/index.tsx
+99:50  Warning: 'idx' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/account/components/overview/index.tsx
+1:24  Warning: 'MessageSquare' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/account/components/profile-password/index.tsx
+3:17  Warning: 'useEffect' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+3:28  Warning: 'useActionState' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+11:58  Warning: 'customer' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/account/components/review-card/index.tsx
+1:25  Warning: 'ImageIcon' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/account/components/reviews-overview/index.tsx
+4:8  Warning: 'ReviewCard' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/account/templates/login-template.tsx
+12:3  Warning: 'SIGN_IN' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+13:3  Warning: 'REGISTER' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/club-settings-form/index.tsx
+7:8  Warning: 'Input' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/delete-product-button.tsx
+5:10  Warning: 'useState' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/edit-product-form.tsx
+13:35  Warning: 'Play' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+16:20  Warning: 'useRef' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+148:33  Warning: 'newImages' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/home-settings/banners-manager/banner-form-modal.tsx
+14:17  Warning: 'banner' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/home-settings/banners-manager/banners-list.tsx
+42:14  Warning: 'banner' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+43:16  Warning: 'id' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+44:16  Warning: 'id' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+44:28  Warning: 'isActive' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+45:17  Warning: 'newBanners' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+50:14  Warning: 'banner' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+51:16  Warning: 'id' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+51:28  Warning: 'title' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+52:16  Warning: 'banner' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+131:37  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+131:55  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+216:12  Warning: 'isPending' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+216:23  Warning: 'startTransition' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/home-settings/banners-manager/index.tsx
+5:10  Warning: 'listHomeBannersAdmin' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/home-settings/exclusive-collections-manager/collection-form-modal.tsx
+15:17  Warning: 'collection' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/home-settings/exclusive-collections-manager/collections-list.tsx
+3:20  Warning: 'useTransition' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+41:14  Warning: 'collection' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+42:16  Warning: 'id' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+43:16  Warning: 'id' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+43:28  Warning: 'isActive' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+44:17  Warning: 'newCollections' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+49:14  Warning: 'collection' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+50:16  Warning: 'id' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+50:28  Warning: 'productName' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+51:16  Warning: 'collection' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/home-settings/exclusive-collections-manager/index.tsx
+5:10  Warning: 'listExclusiveCollectionsAdmin' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/image-uploader/index.tsx
+13:16  Warning: 'url' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+30:11  Warning: The 'handleUpload' function makes the dependencies of useCallback Hook (at line 119) change on every render. To fix this, wrap the definition of 'handleUpload' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+
+./src/modules/admin/components/media-manager/index.tsx
+27:22  Warning: 'images' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/media-manager/sortable-item.tsx
+13:16  Warning: 'id' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/new-product-form.tsx
+10:20  Warning: 'useRef' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/product-form-wrapper/index.tsx
+8:12  Warning: 'formData' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+9:14  Warning: 'args' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+11:20  Warning: 'e' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+15:38  Warning: 'productId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+17:9  Warning: 'formRef' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+18:9  Warning: 'router' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/product-options-editor.tsx
+3:35  Warning: 'useEffect' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+20:80  Warning: 'hasVariants' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/admin/components/product-selector/index.tsx
+15:16  Warning: 'productId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+44:8  Warning: React Hook useEffect has a missing dependency: 'products.length'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/modules/admin/components/team/role-form.tsx
+11:16  Warning: 'formData' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/cart/components/item/index.tsx
+5:10  Warning: 'updateLineItem' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+15:8  Warning: 'Spinner' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/cart/context/cart-store-context.tsx
+31:19  Warning: 'cart' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+33:19  Warning: 'input' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+34:22  Warning: 'lineId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+35:30  Warning: 'lineId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+35:46  Warning: 'quantity' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+39:16  Warning: 'lineId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+40:16  Warning: 'lineId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/cart/templates/index.tsx
+25:9  Warning: 'itemCount' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/catalog/components/catalog-view-toggle.tsx
+10:14  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/components/address-select/index.tsx
+14:5  Warning: 'address' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+15:5  Warning: 'email' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/components/addresses/index.tsx
+6:10  Warning: 'Edit3' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+22:9  Warning: 'hasShippingAddress' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/components/country-select/index.tsx
+14:53  Warning: 'label' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/components/discount-code/index.tsx
+3:10  Warning: 'Text' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/components/payment/index.tsx
+24:10  Warning: 'cardBrand' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+25:10  Warning: 'cardComplete' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/components/payment-container/index.tsx
+91:18  Warning: 'brand' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+92:14  Warning: 'error' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+93:21  Warning: 'complete' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/components/review/index.tsx
+4:10  Warning: 'Text' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/components/shipping/index.tsx
+119:6  Warning: React Hook useEffect has a missing dependency: 'handleSetShippingMethod'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/modules/checkout/components/shipping/shipping-method-option.tsx
+26:3  Warning: 'isPickup' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/components/shipping-address/index.tsx
+84:6  Warning: React Hook useEffect has a missing dependency: 'customer.email'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/modules/checkout/context/checkout-context.tsx
+9:16  Warning: 'email' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+10:26  Warning: 'address' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+11:25  Warning: 'address' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+12:24  Warning: 'method' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+14:25  Warning: 'points' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/checkout/templates/checkout-form/index.tsx
+4:8  Warning: 'ShippingInfo' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/common/components/cart-totals/index.tsx
+30:5  Warning: 'total' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+79:9  Warning: 'discountSubtotal' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/common/components/filter-radio-group/index.tsx
+1:10  Warning: 'Circle' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+12:21  Warning: 'args' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/common/components/input/index.tsx
+4:10  Warning: 'cn' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+18:25  Warning: 'touched' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/common/components/quantity-selector/index.tsx
+8:16  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/common/components/toast-display.tsx
+4:20  Warning: 'AlertCircle' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+4:59  Warning: 'Info' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/common/context/shipping-price-context.tsx
+7:30  Warning: 'price' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/common/context/toast-context.tsx
+3:60  Warning: 'useEffect' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+16:15  Warning: 'message' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+16:32  Warning: 'type' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+16:49  Warning: 'title' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+17:17  Warning: 'id' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/common/icons/bancontact.tsx
+6:3  Warning: 'size' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/common/icons/ideal.tsx
+6:3  Warning: 'size' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/common/icons/nextjs.tsx
+6:3  Warning: 'size' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/home/components/best-selling/index.tsx
+34:9  Warning: 'accountPath' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/home/components/category-marquee/index.tsx
+125:5  Warning: 'event' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/home/components/popular-toy-set/index.tsx
+16:9  Warning: 'countryCode' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+35:9  Warning: 'accountPath' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/layout/components/header/index.tsx
+70:3  Warning: 'regions' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/layout/components/mobile-menu/index.tsx
+201:3  Warning: 'shopMenuPromo' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+216:6  Warning: React Hook useEffect has a missing dependency: 'menuStack.length'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/modules/layout/components/shop-mega-menu/index.tsx
+16:15  Warning: 'event' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/layout/components/side-menu/index.tsx
+17:21  Warning: 'regions' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/layout/context/cart-sidebar-context.tsx
+14:13  Warning: 'cart' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+16:20  Warning: 'lineItemId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+17:16  Warning: 'lineItemId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+26:9  Warning: 'router' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/layout/context/layout-data-context.tsx
+16:13  Warning: 'cart' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+18:17  Warning: 'customer' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/layout/hooks/useOnClickOutside.ts
+3:17  Warning: 'event' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/layout/hooks/useVoiceSearch.ts
+31:14  Warning: 'event' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+34:15  Warning: 'event' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+40:13  Warning: 'Window' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+48:15  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+60:32  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/layout/templates/footer/index.tsx
+101:29  Warning: 'year' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/order/components/items/index.tsx
+4:8  Warning: 'Divider' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/order/components/payment-details/index.tsx
+3:10  Warning: 'isStripeLike' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/order/components/shipping-details/index.tsx
+1:10  Warning: 'convertToLocale' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+6:8  Warning: 'Divider' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/order/templates/order-completed-template.tsx
+1:10  Warning: 'Text' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+8:8  Warning: 'PaymentDetails' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/products/components/product-actions/index.tsx
+375:16  Warning: 'data' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+773:14  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/products/components/product-actions/mobile-actions.tsx
+19:19  Warning: 'title' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+19:34  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/products/components/product-actions/option-select.tsx
+23:18  Warning: 'title' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+23:33  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/products/components/product-preview/price.tsx
+3:10  Warning: 'Star' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/products/components/product-tabs/accordion.tsx
+41:3  Warning: 'headingSize' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+44:3  Warning: 'triggerable' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+47:9  Warning: 'id' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/products/components/related-products/index.tsx
+14:3  Warning: 'countryCode' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/products/context/wishlist.tsx
+24:18  Warning: 'productId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+25:20  Warning: 'productId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+121:6  Warning: React Hook useEffect has a missing dependency: 'items'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/modules/products/templates/index.tsx
+4:8  Warning: 'ProductActions' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/products/templates/product-actions-wrapper/index.tsx
+11:3  Warning: 'region' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/products/templates/product-info/index.tsx
+3:8  Warning: 'SafeRichText' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/store/components/filter-drawer/index.tsx
+76:16  Warning: 'params' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/store/components/product-grid-section/index.tsx
+40:3  Warning: 'isCustomerLoggedIn' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+41:3  Warning: 'loginPath' is assigned a value but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+
+./src/modules/store/components/refinement-list/index.tsx
+42:22  Warning: 'next' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+151:41  Warning: 'params' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+538:14  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+571:19  Warning: 'field' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+571:41  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+571:68  Warning: 'commit' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+636:14  Warning: 'event' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/store/components/refinement-list/sort-products/index.tsx
+8:20  Warning: 'name' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+8:34  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/store/components/results-toolbar/index.tsx
+4:10  Warning: 'ComponentType' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+204:14  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/store/context/storefront-filters.tsx
+58:21  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+59:19  Warning: 'range' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+60:12  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+61:17  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+62:19  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+63:16  Warning: 'partial' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+63:47  Warning: 'options' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+64:19  Warning: 'partial' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+64:50  Warning: 'options' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+65:13  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+66:17  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+67:13  Warning: 'page' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+68:20  Warning: 'value' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/store/templates/paginated-products.tsx
+89:22  Warning: 'limit' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/modules/wishlist/components/wishlist-content.tsx
+3:43  Warning: 'useRef' is defined but never used. Allowed unused vars must match /^_/u.  no-unused-vars
+160:31  Warning: 'countryCode' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

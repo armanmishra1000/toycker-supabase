@@ -5,11 +5,9 @@ import { ClubSettings } from "@/lib/supabase/types"
 import { revalidateTag, unstable_cache } from "next/cache"
 import { cache } from "react"
 
-export const getClubSettings = cache(async (): Promise<ClubSettings> => {
+const getClubSettingsInternal = async (): Promise<ClubSettings> => {
     const supabase = await createClient()
 
-    // Try to get from cache first via unstable_cache if needed, but simple revalidateTag is often enough
-    // Here we use direct DB call wrapped in React cache for deduping
     const { data, error } = await supabase
         .from("club_settings")
         .select("*")
@@ -17,7 +15,6 @@ export const getClubSettings = cache(async (): Promise<ClubSettings> => {
         .single()
 
     if (error || !data) {
-        // Return defaults if table is empty or error
         return {
             id: "default",
             min_purchase_amount: 999,
@@ -29,7 +26,14 @@ export const getClubSettings = cache(async (): Promise<ClubSettings> => {
     }
 
     return data as ClubSettings
-})
+}
+
+export const getClubSettings = async () =>
+    unstable_cache(
+        getClubSettingsInternal,
+        ["club-settings"],
+        { revalidate: 3600, tags: ["club_settings"] }
+    )()
 
 export async function updateClubSettings(settings: Partial<ClubSettings>) {
     const supabase = await createClient()

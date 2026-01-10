@@ -8,6 +8,7 @@ import type { Swiper as SwiperInstance } from "swiper/types"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import type { HomeHeroBanner } from "@lib/data/home-banners"
+import { cn } from "@lib/util/cn"
 
 const FALLBACK_BANNERS: HomeHeroBanner[] = [
   {
@@ -48,6 +49,8 @@ const HERO_SWIPER_OPTIONS = {
   },
 }
 
+const IMAGE_SIZES = "(min-width: 1440px) 40vw, (min-width: 1024px) 50vw, 100vw"
+
 type HeroProps = {
   banners: HomeHeroBanner[]
 }
@@ -63,7 +66,6 @@ const Hero = ({ banners }: HeroProps) => {
     setIsMounted(true)
   }, [])
 
-  const skeletonSlides = Array.from({ length: 3 }, (_, i) => `skeleton-${i}`)
   const bannersToRender = banners.length ? banners : FALLBACK_BANNERS
 
   const maxSlidesPerView = Math.ceil(
@@ -97,21 +99,45 @@ const Hero = ({ banners }: HeroProps) => {
     return (
       <section className="w-full">
         <div className="w-full md:px-4 md:py-8">
-          <div className="relative overflow-hidden">
-            <Swiper
-              {...buildSwiperOptions(skeletonSlides.length)}
-              className="hero-swiper"
-            >
-              {skeletonSlides.map((key) => (
-                <SwiperSlide key={key}>
-                  <div className="w-full">
-                    <div className="relative w-full overflow-hidden md:rounded-2xl aspect-[16/9] bg-slate-200">
-                      <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-ui-bg-subtle to-ui-bg-base" />
-                    </div>
-                  </div>
-                </SwiperSlide>
+          <div className="relative">
+            <div className="flex gap-4 overflow-hidden">
+              {bannersToRender.slice(0, 3).map((banner, index) => (
+                <div
+                  key={banner.id}
+                  className={cn(
+                    "relative shrink-0 overflow-hidden md:rounded-2xl aspect-[16/9] bg-slate-200",
+                    index === 0 ? "w-full small:w-[calc(50%-8px)] large:w-[40%]" : "",
+                    index === 1 ? "hidden small:block small:w-[calc(50%-8px)] large:w-[40%]" : "",
+                    index === 2 ? "hidden large:block large:w-[20%]" : ""
+                  )}
+                >
+                  <Image
+                    src={banner.image_url}
+                    alt={banner.alt_text || banner.title || "Homepage banner"}
+                    fill
+                    priority={index < 3}
+                    sizes={IMAGE_SIZES}
+                    className="object-cover"
+                  />
+                </div>
               ))}
-            </Swiper>
+            </div>
+
+            {/* Placeholder Nav Buttons to prevent popping in after hydration */}
+            <button
+              type="button"
+              className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-ui-border-base bg-white text-ui-fg-base shadow-sm z-20 cursor-default opacity-50"
+              aria-hidden="true"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-ui-border-base bg-white text-ui-fg-base shadow-sm z-20 cursor-default opacity-50"
+              aria-hidden="true"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </section>
@@ -153,18 +179,20 @@ const Hero = ({ banners }: HeroProps) => {
             {bannersToRender.map((slide, index) => {
               const BannerContent = () => (
                 <div className="relative w-full overflow-hidden md:rounded-2xl bg-slate-200 aspect-[16/9]">
-                  <div
-                    className={`absolute inset-0 ${loadedIds.has(slide.id)
-                      ? "opacity-0"
-                      : "animate-pulse bg-ui-bg-subtle"
-                      } transition-opacity duration-300`}
-                  />
+                  {index > 0 && (
+                    <div
+                      className={`absolute inset-0 ${loadedIds.has(slide.id)
+                        ? "opacity-0"
+                        : "animate-pulse bg-ui-bg-subtle"
+                        } transition-opacity duration-300`}
+                    />
+                  )}
                   <Image
                     src={slide.image_url}
                     alt={slide.alt_text || slide.title || "Homepage banner"}
                     fill
                     priority={index === 0}
-                    sizes="(min-width: 2024px) 33vw, (min-width: 1040px) 100vw"
+                    sizes={IMAGE_SIZES}
                     className="object-cover"
                     onLoad={() => {
                       setLoadedIds((prev) => {

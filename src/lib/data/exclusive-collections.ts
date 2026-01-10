@@ -16,7 +16,7 @@ export type ExclusiveCollectionEntry = {
 
 export const listExclusiveCollections = unstable_cache(
   async ({
-    regionId,
+    regionId: _regionId,
   }: {
     regionId: string
   }): Promise<ExclusiveCollectionEntry[]> => {

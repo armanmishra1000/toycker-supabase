@@ -1,5 +1,6 @@
 "use server"
 
+import { unstable_cache } from "next/cache"
 import { listProducts } from "@lib/data/products"
 import { getCollectionByHandle } from "@lib/data/collections"
 import type { Product } from "@/lib/supabase/types"
@@ -11,7 +12,7 @@ type GetCollectionProductsArgs = {
   collectionId?: string
 }
 
-export const getCollectionProductsByHandle = async ({
+const getCollectionProductsByHandleInternal = async ({
   handle,
   regionId,
   limit = 5,
@@ -35,7 +36,7 @@ export const getCollectionProductsByHandle = async ({
         limit,
       },
     })
-    
+
     // If we found products, return them
     if (products.length > 0) {
       return products
@@ -55,3 +56,10 @@ export const getCollectionProductsByHandle = async ({
 
   return fallbackProducts
 }
+
+export const getCollectionProductsByHandle = async (args: GetCollectionProductsArgs) =>
+  unstable_cache(
+    () => getCollectionProductsByHandleInternal(args),
+    ["collection-products", args.handle, args.regionId, String(args.limit)],
+    { revalidate: 3600, tags: ["products", "collections"] }
+  )()

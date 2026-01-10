@@ -66,18 +66,14 @@ export const listProducts = cache(async function listProducts(options: {
   }
 
   if (options.queryParams?.collection_id?.length) {
-    // Filter by junction table
-    const { data: productIds } = await supabase
-      .from("product_collections")
-      .select("product_id")
-      .in("collection_id", options.queryParams.collection_id)
-
-    if (productIds && productIds.length > 0) {
-      query = query.in("id", productIds.map(p => p.product_id))
-    } else {
-      // Return empty if filtered collection has no products
-      return { response: { products: [], count: 0 } }
-    }
+    const collectionIds = options.queryParams.collection_id
+    query = supabase
+      .from("products")
+      .select(`
+        ${PRODUCT_SELECT},
+        product_collections!inner(collection_id)
+      `, { count: "exact" })
+      .in("product_collections.collection_id", collectionIds)
   }
 
   const { data, count, error } = await query.order("created_at", { ascending: false })
@@ -147,16 +143,13 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
 
   if (queryParams?.collection_id) {
     const collectionIds = queryParams.collection_id as string[]
-    const { data: productIds } = await supabase
-      .from("product_collections")
-      .select("product_id")
-      .in("collection_id", collectionIds)
-
-    if (productIds && productIds.length > 0) {
-      query = query.in("id", productIds.map(p => p.product_id))
-    } else {
-      return { response: { products: [], count: 0 }, pagination: { page, limit } }
-    }
+    query = supabase
+      .from("products")
+      .select(`
+        ${PRODUCT_SELECT},
+        product_collections!inner(collection_id)
+      `, { count: "exact" })
+      .in("product_collections.collection_id", collectionIds)
   }
   if (queryParams?.q) query = query.ilike("name", `%${queryParams.q}%`)
 

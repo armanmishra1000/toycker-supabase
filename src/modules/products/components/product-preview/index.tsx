@@ -10,7 +10,7 @@ import WishlistButton from "@modules/products/components/wishlist-button"
 import { useOptionalCartSidebar } from "@modules/layout/context/cart-sidebar-context"
 import { useCartStore } from "@modules/cart/context/cart-store-context"
 import SafeRichText from "@modules/common/components/safe-rich-text"
-import { Loader2, ShoppingCart, Eye, ShoppingBag } from "lucide-react"
+import { Loader2, ShoppingBag } from "lucide-react"
 import ProductQuickViewModal from "./quick-view-modal"
 import { getProductPrice } from "@lib/util/get-product-price"
 
@@ -36,24 +36,17 @@ export default function ProductPreview({
   const [isPending, startTransition] = useTransition()
   const [status, setStatus] = useState<"idle" | "added" | "error">("idle")
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false)
-  const [isQuickViewLoading, setIsQuickViewLoading] = useState(false)
-  const [quickViewProduct, setQuickViewProduct] = useState<Product>(product)
   const cartSidebar = useOptionalCartSidebar()
   const openCart = cartSidebar?.openCart
   const { optimisticAdd } = useCartStore()
 
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    product.variants?.[0]?.id || null
-  )
+  const selectedVariantId = product.variants?.[0]?.id || null
 
   const selectedVariant = useMemo(() => {
     if (!selectedVariantId) return product.variants?.[0]
     return product.variants?.find((v) => v.id === selectedVariantId)
   }, [product.variants, selectedVariantId])
 
-  const hasValidOptions = useMemo(() => {
-    return (product.options || []).some(option => (option.values?.length ?? 0) > 0)
-  }, [product.options])
 
   // Use the central utility to calculate display price
   const { cheapestPrice } = useMemo(() => {
@@ -102,9 +95,7 @@ export default function ProductPreview({
   const openQuickView = async (event: MouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
-    setIsQuickViewLoading(true)
     setIsQuickViewOpen(true)
-    setIsQuickViewLoading(false)
   }
 
   const handleAction = (event: MouseEvent) => {
@@ -230,7 +221,7 @@ export default function ProductPreview({
       </div>
 
       <ProductQuickViewModal
-        product={quickViewProduct}
+        product={product}
         isOpen={isQuickViewOpen}
         onClose={() => setIsQuickViewOpen(false)}
       />

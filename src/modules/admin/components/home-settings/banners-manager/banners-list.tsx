@@ -128,7 +128,7 @@ function SortableBannerItem({ banner, onEdit, onDelete, onToggle, deletingId, to
                             </h3>
                             {banner.alt_text && (
                                 <p className="text-sm text-gray-500 line-clamp-1 mt-0.5 italic">
-                                    "{banner.alt_text}"
+                                    &quot;{banner.alt_text}&quot;
                                 </p>
                             )}
                         </div>

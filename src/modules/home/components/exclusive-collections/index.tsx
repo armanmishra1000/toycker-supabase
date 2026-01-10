@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay } from "swiper/modules"
 import type { Swiper as SwiperInstance } from "swiper/types"
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import "swiper/css"
 
@@ -117,8 +117,6 @@ const ExclusiveCard = ({
 }: {
   item: ExclusiveCollectionEntry
   clubDiscountPercentage?: number
-  index: number
-  totalItems: number
 }) => {
   const [isLoaded, setIsLoaded] = useState(false)
   const poster = resolvePosterSource(item)
@@ -161,7 +159,7 @@ const ExclusiveCard = ({
               alt={title}
               fill
               className="object-cover"
-              sizes="(min-width: 1024px) 360px, 100vw"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 20vw"
               onLoad={() => setIsLoaded(true)}
             />
           </div>
@@ -196,8 +194,6 @@ const ExclusiveCard = ({
 const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollectionsProps) => {
   const [isMounted, setIsMounted] = useState(false)
   const swiperRef = useRef<SwiperInstance | null>(null)
-  const [isAutoplaying, setIsAutoplaying] = useState(true)
-  const [activeIndex, setActiveIndex] = useState(0)
 
   const showcaseItems = useMemo(() => items ?? [], [items])
   const hasItems = showcaseItems.length > 0
@@ -262,11 +258,11 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
                 disableOnInteraction: false,
                 pauseOnMouseEnter: true,
               }}
-              onSwiper={(swiper) => {
-                swiperRef.current = swiper
+              onSwiper={(_swiper) => {
+                swiperRef.current = _swiper
               }}
-              onSlideChange={(swiper) => {
-                setActiveIndex(swiper.realIndex)
+              onSlideChange={(_swiper) => {
+                // Handle slide change if needed
               }}
               className="exclusive-swiper pb-6"
               aria-roledescription="Exclusive collections slider"
@@ -280,8 +276,6 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
                   <ExclusiveCard
                     item={item}
                     clubDiscountPercentage={clubDiscountPercentage}
-                    index={index}
-                    totalItems={showcaseItems.length}
                   />
                 </SwiperSlide>
               ))}
