@@ -1,8 +1,7 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import { isPayU, isStripeLike, paymentInfoMap } from "@lib/constants"
-import { initiatePaymentSession } from "@lib/data/cart"
+import { isStripeLike, paymentInfoMap } from "@lib/constants"
 import { Text } from "@modules/common/components/text"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import PaymentContainer, {
@@ -10,92 +9,36 @@ import PaymentContainer, {
 } from "@modules/checkout/components/payment-container"
 import { useEffect, useState } from "react"
 import { Cart } from "@/lib/supabase/types"
-import { Loader2, CheckCircle } from "lucide-react"
 import { useCheckout } from "../../context/checkout-context"
 
 const Payment = ({
   cart,
   availablePaymentMethods,
-  selectedPaymentMethod,
-  onPaymentMethodChange,
 }: {
   cart: Cart
   availablePaymentMethods: { id: string; name: string }[]
-  selectedPaymentMethod?: string
-  onPaymentMethodChange?: (method: string) => void
 }) => {
-  const activeSession = cart.payment_collection?.payment_sessions?.find(
-    (paymentSession) => paymentSession.status === "pending"
-  )
+  const { state, setPaymentMethod } = useCheckout()
 
   const [error, setError] = useState<string | null>(null)
   const [cardBrand, setCardBrand] = useState<string | null>(null)
   const [cardComplete, setCardComplete] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-
-  const { setSectionUpdating } = useCheckout()
-
-  // Sync local loading state with global context
-  useEffect(() => {
-    setSectionUpdating("payment", isLoading)
-  }, [isLoading, setSectionUpdating])
-
-  // Use prop if available, otherwise local state (though with prop control, local state is redundant for selection)
-  // We'll use local state to track what to display if parent doesn't maximize control, 
-  // but better to rely on parent prop for the "instant" feeling if checking across components.
-  // Actually, let's keep local state for RadioGroup but sync with parent.
-  const [internalSelection, setInternalSelection] = useState(
-    activeSession?.provider_id ?? ""
-  )
-
-  const currentSelection = selectedPaymentMethod ?? internalSelection
 
   const paidByGiftcard = (cart.gift_card_total ?? 0) > 0 && cart.total === 0
 
   // Auto-select first payment method if none selected
   useEffect(() => {
-    if (!currentSelection && availablePaymentMethods?.length && !paidByGiftcard) {
+    if (!state.paymentMethod && availablePaymentMethods?.length && !paidByGiftcard) {
       const firstMethod = availablePaymentMethods[0]
       if (firstMethod) {
         setPaymentMethod(firstMethod.id)
       }
     }
-  }, [availablePaymentMethods, currentSelection, paidByGiftcard])
+  }, [availablePaymentMethods, state.paymentMethod, paidByGiftcard, setPaymentMethod])
 
-  const setPaymentMethod = async (method: string) => {
+  const handlePaymentMethodChange = (method: string) => {
     setError(null)
-    setIsLoading(true)
-    setIsSuccess(false)
-    setInternalSelection(method)
-    if (onPaymentMethodChange) {
-      onPaymentMethodChange(method)
-    }
-
-    try {
-      // Save ALL payment methods to database (including COD)
-      const paymentData: { provider_id: string; data: Record<string, unknown> } = {
-        provider_id: method,
-        data: {}
-      }
-
-      // Add extra data for PayU
-      if (isPayU(method)) {
-        paymentData.data = {
-          email: cart.email,
-          phone: cart.shipping_address?.phone,
-          first_name: cart.shipping_address?.first_name,
-        }
-      }
-
-      await initiatePaymentSession(cart, paymentData)
-      setIsSuccess(true)
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to set payment method"
-      setError(message)
-    } finally {
-      setIsLoading(false)
-    }
+    setPaymentMethod(method)
   }
 
   return (
@@ -104,37 +47,24 @@ const Payment = ({
         <Text
           as="h2"
           weight="bold"
-          className="text-3xl flex items-center gap-2"
+          className="text-3xl"
         >
           Payment Method
-          {isLoading ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
-              <span className="text-sm font-normal text-gray-500">Updating...</span>
-            </div>
-          ) : isSuccess ? (
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-sm font-normal text-green-600">Saved</span>
-            </div>
-          ) : currentSelection ? (
-            <CheckCircle className="h-4 w-4 text-gray-300" />
-          ) : null}
         </Text>
       </div>
 
       <div>
         {!paidByGiftcard && availablePaymentMethods?.length ? (
           <RadioGroup
-            value={currentSelection}
-            onChange={(value: string) => setPaymentMethod(value)}
+            value={state.paymentMethod || ""}
+            onChange={handlePaymentMethodChange}
           >
             {availablePaymentMethods.map((paymentMethod) => (
               <div key={paymentMethod.id}>
                 {isStripeLike(paymentMethod.id) ? (
                   <StripeCardContainer
                     paymentProviderId={paymentMethod.id}
-                    selectedPaymentOptionId={currentSelection}
+                    selectedPaymentOptionId={state.paymentMethod || ""}
                     paymentInfoMap={paymentInfoMap}
                     setCardBrand={setCardBrand}
                     setError={setError}
@@ -144,7 +74,7 @@ const Payment = ({
                   <PaymentContainer
                     paymentInfoMap={paymentInfoMap}
                     paymentProviderId={paymentMethod.id}
-                    selectedPaymentOptionId={currentSelection}
+                    selectedPaymentOptionId={state.paymentMethod || ""}
                   />
                 )}
               </div>

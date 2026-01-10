@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { getCollectionByHandle, listCollections, Collection } from "@lib/data/collections"
 import CollectionTemplate from "@modules/collections/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/types"
+import { getClubSettings } from "@lib/data/club"
 
 type Props = {
   params: Promise<{ handle: string }>
@@ -53,12 +54,15 @@ export default async function CollectionPage(props: Props) {
     notFound()
   }
 
+  const clubSettings = await getClubSettings()
+
   return (
     <CollectionTemplate
       collection={collection}
       page={page}
       sortBy={sortBy}
       countryCode="in"
+      clubDiscountPercentage={clubSettings?.discount_percentage}
     />
   )
 }

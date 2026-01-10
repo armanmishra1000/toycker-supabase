@@ -27,7 +27,7 @@ const resolvePosterSource = (entry: ExclusiveCollectionEntry) => {
   const firstImage = entry.product?.images?.[0]
   return (
     entry.poster_url ??
-    entry.product?.thumbnail ??
+    entry.product?.image_url ??
     (firstImage ? getImageUrl(firstImage) : null) ??
     FALLBACK_POSTER
   )
@@ -37,7 +37,7 @@ const resolveProductImageSource = (entry: ExclusiveCollectionEntry) => {
   const firstImage = entry.product?.images?.[0]
   return (
     (firstImage ? getImageUrl(firstImage) : null) ??
-    entry.product?.thumbnail ??
+    entry.product?.image_url ??
     entry.poster_url ??
     FALLBACK_POSTER
   )
@@ -137,7 +137,7 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
         {!isMounted ? (
           <div className="grid gap-4 rounded-xl bg-[#f8ede6] p-6 sm:grid-cols-2 lg:grid-cols-3">
             {showcaseItems.slice(0, 3).map((item) => {
-              const title = item.product?.title ?? "Featured collectible"
+              const title = item.product?.name ?? "Featured collectible"
               const productImage = resolveProductImageSource(item)
               const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
 
@@ -201,7 +201,7 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
               {showcaseItems.map((item, index) => {
                 const poster = resolvePosterSource(item)
                 const productImage = resolveProductImageSource(item)
-                const title = item.product?.title ?? "Exclusive collectible"
+                const title = item.product?.name ?? "Exclusive collectible"
                 const productHandle = item.product?.handle ?? item.product_id
                 const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
                 const hasVideo = Boolean(item.video_url && item.video_url.trim().length > 0)

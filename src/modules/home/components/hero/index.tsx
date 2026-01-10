@@ -12,9 +12,12 @@ import type { HomeHeroBanner } from "@lib/data/home-banners"
 const FALLBACK_BANNERS: HomeHeroBanner[] = [
   {
     id: "fallback-1",
+    title: "Featured toys adventure",
     image_url: "/assets/images/slider_default.png",
     alt_text: "Featured toys adventure",
+    link_url: null,
     sort_order: 0,
+    is_active: true,
     starts_at: null,
     ends_at: null,
   },
@@ -147,35 +150,52 @@ const Hero = ({ banners }: HeroProps) => {
             }}
             className="hero-swiper"
           >
-            {bannersToRender.map((slide, index) => (
-              <SwiperSlide key={slide.id}>
-                <div className="w-full">
-                  <div className="relative w-full overflow-hidden md:rounded-2xl bg-slate-200 aspect-[16/9]">
-                    <div
-                      className={`absolute inset-0 ${loadedIds.has(slide.id)
-                          ? "opacity-0"
-                          : "animate-pulse bg-ui-bg-subtle"
-                        } transition-opacity duration-300`}
-                    />
-                    <Image
-                      src={slide.image_url}
-                      alt={slide.alt_text || "Homepage banner"}
-                      fill
-                      priority={index === 0}
-                      sizes="(min-width: 2024px) 33vw, (min-width: 1040px) 100vw"
-                      className="object-cover"
-                      onLoad={() => {
-                        setLoadedIds((prev) => {
-                          const next = new Set(prev)
-                          next.add(slide.id)
-                          return next
-                        })
-                      }}
-                    />
-                  </div>
+            {bannersToRender.map((slide, index) => {
+              const BannerContent = () => (
+                <div className="relative w-full overflow-hidden md:rounded-2xl bg-slate-200 aspect-[16/9]">
+                  <div
+                    className={`absolute inset-0 ${loadedIds.has(slide.id)
+                      ? "opacity-0"
+                      : "animate-pulse bg-ui-bg-subtle"
+                      } transition-opacity duration-300`}
+                  />
+                  <Image
+                    src={slide.image_url}
+                    alt={slide.alt_text || slide.title || "Homepage banner"}
+                    fill
+                    priority={index === 0}
+                    sizes="(min-width: 2024px) 33vw, (min-width: 1040px) 100vw"
+                    className="object-cover"
+                    onLoad={() => {
+                      setLoadedIds((prev) => {
+                        const next = new Set(prev)
+                        next.add(slide.id)
+                        return next
+                      })
+                    }}
+                  />
                 </div>
-              </SwiperSlide>
-            ))}
+              )
+
+              return (
+                <SwiperSlide key={slide.id}>
+                  <div className="w-full">
+                    {slide.link_url ? (
+                      <a
+                        href={slide.link_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block cursor-pointer hover:opacity-90 transition-opacity"
+                      >
+                        <BannerContent />
+                      </a>
+                    ) : (
+                      <BannerContent />
+                    )}
+                  </div>
+                </SwiperSlide>
+              )
+            })}
           </Swiper>
           <button
             type="button"

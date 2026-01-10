@@ -9,10 +9,10 @@ import PopularToySet from "@modules/home/components/popular-toy-set"
 import ExclusiveCollections from "@modules/home/components/exclusive-collections"
 import BestSelling from "@modules/home/components/best-selling"
 import ProductGridSkeleton from "@modules/common/components/skeleton/product-grid-skeleton"
+import LazyLoadSection from "@modules/common/components/lazy-load-section"
 import { listHomeBanners } from "@lib/data/home-banners"
 import { listExclusiveCollections } from "@lib/data/exclusive-collections"
 import { getRegion } from "@lib/data/regions"
-import { retrieveCustomer } from "@lib/data/customer"
 import { getClubSettings } from "@lib/data/club"
 
 export const metadata: Metadata = {
@@ -20,21 +20,18 @@ export const metadata: Metadata = {
   description: "Discover a wide range of premium toys for kids of all ages.",
 }
 
-export const revalidate = 60
-
 export default async function Home() {
   const countryCode = "in"
 
-  const [banners, exclusiveItems, region, customer, clubSettings] = await Promise.all([
+  // Fetch club settings from database (admin panel)
+  const clubSettings = await getClubSettings()
+  const clubDiscountPercentage = clubSettings?.discount_percentage
+
+  const [banners, exclusiveItems, region] = await Promise.all([
     listHomeBanners(),
     listExclusiveCollections({ regionId: "reg_india" }),
     getRegion(),
-    retrieveCustomer(),
-    getClubSettings()
   ])
-
-  const isCustomerLoggedIn = Boolean(customer)
-  const clubDiscountPercentage = clubSettings?.discount_percentage
 
   return (
     <>
@@ -43,33 +40,44 @@ export default async function Home() {
       <CategoryMarquee />
 
       {/* Product sections - stream in with skeleton fallbacks */}
-      <Suspense fallback={<ProductGridSkeleton title="Explore" subtitle="Explore Popular Toy Set" count={10} className="bg-primary/10" />}>
-        <PopularToySet
-          regionId={region.id}
-          countryCode={countryCode}
-          isCustomerLoggedIn={isCustomerLoggedIn}
+      <LazyLoadSection minHeight="600px">
+        <Suspense fallback={<ProductGridSkeleton title="Explore" subtitle="Explore Popular Toy Set" count={10} className="bg-primary/10" />}>
+          <PopularToySet
+            regionId={region.id}
+            countryCode={countryCode}
+            clubDiscountPercentage={clubDiscountPercentage}
+          />
+        </Suspense>
+      </LazyLoadSection>
+
+      <LazyLoadSection minHeight="400px">
+        <ShopByAge />
+      </LazyLoadSection>
+
+      <LazyLoadSection minHeight="500px">
+        <ExclusiveCollections
+          items={exclusiveItems}
           clubDiscountPercentage={clubDiscountPercentage}
         />
-      </Suspense>
+      </LazyLoadSection>
 
-      <ShopByAge />
+      <LazyLoadSection minHeight="600px">
+        <Suspense fallback={<ProductGridSkeleton title="Curated" subtitle="Best Selling Picks" count={10} className="bg-white" />}>
+          <BestSelling
+            regionId={region.id}
+            countryCode={countryCode}
+            clubDiscountPercentage={clubDiscountPercentage}
+          />
+        </Suspense>
+      </LazyLoadSection>
 
-      <ExclusiveCollections
-        items={exclusiveItems}
-        clubDiscountPercentage={clubDiscountPercentage}
-      />
+      <LazyLoadSection minHeight="500px">
+        <ReviewMediaHub />
+      </LazyLoadSection>
 
-      <Suspense fallback={<ProductGridSkeleton title="Curated" subtitle="Best Selling Picks" count={10} className="bg-white" />}>
-        <BestSelling
-          regionId={region.id}
-          countryCode={countryCode}
-          isCustomerLoggedIn={isCustomerLoggedIn}
-          clubDiscountPercentage={clubDiscountPercentage}
-        />
-      </Suspense>
-
-      <ReviewMediaHub />
-      <WhyChooseUs />
+      <LazyLoadSection minHeight="400px">
+        <WhyChooseUs />
+      </LazyLoadSection>
     </>
   )
 }

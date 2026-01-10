@@ -16,11 +16,13 @@ export default async function CategoryTemplate({
   sortBy,
   page,
   countryCode,
+  clubDiscountPercentage,
 }: {
   category: Category
   sortBy?: SortOptions
   page?: string
   countryCode: string
+  clubDiscountPercentage?: number
 }) {
   if (!category || !countryCode) notFound()
 
@@ -116,6 +118,7 @@ export default async function CategoryTemplate({
             pageSize={STORE_PRODUCT_PAGE_SIZE}
             isCustomerLoggedIn={isCustomerLoggedIn}
             loginPath={accountPath}
+            clubDiscountPercentage={clubDiscountPercentage}
           />
         </div>
       </FilterDrawer>

@@ -196,7 +196,7 @@ export default function ProductPreview({
               <button
                 type="button"
                 onClick={handleAction}
-                className="w-full bg-white text-slate-900 border border-gray-100 rounded-full py-3 text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+                className="w-full bg-white text-slate-900 rounded-full py-3 text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all"
                 disabled={isPending}
               >
                 {isPending ? (

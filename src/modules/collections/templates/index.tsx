@@ -13,11 +13,13 @@ export default async function CollectionTemplate({
   collection,
   page,
   countryCode,
+  clubDiscountPercentage,
 }: {
   sortBy?: SortOptions
   collection: Collection
   page?: string
   countryCode: string
+  clubDiscountPercentage?: number
 }) {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "featured"
@@ -81,6 +83,7 @@ export default async function CollectionTemplate({
             pageSize={STORE_PRODUCT_PAGE_SIZE}
             isCustomerLoggedIn={isCustomerLoggedIn}
             loginPath={accountPath}
+            clubDiscountPercentage={clubDiscountPercentage}
           />
         </div>
       </FilterDrawer>

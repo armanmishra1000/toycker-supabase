@@ -1416,7 +1416,7 @@ export async function logOrderEvent(
   actor: string = "system",
   metadata: Record<string, unknown> = {}
 ) {
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   // If actor is "admin", try to get the actual admin name
   let actorDisplay = actor

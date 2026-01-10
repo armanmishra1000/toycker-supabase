@@ -3,6 +3,7 @@ import Input from "@modules/common/components/input"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
 import CountrySelect from "../country-select"
+import { useCheckout } from "../../context/checkout-context"
 
 const ShippingAddress = ({
   customer,
@@ -15,6 +16,8 @@ const ShippingAddress = ({
   checked: boolean
   onChange: () => void
 }) => {
+  const { setEmail, setShippingAddress } = useCheckout()
+
   const [formData, setFormData] = useState<Record<string, string>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
@@ -105,6 +108,29 @@ const ShippingAddress = ({
     }),
     [formData]
   )
+
+  // Update checkout context whenever form data changes
+  useEffect(() => {
+    const address = {
+      first_name: formData["shipping_address.first_name"],
+      last_name: formData["shipping_address.last_name"],
+      address_1: formData["shipping_address.address_1"],
+      address_2: formData["shipping_address.company"] || null,
+      city: formData["shipping_address.city"],
+      province: formData["shipping_address.province"] || null,
+      postal_code: formData["shipping_address.postal_code"],
+      country_code: formData["shipping_address.country_code"],
+      phone: formData["shipping_address.phone"] || null,
+    }
+    setShippingAddress(address)
+  }, [formData, setShippingAddress])
+
+  // Update email in checkout context
+  useEffect(() => {
+    if (formData.email) {
+      setEmail(formData.email)
+    }
+  }, [formData.email, setEmail])
 
   return (
     <>

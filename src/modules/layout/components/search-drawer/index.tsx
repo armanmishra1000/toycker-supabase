@@ -333,7 +333,13 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                       />
                       {imagePreview && (
                         <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-slate-200">
-                          <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+                          <Image
+                            src={imagePreview}
+                            alt="Preview"
+                            fill
+                            className="object-cover"
+                            sizes="96px"
+                          />
                         </div>
                       )}
                       {/* Removed Coming Soon badge */}

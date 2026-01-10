@@ -83,9 +83,9 @@ export function Pagination({
     } else {
       // Handle different cases for displaying pages and ellipses
       if (currentPage <= 4) {
-        // Show 1, 2, 3, 4, 5, ..., lastpage
+        // Show 1, 2, 3, ..., lastpage
         buttons.push(
-          ...arrayRange(1, 5).map((p) => renderPageButton(p, p, p === currentPage))
+          ...arrayRange(1, 3).map((p) => renderPageButton(p, p, p === currentPage))
         )
         buttons.push(renderEllipsis("ellipsis1"))
         buttons.push(
@@ -137,11 +137,6 @@ export function Pagination({
 
   return (
     <div className="mt-12 flex w-full flex-col items-center gap-3" data-testid={dataTestid}>
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <span>Page {currentPage}</span>
-        <span aria-hidden className="h-4 w-px bg-gray-200" />
-        <span>of {pagesCount}</span>
-      </div>
       <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1 shadow-sm">
         <button
           type="button"

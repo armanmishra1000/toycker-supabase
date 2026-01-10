@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { getCategoryByHandle, listCategories } from "@lib/data/categories"
 import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/types"
+import { getClubSettings } from "@lib/data/club"
 
 type Props = {
   params: Promise<{ category: string[] }>
@@ -67,12 +68,15 @@ export default async function CategoryPage(props: Props) {
     notFound()
   }
 
+  const clubSettings = await getClubSettings()
+
   return (
     <CategoryTemplate
       category={productCategory}
       sortBy={sortBy}
       page={page}
       countryCode="in"
+      clubDiscountPercentage={clubSettings?.discount_percentage}
     />
   )
 }

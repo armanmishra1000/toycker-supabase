@@ -1,6 +1,7 @@
 import { CartItem } from "@/lib/supabase/types"
 import { Text } from "@modules/common/components/text"
 import { convertToLocale } from "@lib/util/money"
+import Image from "next/image"
 
 type ItemProps = {
   item: CartItem
@@ -12,12 +13,14 @@ const Item = ({ item, currencyCode }: ItemProps) => {
     <tr className="group border-b border-slate-50 last:border-0" data-testid="product-row">
       <td className="py-6 pl-6 sm:pl-10">
         <div className="flex gap-x-4 items-center">
-          <div className="w-16 h-20 sm:w-20 sm:h-28 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-sm transition-transform group-hover:scale-105 border border-slate-100">
+          <div className="relative w-16 h-20 sm:w-20 sm:h-28 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-sm transition-transform group-hover:scale-105 border border-slate-100">
             {item.thumbnail ? (
-              <img
+              <Image
                 src={item.thumbnail}
                 alt={item.title}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 64px, 80px"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">

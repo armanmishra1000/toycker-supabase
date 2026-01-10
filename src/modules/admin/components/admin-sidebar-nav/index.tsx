@@ -15,6 +15,7 @@ import {
   SparklesIcon,
   StarIcon,
   ReceiptPercentIcon,
+  PhotoIcon,
 } from "@heroicons/react/24/outline"
 
 const NAV_ITEMS = [
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
   { label: "Reviews", href: "/admin/reviews", icon: StarIcon },
   { label: "Team", href: "/admin/team", icon: UsersIcon },
   { label: "Discounts", href: "/admin/discounts", icon: ReceiptPercentIcon },
+  { label: "Home Settings", href: "/admin/home-settings", icon: PhotoIcon },
 ]
 
 function isActive(pathname: string, href: string): boolean {
@@ -59,8 +61,8 @@ function NavItem({ label, href, icon: Icon, pathname, onClick }: NavItemProps) {
       href={href}
       onClick={onClick}
       className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${active
-          ? "bg-gray-900 text-white shadow-sm"
-          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        ? "bg-gray-900 text-white shadow-sm"
+        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         }`}
     >
       <Icon

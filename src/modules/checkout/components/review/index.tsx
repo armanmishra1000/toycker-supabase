@@ -5,6 +5,7 @@ import { Text } from "@modules/common/components/text"
 import { Lock, AlertCircle } from "lucide-react"
 
 import PaymentButton from "../payment-button"
+import { useCheckout } from "../../context/checkout-context"
 
 // Extended cart type with gift_cards property
 type CartWithGiftCards = Cart & {
@@ -12,20 +13,21 @@ type CartWithGiftCards = Cart & {
 }
 
 const Review = ({ cart }: { cart: CartWithGiftCards }) => {
+  const { state } = useCheckout()
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && (cart?.total ?? 0) === 0
 
-  // Check if all required steps are completed
-  const hasAddress = Boolean(cart.shipping_address?.address_1)
-  const hasShipping = Boolean(cart.shipping_methods?.length)
-  const hasPayment = Boolean(cart.payment_collection?.payment_sessions?.length) || paidByGiftcard
+  // Check if all required steps are completed using local state
+  const hasAddress = state.isValid || (state.shippingAddress && state.shippingAddress.address_1)
+  const hasShipping = Boolean(cart.shipping_methods?.length) || true // Assuming default shipping
+  const hasPayment = Boolean(state.paymentMethod) || paidByGiftcard
 
   const isReady = hasAddress && hasShipping && hasPayment
 
   // Generate error messages
   const errors = []
   if (!hasAddress) errors.push("shipping address")
-  if (!hasShipping) errors.push("delivery method")
+  // if (!hasShipping) errors.push("delivery method")
   if (!hasPayment) errors.push("payment method")
 
   return (

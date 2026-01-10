@@ -1,14 +1,15 @@
 "use server"
 
+import { createClient } from "@/lib/supabase/server"
 import { Product } from "@/lib/supabase/types"
-import { listProducts } from "./products"
 
 export type ExclusiveCollectionEntry = {
   id: string
   product_id: string
   video_url: string
   poster_url: string | null
-  sort_order: number | null
+  video_duration: number | null
+  sort_order: number
   product: Product | null
 }
 
@@ -17,14 +18,37 @@ export const listExclusiveCollections = async ({
 }: {
   regionId: string
 }): Promise<ExclusiveCollectionEntry[]> => {
-  // Fetch products and assign local video files
-  const { response: { products } } = await listProducts()
-  return products.slice(0, 6).map((product, index) => ({
-    id: `exclusive-${index}`,
-    product_id: product.id,
-    video_url: `/assets/videos/exclusive-${index + 1}.mp4`,
-    poster_url: product.thumbnail ?? product.image_url ?? null,
-    sort_order: index,
-    product,
-  }))
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("home_exclusive_collections")
+    .select(`
+      *,
+      product:products (
+        id,
+        name,
+        handle,
+        image_url,
+        images,
+        price,
+        description,
+        collection_id,
+        metadata,
+        created_at,
+        updated_at
+      )
+    `)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+
+  if (error) {
+    console.warn("Error fetching exclusive collections:", error)
+    return []
+  }
+
+  if (!data || data.length === 0) {
+    return []
+  }
+
+  return data as ExclusiveCollectionEntry[]
 }

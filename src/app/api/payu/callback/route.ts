@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyPayUHash, PayUCallbackPayload } from "@/lib/payu"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { retrieveCart } from "@/lib/data/cart"
 
 // Ensure this runs on Node.js to support crypto
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     console.log("[PAYU] Processing payment:", { status, cartId, txnid, amount })
 
     if (status === "success") {
-      const supabase = await createClient()
+      const supabase = await createAdminClient()
 
       // Use cartId from UDF1 directly
       const cart = await retrieveCart(cartId)
@@ -72,47 +72,87 @@ export async function POST(request: NextRequest) {
         return htmlRedirect("/checkout?error=cart_not_found")
       }
 
-      // 3. Create Order in Database
-      // Use JSON serialization to properly type the complex objects
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert({
-          user_id: cart.user_id,
-          customer_email: email || cart.email || "guest@toycker.com",
-          total_amount: parseFloat(amount),
-          currency_code: cart.currency_code || "inr",
-          status: "paid",
-          payment_status: "captured",
-          fulfillment_status: "not_shipped",
-          payu_txn_id: txnid,
-          shipping_address: cart.shipping_address,
-          billing_address: cart.billing_address,
-          items: JSON.parse(JSON.stringify(cart.items)),
-          shipping_methods: JSON.parse(JSON.stringify(cart.shipping_methods)),
-          metadata: { cartId, payu_payload: payload }
-        })
-        .select()
-        .single()
+      // 3. Update Existing Order or Create New One
+      // We prefer updating the one created by the RPC in completeCheckout
+      let orderIdToUse: string | null = null
 
-      if (error) {
-        console.error("[PAYU] Order creation failed:", error.message)
-        return htmlRedirect("/checkout?error=order_creation_failed_payment_success")
+      const { data: existingOrder } = await supabase
+        .from("orders")
+        .select("*")
+        .contains("metadata", { cart_id: cartId })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (existingOrder) {
+        console.log("[PAYU] Found existing order, updating:", existingOrder.id)
+        orderIdToUse = existingOrder.id
+
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update({
+            status: "paid",
+            payment_status: "captured",
+            payu_txn_id: txnid,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", orderIdToUse)
+
+        if (updateError) {
+          console.error("[PAYU] Order update failed:", updateError.message)
+          return htmlRedirect("/checkout?error=order_update_failed_payment_success")
+        }
+      } else {
+        console.log("[PAYU] No existing order found, creating new one")
+        // Fallback: Create New Order in Database
+        // Use JSON serialization to properly type the complex objects
+        const { data: order, error } = await supabase
+          .from("orders")
+          .insert({
+            user_id: cart.user_id,
+            customer_email: email || cart.email || "guest@toycker.com",
+            email: email || cart.email || "guest@toycker.com", // Set both
+            total_amount: parseFloat(amount),
+            total: parseFloat(amount), // Set total as well
+            subtotal: cart.subtotal || cart.item_subtotal || parseFloat(amount),
+            tax_total: cart.tax_total || 0,
+            shipping_total: cart.shipping_total || 0,
+            discount_total: cart.discount_total || 0,
+            currency_code: cart.currency_code || "inr",
+            status: "paid",
+            payment_status: "captured",
+            fulfillment_status: "not_shipped",
+            payu_txn_id: txnid,
+            shipping_address: cart.shipping_address,
+            billing_address: cart.billing_address || cart.shipping_address,
+            items: JSON.parse(JSON.stringify(cart.items || [])),
+            shipping_methods: JSON.parse(JSON.stringify(cart.shipping_methods || [])),
+            metadata: { cartId, payu_payload: payload, cart_id: cartId }
+          })
+          .select()
+          .single()
+
+        if (error) {
+          console.error("[PAYU] Order creation failed:", error.message)
+          return htmlRedirect("/checkout?error=order_creation_failed_payment_success")
+        }
+        orderIdToUse = order.id
       }
 
-      console.log("[PAYU] Order created successfully:", order.id)
+      console.log("[PAYU] Order processed successfully:", orderIdToUse)
 
       // Log "Order Placed" event
       const { logOrderEvent } = await import("@/lib/data/admin")
       await logOrderEvent(
-        order.id,
+        orderIdToUse!,
         "order_placed",
         "Order Placed",
-        "Order placed via PayU payment gateway.",
+        "Order confirmed via PayU payment gateway callback.",
         "system"
       )
 
       // Success! Redirect to confirmation
-      const response = htmlRedirect(`/order/confirmed/${order.id}`)
+      const response = htmlRedirect(`/order/confirmed/${orderIdToUse}`)
       response.cookies.delete("toycker_cart_id")
       return response
     }

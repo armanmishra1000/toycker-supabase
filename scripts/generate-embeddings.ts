@@ -1,7 +1,7 @@
 import { pipeline, RawImage } from "@xenova/transformers"
 import { createClient } from "@supabase/supabase-js"
 import dotenv from "dotenv"
-import fetch from "node-fetch"
+// import fetch from "node-fetch" // Switched to native fetch
 import sharp from "sharp"
 
 dotenv.config()
@@ -45,7 +45,8 @@ async function syncEmbeddings() {
 
                 // Fetch image bytes
                 const response = await fetch(imageUrl)
-                const buffer = await response.buffer()
+                const arrayBuffer = await response.arrayBuffer()
+                const buffer = Buffer.from(arrayBuffer)
 
                 // Extract raw pixel data using sharp (much more robust)
                 const { data, info } = await sharp(buffer)
@@ -55,7 +56,7 @@ async function syncEmbeddings() {
                 const image = new RawImage(new Uint8Array(data), info.width, info.height, info.channels)
 
                 // Generate embedding
-                const output = await pipe(image, { pooling: "mean", normalize: true })
+                const output = await pipe(image, { normalize: true } as any)
                 const embedding = Array.from(output.data)
 
                 // Update database

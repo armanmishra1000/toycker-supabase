@@ -8,7 +8,7 @@ const BEST_SELLING_SECTION_LIMIT = 10
 type BestSellingProps = {
   regionId: string
   countryCode: string
-  isCustomerLoggedIn: boolean
+  isCustomerLoggedIn?: boolean
   collectionId?: string
   clubDiscountPercentage?: number
 }

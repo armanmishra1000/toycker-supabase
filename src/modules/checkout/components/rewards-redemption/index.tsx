@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Coins, Gift, Loader2 } from "lucide-react"
+import { Coins, Gift } from "lucide-react"
 import { Cart } from "@/lib/supabase/types"
-import { setRewardsToApply, clearRewardsFromCart } from "@lib/data/rewards"
+import { useCheckout } from "../../context/checkout-context"
 import { convertToLocale } from "@lib/util/money"
 
 interface RewardsRedemptionProps {
@@ -11,12 +11,12 @@ interface RewardsRedemptionProps {
 }
 
 export default function RewardsRedemption({ cart }: RewardsRedemptionProps) {
-    const [pointsToUse, setPointsToUse] = useState(cart.rewards_to_apply || 0)
-    const [isSubmitting, setIsSubmitting] = useState(false)
+    const { state, setRewardsToApply } = useCheckout()
+    const [pointsToUse, setPointsToUse] = useState(state.rewardsToApply || 0)
     const [error, setError] = useState<string | null>(null)
 
     const availablePoints = cart.available_rewards || 0
-    const currentlyApplied = cart.rewards_to_apply || 0
+    const currentlyApplied = state.rewardsToApply || 0
     const maxUsable = Math.min(availablePoints, cart.item_subtotal || 0)
 
     // Don't show if not a club member or no points
@@ -24,41 +24,22 @@ export default function RewardsRedemption({ cart }: RewardsRedemptionProps) {
         return null
     }
 
-    const handleApply = async () => {
+    const handleApply = () => {
         if (pointsToUse < 0 || pointsToUse > maxUsable) {
             setError(`Enter between 0 and ${maxUsable} points`)
             return
         }
-
-        setIsSubmitting(true)
         setError(null)
-
-        try {
-            if (pointsToUse > 0) {
-                await setRewardsToApply(cart.id, pointsToUse)
-            } else {
-                await clearRewardsFromCart(cart.id)
-            }
-            // Page will refresh automatically due to revalidateTag
-        } catch (err) {
-            setError("Failed to apply rewards. Please try again.")
-        } finally {
-            setIsSubmitting(false)
-        }
+        setRewardsToApply(pointsToUse)
     }
 
-    const handleClear = async () => {
-        setIsSubmitting(true)
+    const handleClear = () => {
         setError(null)
-        try {
-            await clearRewardsFromCart(cart.id)
-            setPointsToUse(0)
-        } catch (err) {
-            setError("Failed to remove rewards. Please try again.")
-        } finally {
-            setIsSubmitting(false)
-        }
+        setRewardsToApply(0)
+        setPointsToUse(0)
     }
+
+    const remainingPoints = availablePoints - currentlyApplied
 
     return (
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
@@ -69,8 +50,8 @@ export default function RewardsRedemption({ cart }: RewardsRedemptionProps) {
 
             <div className="flex items-center gap-2 mb-3 text-purple-700 text-sm">
                 <Coins className="w-4 h-4" />
-                <span>Available: <strong>{availablePoints.toLocaleString()} points</strong></span>
-                <span className="text-purple-500">(= {convertToLocale({ amount: availablePoints, currency_code: "INR" })})</span>
+                <span>Available: <strong>{remainingPoints.toLocaleString()} points</strong></span>
+                <span className="text-purple-500">(= {convertToLocale({ amount: remainingPoints, currency_code: "INR" })})</span>
             </div>
 
             {currentlyApplied > 0 ? (
@@ -83,10 +64,9 @@ export default function RewardsRedemption({ cart }: RewardsRedemptionProps) {
                     </div>
                     <button
                         onClick={handleClear}
-                        disabled={isSubmitting}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
+                        className="text-red-600 hover:text-red-800 text-sm font-medium"
                     >
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Remove"}
+                        Remove
                     </button>
                 </div>
             ) : (
@@ -99,14 +79,13 @@ export default function RewardsRedemption({ cart }: RewardsRedemptionProps) {
                         onChange={(e) => setPointsToUse(Math.min(maxUsable, Math.max(0, parseInt(e.target.value) || 0)))}
                         className="flex-1 px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Enter points to use"
-                        disabled={isSubmitting}
                     />
                     <button
                         onClick={handleApply}
-                        disabled={isSubmitting || pointsToUse <= 0}
+                        disabled={pointsToUse <= 0}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                        Apply
                     </button>
                 </div>
             )}
