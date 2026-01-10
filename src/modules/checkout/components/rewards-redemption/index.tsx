@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Coins, Gift } from "lucide-react"
 import { Cart } from "@/lib/supabase/types"
 import { useCheckout } from "../../context/checkout-context"
+import { useOptionalCartStore } from "@modules/cart/context/cart-store-context"
 import { convertToLocale } from "@lib/util/money"
 
 interface RewardsRedemptionProps {
@@ -12,8 +13,10 @@ interface RewardsRedemptionProps {
 
 export default function RewardsRedemption({ cart }: RewardsRedemptionProps) {
     const { state, setRewardsToApply } = useCheckout()
+    const cartStore = useOptionalCartStore()
     const [pointsToUse, setPointsToUse] = useState(state.rewardsToApply || 0)
     const [error, setError] = useState<string | null>(null)
+    const [isApplying, setIsApplying] = useState(false)
 
     const availablePoints = cart.available_rewards || 0
     const currentlyApplied = state.rewardsToApply || 0
@@ -24,19 +27,47 @@ export default function RewardsRedemption({ cart }: RewardsRedemptionProps) {
         return null
     }
 
-    const handleApply = () => {
+    const handleApply = async () => {
         if (pointsToUse < 0 || pointsToUse > maxUsable) {
             setError(`Enter between 0 and ${maxUsable} points`)
             return
         }
         setError(null)
-        setRewardsToApply(pointsToUse)
+        setIsApplying(true)
+        try {
+            if (cartStore) {
+                await cartStore.applyRewards(pointsToUse)
+            } else {
+                const { updateCartRewards } = await import("@lib/data/cart")
+                await updateCartRewards(pointsToUse)
+                window.location.reload()
+            }
+            setRewardsToApply(pointsToUse)
+        } catch (e) {
+            setError("Failed to apply rewards")
+        } finally {
+            setIsApplying(false)
+        }
     }
 
-    const handleClear = () => {
+    const handleClear = async () => {
         setError(null)
-        setRewardsToApply(0)
-        setPointsToUse(0)
+        setIsApplying(true)
+        try {
+            if (cartStore) {
+                await cartStore.applyRewards(0)
+            } else {
+                const { updateCartRewards } = await import("@lib/data/cart")
+                await updateCartRewards(0)
+                window.location.reload()
+            }
+            setRewardsToApply(0)
+            setPointsToUse(0)
+        } catch (e) {
+            setError("Failed to remove rewards")
+        } finally {
+            setIsApplying(false)
+        }
     }
 
     const remainingPoints = availablePoints - currentlyApplied
@@ -64,9 +95,10 @@ export default function RewardsRedemption({ cart }: RewardsRedemptionProps) {
                     </div>
                     <button
                         onClick={handleClear}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        disabled={isApplying}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
                     >
-                        Remove
+                        {isApplying ? "Removing..." : "Remove"}
                     </button>
                 </div>
             ) : (
@@ -82,10 +114,10 @@ export default function RewardsRedemption({ cart }: RewardsRedemptionProps) {
                     />
                     <button
                         onClick={handleApply}
-                        disabled={pointsToUse <= 0}
+                        disabled={pointsToUse <= 0 || isApplying}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                        Apply
+                        {isApplying ? "Applying..." : "Apply"}
                     </button>
                 </div>
             )}

@@ -67,12 +67,13 @@ export default async function OrderCompletedTemplate({
               <OrderDetails order={order} />
             </div>
 
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden pt-8">
-              <div className="px-6 sm:px-10 mb-6">
-                <h3 className="text-xl font-bold text-slate-900">Order Summary</h3>
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 sm:px-10 pt-8 pb-6 border-b border-slate-100">
+                <h3 className="text-2xl font-black text-slate-900">Order Summary</h3>
+                <p className="text-sm text-slate-500 mt-1">Review your purchase details</p>
               </div>
               <Items order={order} />
-              <div className="bg-slate-50/80 p-6 sm:p-10 border-t border-dashed border-slate-200">
+              <div className="bg-gradient-to-b from-slate-50/50 to-white p-6 sm:p-10 border-t border-slate-100">
                 <CartTotals totals={order} order={order} />
               </div>
             </div>

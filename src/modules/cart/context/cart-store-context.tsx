@@ -34,6 +34,9 @@ type CartStoreContextValue = {
   optimisticRemove: (lineId: string) => Promise<void>
   optimisticUpdateQuantity: (lineId: string, quantity: number) => Promise<void>
   reloadFromServer: () => Promise<void>
+  applyPromotionCode: (code: string) => Promise<void>
+  removePromotionCode: (code: string) => Promise<void>
+  applyRewards: (points: number) => Promise<void>
   isSyncing: boolean
   lastError: string | null
   isRemoving: (lineId: string) => boolean
@@ -158,6 +161,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       })
 
       const runServerRemove = async () => {
+        setIsSyncing(true)
         try {
           const serverCart = await deleteLineItem(lineId)
           if (serverCart) {
@@ -169,6 +173,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           showToast?.(errorMessage, "error")
           throw error
         } finally {
+          setIsSyncing(false)
           setRemovingIds((prev) => {
             const next = new Set(prev)
             next.delete(lineId)
@@ -231,6 +236,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       setCart(optimisticCart)
 
       const runServerAdd = async () => {
+        setIsSyncing(true)
         try {
           const serverCart = await addToCart({
             productId: product.id,
@@ -249,6 +255,8 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           showToast?.(errorMessage, "error")
           setCart(previousCart)
           throw error
+        } finally {
+          setIsSyncing(false)
         }
       }
 
@@ -277,6 +285,54 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       setIsSyncing(false)
     }
   }, [setFromServer, showToast])
+
+  const applyPromotionCode = useCallback(async (code: string) => {
+    setIsSyncing(true)
+    try {
+      const { applyPromotions } = await import("@lib/data/cart")
+      await applyPromotions([code])
+      await reloadFromServer()
+    } catch (error) {
+      const errorMessage = (error as Error)?.message ?? "Failed to apply promotion"
+      setLastError(errorMessage)
+      showToast?.(errorMessage, "error")
+      throw error
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [reloadFromServer, showToast])
+
+  const removePromotionCode = useCallback(async (code: string) => {
+    setIsSyncing(true)
+    try {
+      const { applyPromotions } = await import("@lib/data/cart")
+      // Logic to remove only this code if multiple were allowed, but it's single-code for now
+      await applyPromotions([])
+      await reloadFromServer()
+    } catch (error) {
+      const errorMessage = (error as Error)?.message ?? "Failed to remove promotion"
+      setLastError(errorMessage)
+      showToast?.(errorMessage, "error")
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [reloadFromServer, showToast])
+
+  const applyRewards = useCallback(async (points: number) => {
+    setIsSyncing(true)
+    try {
+      const { updateCartRewards } = await import("@lib/data/cart")
+      await updateCartRewards(points)
+      await reloadFromServer()
+    } catch (error) {
+      const errorMessage = (error as Error)?.message ?? "Failed to apply rewards"
+      setLastError(errorMessage)
+      showToast?.(errorMessage, "error")
+      throw error
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [reloadFromServer, showToast])
 
   // Enable localStorage persistence and cross-tab sync
   useCartPersistence(cart, reloadFromServer)
@@ -325,6 +381,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const runServerUpdate = async () => {
+        setIsSyncing(true)
         try {
           const serverCart = await updateLineItem({ lineId, quantity })
           if (serverCart) {
@@ -336,6 +393,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
           showToast?.(errorMessage, "error")
           setCart(previousCart)
         } finally {
+          setIsSyncing(false)
           setUpdatingIds((prev) => {
             const next = new Set(prev)
             next.delete(lineId)
@@ -360,6 +418,9 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       optimisticRemove,
       optimisticUpdateQuantity,
       reloadFromServer,
+      applyPromotionCode,
+      removePromotionCode,
+      applyRewards,
       isSyncing,
       lastError,
       isRemoving,
@@ -373,6 +434,8 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       optimisticRemove,
       optimisticUpdateQuantity,
       reloadFromServer,
+      applyPromotionCode,
+      removePromotionCode,
       setFromServer,
       clearCart,
       isRemoving,
