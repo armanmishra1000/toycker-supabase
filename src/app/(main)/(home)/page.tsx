@@ -1,9 +1,7 @@
 import { Metadata } from "next"
 import { Suspense } from "react"
+import dynamic from "next/dynamic"
 import Hero from "@modules/home/components/hero"
-import ShopByAge from "@modules/home/components/shop-by-age"
-import ReviewMediaHub from "@modules/home/components/review-media-hub"
-import WhyChooseUs from "@modules/home/components/why-choose-us"
 import CategoryMarquee from "@modules/home/components/category-marquee"
 import PopularToySet from "@modules/home/components/popular-toy-set"
 import ExclusiveCollections from "@modules/home/components/exclusive-collections"
@@ -15,6 +13,15 @@ import { listExclusiveCollections } from "@lib/data/exclusive-collections"
 import { getRegion } from "@lib/data/regions"
 import { getClubSettings } from "@lib/data/club"
 
+// Dynamically import below-the-fold components to reduce initial JS weight
+const ShopByAge = dynamic(() => import("@modules/home/components/shop-by-age"), {
+  loading: () => <div className="h-[400px] animate-pulse bg-ui-bg-subtle" />
+})
+const ReviewMediaHub = dynamic(() => import("@modules/home/components/review-media-hub"), {
+  loading: () => <div className="h-[500px] animate-pulse bg-ui-bg-subtle" />
+})
+const WhyChooseUs = dynamic(() => import("@modules/home/components/why-choose-us"))
+
 export const metadata: Metadata = {
   title: "Toycker | Premium Toys for Kids",
   description: "Discover a wide range of premium toys for kids of all ages.",
@@ -23,15 +30,15 @@ export const metadata: Metadata = {
 export default async function Home() {
   const countryCode = "in"
 
-  // Fetch club settings from database (admin panel)
-  const clubSettings = await getClubSettings()
-  const clubDiscountPercentage = clubSettings?.discount_percentage
-
-  const [banners, exclusiveItems, region] = await Promise.all([
+  // Fetch critical data in parallel
+  const [banners, exclusiveItems, region, clubSettings] = await Promise.all([
     listHomeBanners(),
     listExclusiveCollections({ regionId: "reg_india" }),
     getRegion(),
+    getClubSettings(),
   ])
+
+  const clubDiscountPercentage = clubSettings?.discount_percentage
 
   return (
     <>

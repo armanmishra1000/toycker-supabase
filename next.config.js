@@ -68,6 +68,9 @@ const nextConfig = {
     qualities: IMAGE_QUALITIES,
     unoptimized: disableOptimizer,
   },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "swiper"],
+  },
 }
 
 module.exports = nextConfig
