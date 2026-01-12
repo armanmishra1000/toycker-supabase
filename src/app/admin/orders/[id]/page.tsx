@@ -105,10 +105,25 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                 <span>Subtotal</span>
                 <span className="text-gray-900 font-bold">{convertToLocale({ amount: order.subtotal || (order.total_amount + rewardsUsed), currency_code: order.currency_code })}</span>
               </div>
+              {(order.metadata as any)?.club_savings && Number((order.metadata as any).club_savings) > 0 && (
+                <div className="flex justify-between text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-600">Club Savings</span>
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase rounded-full">Member</span>
+                  </div>
+                  <span className="text-blue-600 font-bold">-{convertToLocale({ amount: Number((order.metadata as any).club_savings), currency_code: order.currency_code })}</span>
+                </div>
+              )}
               {rewardsUsed > 0 && (
                 <div className="flex justify-between text-sm font-medium text-emerald-600">
-                  <span>Rewards Redeemed</span>
+                  <span>Reward Points</span>
                   <span className="font-bold">-{convertToLocale({ amount: rewardsUsed, currency_code: order.currency_code })}</span>
+                </div>
+              )}
+              {(order.metadata as any)?.promo_discount && Number((order.metadata as any).promo_discount) > 0 && (
+                <div className="flex justify-between text-sm font-medium text-orange-600">
+                  <span>Promo Discount</span>
+                  <span className="font-bold">-{convertToLocale({ amount: Number((order.metadata as any).promo_discount), currency_code: order.currency_code })}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-medium text-gray-500">
@@ -116,6 +131,10 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                 <span className="text-emerald-600 font-bold uppercase tracking-tighter">
                   {order.shipping_total === 0 ? "Free Shipping" : convertToLocale({ amount: order.shipping_total || 0, currency_code: order.currency_code })}
                 </span>
+              </div>
+              <div className="flex justify-between text-sm font-medium text-gray-500">
+                <span>Taxes</span>
+                <span className="text-gray-900 font-bold">{convertToLocale({ amount: order.tax_total || 0, currency_code: order.currency_code })}</span>
               </div>
               <div className="flex justify-between text-lg font-black text-gray-900 pt-4 border-t border-gray-200">
                 <span>Total</span>

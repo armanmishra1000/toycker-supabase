@@ -61,10 +61,6 @@ export const listProducts = cache(async function listProducts(options: {
     .from("products")
     .select(PRODUCT_SELECT, { count: "exact" })
 
-  if (options.queryParams?.limit) {
-    query = query.limit(options.queryParams.limit)
-  }
-
   if (options.queryParams?.collection_id?.length) {
     const collectionIds = options.queryParams.collection_id
     query = supabase
@@ -74,6 +70,11 @@ export const listProducts = cache(async function listProducts(options: {
         product_collections!inner(collection_id)
       `, { count: "exact" })
       .in("product_collections.collection_id", collectionIds)
+  }
+
+  // Apply limit AFTER collection filter
+  if (options.queryParams?.limit) {
+    query = query.limit(options.queryParams.limit)
   }
 
   const { data, count, error } = await query.order("created_at", { ascending: false })

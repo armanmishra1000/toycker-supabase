@@ -126,19 +126,41 @@ const ExclusiveCard = ({
   const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
   const hasVideo = Boolean(item.video_url && item.video_url.trim().length > 0)
 
+  // Show only skeleton until loaded
+  if (!isLoaded) {
+    return (
+      <>
+        <ExclusiveCardSkeleton />
+        {/* Hidden video/image that loads in background */}
+        <div className="hidden">
+          {hasVideo ? (
+            <video
+              src={item.video_url}
+              preload="auto"
+              onLoadedData={() => setIsLoaded(true)}
+              onCanPlay={() => setIsLoaded(true)}
+            />
+          ) : (
+            <Image
+              src={poster}
+              alt={title}
+              width={400}
+              height={400}
+              onLoad={() => setIsLoaded(true)}
+            />
+          )}
+        </div>
+      </>
+    )
+  }
+
+  // Show actual content only when loaded
   return (
     <article className="flex h-full flex-col rounded-xl overflow-hidden">
       <div className="relative overflow-hidden rounded-xl">
-        {!isLoaded && (
-          <div className="absolute inset-0 z-20">
-            <ExclusiveCardSkeleton />
-          </div>
-        )}
-
         {hasVideo ? (
           <video
-            className={cn("h-full w-full object-cover d-block transition-opacity duration-300",
-              isLoaded ? "opacity-100" : "opacity-0")}
+            className="h-full w-full object-cover d-block"
             src={item.video_url}
             autoPlay
             loop
@@ -146,21 +168,17 @@ const ExclusiveCard = ({
             playsInline
             preload="auto"
             poster={poster}
-            onLoadedData={() => setIsLoaded(true)}
-            onCanPlay={() => setIsLoaded(true)}
           >
             Your browser does not support the video tag.
           </video>
         ) : (
-          <div className={cn("relative h-64 w-full transition-opacity duration-300",
-            isLoaded ? "opacity-100" : "opacity-0")}>
+          <div className="relative h-64 w-full">
             <Image
               src={poster}
               alt={title}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 20vw"
-              onLoad={() => setIsLoaded(true)}
             />
           </div>
         )}
