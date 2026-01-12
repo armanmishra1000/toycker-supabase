@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import NextTopLoader from "nextjs-toploader"
 import Providers from "./providers"
-import { grandstander } from "@lib/fonts"
+import { grandstander, inter } from "@lib/fonts"
 import "@/styles/globals.css"
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
   // Removed server-side data fetching to enable static rendering
   // Auth and wishlist data now fetched client-side by providers
   return (
-    <html lang="en" data-mode="light" suppressHydrationWarning className={grandstander.variable}>
+    <html lang="en" data-mode="light" suppressHydrationWarning className={`${grandstander.variable} ${inter.variable}`}>
       <head>
         <link rel="preconnect" href="https://cdn.toycker.in" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://toycker-supabase.r2.dev" crossOrigin="anonymous" />

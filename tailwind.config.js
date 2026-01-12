@@ -84,6 +84,7 @@ module.exports = {
           "sans-serif",
         ],
         grandstander: ["var(--font-Grandstander)", "sans-serif"],
+        inter: ["var(--font-inter)", "sans-serif"],
       },
       keyframes: {
         ring: {

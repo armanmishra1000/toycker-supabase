@@ -1,17 +1,17 @@
-import { getAdminProducts, deleteProduct } from "@/lib/data/admin"
+import { getAdminProducts } from "@/lib/data/admin"
 import Link from "next/link"
 import Image from "next/image"
 import { PlusIcon, PencilIcon, TagIcon, ArrowTopRightOnSquareIcon, PhotoIcon } from "@heroicons/react/24/outline"
 import { convertToLocale } from "@lib/util/money"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
-import AdminCard from "@modules/admin/components/admin-card"
 import ProductCsvImport from "@modules/admin/components/product-csv-import"
 import MedusaSyncButton from "@modules/admin/components/medusa-sync-button"
 import { AdminPagination } from "@modules/admin/components/admin-pagination"
 import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import { cn } from "@lib/util/cn"
 import DeleteProductButton from "@modules/admin/components/delete-product-button"
+import { ClickableTableRow } from "@modules/admin/components/clickable-table-row"
 
 export default async function AdminProducts({
   searchParams
@@ -108,7 +108,11 @@ export default async function AdminProducts({
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {products.length > 0 ? products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
+                <ClickableTableRow
+                  key={product.id}
+                  href={`/admin/products/${product.id}`}
+                  className="hover:bg-gray-50 transition-colors group cursor-pointer"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="h-10 w-10 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
                       {product.image_url ? (
@@ -126,10 +130,10 @@ export default async function AdminProducts({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Link href={`/admin/products/${product.id}`} className="block">
-                      <p className="text-sm font-semibold text-gray-900 hover:underline">{product.name}</p>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors uppercase">{product.name}</p>
                       <p className="text-xs text-gray-500">{product.handle}</p>
-                    </Link>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <AdminBadge variant={product.status === 'active' ? "success" : product.status === 'archived' ? "neutral" : "info"}>
@@ -145,7 +149,7 @@ export default async function AdminProducts({
                     {convertToLocale({ amount: product.price, currency_code: product.currency_code })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex justify-end gap-1 relative z-20">
                       <a
                         href={`/products/${product.handle}`}
                         target="_blank"
@@ -154,17 +158,22 @@ export default async function AdminProducts({
                       >
                         <ArrowTopRightOnSquareIcon className="h-4 w-4" />
                       </a>
-                      <Link href={`/admin/products/${product.id}`} className="p-2 text-gray-400 hover:text-black transition-colors">
+                      <Link
+                        href={`/admin/products/${product.id}`}
+                        className="p-2 text-gray-400 hover:text-black transition-colors"
+                      >
                         <PencilIcon className="h-4 w-4" />
                       </Link>
-                      <DeleteProductButton 
-                        productId={product.id} 
-                        productName={product.name} 
-                        variant="icon"
-                      />
+                      <div>
+                        <DeleteProductButton
+                          productId={product.id}
+                          productName={product.name}
+                          variant="icon"
+                        />
+                      </div>
                     </div>
                   </td>
-                </tr>
+                </ClickableTableRow>
               )) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-20 text-center">

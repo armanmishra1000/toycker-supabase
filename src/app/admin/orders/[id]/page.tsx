@@ -1,4 +1,4 @@
-import { getAdminOrder, updateOrderStatus, getActiveShippingPartners, getOrderTimeline, getCustomerDisplayId } from "@/lib/data/admin"
+import { getAdminOrder, getActiveShippingPartners, getOrderTimeline, getCustomerDisplayId } from "@/lib/data/admin"
 import { formatCustomerDisplayId } from "@/lib/util/customer"
 import { notFound } from "next/navigation"
 import Link from "next/link"
@@ -8,6 +8,7 @@ import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
 import Image from "next/image"
 import FulfillmentModal from "./fulfillment-modal"
+import { MarkAsPaidButton } from "./mark-as-paid-button"
 import { formatIST } from "@/lib/util/date"
 
 export default async function AdminOrderDetails({ params }: { params: Promise<{ id: string }> }) {
@@ -27,12 +28,8 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
 
   const actions = (
     <div className="flex gap-2">
-      {order.payment_status === 'awaiting' && (
-        <form action={updateOrderStatus.bind(null, order.id, 'paid')}>
-          <button type="submit" className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-all shadow-sm">
-            Mark as Paid
-          </button>
-        </form>
+      {(order.payment_status === 'awaiting' || order.payment_status === 'pending') && (
+        <MarkAsPaidButton orderId={order.id} />
       )}
       {canFulfill && (
         <FulfillmentModal orderId={order.id} shippingPartners={shippingPartners} />

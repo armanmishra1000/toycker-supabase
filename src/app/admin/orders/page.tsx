@@ -7,6 +7,7 @@ import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import Link from "next/link"
 import { ShoppingBagIcon } from "@heroicons/react/24/outline"
 import { formatIST } from "@/lib/util/date"
+import { ClickableTableRow } from "@modules/admin/components/clickable-table-row"
 
 // Helper to format payment status for display
 function getPaymentBadge(paymentStatus: string, paymentMethod?: string | null) {
@@ -117,11 +118,13 @@ export default async function AdminOrders({
                 const paymentMethodDisplay = isCOD ? 'COD' : (order.payu_txn_id ? 'PayU' : order.payment_method || '—')
 
                 return (
-                  <tr key={order.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
+                  <ClickableTableRow
+                    key={order.id}
+                    href={`/admin/orders/${order.id}`}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer group"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Link href={`/admin/orders/${order.id}`} className="block">
-                        <span className="text-sm font-semibold text-gray-900 hover:underline">#{order.display_id}</span>
-                      </Link>
+                      <span className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors tracking-tight">#{order.display_id}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatIST(order.created_at)}
@@ -145,7 +148,7 @@ export default async function AdminOrders({
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
                       {convertToLocale({ amount: order.total_amount, currency_code: order.currency_code })}
                     </td>
-                  </tr>
+                  </ClickableTableRow>
                 )
               }) : (
                 <tr>

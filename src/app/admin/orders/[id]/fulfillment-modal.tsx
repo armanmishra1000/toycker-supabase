@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useFormStatus } from "react-dom"
 import { fulfillOrder } from "@/lib/data/admin"
 import { ShippingPartner } from "@/lib/supabase/types"
 import { XMarkIcon, TruckIcon } from "@heroicons/react/24/outline"
@@ -10,19 +11,36 @@ interface FulfillmentModalProps {
     shippingPartners: ShippingPartner[]
 }
 
+function FulfillButton({ disabled }: { disabled: boolean }) {
+    const { pending } = useFormStatus()
+
+    return (
+        <button
+            type="submit"
+            disabled={pending || disabled}
+            className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[140px]"
+        >
+            {pending ? (
+                <>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Fulfilling...</span>
+                </>
+            ) : (
+                "Fulfill Order"
+            )}
+        </button>
+    )
+}
+
 export default function FulfillmentModal({ orderId, shippingPartners }: FulfillmentModalProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const handleSubmit = async (formData: FormData) => {
-        setIsSubmitting(true)
         try {
             await fulfillOrder(orderId, formData)
             setIsOpen(false)
         } catch (error) {
             console.error("Error fulfilling order:", error)
-        } finally {
-            setIsSubmitting(false)
         }
     }
 
@@ -114,13 +132,7 @@ export default function FulfillmentModal({ orderId, shippingPartners }: Fulfillm
                                 >
                                     Cancel
                                 </button>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting || shippingPartners.length === 0}
-                                    className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isSubmitting ? "Fulfilling..." : "Fulfill Order"}
-                                </button>
+                                <FulfillButton disabled={shippingPartners.length === 0} />
                             </div>
                         </form>
                     </div>
