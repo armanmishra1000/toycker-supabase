@@ -2,7 +2,7 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { Cart, CartItem, ShippingOption, Address, Product, ProductVariant, PaymentCollection } from "@/lib/supabase/types"
+import { Cart, CartItem, ShippingOption, Address, Product, ProductVariant, PaymentCollection, Promotion } from "@/lib/supabase/types"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
 export { removeCartId }
@@ -102,7 +102,8 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
         *,
         product:products(*),
         variant:product_variants(*)
-      )
+      ),
+      promotion:promotions(*)
     `)
     .eq("id", id)
     .maybeSingle()
@@ -141,6 +142,30 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   const original_subtotal = items.reduce((sum, item) => sum + (item.original_total || item.total), 0)
   const club_savings = original_subtotal - item_subtotal
 
+  const promotion = cartData.promotion as Promotion | null
+  let discount_total = 0
+  let isFreeShipping = false
+
+  if (promotion && promotion.is_active) {
+    // Check if promotion is valid based on dates
+    const now = new Date()
+    const startsAt = promotion.starts_at ? new Date(promotion.starts_at) : null
+    const endsAt = promotion.ends_at ? new Date(promotion.ends_at) : null
+
+    if ((!startsAt || startsAt <= now) && (!endsAt || endsAt >= now)) {
+      // Check min order amount
+      if (item_subtotal >= (promotion.min_order_amount || 0)) {
+        if (promotion.type === "percentage") {
+          discount_total = Math.round((item_subtotal * promotion.value) / 100)
+        } else if (promotion.type === "fixed") {
+          discount_total = Math.min(promotion.value, item_subtotal)
+        } else if (promotion.type === "free_shipping") {
+          isFreeShipping = true
+        }
+      }
+    }
+  }
+
   const shippingMethods = cartData.shipping_methods as CartShippingMethod[] | null
   // Calculate shipping total dynamically based on threshold
   let shipping_total = 0
@@ -149,7 +174,9 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     const baseAmount = Number(method.amount || 0)
     const threshold = method.min_order_free_shipping
 
-    if (threshold !== null && threshold !== undefined && item_subtotal >= Number(threshold)) {
+    if (isFreeShipping) {
+      shipping_total = 0
+    } else if (threshold !== null && threshold !== undefined && item_subtotal >= Number(threshold)) {
       shipping_total = 0
     } else {
       shipping_total = baseAmount
@@ -161,12 +188,12 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   const rewards_to_apply = Math.min(
     Number(cartMetadata.rewards_to_apply || 0),
     availableRewards,
-    item_subtotal + shipping_total // Can't exceed order total
+    item_subtotal + shipping_total - discount_total // Can't exceed order total after discount
   )
   const rewards_discount = rewards_to_apply // 1 point = ₹1
 
   const tax_total = 0
-  const total = Math.max(0, item_subtotal + tax_total + shipping_total - rewards_discount)
+  const total = Math.max(0, item_subtotal + tax_total + shipping_total - discount_total - rewards_discount)
 
   const cart: Cart = {
     ...cartData,
@@ -176,7 +203,7 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     tax_total,
     shipping_total,
     total,
-    discount_total: 0,
+    discount_total,
     gift_card_total: 0,
     shipping_subtotal: shipping_total,
     // Club membership info
@@ -186,7 +213,8 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     // Rewards
     rewards_to_apply,
     rewards_discount,
-    available_rewards: availableRewards
+    available_rewards: availableRewards,
+    promotions: promotion ? [promotion] : []
   }
 
   return cart
@@ -599,9 +627,11 @@ export async function placeOrder() {
       billing_address: cart.billing_address,
       items: JSON.parse(JSON.stringify(cart.items || [])),
       shipping_methods: JSON.parse(JSON.stringify(cart.shipping_methods || [])),
+      promo_code: cart.promotions?.[0]?.code || null,
       metadata: {
         cart_id: cart.id,
-        rewards_used: rewards_discount
+        rewards_used: rewards_discount,
+        promo_code: cart.promotions?.[0]?.code || null
       }
     })
     .select()
@@ -702,6 +732,20 @@ export async function handlePostOrderLogic(order: any, cart: any, rewards_discou
       }).eq("id", order.user_id)
     }
   }
+
+  // 5. Update promotion use count
+  const promo_code = order.promo_code || cart.promotions?.[0]?.code
+  if (promo_code) {
+    const { data: promotion } = await supabase
+      .from("promotions")
+      .select("id")
+      .eq("code", promo_code)
+      .maybeSingle()
+
+    if (promotion) {
+      await supabase.rpc('increment_promotion_uses', { promo_id: promotion.id })
+    }
+  }
 }
 
 
@@ -782,5 +826,97 @@ export async function updateRegion(countryCode: string, currentPath: string) {
 }
 
 export async function applyPromotions(codes: string[]) {
-  console.log("Applying promotions", codes)
+  const cartId = await getCartId()
+  if (!cartId) throw new Error("No cart found")
+
+  const supabase = await createClient()
+
+  if (codes.length === 0) {
+    const { error } = await supabase.from("carts").update({ promo_code: null, discount_total: 0 }).eq("id", cartId)
+    if (error) throw new Error("Could not remove promotion code")
+    revalidateTag("cart")
+    return
+  }
+
+  const code = codes[0].toUpperCase()
+
+  // Verify code exists and is active
+  const { data: promotion, error: promoError } = await supabase
+    .from("promotions")
+    .select("*")
+    .eq("code", code)
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (promoError || !promotion) {
+    throw new Error("Invalid promotion code")
+  }
+
+  // Basic validation (dates and uses)
+  const now = new Date()
+  if (promotion.starts_at && new Date(promotion.starts_at) > now) {
+    throw new Error("This promotion has not started yet")
+  }
+  if (promotion.ends_at && new Date(promotion.ends_at) < now) {
+    throw new Error("This promotion has expired")
+  }
+  if (promotion.max_uses !== null && promotion.used_count >= promotion.max_uses) {
+    throw new Error("This promotion has reached its usage limit")
+  }
+
+  // Check min order amount against current cart
+  const cart = await retrieveCart(cartId)
+  if (cart && (cart.item_subtotal ?? 0) < (promotion.min_order_amount || 0)) {
+    throw new Error(`Minimum order amount of ₹${promotion.min_order_amount} required to use this code`)
+  }
+
+  // Calculate discount amount based on promotion type
+  let discountAmount = 0
+  const subtotal = cart?.item_subtotal ?? 0
+
+  if (promotion.type === "percentage") {
+    discountAmount = Math.round((subtotal * promotion.value) / 100)
+  } else if (promotion.type === "fixed") {
+    discountAmount = promotion.value
+  }
+  // For free_shipping, discount_amount stays 0 (shipping discount handled separately)
+
+  // Update both promo_code and discount_total
+  const { error } = await supabase
+    .from("carts")
+    .update({
+      promo_code: code,
+      discount_total: discountAmount
+    })
+    .eq("id", cartId)
+
+  if (error) throw new Error("Could not apply promotion code")
+
+  revalidateTag("cart")
+}
+export async function updateCartRewards(points: number) {
+  const cartId = await getCartId()
+  if (!cartId) throw new Error("No cart found")
+
+  const supabase = await createClient()
+
+  const { data: cart } = await supabase
+    .from("carts")
+    .select("metadata")
+    .eq("id", cartId)
+    .single()
+
+  const metadata = {
+    ...(cart?.metadata || {}),
+    rewards_to_apply: points
+  }
+
+  const { error } = await supabase
+    .from("carts")
+    .update({ metadata })
+    .eq("id", cartId)
+
+  if (error) throw new Error("Could not update rewards")
+
+  revalidateTag("cart")
 }

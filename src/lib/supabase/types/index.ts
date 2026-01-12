@@ -165,14 +165,18 @@ export interface Payment {
 }
 
 export interface Promotion {
-  id: string;
-  code: string;
-  is_automatic: boolean;
-  application_method?: {
-    type: 'percentage' | 'fixed';
-    value: number;
-    currency_code: string;
-  };
+  id: string
+  code: string
+  type: "percentage" | "fixed" | "free_shipping"
+  value: number
+  min_order_amount: number
+  is_active: boolean
+  starts_at: string | null
+  ends_at: string | null
+  max_uses: number | null
+  used_count: number
+  created_at: string
+  updated_at: string
 }
 
 export interface CartItem {

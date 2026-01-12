@@ -6,14 +6,17 @@ import { Text } from "@modules/common/components/text"
 import ItemsPreviewTemplate from "@modules/cart/templates/preview"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import CartTotals from "@modules/common/components/cart-totals"
+import { useCartStore } from "@modules/cart/context/cart-store-context"
 import Review from "@modules/checkout/components/review"
 import RewardsRedemption from "@modules/checkout/components/rewards-redemption"
 
 const CheckoutSummary = ({
-  cart,
+  cart: serverCart,
 }: {
   cart: Cart
 }) => {
+  const { cart: clientCart } = useCartStore()
+  const cart = clientCart ?? serverCart
   return (
     <div className="sticky top-4 flex flex-col gap-3 sm:gap-4">
       {/* Cart Summary Card */}

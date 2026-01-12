@@ -157,7 +157,7 @@ const StripePaymentButton = ({
         onClick={handlePayment}
         size="large"
         isLoading={submitting}
-        className="w-full sm:w-auto"
+        className="w-full hover:bg-primary"
         data-testid={dataTestId}
       >
         Place order
@@ -227,7 +227,7 @@ const ManualTestPaymentButton = ({
         isLoading={submitting}
         onClick={handlePayment}
         size="large"
-        className="w-full sm:w-auto"
+        className="w-full hover:bg-primary"
         data-testid={dataTestId}
       >
         Place order
@@ -316,7 +316,7 @@ const PayUPaymentButton = ({
         onClick={handlePayment}
         size="large"
         isLoading={submitting}
-        className="w-full sm:w-auto"
+        className="w-full hover:bg-primary"
         data-testid={dataTestId}
       >
         Place order

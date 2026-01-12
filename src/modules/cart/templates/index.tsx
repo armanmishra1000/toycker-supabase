@@ -25,7 +25,7 @@ const CartTemplate = ({
   const itemCount = activeCart?.items?.length || 0
 
   return (
-    <div className="bg-gradient-to-b from-slate-50 to-white min-h-screen py-6 sm:py-8 lg:py-12">
+    <div className="min-h-screen py-6 sm:py-8 lg:py-12">
       <div className="content-container px-3 sm:px-4" data-testid="cart-container">
         {activeCart?.items?.length ? (
           <>
@@ -68,7 +68,7 @@ const CartTemplate = ({
                     <Divider />
                   </>
                 )}
-                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-sm border border-slate-100">
+                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-sm border border-gray-200">
                   <ItemsTemplate cart={activeCart} />
                 </div>
               </div>
@@ -77,32 +77,43 @@ const CartTemplate = ({
               <div className="lg:sticky lg:top-8 h-fit">
                 <div className="flex flex-col gap-4 sm:gap-6">
                   {/* Order Summary Card */}
-                  <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-sm border border-slate-100">
+                  <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-sm border border-gray-200">
                     <Summary cart={activeCart} />
                   </div>
 
                   {/* Trust Badges */}
-                  <div className="bg-slate-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-slate-100">
-                    <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                  <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                    <div className="grid grid-cols-3 gap-4">
                       <TrustBadge
-                        icon={<Shield className="w-4 h-4 sm:w-5 sm:h-5" />}
-                        label="Secure Checkout"
+                        icon={<Shield className="w-5 h-5" />}
+                        label="Secure"
+                        sublabel="Checkout"
                       />
                       <TrustBadge
-                        icon={<Truck className="w-4 h-4 sm:w-5 sm:h-5" />}
-                        label="Fast Delivery"
+                        icon={<Truck className="w-5 h-5" />}
+                        label="Fast"
+                        sublabel="Delivery"
                       />
                       <TrustBadge
-                        icon={<RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />}
-                        label="Easy Returns"
+                        icon={<RotateCcw className="w-5 h-5" />}
+                        label="Easy"
+                        sublabel="Returns"
                       />
                     </div>
                   </div>
 
                   {/* Help Text */}
-                  <p className="text-center text-[10px] sm:text-xs text-slate-400">
-                    Need help? <LocalizedClientLink href="/contact" className="text-slate-600 hover:text-slate-900 underline">Contact us</LocalizedClientLink>
-                  </p>
+                  <div className="flex flex-col items-center gap-1 mt-2">
+                    <p className="text-[11px] font-medium text-slate-400">
+                      Need help with your order?
+                    </p>
+                    <LocalizedClientLink
+                      href="/contact"
+                      className="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors underline underline-offset-4 decoration-slate-200 hover:decoration-slate-900"
+                    >
+                      Chat with support
+                    </LocalizedClientLink>
+                  </div>
                 </div>
               </div>
             </div>
@@ -117,13 +128,16 @@ const CartTemplate = ({
   )
 }
 
-function TrustBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
+function TrustBadge({ icon, label, sublabel }: { icon: React.ReactNode; label: string; sublabelText?: string; sublabel: string }) {
   return (
-    <div className="flex flex-col items-center text-center gap-1.5 sm:gap-2">
-      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center text-slate-500 shadow-sm border border-slate-100">
+    <div className="flex flex-col items-center text-center group cursor-default">
+      <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 transition-all duration-300 group-hover:bg-slate-900 group-hover:text-white group-hover:scale-110 group-hover:rotate-3 shadow-inner">
         {icon}
       </div>
-      <span className="text-[10px] sm:text-xs font-medium text-slate-600">{label}</span>
+      <div className="mt-3 flex flex-col items-center leading-none">
+        <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">{label}</span>
+        <span className="text-[10px] font-medium text-slate-400 mt-0.5">{sublabel}</span>
+      </div>
     </div>
   )
 }

@@ -35,7 +35,29 @@ const CartTotals: React.FC<CartTotalsProps> = ({
   const checkoutCtx = React.useContext(CheckoutContext)
 
   const selectedShippingPrice = shippingPriceCtx?.selectedShippingPrice
-  const rewards_discount = order ? (order.discount_total || 0) : (checkoutCtx?.state?.rewardsToApply || 0)
+
+  // Extract discounts from order or cart
+  let rewards_discount = 0
+  let club_savings = 0
+  let promoDiscount = 0
+  let is_club_member = false
+
+  if (order) {
+    // For orders, extract from metadata
+    const metadata = order.metadata as Record<string, unknown> | null
+    rewards_discount = typeof metadata?.rewards_discount === 'number' ? metadata.rewards_discount : 0
+    club_savings = typeof metadata?.club_savings === 'number' ? metadata.club_savings : 0
+    promoDiscount = typeof metadata?.promo_discount === 'number' ? metadata.promo_discount : 0
+    is_club_member = metadata?.is_club_member === true
+  } else {
+    // For carts
+    rewards_discount = checkoutCtx?.state?.rewardsToApply ?? cart?.rewards_discount ?? 0
+    club_savings = cart?.club_savings ?? 0
+    promoDiscount = cart?.discount_total || totals.discount_subtotal || 0
+    is_club_member = cart?.is_club_member ?? false
+  }
+
+  const discountSubtotal = promoDiscount + rewards_discount
 
   // Handle both Cart and Order types for subtotal
   const itemSubtotal = totals.item_subtotal ?? (order?.subtotal ?? null) ?? cart?.item_subtotal ?? cart?.subtotal ?? 0
@@ -75,13 +97,6 @@ const CartTotals: React.FC<CartTotalsProps> = ({
 
   const displayShippingSubtotal = getDisplayShippingSubtotal()
 
-  // Handle discount from multiple sources
-  const discountSubtotal = totals.discount_subtotal ?? order?.discount_total ?? cart?.discount_subtotal ?? 0
-
-  // Get club savings from cart or order
-  const club_savings = cart?.club_savings ?? 0
-  const is_club_member = cart?.is_club_member ?? false
-
   // Check if shipping is free
   const isFreeShipping = displayShippingSubtotal === 0
 
@@ -89,10 +104,10 @@ const CartTotals: React.FC<CartTotalsProps> = ({
   const baseSubtotal = itemSubtotal + club_savings
 
   return (
-    <div className="flex flex-col text-slate-600 gap-y-3">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-base">
-          <span className="font-medium text-slate-500 uppercase tracking-tighter text-xs">Subtotal</span>
+    <div className="flex flex-col gap-y-4">
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium text-slate-500 uppercase tracking-widest text-sm">Subtotal</span>
           <span className="font-bold text-slate-900" data-testid="cart-subtotal" data-value={baseSubtotal}>
             {convertToLocale({
               amount: baseSubtotal,
@@ -102,13 +117,13 @@ const CartTotals: React.FC<CartTotalsProps> = ({
         </div>
 
         {is_club_member && club_savings > 0 && (
-          <div className="flex items-center justify-between bg-blue-50 px-4 py-3 rounded-2xl border border-blue-100 shadow-sm shadow-blue-900/5">
+          <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-blue-800 text-sm">Club Savings</span>
-              <span className="bg-blue-600 text-[10px] text-white px-1.5 py-0.5 rounded-full font-black uppercase">Member</span>
+              <span className="font-medium text-blue-600 uppercase tracking-widest text-sm">Club Savings</span>
+              <span className="bg-blue-600 text-sm text-white px-1.5 py-0.5 rounded-md uppercase tracking-wider">Member</span>
             </div>
             <span
-              className="font-black text-blue-800"
+              className="font-bold text-blue-600"
               data-testid="cart-club-savings"
               data-value={club_savings}
             >
@@ -122,10 +137,10 @@ const CartTotals: React.FC<CartTotalsProps> = ({
         )}
 
         {rewards_discount > 0 && (
-          <div className="flex items-center justify-between bg-emerald-50 px-4 py-3 rounded-2xl border border-emerald-100 shadow-sm shadow-emerald-900/5">
-            <span className="font-bold text-emerald-800 text-sm">Reward Discount Applied</span>
+          <div className="flex items-center justify-between py-1">
+            <span className="font-medium text-emerald-600 uppercase tracking-widest text-sm">Reward Points</span>
             <span
-              className="font-black text-emerald-800"
+              className="font-bold text-emerald-600"
               data-testid="cart-discount"
               data-value={rewards_discount}
             >
@@ -138,11 +153,28 @@ const CartTotals: React.FC<CartTotalsProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-between text-base">
-          <span className="font-medium text-slate-500 uppercase tracking-tighter text-xs">Shipping</span>
+        {promoDiscount > 0 && (
+          <div className="flex items-center justify-between py-1">
+            <span className="font-medium text-amber-600 uppercase tracking-widest text-sm">Promo Discount</span>
+            <span
+              className="font-bold text-amber-600"
+              data-testid="cart-promo-discount"
+              data-value={promoDiscount}
+            >
+              -{" "}
+              {convertToLocale({
+                amount: promoDiscount,
+                currency_code: normalizedCurrency,
+              })}
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium text-slate-500 uppercase tracking-widest text-sm">Shipping</span>
           <span className="font-bold text-slate-900" data-testid="cart-shipping" data-value={displayShippingSubtotal}>
             {isFreeShipping ? (
-              <span className="text-emerald-600 font-black">FREE</span>
+              <span className="text-emerald-500 font-bold uppercase tracking-widest">Free</span>
             ) : (
               convertToLocale({
                 amount: displayShippingSubtotal,
@@ -152,8 +184,8 @@ const CartTotals: React.FC<CartTotalsProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center justify-between text-base">
-          <span className="font-medium text-slate-500 uppercase tracking-tighter text-xs">Taxes</span>
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium text-slate-500 uppercase tracking-widest">Taxes</span>
           <span className="font-bold text-slate-900" data-testid="cart-taxes" data-value={tax_total || 0}>
             {convertToLocale({
               amount: tax_total || 0,
@@ -163,27 +195,29 @@ const CartTotals: React.FC<CartTotalsProps> = ({
         </div>
       </div>
 
-      <div className="my-6 border-t border-slate-200 border-dashed" />
-
-      <div className="flex items-center justify-between px-2">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Final Total
-          </span>
-          <span className="text-[10px] text-slate-400 font-medium italic">
-            Inclusive of all applicable taxes
-          </span>
+      <div className="mt-2 pt-5 border-t border-slate-100">
+        <div className="flex items-end justify-between">
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold uppercase tracking-[0.2em] text-slate-400">
+              Final Total
+            </span>
+            <span className="text-sm text-slate-300 font-medium">
+              Incl. all taxes
+            </span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span
+              className="text-4xl font-black text-slate-900 tracking-tighter leading-none"
+              data-testid="cart-total"
+              data-value={Math.max(0, itemSubtotal + displayShippingSubtotal + (tax_total || 0) - (order ? (order.discount_total || 0) : discountSubtotal))}
+            >
+              {convertToLocale({
+                amount: Math.max(0, itemSubtotal + displayShippingSubtotal + (tax_total || 0) - (order ? (order.discount_total || 0) : discountSubtotal)),
+                currency_code: normalizedCurrency,
+              })}
+            </span>
+          </div>
         </div>
-        <span
-          className="text-4xl font-black text-slate-900 tracking-tighter"
-          data-testid="cart-total"
-          data-value={Math.max(0, itemSubtotal + displayShippingSubtotal + (tax_total || 0) - rewards_discount)}
-        >
-          {convertToLocale({
-            amount: Math.max(0, itemSubtotal + displayShippingSubtotal + (tax_total || 0) - rewards_discount),
-            currency_code: normalizedCurrency,
-          })}
-        </span>
       </div>
     </div>
   )

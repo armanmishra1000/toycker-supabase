@@ -33,7 +33,7 @@ const Review = ({ cart }: { cart: CartWithGiftCards }) => {
   return (
     <div className="space-y-4">
       {/* Security Badge */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+      <div className="w-full flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
         <Lock size={16} className="text-green-600" />
         <span className="text-xs font-medium text-green-700">
           Secure checkout - Your information is protected
@@ -50,7 +50,7 @@ const Review = ({ cart }: { cart: CartWithGiftCards }) => {
 
       {/* Error Messages */}
       {!isReady && (
-        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="w-full flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
           <AlertCircle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-amber-800">
             <span className="font-medium">Please complete:</span>{" "}
