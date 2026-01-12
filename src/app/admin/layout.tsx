@@ -3,7 +3,6 @@ import Link from "next/link"
 import {
   ArrowLeftOnRectangleIcon,
   ArrowTopRightOnSquareIcon,
-  BellIcon,
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin, getAdminUser } from "@/lib/data/admin"
@@ -12,6 +11,7 @@ import { AdminSettingsLink } from "@modules/admin/components/admin-settings-link
 import { AdminMobileMenu } from "@modules/admin/components/admin-mobile-menu"
 import { AdminNotificationDropdown } from "@modules/admin/components/notifications"
 import { AdminGlobalSearch } from "@modules/admin/components/admin-global-search"
+import { inter } from "@lib/fonts"
 
 export const metadata = {
   title: "Toycker Admin",
@@ -60,7 +60,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const email = adminUser?.email || ""
 
   return (
-    <div className="flex flex-col lg:grid lg:grid-cols-[260px_1fr] min-h-screen bg-gray-50 font-sans">
+    <div className={`flex flex-col lg:grid lg:grid-cols-[260px_1fr] min-h-screen bg-gray-50 ${inter.variable} font-inter`}>
       {/* Desktop Sidebar - Hidden on mobile, visible on lg+ */}
       <aside className="hidden lg:flex bg-white border-r border-gray-200 flex-col sticky top-0 h-screen overflow-hidden">
         {/* Logo Section */}

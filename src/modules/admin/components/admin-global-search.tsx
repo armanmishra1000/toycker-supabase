@@ -139,7 +139,7 @@ export function AdminGlobalSearch() {
                             leaveFrom="opacity-100 scale-100 translate-y-0"
                             leaveTo="opacity-0 scale-95 translate-y-4"
                         >
-                            <Dialog.Panel className="mx-auto max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 transition-all outline-none">
+                            <Dialog.Panel className="mx-auto max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 transition-all outline-none font-inter">
                                 <Combobox value={null as any} onChange={handleSelect}>
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">

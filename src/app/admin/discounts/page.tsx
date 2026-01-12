@@ -1,10 +1,12 @@
-import { getAdminPromotions, deletePromotion, togglePromotion } from "@/lib/data/promotions"
+import { getAdminPromotions } from "@/lib/data/promotions"
 import Link from "next/link"
-import { PlusIcon, TrashIcon, TicketIcon, CalendarIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, TicketIcon, CalendarIcon, PencilIcon } from "@heroicons/react/24/outline"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
+import { ClickableTableRow } from "@modules/admin/components/clickable-table-row"
+import DeletePromotionButton from "@modules/admin/components/delete-promotion-button"
 
 export default async function AdminDiscounts() {
     const promotions = await getAdminPromotions()
@@ -37,14 +39,18 @@ export default async function AdminDiscounts() {
                         <tbody className="bg-white divide-y divide-gray-100">
                             {promotions.length > 0 ? (
                                 promotions.map((promo) => (
-                                    <tr key={promo.id} className="hover:bg-gray-50 transition-colors group">
+                                    <ClickableTableRow
+                                        key={promo.id}
+                                        href={`/admin/discounts/${promo.id}`}
+                                        className="hover:bg-gray-50 transition-colors group cursor-pointer"
+                                    >
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100 transition-all">
+                                                <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 transition-all group-hover:scale-110">
                                                     <TicketIcon className="h-5 w-5" />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-sm font-bold text-gray-900 tracking-tight">{promo.code}</div>
+                                                    <div className="text-sm font-bold text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors uppercase">{promo.code}</div>
                                                     <div className="flex items-center text-xs text-gray-500 mt-0.5">
                                                         <CalendarIcon className="h-3 w-3 mr-1" />
                                                         {promo.ends_at ? `Exp: ${new Date(promo.ends_at).toLocaleDateString()}` : "No expiry"}
@@ -70,7 +76,7 @@ export default async function AdminDiscounts() {
                                             </div>
                                             <div className="w-24 bg-gray-100 h-1.5 rounded-full mt-1.5 overflow-hidden">
                                                 <div
-                                                    className="bg-blue-600 h-full rounded-full"
+                                                    className="bg-indigo-600 h-full rounded-full"
                                                     style={{ width: promo.max_uses ? `${Math.min(100, (promo.used_count / promo.max_uses) * 100)}%` : "0%" }}
                                                 />
                                             </div>
@@ -81,15 +87,17 @@ export default async function AdminDiscounts() {
                                             </AdminBadge>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <form action={deletePromotion.bind(null, promo.id)}>
-                                                    <button className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </button>
-                                                </form>
+                                            <div className="flex justify-end gap-2 relative z-20">
+                                                <Link
+                                                    href={`/admin/discounts/${promo.id}`}
+                                                    className="p-1.5 text-gray-400 hover:text-black hover:bg-gray-100 rounded transition-colors"
+                                                >
+                                                    <PencilIcon className="h-4 w-4" />
+                                                </Link>
+                                                <DeletePromotionButton promoId={promo.id} promoCode={promo.code} />
                                             </div>
                                         </td>
-                                    </tr>
+                                    </ClickableTableRow>
                                 ))
                             ) : (
                                 <tr>

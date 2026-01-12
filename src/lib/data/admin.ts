@@ -438,8 +438,23 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
   const { data, error } = await query
   if (error) throw error
 
+  const products = (data || []).map(product => {
+    const variants = (product as any).variants || []
+    if (variants.length > 0) {
+      // If base price is 0, use min variant price
+      if (product.price === 0) {
+        product.price = Math.min(...variants.map((v: any) => v.price))
+      }
+      // If stock count is 0, use sum of variant stock
+      if (product.stock_count === 0) {
+        product.stock_count = variants.reduce((sum: number, v: any) => sum + (v.inventory_quantity || 0), 0)
+      }
+    }
+    return product
+  })
+
   return {
-    products: (data || []) as Product[],
+    products: products as Product[],
     count: count || 0,
     totalPages,
     currentPage: page
@@ -734,15 +749,19 @@ export async function saveProductVariants(
     if (updateError) throw new Error(updateError.message)
   }
 
-  // Update total stock count on product
+  // Update total stock count and price on product
   const { data: allVariants } = await supabase
     .from("product_variants")
-    .select("inventory_quantity")
+    .select("inventory_quantity, price")
     .eq("product_id", productId)
 
-  if (allVariants) {
+  if (allVariants && allVariants.length > 0) {
     const totalStock = allVariants.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0)
-    await supabase.from("products").update({ stock_count: totalStock }).eq("id", productId)
+    const minPrice = Math.min(...allVariants.map(v => v.price))
+    await supabase.from("products").update({
+      stock_count: totalStock,
+      price: minPrice
+    }).eq("id", productId)
   }
 
   // Get product handle for revalidation
@@ -1209,7 +1228,13 @@ export async function getAdminOrder(id: string) {
 export async function updateOrderStatus(id: string, status: string) {
   await ensureAdmin()
   const supabase = await createClient()
-  const { error } = await supabase.from("orders").update({ status }).eq("id", id)
+
+  const updates: any = { status }
+  if (status === 'paid') {
+    updates.payment_status = 'paid'
+  }
+
+  const { error } = await supabase.from("orders").update(updates).eq("id", id)
   if (error) throw error
 
   // Log to timeline
@@ -1633,7 +1658,7 @@ export async function fulfillOrder(orderId: string, formData: FormData) {
     { shipping_partner: partnerName, tracking_number: trackingNumber }
   )
 
-  revalidatePath(`/ admin / orders / ${orderId} `)
+  revalidatePath(`/admin/orders/${orderId}`)
   revalidatePath("/admin/orders")
 }
 
