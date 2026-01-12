@@ -17,7 +17,6 @@ import { getAuthUser } from "./auth"
 import {
   mapCartItems,
   calculateCartTotals,
-  DatabaseCartItem,
   CartShippingMethod
 } from "@/lib/util/cart-calculations"
 

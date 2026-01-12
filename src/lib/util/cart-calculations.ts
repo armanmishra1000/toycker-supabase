@@ -1,4 +1,4 @@
-import { Cart, CartItem, Product, ProductVariant, Promotion } from "@/lib/supabase/types"
+import { CartItem, Product, ProductVariant, Promotion } from "@/lib/supabase/types"
 
 /** Raw cart item from database with nested product/variant objects */
 export interface DatabaseCartItem {

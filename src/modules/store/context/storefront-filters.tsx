@@ -27,6 +27,7 @@ type FilterState = {
   availability?: AvailabilityFilter
   priceRange?: PriceRangeFilter
   age?: string
+  categoryId?: string
   collectionId?: string
   sortBy: SortOptions
   page: number
@@ -41,6 +42,7 @@ type StorefrontFiltersProviderProps = {
   initialProducts: Product[]
   initialCount: number
   pageSize?: number
+  fixedCategoryId?: string
   fixedCollectionId?: string
 }
 
@@ -56,6 +58,7 @@ type StorefrontFiltersContextValue = {
   setAvailability: (_value?: AvailabilityFilter) => void
   setPriceRange: (_range?: PriceRangeFilter) => void
   setAge: (_value?: string) => void
+  setCategory: (_value?: string) => void
   setCollection: (_value?: string) => void
   setFilters: (_partial: Partial<FilterState>, _options?: { resetPage?: boolean }) => void
   updateFilters: (_partial: Partial<FilterState>, _options?: { resetPage?: boolean }) => void
@@ -98,6 +101,7 @@ const isFilterStateEqual = (a: FilterState, b: FilterState) =>
   a.availability === b.availability &&
   isPriceRangeEqual(a.priceRange, b.priceRange) &&
   a.age === b.age &&
+  a.categoryId === b.categoryId &&
   a.collectionId === b.collectionId &&
   a.sortBy === b.sortBy &&
   a.page === b.page &&
@@ -111,6 +115,7 @@ export const StorefrontFiltersProvider = ({
   initialProducts,
   initialCount,
   pageSize = STORE_PRODUCT_PAGE_SIZE,
+  fixedCategoryId,
   fixedCollectionId,
 }: StorefrontFiltersProviderProps) => {
   const [filters, setFilterState] = useState<FilterState>(initialFilters)
@@ -144,6 +149,7 @@ export const StorefrontFiltersProvider = ({
       setIsFetching(true)
       setError(undefined)
 
+      const effectiveCategoryId = nextFilters.categoryId ?? fixedCategoryId
       const effectiveCollectionId = nextFilters.collectionId ?? fixedCollectionId
       const normalizedAgeFilter = resolveAgeFilterValue(nextFilters.age)
       const shouldApplyAgeFilter = Boolean(normalizedAgeFilter) && !effectiveCollectionId
@@ -159,6 +165,7 @@ export const StorefrontFiltersProvider = ({
             countryCode,
             page: nextFilters.page,
             sortBy: nextFilters.sortBy,
+            categoryId: effectiveCategoryId,
             collectionId: effectiveCollectionId,
             searchQuery: nextFilters.searchQuery,
             limit: pageSize,
@@ -205,7 +212,7 @@ export const StorefrontFiltersProvider = ({
         }
       }
     },
-    [countryCode, pageSize, fixedCollectionId]
+    [countryCode, pageSize, fixedCategoryId, fixedCollectionId]
   )
 
   const triggerFetch = useCallback(
@@ -258,6 +265,7 @@ export const StorefrontFiltersProvider = ({
 
   const setAvailability = useCallback((value?: AvailabilityFilter) => baseUpdate({ availability: value }), [baseUpdate])
   const setAge = useCallback((value?: string) => baseUpdate({ age: value ?? undefined }), [baseUpdate])
+  const setCategory = useCallback((value?: string) => baseUpdate({ categoryId: value ?? undefined }), [baseUpdate])
   const setCollection = useCallback((value?: string) => baseUpdate({ collectionId: value ?? undefined }), [baseUpdate])
   const updateFilters = useCallback(
     (partial: Partial<FilterState>, options?: { resetPage?: boolean }) => {
@@ -302,6 +310,7 @@ export const StorefrontFiltersProvider = ({
 
     if (filters.availability) count += 1
     if (filters.age) count += 1
+    if (filters.categoryId) count += 1
 
     const hasPriceRange = filters.priceRange && (filters.priceRange.min !== undefined || filters.priceRange.max !== undefined)
     if (hasPriceRange) count += 1
@@ -328,6 +337,7 @@ export const StorefrontFiltersProvider = ({
       setAvailability,
       setPriceRange,
       setAge,
+      setCategory,
       setCollection,
       setFilters: updateFilters,
       updateFilters,
@@ -350,6 +360,7 @@ export const StorefrontFiltersProvider = ({
       setAvailability,
       setPriceRange,
       setAge,
+      setCategory,
       setCollection,
       updateFilters,
       setSort,
