@@ -3,7 +3,7 @@
 import React from "react"
 import { Text } from "@modules/common/components/text"
 import { Cart, CustomerProfile, ShippingOption } from "@/lib/supabase/types"
-import { Edit3 } from "lucide-react"
+
 import BillingAddress from "../billing_address"
 import ShippingAddress from "../shipping-address"
 import { useCheckout } from "../../context/checkout-context"
@@ -19,7 +19,7 @@ const Addresses = ({
   const { state, toggleSameAsBilling } = useCheckout()
 
   // Check if address has been filled (for UI indicator)
-  const hasShippingAddress = Boolean(state.shippingAddress?.address_1)
+  // const hasShippingAddress = Boolean(state.shippingAddress?.address_1)
 
   return (
     <div>

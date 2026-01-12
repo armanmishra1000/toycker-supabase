@@ -73,7 +73,7 @@ const FilterDrawer = ({
   const [pendingFilters, setPendingFilters] = useState<SelectedFilters>(() => snapshotToSelected(snapshot))
 
   const syncRouterParams = useCallback(
-    (mutator: (params: URLSearchParams) => void) => {
+    (mutator: (_params: URLSearchParams) => void) => {
       const params = new URLSearchParams(searchParams)
       mutator(params)
       params.delete("page")
@@ -130,7 +130,6 @@ const FilterDrawer = ({
     storefrontFilters.updateFilters({
       availability: pendingFilters.availability,
       age: pendingFilters.age,
-      categoryId: pendingFilters.category,
       collectionId: pendingFilters.collection,
       priceRange: nextPrice,
     })
@@ -147,7 +146,6 @@ const FilterDrawer = ({
       assignParam("availability", pendingFilters.availability)
       assignParam("age", pendingFilters.age)
       assignParam("collection", pendingFilters.collection)
-      assignParam("category", pendingFilters.category)
       assignParam(
         "price_min",
         pendingFilters.priceMin !== undefined ? Math.round(pendingFilters.priceMin) : undefined
@@ -231,7 +229,6 @@ const FilterDrawer = ({
 type FilterSnapshot = {
   availability?: string
   age?: string
-  category?: string
   price?: { min?: number; max?: number }
   search?: string
   collection?: string
@@ -243,7 +240,6 @@ const useFilterSnapshot = (selectedFilters?: SelectedFilters, searchQuery?: stri
   return useMemo<FilterSnapshot>(() => {
     const availability = storefrontFilters?.filters.availability ?? selectedFilters?.availability
     const age = storefrontFilters?.filters.age ?? selectedFilters?.age
-    const category = storefrontFilters?.filters.categoryId ?? selectedFilters?.category
     const collection = storefrontFilters?.filters.collectionId ?? selectedFilters?.collection
     const price = storefrontFilters?.filters.priceRange ??
       (selectedFilters?.priceMin !== undefined || selectedFilters?.priceMax !== undefined
@@ -254,7 +250,6 @@ const useFilterSnapshot = (selectedFilters?: SelectedFilters, searchQuery?: stri
     return {
       availability,
       age,
-      category,
       price,
       search,
       collection,
@@ -269,7 +264,6 @@ const useActiveFilterCount = (selectedFilters?: SelectedFilters, searchQuery?: s
     let count = 0
     if (snapshot.availability) count += 1
     if (snapshot.age) count += 1
-    if (snapshot.category) count += 1
     if (snapshot.price && (snapshot.price.min !== undefined || snapshot.price.max !== undefined)) {
       count += 1
     }
@@ -289,7 +283,6 @@ const useFilterSignature = (selectedFilters?: SelectedFilters, searchQuery?: str
 const snapshotToSelected = (snapshot: FilterSnapshot): SelectedFilters => ({
   availability: snapshot.availability as SelectedFilters["availability"],
   age: snapshot.age,
-  category: snapshot.category,
   priceMin: snapshot.price?.min,
   priceMax: snapshot.price?.max,
   collection: snapshot.collection,
@@ -298,7 +291,6 @@ const snapshotToSelected = (snapshot: FilterSnapshot): SelectedFilters => ({
 const areFiltersEqual = (a: SelectedFilters, b: SelectedFilters) =>
   a.availability === b.availability &&
   a.age === b.age &&
-  a.category === b.category &&
   a.collection === b.collection &&
   (a.priceMin ?? undefined) === (b.priceMin ?? undefined) &&
   (a.priceMax ?? undefined) === (b.priceMax ?? undefined)

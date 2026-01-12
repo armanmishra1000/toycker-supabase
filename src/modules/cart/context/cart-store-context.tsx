@@ -28,19 +28,19 @@ type OptimisticAddInput = {
 
 type CartStoreContextValue = {
   cart: Cart | null
-  setFromServer: (cart: Cart | null) => void
+  setFromServer: (_cart: Cart | null) => void
   clearCart: () => void
-  optimisticAdd: (input: OptimisticAddInput) => Promise<void>
-  optimisticRemove: (lineId: string) => Promise<void>
-  optimisticUpdateQuantity: (lineId: string, quantity: number) => Promise<void>
+  optimisticAdd: (_input: OptimisticAddInput) => Promise<void>
+  optimisticRemove: (_lineId: string) => Promise<void>
+  optimisticUpdateQuantity: (_lineId: string, _quantity: number) => Promise<void>
   reloadFromServer: () => Promise<void>
-  applyPromotionCode: (code: string) => Promise<void>
-  removePromotionCode: (code: string) => Promise<void>
-  applyRewards: (points: number) => Promise<void>
+  applyPromotionCode: (_code: string) => Promise<void>
+  removePromotionCode: (_code: string) => Promise<void>
+  applyRewards: (_points: number) => Promise<void>
   isSyncing: boolean
   lastError: string | null
-  isRemoving: (lineId: string) => boolean
-  isUpdating: (lineId: string) => boolean
+  isRemoving: (_lineId: string) => boolean
+  isUpdating: (_lineId: string) => boolean
 }
 
 const CartStoreContext = createContext<CartStoreContextValue | undefined>(undefined)
@@ -302,7 +302,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [reloadFromServer, showToast])
 
-  const removePromotionCode = useCallback(async (code: string) => {
+  const removePromotionCode = useCallback(async (_code: string) => {
     setIsSyncing(true)
     try {
       const { applyPromotions } = await import("@lib/data/cart")
@@ -440,6 +440,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       clearCart,
       isRemoving,
       isUpdating,
+      applyRewards
     ]
   )
 

@@ -11,7 +11,7 @@ import ImageUploader from "../../image-uploader"
 type Props = {
     isOpen: boolean
     onClose: () => void
-    onSuccess: (banner: HomeBanner) => void
+    onSuccess: (_banner: HomeBanner) => void
     banner?: HomeBanner | null
     defaultSortOrder?: number
 }

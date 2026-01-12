@@ -1,4 +1,4 @@
-import { Star, Image as ImageIcon, Video, Mic } from "lucide-react"
+import { Star, Video, Mic } from "lucide-react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { ReviewWithMedia } from "@/lib/actions/reviews"
 import { cn } from "@lib/util/cn"

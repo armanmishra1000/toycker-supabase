@@ -8,7 +8,7 @@ import ProductActions from "@modules/products/components/product-actions"
  */
 export default async function ProductActionsWrapper({
   id,
-  region,
+  region: _region,
   clubDiscountPercentage,
 }: {
   id: string

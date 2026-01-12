@@ -2,18 +2,18 @@
 
 import { useActionState } from "react"
 import Input from "@modules/common/components/input"
-import { LOGIN_VIEW } from "@modules/account/templates/login-template"
+import { LOGIN_VIEW, LoginView } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signup } from "@lib/data/customer"
 
 type Props = {
-  setCurrentView: (_view: LOGIN_VIEW) => void
+  setCurrentView: (_view: LoginView) => void
 }
 
 const Register = ({ setCurrentView }: Props) => {
-  const [message, formAction, isPending] = useActionState(signup, null)
+  const [state, formAction, isPending] = useActionState(signup, { success: true, data: undefined } as any)
 
   return (
     <div className="w-full flex flex-col gap-y-6" data-testid="register-page">
@@ -64,8 +64,8 @@ const Register = ({ setCurrentView }: Props) => {
         </div>
         <div aria-live="polite" className="min-h-[24px] mt-3">
           <ErrorMessage
-            error={message}
-            variant={message?.includes("Check your email") ? "info" : "error"}
+            error={state?.success === false ? state.error : (state?.success === true ? state.data : null)}
+            variant={state?.success === true ? "info" : "error"}
             data-testid="register-error"
           />
         </div>

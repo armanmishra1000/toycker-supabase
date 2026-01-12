@@ -2,12 +2,10 @@
 
 import { useState } from "react"
 import { approveReview, rejectReview, deleteReview, type ReviewWithMedia } from "@/lib/actions/reviews"
-import { Star, Eye, Check, X, Trash2, FileText, Image as ImageIcon, Video, Mic } from "lucide-react"
+import { Star, Eye, Check, X, Trash2, Video, Mic, Image as ImageIcon } from "lucide-react"
 import clsx from "clsx"
-import Image from "next/image"
 import { formatIST } from "@/lib/util/date"
 
-type Review = ReviewWithMedia // Typed from server action return
 
 export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }) {
     const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all")

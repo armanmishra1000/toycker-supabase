@@ -13,9 +13,9 @@ import {
 
 type LayoutDataContextValue = {
   cart: any
-  setCart: (cart: any) => void
+  setCart: (_cart: any) => void
   customer: any
-  setCustomer: (customer: any) => void
+  setCustomer: (_customer: any) => void
   shippingOptions: any[]
   loading: boolean
   refresh: () => Promise<void>

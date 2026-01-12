@@ -13,7 +13,7 @@ type ShopMegaMenuProps = {
   offsetLeft?: number
   onMouseEnter: () => void
   onMouseLeave: () => void
-  onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
+  onKeyDown: (_event: KeyboardEvent<HTMLDivElement>) => void
 }
 
 const basePanelClasses =

@@ -4,7 +4,6 @@ import { ClubSettings } from "@lib/supabase/types"
 import { updateClubSettings } from "@lib/data/club"
 import { useState } from "react"
 import { Button } from "@modules/common/components/button"
-import Input from "@modules/common/components/input"
 
 export default function ClubSettingsForm({ settings }: { settings: ClubSettings }) {
     const [minPurchase, setMinPurchase] = useState(settings.min_purchase_amount)

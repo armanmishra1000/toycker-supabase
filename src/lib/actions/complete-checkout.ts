@@ -87,8 +87,6 @@ export async function completeCheckout(
             await handlePostOrderLogic(orderData, currentCart, validatedData.rewardsToApply)
         }
 
-        // const { removeCartId } = await import("@lib/data/cart")
-        // await removeCartId()
         // We will do redirect in the client to avoid issues with some actions
         // Cart clearing is handled by ClearCartOnMount on the confirmation page
         // to avoid "Not Found" race conditions during payment gateway handoffs.

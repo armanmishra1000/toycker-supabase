@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { Product } from "@/lib/supabase/types"
 
@@ -157,7 +157,7 @@ const ProductGridSkeleton = () => (
   </div>
 )
 
-const EmptyWishlistState = ({ countryCode }: { countryCode: string }) => (
+const EmptyWishlistState = ({ countryCode: _countryCode }: { countryCode: string }) => (
   <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
     <h2 className="text-2xl font-semibold text-slate-900">Your wishlist is empty</h2>
     <p className="mt-2 text-sm text-slate-600">

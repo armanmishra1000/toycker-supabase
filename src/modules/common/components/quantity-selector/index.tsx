@@ -5,7 +5,7 @@ import { cn } from "@lib/util/cn"
 
 type QuantitySelectorProps = {
     quantity: number
-    onChange: (value: number) => void
+    onChange: (_value: number) => void
     onIncrement?: () => void
     onDecrement?: () => void
     max?: number

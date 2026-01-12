@@ -11,7 +11,7 @@ type RelatedProductsProps = {
 
 export default async function RelatedProducts({
   product,
-  countryCode,
+  countryCode: _countryCode,
   clubDiscountPercentage,
 }: RelatedProductsProps) {
   const region = await getRegion()

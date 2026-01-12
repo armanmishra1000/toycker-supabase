@@ -1,6 +1,5 @@
 "use client"
 
-import { Text } from "@modules/common/components/text"
 import React from "react"
 import { ChevronDown, X } from "lucide-react"
 

@@ -22,13 +22,11 @@ export type FilterOption = {
 export type FilterConfig = {
   availability?: FilterOption[]
   ages?: FilterOption[]
-  categories?: FilterOption[]
 }
 
 export type SelectedFilters = {
   availability?: AvailabilityFilter
   age?: string
-  category?: string
   collection?: string
   priceMin?: number
   priceMax?: number
@@ -39,7 +37,7 @@ export type RefinementListProps = {
   activeFilters?: ActiveFilter[]
   filterOptions?: FilterConfig
   selectedFilters?: SelectedFilters
-  onFiltersChange?: (next: SelectedFilters) => void
+  onFiltersChange?: (_next: SelectedFilters) => void
 }
 
 type PriceRangeState = {
@@ -106,7 +104,6 @@ const RefinementList = ({
       ? {
         availability: storefrontFilters.filters.availability,
         age: storefrontFilters.filters.age,
-        category: storefrontFilters.filters.categoryId,
         collection: storefrontFilters.filters.collectionId,
         priceMin: storefrontFilters.filters.priceRange?.min,
         priceMax: storefrontFilters.filters.priceRange?.max,
@@ -117,7 +114,6 @@ const RefinementList = ({
     : storefrontFilters?.filters.searchQuery ?? searchQuery ?? undefined
   const selectedAvailability = effectiveFilters.availability
   const selectedAge = effectiveFilters.age
-  const selectedCategory = effectiveFilters.category
   const selectedPriceMin = effectiveFilters.priceMin
   const selectedPriceMax = effectiveFilters.priceMax
 
@@ -148,7 +144,7 @@ const RefinementList = ({
     router.push(queryString ? `${pathname}?${queryString}` : pathname)
   }
 
-  const updateSearchParams = (updater: (params: URLSearchParams) => void) => {
+  const updateSearchParams = (updater: (_params: URLSearchParams) => void) => {
     const params = new URLSearchParams(searchParams)
     updater(params)
     params.delete("page")
@@ -188,17 +184,6 @@ const RefinementList = ({
             params.delete("collection")
           }
         })
-      } else if (name === "category") {
-        const isActive = storefrontFilters.filters.categoryId === value
-        const nextValue = isActive ? undefined : value
-        storefrontFilters.setCategory(nextValue)
-        updateSearchParams((params) => {
-          if (nextValue) {
-            params.set("category", nextValue)
-          } else {
-            params.delete("category")
-          }
-        })
       }
       return
     }
@@ -218,12 +203,6 @@ const RefinementList = ({
           ...effectiveFilters,
           age: nextValue,
           collection: nextCollection,
-        })
-      } else if (name === "category") {
-        const nextValue = effectiveFilters.category === value ? undefined : value
-        onFiltersChange({
-          ...effectiveFilters,
-          category: nextValue,
         })
       }
       return
@@ -346,7 +325,6 @@ const RefinementList = ({
 
     appendChip("availability", selectedAvailability, filterOptions?.availability)
     appendChip("age", selectedAge, filterOptions?.ages)
-    appendChip("category", selectedCategory, filterOptions?.categories)
 
     if (selectedPriceMin !== undefined || selectedPriceMax !== undefined) {
       const formattedMin = formatCurrency(selectedPriceMin ?? sliderBounds.min)
@@ -373,7 +351,6 @@ const RefinementList = ({
     resolvedSearchQuery,
     selectedAvailability,
     selectedAge,
-    selectedCategory,
     selectedPriceMin,
     selectedPriceMax,
     sliderBounds,
@@ -389,9 +366,6 @@ const RefinementList = ({
             break
           case "age":
             storefrontFilters.updateFilters({ age: undefined, collectionId: undefined }, { resetPage: true })
-            break
-          case "category":
-            storefrontFilters.setCategory(undefined)
             break
           case "collection":
             storefrontFilters.setCollection(undefined)
@@ -421,9 +395,6 @@ const RefinementList = ({
           case "age":
             next.age = undefined
             next.collection = undefined
-            break
-          case "category":
-            next.category = undefined
             break
           case "collection":
             next.collection = undefined
@@ -499,16 +470,6 @@ const RefinementList = ({
               />
             </FilterSection>
           ) : null}
-
-          {filterOptions?.categories?.length ? (
-            <FilterSection title="Category">
-              <CheckboxGroup
-                options={filterOptions.categories}
-                selectedValue={selectedCategory}
-                onChange={(value) => toggleCheckboxParam("category", value)}
-              />
-            </FilterSection>
-          ) : null}
         </div>
       </section>
     </div>
@@ -535,7 +496,7 @@ const CheckboxGroup = ({
 }: {
   options: FilterOption[]
   selectedValue?: string
-  onChange: (value: string) => void
+  onChange: (_value: string) => void
 }) => (
   <div className="space-y-2">
     {options.map((option) => {
@@ -568,7 +529,7 @@ const PriceRangeControls = ({
 }: {
   sliderBounds: typeof PRICE_SLIDER_LIMITS
   priceRange: PriceRangeState
-  onRangeChange: (field: "min" | "max", value: number | undefined, commit?: boolean) => void
+  onRangeChange: (_field: "min" | "max", _value: number | undefined, _commit?: boolean) => void
 }) => {
   const handleInputChange = (field: "min" | "max", event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value === "" ? undefined : Number(event.target.value)
@@ -633,7 +594,7 @@ const InputField = ({
   onBlur,
 }: {
   value: number
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onChange: (_event: ChangeEvent<HTMLInputElement>) => void
   onBlur: () => void
 }) => (
   <div className="flex flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm transition-all focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900">

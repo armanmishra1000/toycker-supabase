@@ -9,7 +9,7 @@ type AuthShellProps = {
   footer?: React.ReactNode
 }
 
-const AuthShell = ({ title, subtitle, children, footer }: AuthShellProps) => {
+const AuthShell = ({ title, subtitle, children, footer: _footer }: AuthShellProps) => {
   return (
     <div className="w-full flex justify-center px-4 py-12 bg-ui-bg-subtle rounded-lg">
       <div className="w-full max-w-2xl shadow-card rounded-xl bg-ui-bg-base border border-ui-border">

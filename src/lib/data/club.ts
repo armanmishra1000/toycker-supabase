@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { ClubSettings } from "@/lib/supabase/types"
 import { revalidateTag, unstable_cache } from "next/cache"
-import { cache } from "react"
 
 const getClubSettingsInternal = async (): Promise<ClubSettings> => {
     const supabase = await createClient()

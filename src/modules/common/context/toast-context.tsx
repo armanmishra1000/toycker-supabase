@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 
 type ToastType = "success" | "error" | "info" | "warning"
 
@@ -13,8 +13,8 @@ type Toast = {
 
 type ToastContextValue = {
   toasts: Toast[]
-  showToast: (message: string, type: ToastType, title?: string) => void
-  removeToast: (id: string) => void
+  showToast: (_message: string, _type: ToastType, _title?: string) => void
+  removeToast: (_id: string) => void
 }
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined)

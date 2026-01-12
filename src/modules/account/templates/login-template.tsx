@@ -8,13 +8,14 @@ import Login from "@modules/account/components/login"
 import AuthShell from "@modules/account/components/auth-shell"
 import ErrorMessage from "@modules/checkout/components/error-message"
 
-export enum LOGIN_VIEW {
-  SIGN_IN = "sign-in",
-  REGISTER = "register",
-}
+export const LOGIN_VIEW = {
+  SIGN_IN: "sign-in",
+  REGISTER: "register",
+} as const
+export type LoginView = (typeof LOGIN_VIEW)[keyof typeof LOGIN_VIEW]
 
 const LoginTemplateContent = ({ returnUrl }: { returnUrl?: string }) => {
-  const [currentView, setCurrentView] = useState<LOGIN_VIEW>(LOGIN_VIEW.SIGN_IN)
+  const [currentView, setCurrentView] = useState<LoginView>(LOGIN_VIEW.SIGN_IN)
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -71,7 +72,7 @@ const LoginTemplateContent = ({ returnUrl }: { returnUrl?: string }) => {
           <ErrorMessage error={infoMsg} variant="info" />
         </div>
       )}
-      {currentView === "sign-in" ? (
+      {currentView === LOGIN_VIEW.SIGN_IN ? (
         <Login setCurrentView={setCurrentView} returnUrl={returnUrl} />
       ) : (
         <Register setCurrentView={setCurrentView} /> // Todo: Register might also need returnUrl

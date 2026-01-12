@@ -3,9 +3,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { PaymentProvider } from "@/lib/supabase/types"
 
-export const listCartPaymentMethods = async (regionId: string) => {
+export const listCartPaymentMethods = async (_regionId: string) => {
   const supabase = await createClient()
-  
+
   const { data, error } = await supabase
     .from("payment_providers")
     .select("id, name, description")

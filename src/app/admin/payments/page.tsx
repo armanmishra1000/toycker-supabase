@@ -8,15 +8,7 @@ import AdminBadge from "@modules/admin/components/admin-badge"
 export default async function AdminPayments() {
   const methods = await getAdminPaymentMethods()
 
-  const actions = (
-    <Link
-      href="/admin/payments/new"
-      className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-black hover:bg-gray-800 transition-all"
-    >
-      <PlusIcon className="h-4 w-4 mr-2" strokeWidth={3} />
-      Add Method
-    </Link>
-  )
+
 
   return (
     <div className="space-y-6">

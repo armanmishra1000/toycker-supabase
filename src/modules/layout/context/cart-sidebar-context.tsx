@@ -1,7 +1,6 @@
 "use client"
 
 import { Cart } from "@/lib/supabase/types"
-import { useRouter } from "next/navigation"
 import { ReactNode, createContext, useCallback, useContext, useMemo, useState } from "react"
 
 import { useCartStore } from "@modules/cart/context/cart-store-context"
@@ -11,10 +10,10 @@ type CartSidebarContextValue = {
   openCart: () => void
   closeCart: () => void
   cart: Cart | null
-  setCart: (cart: Cart | null) => void
+  setCart: (_cart: Cart | null) => void
   refreshCart: () => Promise<void>
-  removeLineItem: (lineItemId: string) => Promise<void>
-  isRemoving: (lineItemId: string) => boolean
+  removeLineItem: (_lineItemId: string) => Promise<void>
+  isRemoving: (_lineItemId: string) => boolean
 }
 
 const CartSidebarContext = createContext<CartSidebarContextValue | undefined>(
@@ -23,7 +22,6 @@ const CartSidebarContext = createContext<CartSidebarContextValue | undefined>(
 
 export const CartSidebarProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false)
-  const router = useRouter()
   const { cart, setFromServer, optimisticRemove, reloadFromServer, isRemoving } = useCartStore()
 
   const refreshCart = useCallback(async () => {

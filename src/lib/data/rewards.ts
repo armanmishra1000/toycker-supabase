@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { RewardWallet, RewardTransaction, RewardTransactionWithOrder } from "@/lib/supabase/types"
+import { RewardWallet, RewardTransactionWithOrder } from "@/lib/supabase/types"
 import { revalidateTag } from "next/cache"
 import { cache } from "react"
 
@@ -298,7 +298,7 @@ export async function clearRewardsFromCart(cartId: string): Promise<void> {
     const currentMetadata = (cart?.metadata || {}) as Record<string, unknown>
 
     // Remove rewards_to_apply from metadata
-    const { rewards_to_apply, ...restMetadata } = currentMetadata as { rewards_to_apply?: number;[key: string]: unknown }
+    const { rewards_to_apply: _rewards_to_apply, ...restMetadata } = currentMetadata as { rewards_to_apply?: number;[key: string]: unknown }
 
     const { error } = await supabase
         .from("carts")

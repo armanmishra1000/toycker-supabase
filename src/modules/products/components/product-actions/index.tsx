@@ -372,7 +372,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
     }
     const url = window.location.href
     const shareNavigator = navigator as Navigator & {
-      share?: (data: ShareData) => Promise<void>
+      share?: (_data: ShareData) => Promise<void>
     }
     if (shareNavigator.share) {
       await shareNavigator.share({
@@ -770,7 +770,7 @@ const InputField = ({
   label: string
   type?: string
   value: string
-  onChange: (value: string) => void
+  onChange: (_value: string) => void
   required?: boolean
 }) => {
   return (

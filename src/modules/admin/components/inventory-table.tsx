@@ -16,12 +16,13 @@ import Link from "next/link"
 import { useState, Fragment } from "react"
 import { useToast } from "@modules/common/context/toast-context"
 import { cn } from "@lib/util/cn"
+import { LOW_STOCK_THRESHOLD } from "@/lib/constants/inventory"
 
 type InventoryTableProps = {
   initialProducts: Product[]
 }
 
-const LOW_STOCK_THRESHOLD = 5
+
 
 export default function InventoryTable({ initialProducts }: InventoryTableProps) {
   const { showToast } = useToast()

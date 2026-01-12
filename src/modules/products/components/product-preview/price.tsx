@@ -1,6 +1,5 @@
 import { Text } from "@modules/common/components/text"
 import { cn } from "@lib/util/cn"
-import { Star } from "lucide-react"
 
 export default function PreviewPrice({ price }: { price: any | null }) {
   if (!price) {

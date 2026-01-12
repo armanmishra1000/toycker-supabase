@@ -1,4 +1,3 @@
-import { listCategories } from "@lib/data/categories"
 import { listPaginatedProducts } from "@lib/data/products"
 import { retrieveCustomer } from "@lib/data/customer"
 import {
@@ -14,7 +13,6 @@ import { STORE_PRODUCT_PAGE_SIZE } from "@modules/store/constants"
 import FilterDrawer from "@modules/store/components/filter-drawer"
 import Breadcrumbs from "@modules/common/components/breadcrumbs"
 import { resolveAgeFilterValue } from "@modules/store/utils/age-filter"
-import { resolveCategoryIdentifier } from "@modules/store/utils/category"
 import { resolveCollectionIdentifier } from "@modules/store/utils/collection"
 
 const StoreTemplate = async ({
@@ -25,7 +23,6 @@ const StoreTemplate = async ({
   availability,
   priceRange,
   ageFilter,
-  categoryId,
   collectionId,
   viewMode,
   clubDiscountPercentage,
@@ -37,7 +34,6 @@ const StoreTemplate = async ({
   availability?: AvailabilityFilter
   priceRange?: PriceRangeFilter
   ageFilter?: string
-  categoryId?: string
   collectionId?: string
   viewMode?: ViewMode
   clubDiscountPercentage?: number
@@ -47,7 +43,6 @@ const StoreTemplate = async ({
   const resolvedViewMode = viewMode || "grid-4"
 
   const normalizedAgeFilter = resolveAgeFilterValue(ageFilter)
-  const resolvedCategoryId = await resolveCategoryIdentifier(categoryId)
 
   const ageCollectionEntries = await Promise.all(
     ageCategories.map(async (age) => {
@@ -66,10 +61,6 @@ const StoreTemplate = async ({
 
   const productQueryParams: Record<string, string | string[] | undefined> = {}
 
-  if (resolvedCategoryId) {
-    productQueryParams["category_id"] = [resolvedCategoryId]
-  }
-
   if (effectiveCollectionId) {
     productQueryParams["collection_id"] = [effectiveCollectionId]
   }
@@ -81,41 +72,20 @@ const StoreTemplate = async ({
   const effectiveProductQueryParams: Record<string, string | string[] | undefined> | undefined =
     Object.keys(productQueryParams).length ? productQueryParams : undefined
 
-  const [categories, productListing] = await Promise.all([
-    listCategories(),
-    listPaginatedProducts({
-      page: pageNumber,
-      limit: STORE_PRODUCT_PAGE_SIZE,
-      queryParams: effectiveProductQueryParams,
-      sortBy: sort,
-      countryCode,
-      availability,
-      priceFilter: priceRange,
-      ageFilter: normalizedAgeFilter,
-    }),
-  ])
+  const productListing = await listPaginatedProducts({
+    page: pageNumber,
+    limit: STORE_PRODUCT_PAGE_SIZE,
+    queryParams: effectiveProductQueryParams,
+    sortBy: sort,
+    countryCode,
+    availability,
+    priceFilter: priceRange,
+    ageFilter: normalizedAgeFilter,
+  })
 
   const {
     response: { products: initialProducts, count: initialCount },
   } = productListing
-
-  const prioritizedCategories = ["Merch", "Pants", "Shirts", "Sweatshirts"]
-
-  const categoryOptions = categories
-    ?.map((category) => ({ value: category.id, label: category.name }))
-    .sort((a, b) => {
-      const aIndex = prioritizedCategories.indexOf(a.label)
-      const bIndex = prioritizedCategories.indexOf(b.label)
-
-      if (aIndex !== -1 || bIndex !== -1) {
-        if (aIndex === -1) return 1
-        if (bIndex === -1) return -1
-        return aIndex - bIndex
-      }
-
-      return a.label.localeCompare(b.label)
-    })
-    ?? []
 
   const ageOptions = ageCategories.map((age) => ({
     value: age.id,
@@ -148,7 +118,6 @@ const StoreTemplate = async ({
         availability,
         priceRange,
         age: ageFilter,
-        categoryId: resolvedCategoryId,
         collectionId: effectiveCollectionId,
         viewMode: resolvedViewMode,
       }}
@@ -163,13 +132,11 @@ const StoreTemplate = async ({
           priceMin: priceRange?.min,
           priceMax: priceRange?.max,
           age: ageFilter,
-          category: resolvedCategoryId,
           collection: effectiveCollectionId,
         }}
         filterOptions={{
           availability: availabilityOptions,
           ages: ageOptions,
-          categories: categoryOptions,
         }}
       >
         <div className="mx-auto p-4 max-w-[1440px] pb-10" data-testid="category-container" id="store-catalog">

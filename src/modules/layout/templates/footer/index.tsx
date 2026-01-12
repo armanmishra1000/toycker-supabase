@@ -98,7 +98,7 @@ const FloatingDecor = () => (
   </div>
 )
 
-const DecorativeGround = ({ year }: { year: number }) => (
+const DecorativeGround = ({ year: _year }: { year: number }) => (
   <div className="relative mt-12 w-full bg-transparent">
     <div className="relative flex w-full items-end justify-center">
       <Image

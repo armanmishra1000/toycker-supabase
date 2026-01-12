@@ -67,7 +67,7 @@ type HeaderProps = {
 }
 
 const Header = ({
-  regions,
+  regions: _regions,
   cart,
   navLinks,
   ageCategories,

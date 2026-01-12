@@ -1,6 +1,5 @@
 import { Text } from "@modules/common/components/text"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import SafeRichText from "@modules/common/components/safe-rich-text"
 import getShortDescription from "@modules/products/utils/get-short-description"
 
 type ProductInfoProps = {
@@ -30,7 +29,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
           {product.title}
         </Text>
 
-        {shortDescription ? ( 
+        {shortDescription ? (
           <p className="text-sm text-gray-500" data-testid="product-description">
             {shortDescription}
           </p>

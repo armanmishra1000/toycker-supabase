@@ -1,6 +1,10 @@
 "use client"
 
 import { onCLS, onINP, onLCP, onTTFB, type Metric } from "web-vitals"
+import * as Sentry from "@sentry/nextjs";
+
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
 
 type LoggedMetric = {
   name: string
@@ -64,11 +68,11 @@ const recordInitialNavigation = () => {
 type NavigateEvent = Event & {
   destination: { url: string }
   navigationType?: string
-  transitionWhile?: (callback: Promise<unknown>) => void
+  transitionWhile?: (_callback: Promise<unknown>) => void
 }
 
 type ExperimentalNavigation = {
-  addEventListener?: (type: "navigate", listener: (event: NavigateEvent) => void) => void
+  addEventListener?: (_type: "navigate", _listener: (_event: NavigateEvent) => void) => void
 }
 
 const watchNavigationAPI = () => {

@@ -7,7 +7,7 @@ import type { CatalogViewMode } from "@modules/catalog/types"
 
 type CatalogViewToggleProps = {
   value: CatalogViewMode
-  onChange: (value: CatalogViewMode) => void
+  onChange: (_value: CatalogViewMode) => void
 }
 
 const MODES: { value: CatalogViewMode; label: string; icon: ComponentType<{ className?: string }> }[] = [

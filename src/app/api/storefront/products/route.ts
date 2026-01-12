@@ -25,7 +25,6 @@ type RequestBody = {
   page?: number
   limit?: number
   sortBy?: SortOptions
-  categoryId?: string
   collectionId?: string | string[]
   productsIds?: string[]
   searchQuery?: string
@@ -52,11 +51,6 @@ export async function POST(request: Request) {
     const sortBy: SortOptions = body.sortBy || "featured"
 
     const queryParams: Record<string, string | string[] | undefined> = {}
-    const resolvedCategoryId = await resolveCategoryIdentifier(body.categoryId)
-
-    if (resolvedCategoryId) {
-      queryParams["category_id"] = [resolvedCategoryId]
-    }
 
     const collectionIdsInput = normalizeStringArray(body.collectionId)
     if (collectionIdsInput.length) {

@@ -15,7 +15,7 @@ import { Region } from "@/lib/supabase/types"
 
 const AddAddress = ({
   region,
-  addresses,
+  addresses: _addresses,
 }: {
   region: Region
   addresses: any[]

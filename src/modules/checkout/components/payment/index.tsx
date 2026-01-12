@@ -21,8 +21,7 @@ const Payment = ({
   const { state, setPaymentMethod } = useCheckout()
 
   const [error, setError] = useState<string | null>(null)
-  const [cardBrand, setCardBrand] = useState<string | null>(null)
-  const [cardComplete, setCardComplete] = useState(false)
+
 
   const paidByGiftcard = (cart.gift_card_total ?? 0) > 0 && cart.total === 0
 
@@ -66,9 +65,9 @@ const Payment = ({
                     paymentProviderId={paymentMethod.id}
                     selectedPaymentOptionId={state.paymentMethod || ""}
                     paymentInfoMap={paymentInfoMap}
-                    setCardBrand={setCardBrand}
+                    setCardBrand={() => { }}
                     setError={setError}
-                    setCardComplete={setCardComplete}
+                    setCardComplete={() => { }}
                   />
                 ) : (
                   <PaymentContainer

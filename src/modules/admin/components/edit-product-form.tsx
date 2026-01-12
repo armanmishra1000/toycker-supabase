@@ -10,10 +10,10 @@ import CollectionCheckboxList from "./collection-checkbox-list"
 import AdminBadge from "./admin-badge"
 import ProductVariantEditor from "./product-variant-editor"
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
-import { PackageIcon, LayersIcon, Play } from "lucide-react"
+import { PackageIcon, LayersIcon } from "lucide-react"
 import MediaGallery from "./media-manager"
 import { cn } from "@/lib/util/cn"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { getYoutubeId, getYoutubeEmbedUrl } from "@/lib/util/youtube"
 import { Tag, Globe, Layers, Edit2 } from "lucide-react"
 
@@ -145,7 +145,7 @@ export default function EditProductForm({
             <div className="space-y-4">
               <MediaGallery
                 initialImages={product.images?.map(img => typeof img === 'string' ? img : img.url) || []}
-                onOrderChange={(newImages: string[]) => {
+                onOrderChange={(_newImages: string[]) => {
                   // This is handled by hidden input for form submission
                 }}
               />

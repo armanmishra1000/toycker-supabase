@@ -6,7 +6,7 @@ import { calculatePriceForShippingOption } from "@lib/data/fulfillment"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { Text } from "@modules/common/components/text"
 import { useShippingPrice } from "@modules/common/context/shipping-price-context"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { Address, Cart, ShippingOption } from "@/lib/supabase/types"
 
 import ShippingMethodOption from "./shipping-method-option"
@@ -108,17 +108,7 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
     }
   }, [shippingMethods, pickupMethods, shippingMethodId, cart.id])
 
-  // Auto-select first shipping method if none selected
-  useEffect(() => {
-    if (!shippingMethodId && shippingMethods?.length && !isLoadingPrices) {
-      const firstMethod = shippingMethods[0]
-      if (firstMethod) {
-        handleSetShippingMethod(firstMethod.id, "shipping")
-      }
-    }
-  }, [shippingMethods, shippingMethodId, isLoadingPrices])
-
-  const handleSetShippingMethod = async (
+  const handleSetShippingMethod = useCallback(async (
     id: string,
     variant: "shipping" | "pickup"
   ) => {
@@ -152,7 +142,19 @@ const Shipping = ({ cart, availableShippingMethods }: ShippingProps) => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [cart.id, shippingMethodId, shippingOptions, calculatedPricesMap, setSelectedShippingPrice])
+
+  // Auto-select first shipping method if none selected
+  useEffect(() => {
+    if (!shippingMethodId && shippingMethods?.length && !isLoadingPrices) {
+      const firstMethod = shippingMethods[0]
+      if (firstMethod) {
+        handleSetShippingMethod(firstMethod.id, "shipping")
+      }
+    }
+  }, [shippingMethods, shippingMethodId, isLoadingPrices, handleSetShippingMethod])
+
+
 
   return (
     <div className="bg-white">

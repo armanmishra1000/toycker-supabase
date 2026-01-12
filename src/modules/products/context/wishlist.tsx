@@ -21,8 +21,8 @@ import {
 
 type WishlistContextValue = {
   items: string[]
-  isInWishlist: (productId: string) => boolean
-  toggleWishlist: (productId: string) => Promise<void>
+  isInWishlist: (_productId: string) => boolean
+  toggleWishlist: (_productId: string) => Promise<void>
   isInitialized: boolean
 }
 
@@ -118,7 +118,7 @@ export const WishlistProvider = ({
     }
 
     merge()
-  }, [isAuthenticated, isInitialized]) // Depend on initialized to ensure we have the current DB state
+  }, [isAuthenticated, isInitialized, items]) // Depend on initialized to ensure we have the current DB state
 
   useEffect(() => {
     if (typeof window === "undefined") {

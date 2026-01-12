@@ -1384,7 +1384,7 @@ export async function getAdminRewardTransactions(userId: string, supabase?: any)
   // 3. Fetch order display IDs
   let ordersMap: Record<string, number> = {}
   if (orderIds.length > 0) {
-    const { data: orders, error: orderError } = await supabase
+    const { data: orders } = await supabase
       .from("orders")
       .select("id, display_id")
       .in("id", orderIds)

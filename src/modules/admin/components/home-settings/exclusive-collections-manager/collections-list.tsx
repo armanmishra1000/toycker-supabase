@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState } from "react"
 import { deleteExclusiveCollection, updateExclusiveCollection, reorderExclusiveCollections } from "@/lib/actions/home-exclusive-collections"
 import { type HomeExclusiveCollection } from "@/lib/types/home-exclusive-collections"
 import { useToast } from "@modules/common/context/toast-context"
@@ -38,17 +38,17 @@ import { CSS } from '@dnd-kit/utilities'
 
 type Props = {
     collections: HomeExclusiveCollection[]
-    onEdit: (collection: HomeExclusiveCollection) => void
-    onDelete: (id: string) => void
-    onToggle: (id: string, isActive: boolean) => void
-    onReorder: (newCollections: HomeExclusiveCollection[]) => void
+    onEdit: (_collection: HomeExclusiveCollection) => void
+    onDelete: (_id: string) => void
+    onToggle: (_id: string, _isActive: boolean) => void
+    onReorder: (_newCollections: HomeExclusiveCollection[]) => void
 }
 
 interface SortableItemProps {
     collection: HomeExclusiveCollection
-    onEdit: (collection: HomeExclusiveCollection) => void
-    onDelete: (id: string, productName: string) => void
-    onToggle: (collection: HomeExclusiveCollection) => void
+    onEdit: (_collection: HomeExclusiveCollection) => void
+    onDelete: (_id: string, _productName: string) => void
+    onToggle: (_collection: HomeExclusiveCollection) => void
     deletingId: string | null
     togglingId: string | null
 }

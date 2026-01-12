@@ -24,7 +24,7 @@ import { cn } from "@lib/util/cn"
 
 interface MediaGalleryProps {
     initialImages?: string[]
-    onOrderChange?: (images: string[]) => void
+    onOrderChange?: (_images: string[]) => void
 }
 
 export default function MediaGallery({ initialImages = [], onOrderChange }: MediaGalleryProps) {

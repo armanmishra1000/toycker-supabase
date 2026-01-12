@@ -86,7 +86,7 @@ export default async function PaginatedProducts({
   } = await listPaginatedProducts({
     page,
     limit: STORE_PRODUCT_PAGE_SIZE,
-    queryParams: (({ limit, ...rest }) => rest)(queryParams),
+    queryParams: (({ limit: _limit, ...rest }) => rest)(queryParams),
     sortBy,
     countryCode,
     availability: filters?.availability,

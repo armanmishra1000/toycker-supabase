@@ -1,4 +1,4 @@
-import { getAdminCollections, updateProduct, getProductVariants, getProductCollections, getAdminCategories, getProductCategories } from "@/lib/data/admin"
+import { getAdminCollections, getProductVariants, getProductCollections, getAdminCategories, getProductCategories } from "@/lib/data/admin"
 import Link from "next/link"
 import { retrieveProduct } from "@lib/data/products"
 import { notFound } from "next/navigation"

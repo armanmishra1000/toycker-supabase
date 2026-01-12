@@ -20,7 +20,7 @@ const COLOR_SWATCH_MAP: Record<string, string> = {
 type OptionSelectProps = {
   option: any
   current: string | undefined
-  updateOption: (title: string, value: string) => void
+  updateOption: (_optionId: string, _value: string) => void
   title: string
   disabled: boolean
   "data-testid"?: string
@@ -69,14 +69,12 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
               className={cn(
                 "transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
                 isSwatch
-                  ? `relative flex h-12 w-12 items-center justify-center rounded-full border ${
-                      value === current
-                        ? "border-[#E7353A] ring-2 ring-[#FDD5DB]"
-                        : "border-transparent"
-                    }`
-                  : `border-gray-200 bg-gray-50 border text-sm font-medium rounded-full px-5 py-2 ${
-                      value === current ? "border-[#E7353A] text-gray-900" : "text-gray-500"
-                    }`
+                  ? `relative flex h-12 w-12 items-center justify-center rounded-full border ${value === current
+                    ? "border-[#E7353A] ring-2 ring-[#FDD5DB]"
+                    : "border-transparent"
+                  }`
+                  : `border-gray-200 bg-gray-50 border text-sm font-medium rounded-full px-5 py-2 ${value === current ? "border-[#E7353A] text-gray-900" : "text-gray-500"
+                  }`
               )}
               disabled={disabled}
               data-testid="option-button"

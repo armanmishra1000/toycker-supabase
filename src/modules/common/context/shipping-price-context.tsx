@@ -4,7 +4,7 @@ import { createContext, useContext, useState, ReactNode } from "react"
 
 type ShippingPriceContextType = {
   selectedShippingPrice: number | null
-  setSelectedShippingPrice: (price: number | null) => void
+  setSelectedShippingPrice: (_price: number | null) => void
 }
 
 export const ShippingPriceContext = createContext<ShippingPriceContextType | undefined>(undefined)

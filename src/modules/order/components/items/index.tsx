@@ -1,7 +1,6 @@
 import repeat from "@lib/util/repeat"
 import { Order } from "@/lib/supabase/types"
 
-import Divider from "@modules/common/components/divider"
 import Item from "@modules/order/components/item"
 import SkeletonLineItem from "@modules/skeletons/components/skeleton-line-item"
 

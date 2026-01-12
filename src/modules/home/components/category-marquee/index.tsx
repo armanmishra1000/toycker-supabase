@@ -122,7 +122,7 @@ const CategoryMarquee = () => {
   }, [])
 
   const handlePreview = (
-    event: MouseEvent<HTMLAnchorElement> | FocusEvent<HTMLAnchorElement>,
+    _event: MouseEvent<HTMLAnchorElement> | FocusEvent<HTMLAnchorElement>,
   ) => {
     setIsPaused(true)
   }

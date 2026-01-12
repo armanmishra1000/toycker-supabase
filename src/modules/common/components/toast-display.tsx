@@ -1,7 +1,7 @@
 "use client"
 
 import { useToast } from "@modules/common/context/toast-context"
-import { Check, X, AlertCircle, Lightbulb, AlertTriangle, Info } from "lucide-react"
+import { Check, X, Lightbulb, AlertTriangle } from "lucide-react"
 
 const TOAST_STYLES = {
   success: {

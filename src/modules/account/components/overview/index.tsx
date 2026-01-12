@@ -1,4 +1,4 @@
-import { ChevronRight, MessageSquare } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { convertToLocale } from "@lib/util/money"
 
