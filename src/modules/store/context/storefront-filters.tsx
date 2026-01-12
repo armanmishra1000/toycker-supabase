@@ -55,17 +55,17 @@ type StorefrontFiltersContextValue = {
   isFetching: boolean
   error?: string
   activeFilterCount: number
-  setAvailability: (value?: AvailabilityFilter) => void
-  setPriceRange: (range?: PriceRangeFilter) => void
-  setAge: (value?: string) => void
-  setCategory: (value?: string) => void
-  setCollection: (value?: string) => void
-  setFilters: (partial: Partial<FilterState>, options?: { resetPage?: boolean }) => void
-  updateFilters: (partial: Partial<FilterState>, options?: { resetPage?: boolean }) => void
-  setSort: (value: SortOptions) => void
-  setViewMode: (value: ViewMode) => void
-  setPage: (page: number) => void
-  setSearchQuery: (value?: string) => void
+  setAvailability: (_value?: AvailabilityFilter) => void
+  setPriceRange: (_range?: PriceRangeFilter) => void
+  setAge: (_value?: string) => void
+  setCategory: (_value?: string) => void
+  setCollection: (_value?: string) => void
+  setFilters: (_partial: Partial<FilterState>, _options?: { resetPage?: boolean }) => void
+  updateFilters: (_partial: Partial<FilterState>, _options?: { resetPage?: boolean }) => void
+  setSort: (_value: SortOptions) => void
+  setViewMode: (_value: ViewMode) => void
+  setPage: (_page: number) => void
+  setSearchQuery: (_value?: string) => void
   refresh: () => void
   productsPerPage: number
 }

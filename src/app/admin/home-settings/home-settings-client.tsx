@@ -6,7 +6,6 @@ import { type HomeExclusiveCollection } from "@/lib/types/home-exclusive-collect
 import BannersManager from "@/modules/admin/components/home-settings/banners-manager"
 import ExclusiveCollectionsManager from "@/modules/admin/components/home-settings/exclusive-collections-manager"
 import {
-    LayoutDashboard,
     PictureInPicture,
     Video,
     Settings2
@@ -61,16 +60,16 @@ export default function HomeSettingsClient({ banners, collections }: Props) {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`flex items-center gap-2.5 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all duration-200 ${activeTab === tab.id
-                                    ? "border-emerald-500 text-emerald-600 bg-emerald-50/50"
-                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                                ? "border-emerald-500 text-emerald-600 bg-emerald-50/50"
+                                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                                 }`}
                         >
                             <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "text-emerald-500" : "text-gray-400"}`} />
                             {tab.label}
                             {tab.count > 0 && (
                                 <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${activeTab === tab.id
-                                        ? "bg-emerald-100 text-emerald-700"
-                                        : "bg-gray-100 text-gray-500"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-gray-100 text-gray-500"
                                     }`}>
                                     {tab.count}
                                 </span>

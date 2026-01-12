@@ -27,7 +27,6 @@ const CartTotals: React.FC<CartTotalsProps> = ({
 }) => {
   const {
     currency_code,
-    total,
     tax_total,
   } = totals
   const normalizedCurrency = currency_code?.trim() || "INR"

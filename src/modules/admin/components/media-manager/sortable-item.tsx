@@ -10,7 +10,7 @@ interface SortableItemProps {
     id: string
     url: string
     isPrimary?: boolean
-    onRemove: (id: string) => void
+    onRemove: (_id: string) => void
 }
 
 export function SortableItem({ id, url, isPrimary, onRemove }: SortableItemProps) {

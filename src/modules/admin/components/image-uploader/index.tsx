@@ -10,7 +10,7 @@ import { useToast } from "@modules/common/context/toast-context"
 type Props = {
     folder: "banners" | "exclusive-videos"
     value?: string
-    onChange: (url: string) => void
+    onChange: (_url: string) => void
     acceptedFormats: string[]
     maxSizeMB: number
 }
@@ -27,7 +27,7 @@ export default function ImageUploader({
     const [uploadProgress, setUploadProgress] = useState(0)
     const [isDragging, setIsDragging] = useState(false)
 
-    const handleUpload = async (file: File) => {
+    const handleUpload = useCallback(async (file: File) => {
         // Validate file size
         if (file.size > maxSizeMB * 1024 * 1024) {
             showToast(`File must be smaller than ${maxSizeMB}MB`, "error")
@@ -95,7 +95,7 @@ export default function ImageUploader({
             setIsUploading(false)
             setUploadProgress(0)
         }
-    }
+    }, [acceptedFormats, folder, maxSizeMB, onChange, showToast])
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -169,8 +169,8 @@ export default function ImageUploader({
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragging
-                            ? "border-gray-900 bg-gray-50"
-                            : "border-gray-300 hover:border-gray-400"
+                        ? "border-gray-900 bg-gray-50"
+                        : "border-gray-300 hover:border-gray-400"
                         } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
                 >
                     <input

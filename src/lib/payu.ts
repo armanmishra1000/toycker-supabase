@@ -73,8 +73,10 @@ export const generatePayUHash = (
   ].join("|")
 
   // Debug logging (salt is masked for security)
-  const debugString = hashString.replace(salt, "***SALT***")
-  console.log("[PAYU] Hash string (masked):", debugString)
+  if (process.env.NODE_ENV === "development") {
+    const debugString = hashString.replace(salt, "***SALT***")
+    console.log("[PAYU] Hash string (masked):", debugString)
+  }
 
   return crypto.createHash("sha512").update(hashString, "utf8").digest("hex")
 }
@@ -134,13 +136,17 @@ export const verifyPayUHash = (payload: PayUCallbackPayload, salt: string): bool
   const computed = crypto.createHash("sha512").update(base, "utf8").digest("hex").toLowerCase()
 
   // Debug logging
-  const debugBase = base.replace(salt, "***SALT***")
-  console.log("[PAYU] Verify hash string (masked):", debugBase)
-  console.log("[PAYU] Computed hash:", computed.substring(0, 20) + "...")
-  console.log("[PAYU] Received hash:", receivedHash.substring(0, 20) + "...")
+  if (process.env.NODE_ENV === "development") {
+    const debugBase = base.replace(salt, "***SALT***")
+    console.log("[PAYU] Verify hash string (masked):", debugBase)
+    console.log("[PAYU] Computed hash:", computed.substring(0, 20) + "...")
+    console.log("[PAYU] Received hash:", receivedHash.substring(0, 20) + "...")
+  }
 
   if (computed === receivedHash) {
-    console.log("[PAYU] Hash verification: PASSED")
+    if (process.env.NODE_ENV === "development") {
+      console.log("[PAYU] Hash verification: PASSED")
+    }
     return true
   }
 

@@ -7,6 +7,12 @@ import { grandstander, inter } from "@lib/fonts"
 import "@/styles/globals.css"
 
 export const metadata: Metadata = {
+  title: {
+    template: "%s | Toycker",
+    default: "Toycker | Premium Toys & Collectibles",
+  },
+  description: "Shop the best selection of action figures, building sets, and educational toys at Toycker. Exclusive collections and free shipping on orders over ₹999.",
+  keywords: ["toys", "action figures", "building blocks", "educational toys", "Toycker"],
   metadataBase: new URL(getBaseURL()),
   icons: {
     icon: "/favicon.jpg",

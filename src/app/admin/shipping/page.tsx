@@ -9,15 +9,7 @@ import { convertToLocale } from "@lib/util/money"
 export default async function AdminShipping() {
   const options = await getAdminShippingOptions()
 
-  const actions = (
-    <Link
-      href="/admin/shipping/new"
-      className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-black hover:bg-gray-800 transition-all"
-    >
-      <PlusIcon className="h-4 w-4 mr-2" strokeWidth={3} />
-      Add Option
-    </Link>
-  )
+
 
   return (
     <div className="space-y-6">

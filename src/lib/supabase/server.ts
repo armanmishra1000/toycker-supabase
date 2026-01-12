@@ -45,7 +45,7 @@ export const createClient = async () => {
           getAll() {
             return []
           },
-          setAll(cookiesToSet) {
+          setAll(_cookiesToSet) {
             // No-op
           },
         },

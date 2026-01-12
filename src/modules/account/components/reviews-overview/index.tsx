@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@modules/common/components/button"
-import ReviewCard from "../review-card"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { ReviewWithMedia } from "@/lib/actions/reviews"
 

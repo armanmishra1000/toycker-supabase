@@ -1,7 +1,6 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { Product, Category, Collection } from "@/lib/supabase/types"
 
 export type SearchProductSummary = {
     id: string
@@ -43,7 +42,7 @@ type SearchEntitiesArgs = {
 
 export const searchEntities = async ({
     query,
-    countryCode,
+    countryCode: _countryCode,
     productLimit = 6,
     taxonomyLimit = 5,
 }: SearchEntitiesArgs): Promise<SearchResultsPayload> => {

@@ -2,12 +2,12 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getAuthUser } from "./auth"
 import { redirect } from "next/navigation"
 import { CustomerProfile, Address } from "@/lib/supabase/types"
 import { getBaseURL } from "@/lib/util/env"
+import { ActionResult } from "@/lib/types/action-result"
 
 export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> => {
   const user = await getAuthUser()
@@ -37,7 +37,7 @@ export const retrieveCustomer = cache(async (): Promise<CustomerProfile | null> 
   }
 })
 
-export async function signup(_currentState: unknown, formData: FormData) {
+export async function signup(_currentState: unknown, formData: FormData): Promise<ActionResult<string>> {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
   const first_name = formData.get("first_name") as string
@@ -60,22 +60,24 @@ export async function signup(_currentState: unknown, formData: FormData) {
     },
   })
 
-  console.log("Signup triggered for:", email, "Redirecting to:", `${getBaseURL()}/auth/confirm`)
+  if (process.env.NODE_ENV === "development") {
+    console.log("Signup triggered for:", email, "Redirecting to:", `${getBaseURL()}/auth/confirm`)
+  }
 
   if (error) {
-    return error.message
+    return { success: false, error: error.message }
   }
 
   // Supabase "success" handling:
   // 1. If email is already in use, `identities` will be an empty array
   if (data.user && data.user.identities && data.user.identities.length === 0) {
-    return "Email already in use. Please sign in instead."
+    return { success: false, error: "Email already in use. Please sign in instead." }
   }
 
   // 2. If email confirmation is enabled and the user is new, `session` will be null
   if (data.user && !data.session) {
     console.log("Signup successful, requiring confirmation. Returning success message.")
-    return "Check your email for the confirmation link to complete your signup."
+    return { success: true, data: "Check your email for the confirmation link to complete your signup." }
   }
 
   revalidatePath("/", "layout")
@@ -86,7 +88,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
   redirect("/account")
 }
 
-export async function login(_currentState: unknown, formData: FormData) {
+export async function login(_currentState: unknown, formData: FormData): Promise<ActionResult> {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
@@ -100,7 +102,7 @@ export async function login(_currentState: unknown, formData: FormData) {
   })
 
   if (error) {
-    return error.message
+    return { success: false, error: error.message }
   }
 
   let isAdmin = false

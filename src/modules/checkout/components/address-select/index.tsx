@@ -11,8 +11,8 @@ type AddressSelectProps = {
   addresses: any[]
   addressInput: any | null
   onSelect: (
-    address: any | undefined,
-    email?: string
+    _address: any | undefined,
+    _email?: string
   ) => void
 }
 

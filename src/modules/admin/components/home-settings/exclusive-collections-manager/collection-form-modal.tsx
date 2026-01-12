@@ -12,7 +12,7 @@ import ProductSelector from "../../product-selector"
 type Props = {
     isOpen: boolean
     onClose: () => void
-    onSuccess: (collection: HomeExclusiveCollection) => void
+    onSuccess: (_collection: HomeExclusiveCollection) => void
     collection?: HomeExclusiveCollection | null
     defaultSortOrder?: number
 }

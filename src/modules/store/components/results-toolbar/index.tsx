@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { ComponentType, Fragment, useId } from "react"
+import { Fragment, useId } from "react"
 
 import { cn } from "@lib/util/cn"
 import { Check, ChevronDown, LayoutGrid, PanelsTopLeft, Rows, SlidersHorizontal } from "lucide-react"
@@ -201,7 +201,7 @@ const SortDropdown = ({
   onChange,
 }: {
   value: SortOptions
-  onChange: (value: SortOptions) => void
+  onChange: (_value: SortOptions) => void
 }) => {
   const listboxId = useId()
   const buttonId = `${listboxId}-button`

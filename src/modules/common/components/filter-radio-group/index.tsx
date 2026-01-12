@@ -1,4 +1,3 @@
-import { Circle } from "lucide-react"
 import { Text } from "@modules/common/components/text"
 import { cn } from "@lib/util/cn"
 
@@ -9,7 +8,7 @@ type FilterRadioGroupProps = {
     label: string
   }[]
   value: any
-  handleChange: (...args: any[]) => void
+  handleChange: (..._args: any[]) => void
   "data-testid"?: string
 }
 

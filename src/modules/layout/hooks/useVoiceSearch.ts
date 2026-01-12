@@ -28,15 +28,16 @@ type SpeechRecognitionShape = {
   start: () => void
   stop: () => void
   onstart?: () => void
-  onerror?: (event: SpeechRecognitionErrorEvent) => void
+  onerror?: (_event: SpeechRecognitionErrorEvent) => void
   onend?: () => void
   onspeechend?: () => void
-  onresult?: (event: SpeechRecognitionEvent) => void
+  onresult?: (_event: SpeechRecognitionEvent) => void
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionShape
 
 declare global {
+  // eslint-disable-next-line no-unused-vars
   interface Window {
     webkitSpeechRecognition?: SpeechRecognitionConstructor
     SpeechRecognition?: SpeechRecognitionConstructor
@@ -45,7 +46,7 @@ declare global {
 
 type UseVoiceSearchArgs = {
   language?: string
-  onResult?: (value: string) => void
+  onResult?: (_value: string) => void
 }
 
 export const useVoiceSearch = ({
@@ -57,7 +58,7 @@ export const useVoiceSearch = ({
   const [transcript, setTranscript] = useState("")
   const [error, setError] = useState<string | null>(null)
   const recognitionRef = useRef<SpeechRecognitionShape | null>(null)
-  const onResultRef = useRef<((value: string) => void) | undefined>(undefined)
+  const onResultRef = useRef<((_value: string) => void) | undefined>(undefined)
   const inactivityTimeoutRef = useRef<number | null>(null)
 
   const clearInactivityTimer = () => {

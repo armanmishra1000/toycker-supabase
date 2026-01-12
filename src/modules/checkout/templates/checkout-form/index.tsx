@@ -1,7 +1,6 @@
 import { listCartOptions } from "@lib/data/cart"
 import { Cart, CustomerProfile } from "@/lib/supabase/types"
 import Addresses from "@modules/checkout/components/addresses"
-import ShippingInfo from "@modules/checkout/components/shipping-info"
 import Payment from "@modules/checkout/components/payment"
 
 export default async function CheckoutForm({

@@ -6,28 +6,29 @@ const R2_PROTOCOL = process.env.NEXT_PUBLIC_R2_MEDIA_PROTOCOL || "https"
 const R2_HOSTNAME = process.env.NEXT_PUBLIC_R2_MEDIA_HOSTNAME || "cdn.toycker.in"
 const R2_PATHNAME = process.env.NEXT_PUBLIC_R2_MEDIA_PATHNAME || "/uploads/**"
 
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+})
+
 /**
  * @type {import('next').NextConfig}
  */
 const IMAGE_QUALITIES = [50, 75, 90]
 
-const shouldForceOptimizedImages =
-  process.env.NEXT_PUBLIC_ENABLE_IMAGE_OPTIMIZATION === "true"
-
-const disableOptimizer = !shouldForceOptimizedImages && Boolean(process.env.VERCEL)
-
 const nextConfig = {
   reactStrictMode: true,
+
+  // Remove console.logs in production (keep error/warn for debugging)
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+
   logging: {
     fetches: {
       fullUrl: true,
     },
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
   },
   images: {
     remotePatterns: [
@@ -66,11 +67,33 @@ const nextConfig = {
         : []),
     ],
     qualities: IMAGE_QUALITIES,
-    unoptimized: disableOptimizer,
+    unoptimized: false,
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "swiper"],
+    optimizePackageImports: ["lucide-react", "swiper", "@heroicons/react"],
   },
 }
 
-module.exports = nextConfig
+// Injected Sentry Configuration
+const { withSentryConfig } = require("@sentry/nextjs");
+
+const sentryWebpackPluginOptions = {
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+};
+
+const sentryOptions = {
+  widenClientFileUpload: true,
+  transpileClientSDK: true,
+  tunnelRoute: "/monitoring",
+  hideSourceMaps: true,
+  disableLogger: true,
+  automaticVercelMonitors: true,
+};
+
+module.exports = withSentryConfig(
+  withBundleAnalyzer(nextConfig),
+  sentryWebpackPluginOptions,
+  sentryOptions
+);

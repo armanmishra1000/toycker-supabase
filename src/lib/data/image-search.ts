@@ -1,7 +1,7 @@
 import sharp from "sharp"
 import { pipeline, env, RawImage } from "@xenova/transformers"
 import { createClient } from "@/lib/supabase/server"
-import { searchEntities, SearchResultsPayload } from "./search"
+import { SearchResultsPayload } from "./search"
 
 // Configuration for Transformers.js
 const EMBEDDING_MODEL = "Xenova/clip-vit-base-patch32"
@@ -39,7 +39,7 @@ type SearchByImageArgs = {
 
 export async function searchByImage({
   fileBuffer,
-  countryCode,
+  countryCode: _countryCode,
   limit = 6,
 }: SearchByImageArgs): Promise<SearchResultsPayload> {
   try {

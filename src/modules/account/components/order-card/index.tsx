@@ -96,7 +96,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
       {/* Product Grid - Square thumbnails to prevent cutoff */}
       <div className="mb-4">
         <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin">
-          {order.items?.slice(0, 4).map((i: any, idx: number) => (
+          {order.items?.slice(0, 4).map((i: any, _idx: number) => (
             <div
               key={i.id}
               className="flex-shrink-0 group"

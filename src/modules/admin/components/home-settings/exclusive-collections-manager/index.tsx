@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { PlusIcon } from "@heroicons/react/24/outline"
-import { listExclusiveCollectionsAdmin } from "@/lib/actions/home-exclusive-collections"
 import { type HomeExclusiveCollection } from "@/lib/types/home-exclusive-collections"
 import CollectionsList from "./collections-list"
 import CollectionFormModal from "./collection-form-modal"

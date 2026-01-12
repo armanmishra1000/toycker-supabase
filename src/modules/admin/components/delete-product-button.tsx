@@ -2,7 +2,7 @@
 
 import { deleteProduct } from "@/lib/data/admin"
 import { TrashIcon } from "@heroicons/react/24/outline"
-import { useState, useTransition } from "react"
+import { useTransition } from "react"
 import { cn } from "@lib/util/cn"
 import { Loader2 } from "lucide-react"
 

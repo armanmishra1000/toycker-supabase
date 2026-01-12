@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { PlusIcon } from "@heroicons/react/24/outline"
-import { listHomeBannersAdmin } from "@/lib/actions/home-banners"
 import { type HomeBanner } from "@/lib/types/home-banners"
 import BannersList from "./banners-list"
 import BannerFormModal from "./banner-form-modal"

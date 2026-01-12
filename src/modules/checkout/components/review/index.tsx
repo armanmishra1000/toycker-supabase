@@ -1,7 +1,6 @@
 "use client"
 
 import { Cart } from "@/lib/supabase/types"
-import { Text } from "@modules/common/components/text"
 import { Lock, AlertCircle } from "lucide-react"
 
 import PaymentButton from "../payment-button"

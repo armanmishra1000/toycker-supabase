@@ -1,6 +1,5 @@
 import { createCategory } from "@/lib/data/admin"
 import Link from "next/link"
-import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 

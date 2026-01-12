@@ -88,9 +88,9 @@ export const StripeCardContainer = ({
   setError,
   setCardComplete,
 }: Omit<PaymentContainerProps, "children"> & {
-  setCardBrand: (brand: string) => void
-  setError: (error: string | null) => void
-  setCardComplete: (complete: boolean) => void
+  setCardBrand: (_brand: string) => void
+  setError: (_error: string | null) => void
+  setCardComplete: (_complete: boolean) => void
 }) => {
   const stripeReady = useContext(StripeContext)
 

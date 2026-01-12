@@ -6,12 +6,12 @@ import { Cart } from "@/lib/supabase/types"
 
 interface CheckoutContextType {
     state: CheckoutState
-    setEmail: (email: string) => void
-    setShippingAddress: (address: Address) => void
-    setBillingAddress: (address: Address) => void
-    setPaymentMethod: (method: string) => void
+    setEmail: (_email: string) => void
+    setShippingAddress: (_address: Address) => void
+    setBillingAddress: (_address: Address) => void
+    setPaymentMethod: (_method: string) => void
     toggleSameAsBilling: () => void
-    setRewardsToApply: (points: number) => void
+    setRewardsToApply: (_points: number) => void
     reset: () => void
 }
 

@@ -22,7 +22,7 @@ const CartTemplate = ({
   const { cart: clientCart } = useCartStore()
   const activeCart = clientCart ?? cart
   const isClubMember = customer?.is_club_member || activeCart?.is_club_member || false
-  const itemCount = activeCart?.items?.length || 0
+  // const itemCount = activeCart?.items?.length || 0
 
   return (
     <div className="min-h-screen py-6 sm:py-8 lg:py-12">

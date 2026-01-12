@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from "uuid"
 export async function getPresignedUploadUrl({
     fileType,
     folder = "reviews",
-    maxSizeMB = 10,
+    maxSizeMB: _maxSizeMB = 10,
 }: {
     fileType: string
     folder?: "reviews" | "banners" | "exclusive-videos" | "products"

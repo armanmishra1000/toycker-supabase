@@ -23,7 +23,7 @@ const ShippingMethodOption = ({
   isLoadingPrice,
   disabled,
   addressDisplay,
-  isPickup,
+  isPickup: _isPickup,
 }: ShippingMethodOptionProps) => {
   return (
     <Radio

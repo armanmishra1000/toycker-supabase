@@ -1,6 +1,6 @@
 import { Text } from "@modules/common/components/text"
 
-import { isStripeLike, paymentInfoMap } from "@lib/constants"
+import { paymentInfoMap } from "@lib/constants"
 import Divider from "@modules/common/components/divider"
 import { convertToLocale } from "@lib/util/money"
 import { Order } from "@/lib/supabase/types"

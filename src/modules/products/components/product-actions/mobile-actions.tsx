@@ -16,7 +16,7 @@ type MobileActionsProps = {
   product: any
   variant?: any
   options: Record<string, string | undefined>
-  updateOptions: (title: string, value: string) => void
+  updateOptions: (_title: string, _value: string) => void
   inStock?: boolean
   handleAddToCart: () => void
   isAdding?: boolean

@@ -1,9 +1,7 @@
-import { convertToLocale } from "@lib/util/money"
 import { Order } from "@/lib/supabase/types"
 import { Text } from "@modules/common/components/text"
 import { MapPin, Phone, Truck } from "lucide-react"
 
-import Divider from "@modules/common/components/divider"
 
 type ShippingDetailsProps = {
   order: Order

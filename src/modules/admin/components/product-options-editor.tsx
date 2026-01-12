@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react"
+import { useState, useTransition } from "react"
 import { getProductOptions, saveProductOption, deleteProductOption, generateVariantsFromOptions } from "@/lib/data/admin"
 import AdminCard from "./admin-card"
 import { PlusIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline"
@@ -17,7 +17,7 @@ type OptionFormData = {
   values: string
 }
 
-export default function ProductOptionsEditor({ productId, initialOptions = [], hasVariants = false }: ProductOptionsEditorProps) {
+export default function ProductOptionsEditor({ productId, initialOptions = [], hasVariants: _hasVariants = false }: ProductOptionsEditorProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [options, setOptions] = useState<{ id: string; title: string; values: { id: string; value: string }[] }[]>(initialOptions)

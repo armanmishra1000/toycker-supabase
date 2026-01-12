@@ -15,8 +15,10 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          console.log("Middleware setAll cookies:", cookiesToSet.map(c => c.name))
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          if (process.env.NODE_ENV === "development") {
+            console.log("Middleware setAll cookies:", cookiesToSet.map(c => c.name))
+          }
+          cookiesToSet.forEach(({ name, value, options: _options }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
             request,
           })

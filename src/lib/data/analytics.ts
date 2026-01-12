@@ -1,5 +1,4 @@
 import { createClient } from "@lib/supabase/server"
-import { Product } from "@lib/supabase/types"
 
 export type SalesDataPoint = {
     date: string
@@ -121,7 +120,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     // Date Ranges
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0) // Last day of prev month
 
     // 1. Revenue & Orders (Current Month vs Last Month)
     // We fetch all orders from startOfLastMonth to now to minimize queries, then split in JS.

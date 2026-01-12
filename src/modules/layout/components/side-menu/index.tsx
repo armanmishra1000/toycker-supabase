@@ -14,7 +14,7 @@ const SideMenuItems = {
   Cart: "/cart",
 }
 
-const SideMenu = ({ regions }: { regions: Region[] | null }) => {
+const SideMenu = ({ regions: _regions }: { regions: Region[] | null }) => {
   return (
     <div className="h-full">
       <div className="flex items-center h-full">

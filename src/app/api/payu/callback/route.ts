@@ -25,19 +25,37 @@ function htmlRedirect(path: string) {
   )
 }
 
+const RECENT_CALLBACKS = new Map<string, number>()
+const THROTTLE_MS = 2000 // 2 seconds
+
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for") || "unknown"
+  const now = Date.now()
+  const lastHit = RECENT_CALLBACKS.get(ip)
+
+  if (lastHit && now - lastHit < THROTTLE_MS) {
+    console.warn("[PAYU] Throttling possible duplicate callback for IP:", ip)
+    return new NextResponse("Throttled", { status: 429 })
+  }
+  RECENT_CALLBACKS.set(ip, now)
+
+  // Cleanup map periodically
+  if (RECENT_CALLBACKS.size > 1000) RECENT_CALLBACKS.clear()
+
   try {
     // PayU sends data as application/x-www-form-urlencoded
     const bodyText = await request.text()
     const params = new URLSearchParams(bodyText)
     const payload = Object.fromEntries(params.entries()) as PayUCallbackPayload
 
-    console.log("[PAYU] Callback hit:", {
-      status: payload.status,
-      txnid: payload.txnid,
-      amount: payload.amount,
-      key: payload.key?.substring(0, 6) + "..."
-    })
+    if (process.env.NODE_ENV === "development") {
+      console.log("[PAYU] Callback hit:", {
+        status: payload.status,
+        txnid: payload.txnid,
+        amount: payload.amount,
+        key: payload.key?.substring(0, 6) + "..."
+      })
+    }
 
     // 1. Retrieve Salt from Environment
     const salt = process.env.PAYU_MERCHANT_SALT
@@ -59,7 +77,9 @@ export async function POST(request: NextRequest) {
     const amount = payload.amount
     const email = payload.email
 
-    console.log("[PAYU] Processing payment:", { status, cartId, txnid, amount })
+    if (process.env.NODE_ENV === "development") {
+      console.log("[PAYU] Processing payment:", { status, cartId, txnid, amount })
+    }
 
     if (status === "success") {
       const supabase = await createAdminClient()

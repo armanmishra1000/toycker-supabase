@@ -2,7 +2,7 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { Cart, CartItem, ShippingOption, Address, Product, ProductVariant, PaymentCollection, Promotion } from "@/lib/supabase/types"
+import { Cart, ShippingOption, PaymentCollection, Promotion } from "@/lib/supabase/types"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
 export { removeCartId }
@@ -12,74 +12,13 @@ import { generatePayUHash, PayUHashParams } from "@/lib/payu"
 import { getBaseURL } from "@/lib/util/env"
 import { getAuthUser } from "./auth"
 
-// Addresses interface for type safety
-interface AddressFormData {
-  email: string
-  shipping_address: Address
-  billing_address: Address
-}
 
-/** Raw cart item from database with nested product/variant objects */
-interface DatabaseCartItem {
-  id: string
-  cart_id: string
-  product_id: string
-  variant_id: string | null
-  quantity: number
-  created_at: string
-  updated_at: string
-  product: Product | null
-  variant: ProductVariant | null
-  metadata?: Record<string, unknown>
-}
 
-/** Shipping method stored in cart */
-interface CartShippingMethod {
-  shipping_option_id: string
-  name: string
-  amount: number
-  min_order_free_shipping?: number | null
-}
-
-const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): CartItem[] => {
-  return items.map((item) => {
-    const product = item.product
-    const variant = item.variant
-
-    let thumbnail = product?.image_url
-    if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
-      const firstImg = product.images[0]
-      // Handle both string and object image formats
-      if (typeof firstImg === 'string') {
-        thumbnail = firstImg
-      } else if (firstImg && typeof firstImg === 'object' && 'url' in firstImg) {
-        thumbnail = (firstImg as { url: string }).url || thumbnail
-      }
-    }
-
-    const originalPrice = Number(variant?.price || product?.price || 0)
-    const hasClubDiscount = clubDiscountPercentage > 0
-    const discountedPrice = hasClubDiscount
-      ? Math.round(originalPrice * (1 - clubDiscountPercentage / 100))
-      : originalPrice
-
-    return {
-      ...item,
-      title: variant?.title || product?.name || "Product",
-      product_title: product?.name || "Product",
-      product_handle: product?.handle,
-      thumbnail: thumbnail ?? undefined,
-      unit_price: discountedPrice,
-      original_unit_price: originalPrice,
-      total: discountedPrice * item.quantity,
-      original_total: originalPrice * item.quantity,
-      subtotal: discountedPrice * item.quantity,
-      has_club_discount: hasClubDiscount,
-      product: product ?? undefined,
-      variant: variant ?? undefined
-    }
-  })
-}
+import {
+  mapCartItems,
+  calculateCartTotals,
+  CartShippingMethod
+} from "@/lib/util/cart-calculations"
 
 export async function retrieveCart(cartId?: string): Promise<Cart | null> {
   return cachedRetrieveCart(cartId)
@@ -137,88 +76,27 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     }
   }
 
-  const items = mapCartItems(cartData.items || [], clubDiscountPercentage)
-  const item_subtotal = items.reduce((sum, item) => sum + item.total, 0)
-  const original_subtotal = items.reduce((sum, item) => sum + (item.original_total || item.total), 0)
-  const club_savings = original_subtotal - item_subtotal
-
-  const promotion = cartData.promotion as Promotion | null
-  let discount_total = 0
-  let isFreeShipping = false
-
-  if (promotion && promotion.is_active) {
-    // Check if promotion is valid based on dates
-    const now = new Date()
-    const startsAt = promotion.starts_at ? new Date(promotion.starts_at) : null
-    const endsAt = promotion.ends_at ? new Date(promotion.ends_at) : null
-
-    if ((!startsAt || startsAt <= now) && (!endsAt || endsAt >= now)) {
-      // Check min order amount
-      if (item_subtotal >= (promotion.min_order_amount || 0)) {
-        if (promotion.type === "percentage") {
-          discount_total = Math.round((item_subtotal * promotion.value) / 100)
-        } else if (promotion.type === "fixed") {
-          discount_total = Math.min(promotion.value, item_subtotal)
-        } else if (promotion.type === "free_shipping") {
-          isFreeShipping = true
-        }
-      }
-    }
-  }
-
-  const shippingMethods = cartData.shipping_methods as CartShippingMethod[] | null
-  // Calculate shipping total dynamically based on threshold
-  let shipping_total = 0
-  if (Array.isArray(shippingMethods) && shippingMethods.length > 0) {
-    const method = shippingMethods[0]
-    const baseAmount = Number(method.amount || 0)
-    const threshold = method.min_order_free_shipping
-
-    if (isFreeShipping) {
-      shipping_total = 0
-    } else if (threshold !== null && threshold !== undefined && item_subtotal >= Number(threshold)) {
-      shipping_total = 0
-    } else {
-      shipping_total = baseAmount
-    }
-  }
-
-  // Get rewards to apply from cart metadata
-  const cartMetadata = (cartData.metadata || {}) as Record<string, unknown>
-  const rewards_to_apply = Math.min(
-    Number(cartMetadata.rewards_to_apply || 0),
+  const items = mapCartItems(cartData.items as any || [], clubDiscountPercentage)
+  const totals = calculateCartTotals({
+    items,
+    promotion: cartData.promotion as Promotion,
+    shippingMethods: cartData.shipping_methods as CartShippingMethod[],
     availableRewards,
-    item_subtotal + shipping_total - discount_total // Can't exceed order total after discount
-  )
-  const rewards_discount = rewards_to_apply // 1 point = ₹1
-
-  const tax_total = 0
-  const total = Math.max(0, item_subtotal + tax_total + shipping_total - discount_total - rewards_discount)
+    cartMetadata: (cartData.metadata || {}) as Record<string, unknown>,
+    isClubMember,
+    clubDiscountPercentage,
+  })
 
   const cart: Cart = {
     ...cartData,
+    ...totals,
     items,
-    item_subtotal,
-    subtotal: item_subtotal,
-    tax_total,
-    shipping_total,
-    total,
-    discount_total,
-    gift_card_total: 0,
-    shipping_subtotal: shipping_total,
-    // Club membership info
-    club_savings,
-    is_club_member: isClubMember,
-    club_discount_percentage: clubDiscountPercentage,
-    // Rewards
-    rewards_to_apply,
-    rewards_discount,
-    available_rewards: availableRewards,
-    promotions: promotion ? [promotion] : []
+    promotions: cartData.promotion ? [cartData.promotion as Promotion] : []
   }
 
   return cart
 }
+
 
 
 export async function getOrSetCart(): Promise<Cart> {
@@ -234,9 +112,9 @@ export async function getOrSetCart(): Promise<Cart> {
     .from("carts")
     .insert({
       id: newCartId,
-      user_id: user?.id || null,
+      user_id: user?.id || null,  // Supports Guests (NULL)
       currency_code: "inr",
-      email: user?.email
+      email: user?.email || null
     })
     .select()
     .single()
@@ -653,7 +531,6 @@ export async function placeOrder() {
   await handlePostOrderLogic(order, cart, rewards_discount)
 
   revalidateTag("rewards")
-  // await removeCartId()
   revalidateTag("cart")
 
   redirect(`/order/confirmed/${order.id}`)
@@ -753,7 +630,7 @@ export async function createBuyNowCart({
   variantId,
   productId,
   quantity,
-  countryCode,
+  countryCode: _countryCode,
   metadata
 }: {
   variantId?: string | null
@@ -764,13 +641,19 @@ export async function createBuyNowCart({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Require authentication for buy now (RLS policy requirement)
+  if (!user) {
+    throw new Error("Authentication required for buy now")
+  }
+
   const newCartId = randomUUID()
 
   const { error } = await supabase.from("carts").insert({
     id: newCartId,
-    user_id: user?.id || null,
+    user_id: user.id,  // Always has user_id (required by RLS)
     currency_code: "inr",
-    email: user?.email
+    email: user.email
   })
 
   if (error) throw new Error(error.message)

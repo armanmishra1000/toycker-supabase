@@ -8,7 +8,7 @@ import { AdminRole } from "@/lib/supabase/types"
 
 interface RoleFormProps {
     initialData?: AdminRole
-    onSubmit: (formData: FormData) => Promise<void>
+    onSubmit: (_formData: FormData) => Promise<void>
 }
 
 export default function RoleForm({ initialData, onSubmit }: RoleFormProps) {

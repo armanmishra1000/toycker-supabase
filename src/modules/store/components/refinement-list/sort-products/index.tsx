@@ -5,7 +5,7 @@ import { SortOptions } from "../types"
 
 type SortProductsProps = {
   sortBy: SortOptions
-  setQueryParams: (name: string, value: SortOptions) => void
+  setQueryParams: (_name: string, _value: SortOptions) => void
   "data-testid"?: string
 }
 

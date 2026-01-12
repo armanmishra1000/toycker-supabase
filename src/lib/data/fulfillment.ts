@@ -1,6 +1,6 @@
 "use server"
 
-export const listCartShippingMethods = async (cartId: string) => {
+export const listCartShippingMethods = async (_cartId: string) => {
   return [
     {
       id: "standard",
@@ -12,8 +12,8 @@ export const listCartShippingMethods = async (cartId: string) => {
 
 export const calculatePriceForShippingOption = async (
   optionId: string,
-  cartId: string,
-  data?: Record<string, unknown>
+  _cartId: string,
+  _data?: Record<string, unknown>
 ) => {
   return {
     id: optionId,

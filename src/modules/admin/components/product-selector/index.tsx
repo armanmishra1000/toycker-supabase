@@ -12,7 +12,7 @@ type Product = {
 
 type Props = {
     value: string
-    onChange: (productId: string) => void
+    onChange: (_productId: string) => void
     disabled?: boolean
 }
 
@@ -41,7 +41,7 @@ export default function ProductSelector({ value, onChange, disabled = false }: P
         if (isOpen && products.length === 0) {
             loadProducts()
         }
-    }, [isOpen])
+    }, [isOpen, products.length])
 
     const selectedProduct = products.find((p) => p.id === value)
 

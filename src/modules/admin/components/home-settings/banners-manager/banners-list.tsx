@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import { deleteHomeBanner, updateHomeBanner, reorderHomeBanners } from "@/lib/actions/home-banners"
 import { type HomeBanner } from "@/lib/types/home-banners"
@@ -39,17 +39,17 @@ import { CSS } from '@dnd-kit/utilities'
 
 type Props = {
     banners: HomeBanner[]
-    onEdit: (banner: HomeBanner) => void
-    onDelete: (id: string) => void
-    onToggle: (id: string, isActive: boolean) => void
-    onReorder: (newBanners: HomeBanner[]) => void
+    onEdit: (_banner: HomeBanner) => void
+    onDelete: (_id: string) => void
+    onToggle: (_id: string, _isActive: boolean) => void
+    onReorder: (_newBanners: HomeBanner[]) => void
 }
 
 interface SortableItemProps {
     banner: HomeBanner
-    onEdit: (banner: HomeBanner) => void
-    onDelete: (id: string, title: string) => void
-    onToggle: (banner: HomeBanner) => void
+    onEdit: (_banner: HomeBanner) => void
+    onDelete: (_id: string, _title: string) => void
+    onToggle: (_banner: HomeBanner) => void
     deletingId: string | null
     togglingId: string | null
 }
@@ -213,7 +213,8 @@ function SortableBannerItem({ banner, onEdit, onDelete, onToggle, deletingId, to
 export default function BannersList({ banners, onEdit, onDelete, onToggle, onReorder }: Props) {
     const router = useRouter()
     const { showToast } = useToast()
-    const [isPending, startTransition] = useTransition()
+
+
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [togglingId, setTogglingId] = useState<string | null>(null)
 
