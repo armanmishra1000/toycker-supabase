@@ -2,7 +2,7 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { Cart, CartItem, ShippingOption, Product, ProductVariant, PaymentCollection, Promotion } from "@/lib/supabase/types"
+import { Cart, ShippingOption, PaymentCollection, Promotion } from "@/lib/supabase/types"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
 export { removeCartId }

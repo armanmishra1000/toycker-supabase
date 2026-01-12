@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calculateCartTotals, mapCartItems, DatabaseCartItem } from './cart-calculations'
+import { calculateCartTotals } from './cart-calculations'
 import { CartItem, Promotion } from '@/lib/supabase/types'
 
 describe('Cart Calculations', () => {
