@@ -7,6 +7,7 @@ import { cn } from "@lib/util/cn"
 import { createClient } from "@/lib/supabase/client"
 import { AdminNotification, RealtimePayload } from "@/lib/supabase/types/notifications"
 import { getAdminNotifications, markNotificationAsRead, clearAllNotifications } from "@/lib/data/admin"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 export function AdminNotificationDropdown() {
     const [notifications, setNotifications] = useState<AdminNotification[]>([])
@@ -94,17 +95,36 @@ export function AdminNotificationDropdown() {
             default: return <BellIcon className="h-4 w-4 text-gray-500" />
         }
     }
+    const getNotificationUrl = (notification: AdminNotification) => {
+        const { type, metadata } = notification
+        switch (type) {
+            case "order":
+                return `/admin/orders/${metadata.order_id || ""}`
+            case "user":
+                return `/admin/customers/${metadata.user_id || ""}`
+            case "review":
+                return `/admin/reviews`
+            default:
+                return "/admin"
+        }
+    }
 
-    const NotificationList = ({ list }: { list: AdminNotification[] }) => (
+    const NotificationList = ({ list, close }: { list: AdminNotification[], close: () => void }) => (
         <div className="max-h-[350px] overflow-y-auto overflow-x-hidden">
             {list.length > 0 ? (
                 <div className="divide-y divide-gray-50">
                     {list.map((notification) => (
-                        <div
+                        <LocalizedClientLink
                             key={notification.id}
-                            onClick={() => !notification.is_read && handleMarkAsRead(notification.id)}
+                            href={getNotificationUrl(notification)}
+                            onClick={() => {
+                                close()
+                                if (!notification.is_read) {
+                                    handleMarkAsRead(notification.id)
+                                }
+                            }}
                             className={cn(
-                                "group relative px-4 py-3 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer text-left",
+                                "group relative px-4 py-3 flex gap-3 hover:bg-gray-50 transition-colors cursor-pointer text-left focus:outline-none",
                                 !notification.is_read && "bg-emerald-50/30"
                             )}
                         >
@@ -115,7 +135,7 @@ export function AdminNotificationDropdown() {
                             )}>
                                 {getTypeIcon(notification.type)}
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 text-left">
                                 <div className="flex items-start justify-between gap-2">
                                     <p className={cn(
                                         "text-sm font-medium text-gray-900 truncate",
@@ -136,7 +156,7 @@ export function AdminNotificationDropdown() {
                                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                                 </div>
                             )}
-                        </div>
+                        </LocalizedClientLink>
                     ))}
                 </div>
             ) : (
@@ -169,70 +189,74 @@ export function AdminNotificationDropdown() {
                 leaveTo="opacity-0 translate-y-1"
             >
                 <PopoverPanel className="absolute right-0 z-50 mt-2 w-80 sm:w-96 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                        <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
-                            {notifications.length > 0 && (
-                                <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-                                    {notifications.length}
-                                </span>
-                            )}
-                        </div>
-                        {unreadNotifications.length > 0 && (
-                            <button
-                                onClick={handleClearAll}
-                                className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
-                            >
-                                Mark all as read
-                            </button>
-                        )}
-                    </div>
+                    {({ close }) => (
+                        <>
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                                    {notifications.length > 0 && (
+                                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                                            {notifications.length}
+                                        </span>
+                                    )}
+                                </div>
+                                {unreadNotifications.length > 0 && (
+                                    <button
+                                        onClick={handleClearAll}
+                                        className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                                    >
+                                        Mark all as read
+                                    </button>
+                                )}
+                            </div>
 
-                    <TabGroup>
-                        <TabList className="flex gap-4 border-b border-gray-100 px-4">
-                            <Tab className={({ selected }) => cn(
-                                "flex items-center gap-2 py-2 text-xs font-medium transition-all focus:outline-none border-b-2",
-                                selected ? "border-emerald-500 text-emerald-600" : "border-transparent text-gray-500 hover:text-gray-700"
-                            )}>
-                                Unread
-                                <span className={cn(
-                                    "rounded-full px-1.5 py-0.5 text-[10px]",
-                                    unreadNotifications.length > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
-                                )}>
-                                    {unreadNotifications.length}
-                                </span>
-                            </Tab>
-                            <Tab className={({ selected }) => cn(
-                                "flex items-center gap-2 py-2 text-xs font-medium transition-all focus:outline-none border-b-2",
-                                selected ? "border-emerald-500 text-emerald-600" : "border-transparent text-gray-500 hover:text-gray-700"
-                            )}>
-                                Last 24 Hours
-                                <span className={cn(
-                                    "rounded-full px-1.5 py-0.5 text-[10px]",
-                                    last24hNotifications.length > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
-                                )}>
-                                    {last24hNotifications.length}
-                                </span>
-                            </Tab>
-                        </TabList>
-                        <TabPanels>
-                            <TabPanel>
-                                <NotificationList list={unreadNotifications} />
-                            </TabPanel>
-                            <TabPanel>
-                                <NotificationList list={last24hNotifications} />
-                            </TabPanel>
-                        </TabPanels>
-                    </TabGroup>
+                            <TabGroup>
+                                <TabList className="flex gap-4 border-b border-gray-100 px-4">
+                                    <Tab className={({ selected }) => cn(
+                                        "flex items-center gap-2 py-2 text-xs font-medium transition-all focus:outline-none border-b-2",
+                                        selected ? "border-emerald-500 text-emerald-600" : "border-transparent text-gray-500 hover:text-gray-700"
+                                    )}>
+                                        Unread
+                                        <span className={cn(
+                                            "rounded-full px-1.5 py-0.5 text-[10px]",
+                                            unreadNotifications.length > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+                                        )}>
+                                            {unreadNotifications.length}
+                                        </span>
+                                    </Tab>
+                                    <Tab className={({ selected }) => cn(
+                                        "flex items-center gap-2 py-2 text-xs font-medium transition-all focus:outline-none border-b-2",
+                                        selected ? "border-emerald-500 text-emerald-600" : "border-transparent text-gray-500 hover:text-gray-700"
+                                    )}>
+                                        Last 24 Hours
+                                        <span className={cn(
+                                            "rounded-full px-1.5 py-0.5 text-[10px]",
+                                            last24hNotifications.length > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+                                        )}>
+                                            {last24hNotifications.length}
+                                        </span>
+                                    </Tab>
+                                </TabList>
+                                <TabPanels>
+                                    <TabPanel>
+                                        <NotificationList list={unreadNotifications} close={close} />
+                                    </TabPanel>
+                                    <TabPanel>
+                                        <NotificationList list={last24hNotifications} close={close} />
+                                    </TabPanel>
+                                </TabPanels>
+                            </TabGroup>
 
-                    <div className="px-4 py-2 border-t border-gray-100 flex justify-center bg-gray-50/50 rounded-b-xl">
-                        <button
-                            onClick={fetchNotifications}
-                            className="text-[11px] font-medium text-gray-400 hover:text-gray-600 uppercase tracking-wider"
-                        >
-                            {isRefreshing ? "Refreshing..." : "Refresh"}
-                        </button>
-                    </div>
+                            <div className="px-4 py-2 border-t border-gray-100 flex justify-center bg-gray-50/50 rounded-b-xl">
+                                <button
+                                    onClick={fetchNotifications}
+                                    className="text-[11px] font-medium text-gray-400 hover:text-gray-600 uppercase tracking-wider"
+                                >
+                                    {isRefreshing ? "Refreshing..." : "Refresh"}
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </PopoverPanel>
             </Transition>
         </Popover>

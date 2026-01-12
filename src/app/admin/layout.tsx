@@ -3,7 +3,6 @@ import Link from "next/link"
 import {
   ArrowLeftOnRectangleIcon,
   ArrowTopRightOnSquareIcon,
-  MagnifyingGlassIcon,
   BellIcon,
 } from "@heroicons/react/24/outline"
 import { signout } from "@lib/data/customer"
@@ -12,6 +11,7 @@ import { AdminSidebarNav } from "@modules/admin/components/admin-sidebar-nav"
 import { AdminSettingsLink } from "@modules/admin/components/admin-settings-link"
 import { AdminMobileMenu } from "@modules/admin/components/admin-mobile-menu"
 import { AdminNotificationDropdown } from "@modules/admin/components/notifications"
+import { AdminGlobalSearch } from "@modules/admin/components/admin-global-search"
 
 export const metadata = {
   title: "Toycker Admin",
@@ -128,17 +128,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
               {/* Search - Hidden on smallest screens */}
               <div className="hidden sm:block flex-1 max-w-xl">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="search"
-                    placeholder="Search products, orders, customers..."
-                    className="w-full h-10 pl-10 pr-4 text-sm bg-gray-100 border-transparent rounded-lg focus:bg-white focus:border-gray-300 focus:ring-2 focus:ring-gray-100 focus:outline-none transition-all placeholder:text-gray-400"
-                  />
-                  <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-200 rounded">
-                    ⌘K
-                  </kbd>
-                </div>
+                <AdminGlobalSearch />
               </div>
             </div>
 
