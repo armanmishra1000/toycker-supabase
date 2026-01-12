@@ -146,6 +146,141 @@ export async function getLowStockStats(threshold: number = 5) {
   }
 }
 
+// --- Global Search ---
+
+export type AdminSearchResult = {
+  id: string
+  title: string
+  subtitle?: string
+  type: "product" | "order" | "customer" | "collection" | "category"
+  url: string
+  thumbnail?: string | null
+}
+
+export async function getAdminGlobalSearch(query: string): Promise<AdminSearchResult[]> {
+  await ensureAdmin()
+  const normalizedQuery = query.trim()
+  if (!normalizedQuery || normalizedQuery.length < 2) return []
+
+  const supabase = await createClient()
+
+  const searchNum = !isNaN(Number(normalizedQuery)) ? Number(normalizedQuery) : null
+
+  // Parallelize search queries
+  const [productsRes, ordersRes, customersRes, collectionsRes, categoriesRes] = await Promise.all([
+    // Search Products
+    supabase
+      .from("products")
+      .select("id, name, handle, thumbnail")
+      .or(`name.ilike.%${normalizedQuery}%,handle.ilike.%${normalizedQuery}%`)
+      .limit(5),
+
+    // Search Orders (Check if query is numeric for Order ID)
+    searchNum !== null
+      ? supabase
+        .from("orders")
+        .select("id, display_id, customer_email, status")
+        .eq("display_id", searchNum)
+        .limit(5)
+      : supabase
+        .from("orders")
+        .select("id, display_id, customer_email, status")
+        .ilike("customer_email", `%${normalizedQuery}%`)
+        .limit(5),
+
+    // Search Customers
+    supabase
+      .from("profiles")
+      .select("id, first_name, last_name, email")
+      .or(`first_name.ilike.%${normalizedQuery}%,last_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`)
+      .limit(5),
+
+    // Search Collections
+    supabase
+      .from("collections")
+      .select("id, title, handle")
+      .or(`title.ilike.%${normalizedQuery}%,handle.ilike.%${normalizedQuery}%`)
+      .limit(5),
+
+    // Search Categories
+    supabase
+      .from("categories")
+      .select("id, name, handle")
+      .or(`name.ilike.%${normalizedQuery}%,handle.ilike.%${normalizedQuery}%`)
+      .limit(5),
+  ])
+
+  const results: AdminSearchResult[] = []
+
+  // Process Products
+  if (productsRes.data) {
+    productsRes.data.forEach((p) => {
+      results.push({
+        id: p.id,
+        title: p.name,
+        subtitle: `Product • ${p.handle}`,
+        type: "product",
+        url: `/admin/products/${p.id}`,
+        thumbnail: p.thumbnail,
+      })
+    })
+  }
+
+  // Process Orders
+  if (ordersRes.data) {
+    ordersRes.data.forEach((o) => {
+      results.push({
+        id: o.id,
+        title: `Order #${o.display_id}`,
+        subtitle: `Order • ${o.customer_email} • ${o.status}`,
+        type: "order",
+        url: `/admin/orders/${o.id}`,
+      })
+    })
+  }
+
+  // Process Customers
+  if (customersRes.data) {
+    customersRes.data.forEach((c) => {
+      results.push({
+        id: c.id,
+        title: `${c.first_name || ""} ${c.last_name || ""}`.trim() || "No Name",
+        subtitle: `Customer • ${c.email}`,
+        type: "customer",
+        url: `/admin/customers/${c.id}`,
+      })
+    })
+  }
+
+  // Process Collections
+  if (collectionsRes.data) {
+    collectionsRes.data.forEach((c) => {
+      results.push({
+        id: c.id,
+        title: c.title,
+        subtitle: `Collection • ${c.handle}`,
+        type: "collection",
+        url: `/admin/collections/${c.id}`,
+      })
+    })
+  }
+
+  // Process Categories
+  if (categoriesRes.data) {
+    categoriesRes.data.forEach((c) => {
+      results.push({
+        id: c.id,
+        title: c.name,
+        subtitle: `Category • ${c.handle}`,
+        type: "category",
+        url: `/admin/categories/${c.id}`,
+      })
+    })
+  }
+
+  return results
+}
+
 // --- Categories ---
 
 interface GetAdminCategoriesParams {
