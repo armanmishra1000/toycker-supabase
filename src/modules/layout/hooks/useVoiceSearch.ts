@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react"
 
-export const useVoiceSearch = (onResult: (text: string) => void) => {
+export const useVoiceSearch = (onResult: (_text: string) => void) => {
     const [isListening, setIsListening] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [supported, setSupported] = useState(false)

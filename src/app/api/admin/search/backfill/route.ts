@@ -2,11 +2,11 @@ import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { generateImageEmbedding } from "@/lib/ml/embeddings"
 
-export async function GET(request: Request) {
-    return POST(request)
+export async function GET(_request: Request) {
+    return POST(_request)
 }
 
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
     try {
         const supabase = await createAdminClient()
 
