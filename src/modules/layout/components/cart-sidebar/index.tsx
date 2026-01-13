@@ -85,7 +85,7 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                           <div className="space-y-2">
                             <p className="text-sm font-medium">
                               {isFree ? (
-                                <span className="text-emerald-600 font-bold">You've unlocked FREE SHIPPING!</span>
+                                <span className="text-emerald-600 font-bold">You&apos;ve unlocked FREE SHIPPING!</span>
                               ) : (
                                 <>
                                   Spend <span className="text-red-500 font-bold">{convertToLocale({ amount: amountToFree, currency_code: cart?.currency_code || 'INR' })}</span> more to enjoy <span className="text-slate-900 font-bold uppercase tracking-tight">FREE SHIPPING!</span>

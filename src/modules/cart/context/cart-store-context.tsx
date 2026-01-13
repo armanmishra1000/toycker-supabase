@@ -372,8 +372,6 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       const nextItems = cart.items?.map((item) => {
         if (item.id === lineId) {
           const baseUnitPrice = item.unit_price ?? 0
-          const meta = (item.metadata || {}) as Record<string, unknown>
-          const giftWrapFee = meta.gift_wrap === true ? Number(meta.gift_wrap_fee || 0) : 0
 
           // Note: unit_price should already include gift wrap fee if it was fetched correctly,
           // but we ensure it matches the metadata for consistent optimistic UI.

@@ -47,12 +47,12 @@ export const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage =
 
         // Check if this specific line is a Gift Wrap line
         const isGiftWrapLine = metadata.gift_wrap_line === true
-        const giftWrapFee = Number(metadata.gift_wrap_fee || 0)
+        const itemGiftWrapFee = Number(metadata.gift_wrap_fee || giftWrapFee)
 
         // If it's a gift wrap line, the price is ONLY the fee
         // Otherwise, it's the product price (without the fee)
-        const finalUnitPrice = isGiftWrapLine ? giftWrapFee : discountedPrice
-        const finalOriginalUnitPrice = isGiftWrapLine ? giftWrapFee : originalPrice
+        const finalUnitPrice = isGiftWrapLine ? itemGiftWrapFee : discountedPrice
+        const finalOriginalUnitPrice = isGiftWrapLine ? itemGiftWrapFee : originalPrice
 
         return {
             ...item,
