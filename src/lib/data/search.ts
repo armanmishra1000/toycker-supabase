@@ -56,11 +56,10 @@ export const searchEntities = async ({
 
     // 1. Parallelize queries for speed
     const [productsRes, categoriesRes, collectionsRes] = await Promise.all([
-        // Search Products using Advanced RPC
-        supabase.rpc("search_products_advanced", {
+        // Search Products using Advanced Multimodal RPC (FTS part only for now)
+        supabase.rpc("search_products_multimodal", {
             search_query: normalizedQuery,
-            similarity_threshold: 0.2, // Lower threshold for more results
-            result_limit: productLimit,
+            match_count: productLimit,
         }),
 
         // Search Categories
@@ -90,6 +89,7 @@ export const searchEntities = async ({
             formatted: `₹${p.price}`,
         },
     }))
+
 
     const categories = (categoriesRes.data || []).map((c: { id: string; name: string; handle: string }) => ({
         id: c.id,
