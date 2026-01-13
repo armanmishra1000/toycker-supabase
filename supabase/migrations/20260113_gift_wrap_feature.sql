@@ -13,6 +13,19 @@ INSERT INTO public.global_settings (id, gift_wrap_fee, is_gift_wrap_enabled)
 VALUES ('default', 50, true)
 ON CONFLICT (id) DO NOTHING;
 
+-- 2.5. Ensure payment_collection column exists in orders table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'orders' 
+        AND column_name = 'payment_collection'
+    ) THEN
+        ALTER TABLE public.orders ADD COLUMN payment_collection JSONB;
+    END IF;
+END $$;
+
 -- 3. Update create_order_with_payment RPC
 DROP FUNCTION IF EXISTS public.create_order_with_payment(TEXT, TEXT, JSONB, JSONB, TEXT, INTEGER) CASCADE;
 
@@ -95,21 +108,24 @@ BEGIN
         'id', ci.id,
         'product_id', ci.product_id,
         'variant_id', ci.variant_id,
-        'title', COALESCE(pv.title, p.name, 'Product'),
-        'product_title', p.name,
+        'title', CASE 
+          WHEN COALESCE((ci.metadata->>'gift_wrap_line')::boolean, false) = true THEN 'Gift Wrap'
+          ELSE COALESCE(pv.title, p.name, 'Product')
+        END,
+        'product_title', COALESCE(p.name, 'Product'),
         'quantity', ci.quantity,
         'unit_price', CASE 
-          WHEN (ci.metadata->>'gift_wrap_line')::boolean = true THEN COALESCE((ci.metadata->>'gift_wrap_fee')::numeric, v_gift_wrap_setting_fee)
+          WHEN COALESCE((ci.metadata->>'gift_wrap_line')::boolean, false) = true THEN COALESCE((ci.metadata->>'gift_wrap_fee')::numeric, v_gift_wrap_setting_fee)
           ELSE ROUND(COALESCE(pv.price, p.price, 0) * (1 - v_club_discount_percentage / 100))
         END,
         'total', (CASE 
-          WHEN (ci.metadata->>'gift_wrap_line')::boolean = true THEN COALESCE((ci.metadata->>'gift_wrap_fee')::numeric, v_gift_wrap_setting_fee)
+          WHEN COALESCE((ci.metadata->>'gift_wrap_line')::boolean, false) = true THEN COALESCE((ci.metadata->>'gift_wrap_fee')::numeric, v_gift_wrap_setting_fee)
           ELSE ROUND(COALESCE(pv.price, p.price, 0) * (1 - v_club_discount_percentage / 100))
         END) * ci.quantity,
         'metadata', COALESCE(ci.metadata, '{}'::jsonb),
-        'thumbnail', CASE WHEN (ci.metadata->>'gift_wrap_line')::boolean = true THEN NULL ELSE p.image_url END,
+        'thumbnail', CASE WHEN COALESCE((ci.metadata->>'gift_wrap_line')::boolean, false) = true THEN NULL ELSE p.image_url END,
         'variant', CASE 
-          WHEN (ci.metadata->>'gift_wrap_line')::boolean = true THEN NULL
+          WHEN COALESCE((ci.metadata->>'gift_wrap_line')::boolean, false) = true THEN NULL
           WHEN pv.id IS NOT NULL THEN jsonb_build_object('title', pv.title, 'id', pv.id)
           ELSE NULL
         END,
@@ -117,11 +133,11 @@ BEGIN
       )
     ), '[]'::jsonb),
     COALESCE(SUM((CASE 
-      WHEN (ci.metadata->>'gift_wrap_line')::boolean = true THEN COALESCE((ci.metadata->>'gift_wrap_fee')::numeric, v_gift_wrap_setting_fee)
+      WHEN COALESCE((ci.metadata->>'gift_wrap_line')::boolean, false) = true THEN COALESCE((ci.metadata->>'gift_wrap_fee')::numeric, v_gift_wrap_setting_fee)
       ELSE ROUND(COALESCE(pv.price, p.price, 0) * (1 - v_club_discount_percentage / 100))
     END) * ci.quantity), 0),
     COALESCE(SUM((CASE 
-      WHEN (ci.metadata->>'gift_wrap_line')::boolean = true THEN COALESCE((ci.metadata->>'gift_wrap_fee')::numeric, v_gift_wrap_setting_fee)
+      WHEN COALESCE((ci.metadata->>'gift_wrap_line')::boolean, false) = true THEN COALESCE((ci.metadata->>'gift_wrap_fee')::numeric, v_gift_wrap_setting_fee)
       ELSE COALESCE(pv.price, p.price, 0)
     END) * ci.quantity), 0)
   INTO 
@@ -129,7 +145,7 @@ BEGIN
     v_item_subtotal,
     v_item_subtotal_before_club
   FROM public.cart_items ci
-  JOIN public.products p ON ci.product_id = p.id
+  LEFT JOIN public.products p ON ci.product_id = p.id
   LEFT JOIN public.product_variants pv ON ci.variant_id = pv.id
   WHERE ci.cart_id = p_cart_id;
 

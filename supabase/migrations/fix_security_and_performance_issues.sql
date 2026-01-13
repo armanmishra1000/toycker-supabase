@@ -38,46 +38,10 @@ CREATE POLICY "Admins manage product_categories"
   USING (public.is_admin())
   WITH CHECK (public.is_admin());
 
--- -----------------------------------------------------
--- 2. Fix function search_path vulnerabilities (4 functions)
+-- 2. Fix function search_path vulnerabilities (3 functions)
 -- -----------------------------------------------------
 
--- Fix: match_products (vector function)
--- Drop existing function first to avoid return type conflicts
-DROP FUNCTION IF EXISTS public.match_products(vector, double precision, integer);
-DROP FUNCTION IF EXISTS public.match_products(vector, float, int);
-
-CREATE FUNCTION public.match_products(
-  query_embedding vector(1536),
-  match_threshold float,
-  match_count int
-)
-RETURNS TABLE (
-  id uuid,
-  title text,
-  handle text,
-  thumbnail text,
-  similarity float
-)
-LANGUAGE plpgsql
-STABLE
-SET search_path = public, extensions  -- Explicit path for pgvector operators
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    public.products.id,
-    public.products.title,
-    public.products.handle,
-    public.products.thumbnail,
-    1 - (public.products.embedding <=> query_embedding) as similarity
-  FROM public.products
-  WHERE public.products.embedding IS NOT NULL
-    AND 1 - (public.products.embedding <=> query_embedding) > match_threshold
-  ORDER BY public.products.embedding <=> query_embedding
-  LIMIT match_count;
-END;
-$$;
+-- Note: match_products removed (image search feature deleted)
 
 -- Fix: handle_new_user
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -141,52 +105,8 @@ END;
 $$;
 
 -- -----------------------------------------------------
--- 3. Move vector extension to extensions schema
+-- 3. Vector extension logic removed (image search feature deleted)
 -- -----------------------------------------------------
-
--- Note: This requires dropping and recreating the extension
--- which will also drop dependent objects (like the match_products function)
--- We already recreated match_products above with correct search_path
-
-DROP EXTENSION IF EXISTS vector CASCADE;
-CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
-
--- Recreate match_products again after extension move
--- Drop first to avoid conflicts (extension move drops it via CASCADE)
-DROP FUNCTION IF EXISTS public.match_products(vector, double precision, integer);
-DROP FUNCTION IF EXISTS public.match_products(vector, float, int);
-
-CREATE FUNCTION public.match_products(
-  query_embedding vector(1536),
-  match_threshold float,
-  match_count int
-)
-RETURNS TABLE (
-  id uuid,
-  title text,
-  handle text,
-  thumbnail text,
-  similarity float
-)
-LANGUAGE plpgsql
-STABLE
-SET search_path = public, extensions
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    public.products.id,
-    public.products.title,
-    public.products.handle,
-    public.products.thumbnail,
-    1 - (public.products.embedding <=> query_embedding) as similarity
-  FROM public.products
-  WHERE public.products.embedding IS NOT NULL
-    AND 1 - (public.products.embedding <=> query_embedding) > match_threshold
-  ORDER BY public.products.embedding <=> query_embedding
-  LIMIT match_count;
-END;
-$$;
 
 -- -----------------------------------------------------
 -- 4. Consolidate and secure overly permissive RLS policies
@@ -502,6 +422,8 @@ CREATE POLICY "Public read product_option_values"
 -- Payment providers: Consolidate duplicate policies
 DROP POLICY IF EXISTS "Admins full access" ON public.payment_providers;
 DROP POLICY IF EXISTS "Public read access" ON public.payment_providers;
+DROP POLICY IF EXISTS "Public read payment_providers" ON public.payment_providers;
+DROP POLICY IF EXISTS "Admins manage payment_providers" ON public.payment_providers;
 
 CREATE POLICY "Public read payment_providers"
   ON public.payment_providers FOR SELECT
@@ -517,6 +439,8 @@ CREATE POLICY "Admins manage payment_providers"
 -- Shipping options: Consolidate policies
 DROP POLICY IF EXISTS "Admins full access" ON public.shipping_options;
 DROP POLICY IF EXISTS "Public read access" ON public.shipping_options;
+DROP POLICY IF EXISTS "Public read shipping_options" ON public.shipping_options;
+DROP POLICY IF EXISTS "Admins manage shipping_options" ON public.shipping_options;
 
 CREATE POLICY "Public read shipping_options"
   ON public.shipping_options FOR SELECT

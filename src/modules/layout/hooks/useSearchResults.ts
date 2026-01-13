@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-
+import { useDebounce } from "@/lib/hooks/use-debounce"
 import type { SearchResultsPayload } from "@lib/data/search"
 
 type SearchStatus = "idle" | "loading" | "success" | "error"
@@ -18,20 +18,13 @@ export const useSearchResults = ({
   taxonomyLimit = 5,
 }: UseSearchResultsArgs) => {
   const [query, setQuery] = useState("")
-  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const debouncedQuery = useDebounce(query.trim(), 200)
   const [results, setResults] = useState<SearchResultsPayload | null>(null)
   const [status, setStatus] = useState<SearchStatus>("idle")
   const [error, setError] = useState<string | null>(null)
   const cacheRef = useRef<Map<string, SearchResultsPayload>>(new Map())
   const fetchIdRef = useRef(0)
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDebouncedQuery(query.trim())
-    }, 150)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [query])
 
   useEffect(() => {
     if (!debouncedQuery) {
@@ -127,6 +120,42 @@ export const useSearchResults = ({
     )
   }, [results])
 
+  const searchByImage = async (file: File) => {
+
+    setStatus("loading")
+    setError(null)
+    setQuery("") // Clear text query when starting image search
+
+    try {
+      const formData = new FormData()
+      formData.append("image", file)
+
+      const response = await fetch("/api/storefront/search/image", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          message?: string
+        }
+        throw new Error(payload.message || "Unable to fetch image search results")
+      }
+
+      const payload = (await response.json()) as SearchResultsPayload
+      setResults({
+        ...payload,
+        categories: [],
+        collections: [],
+        suggestions: [],
+      })
+      setStatus("success")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unexpected error")
+      setStatus("error")
+    }
+  }
+
   return {
     query,
     setQuery,
@@ -137,5 +166,7 @@ export const useSearchResults = ({
     suggestions: results?.suggestions ?? [],
     hasTypedQuery: Boolean(query.trim()),
     isEmpty,
+    searchByImage,
   }
 }
+

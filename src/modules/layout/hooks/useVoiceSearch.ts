@@ -1,199 +1,67 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 
-type SpeechRecognitionResultItem = {
-  transcript?: string
-}
+export const useVoiceSearch = (onResult: (text: string) => void) => {
+    const [isListening, setIsListening] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [supported, setSupported] = useState(false)
+    const recognitionRef = useRef<any>(null)
 
-type SpeechRecognitionResult = {
-  length: number
-  [index: number]: SpeechRecognitionResultItem
-  isFinal?: boolean
-}
-
-type SpeechRecognitionErrorEvent = {
-  error: string
-}
-
-type SpeechRecognitionEvent = {
-  results: SpeechRecognitionResult[]
-  resultIndex: number
-}
-
-type SpeechRecognitionShape = {
-  lang: string
-  interimResults: boolean
-  maxAlternatives: number
-  start: () => void
-  stop: () => void
-  onstart?: () => void
-  onerror?: (_event: SpeechRecognitionErrorEvent) => void
-  onend?: () => void
-  onspeechend?: () => void
-  onresult?: (_event: SpeechRecognitionEvent) => void
-}
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionShape
-
-declare global {
-  // eslint-disable-next-line no-unused-vars
-  interface Window {
-    webkitSpeechRecognition?: SpeechRecognitionConstructor
-    SpeechRecognition?: SpeechRecognitionConstructor
-  }
-}
-
-type UseVoiceSearchArgs = {
-  language?: string
-  onResult?: (_value: string) => void
-}
-
-export const useVoiceSearch = ({
-  language = "en-US",
-  onResult,
-}: UseVoiceSearchArgs = {}) => {
-  const [isSupported, setIsSupported] = useState(false)
-  const [isListening, setIsListening] = useState(false)
-  const [transcript, setTranscript] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const recognitionRef = useRef<SpeechRecognitionShape | null>(null)
-  const onResultRef = useRef<((_value: string) => void) | undefined>(undefined)
-  const inactivityTimeoutRef = useRef<number | null>(null)
-
-  const clearInactivityTimer = () => {
-    if (inactivityTimeoutRef.current) {
-      window.clearTimeout(inactivityTimeoutRef.current)
-      inactivityTimeoutRef.current = null
-    }
-  }
-
-  useEffect(() => {
-    onResultRef.current = onResult
-  }, [onResult])
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return
-    }
-
-    const speechWindow = window as Window & {
-      SpeechRecognition?: SpeechRecognitionConstructor
-    }
-
-    const RecognitionConstructor =
-      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition
-
-    if (!RecognitionConstructor) {
-      setIsSupported(false)
-      return
-    }
-
-    const recognition = new RecognitionConstructor()
-    recognition.lang = language
-    recognition.interimResults = true
-    recognition.maxAlternatives = 1
-
-    recognition.onstart = () => {
-      setIsListening(true)
-      setTranscript("")
-      setError(null)
-      clearInactivityTimer()
-    }
-
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      const message =
-        event.error === "not-allowed"
-          ? "Microphone permission denied"
-          : event.error === "network"
-            ? "Network issue while listening"
-            : event.error
-      setError(message)
-      clearInactivityTimer()
-    }
-
-    recognition.onend = () => {
-      setIsListening(false)
-      clearInactivityTimer()
-    }
-
-    recognition.onspeechend = () => {
-      clearInactivityTimer()
-      recognition.stop()
-    }
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalTranscript = ""
-      let interimTranscript = ""
-
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript
-        } else {
-          interimTranscript += event.results[i][0].transcript
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+            setSupported(!!SpeechRecognition)
         }
-      }
+    }, [])
 
-      const currentText = finalTranscript || interimTranscript
-      setTranscript(currentText)
-
-      if (currentText && (finalTranscript || interimTranscript.length > 3)) {
-        if (inactivityTimeoutRef.current) window.clearTimeout(inactivityTimeoutRef.current)
-
-        if (finalTranscript) {
-          onResultRef.current?.(finalTranscript)
-        } else {
-          inactivityTimeoutRef.current = window.setTimeout(() => {
-            onResultRef.current?.(currentText)
-          }, 500)
+    const stopListening = useCallback(() => {
+        if (recognitionRef.current) {
+            recognitionRef.current.stop()
+            setIsListening(false)
         }
-      }
+    }, [])
 
-      clearInactivityTimer()
-      inactivityTimeoutRef.current = window.setTimeout(() => {
-        recognition.stop()
-      }, 2500)
-    }
+    const startListening = useCallback(() => {
+        if (isListening) {
+            stopListening()
+            return
+        }
 
-    recognitionRef.current = recognition
-    setIsSupported(true)
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        if (!SpeechRecognition) {
+            setError("Speech recognition not supported in this browser.")
+            return
+        }
 
-    return () => {
-      recognition.stop()
-      recognitionRef.current = null
-    }
-  }, [language])
+        const recognition = new SpeechRecognition()
+        recognitionRef.current = recognition
+        recognition.lang = "en-US"
+        recognition.interimResults = false
+        recognition.maxAlternatives = 1
 
-  const startListening = useCallback(() => {
-    if (!recognitionRef.current) {
-      return
-    }
+        recognition.onstart = () => {
+            setIsListening(true)
+            setError(null)
+        }
 
-    setTranscript("")
-    setError(null)
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript
+            onResult(transcript)
+        }
 
-    try {
-      recognitionRef.current.start()
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "InvalidStateError") {
-        return
-      }
+        recognition.onerror = (event: any) => {
+            setError(event.error)
+            setIsListening(false)
+        }
 
-      setError(err instanceof Error ? err.message : "Unable to access microphone")
-    }
-  }, [])
+        recognition.onend = () => {
+            setIsListening(false)
+        }
 
-  const stopListening = useCallback(() => {
-    clearInactivityTimer()
-    recognitionRef.current?.stop()
-  }, [])
+        recognition.start()
+    }, [onResult, isListening, stopListening])
 
-  return {
-    isSupported,
-    isListening,
-    transcript,
-    error,
-    startListening,
-    stopListening,
-  }
+    return { isListening, error, startListening, stopListening, supported }
 }
+
