@@ -1,19 +1,11 @@
 import { createShippingOption } from "@/lib/data/admin"
+import { SubmitButton } from "@/modules/admin/components"
 import Link from "next/link"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 
 export default function NewShippingOption() {
-  const actions = (
-    <div className="flex gap-2">
-      <Link href="/admin/shipping" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">Cancel</Link>
-      <button form="shipping-form" type="submit" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all shadow-sm">
-        Save Option
-      </button>
-    </div>
-  )
-
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
@@ -23,9 +15,9 @@ export default function NewShippingOption() {
         </Link>
       </nav>
 
-      <AdminPageHeader title="Add Shipping Option" actions={actions} />
+      <AdminPageHeader title="Add Shipping Option" />
 
-      <form id="shipping-form" action={createShippingOption}>
+      <form action={createShippingOption}>
         <AdminCard title="Option Details">
           <div className="space-y-4">
             <div>
@@ -50,6 +42,13 @@ export default function NewShippingOption() {
             </div>
           </div>
         </AdminCard>
+
+        <div className="flex gap-2 mt-6">
+          <Link href="/admin/shipping" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">Cancel</Link>
+          <SubmitButton loadingText="Saving...">
+            Save Option
+          </SubmitButton>
+        </div>
       </form>
     </div>
   )

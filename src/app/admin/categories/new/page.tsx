@@ -1,18 +1,10 @@
 import { createCategory } from "@/lib/data/admin"
+import { SubmitButton } from "@/modules/admin/components"
 import Link from "next/link"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 
 export default function NewCategory() {
-  const actions = (
-    <div className="flex gap-2">
-      <Link href="/admin/categories" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Cancel</Link>
-      <button form="category-form" type="submit" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all">
-        Save Category
-      </button>
-    </div>
-  )
-
   return (
     <div className="space-y-8">
       <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
@@ -22,9 +14,9 @@ export default function NewCategory() {
         </Link>
       </nav>
 
-      <AdminPageHeader title="Add Category" actions={actions} />
+      <AdminPageHeader title="Add Category" />
 
-      <form id="category-form" action={createCategory}>
+      <form action={createCategory}>
         <div title="Basic Info">
           <div className="space-y-4">
             <div>
@@ -40,6 +32,13 @@ export default function NewCategory() {
               <textarea name="description" rows={4} placeholder="What kind of toys are in this category?" className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
             </div>
           </div>
+        </div>
+
+        <div className="flex gap-2 mt-6 pt-6 border-t">
+          <Link href="/admin/categories" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Cancel</Link>
+          <SubmitButton loadingText="Saving...">
+            Save Category
+          </SubmitButton>
         </div>
       </form>
     </div>

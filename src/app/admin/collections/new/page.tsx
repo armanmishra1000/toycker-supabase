@@ -1,18 +1,10 @@
 import { createCollection } from "@/lib/data/admin"
+import { SubmitButton } from "@/modules/admin/components"
 import Link from "next/link"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 
 export default function NewCollection() {
-  const actions = (
-    <div className="flex gap-2">
-      <Link href="/admin/collections" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Cancel</Link>
-      <button form="collection-form" type="submit" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all">
-        Save Collection
-      </button>
-    </div>
-  )
-
   return (
     <div className="space-y-8">
       <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
@@ -22,9 +14,9 @@ export default function NewCollection() {
         </Link>
       </nav>
 
-      <AdminPageHeader title="Create Collection" actions={actions} />
+      <AdminPageHeader title="Create Collection" />
 
-      <form id="collection-form" action={createCollection}>
+      <form action={createCollection}>
         <div title="General Information">
           <div className="space-y-4">
             <div>
@@ -37,6 +29,13 @@ export default function NewCollection() {
               <p className="mt-1 text-xs text-gray-400">Used for the collection URL</p>
             </div>
           </div>
+        </div>
+
+        <div className="flex gap-2 mt-6 pt-6 border-t">
+          <Link href="/admin/collections" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Cancel</Link>
+          <SubmitButton loadingText="Saving...">
+            Save Collection
+          </SubmitButton>
         </div>
       </form>
     </div>
