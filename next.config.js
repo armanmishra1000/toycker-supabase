@@ -70,9 +70,16 @@ const nextConfig = {
     unoptimized: false,
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "swiper", "@heroicons/react"],
-    serverExternalPackages: ["require-in-the-middle", "import-in-the-middle"],
+    optimizePackageImports: [
+      "lucide-react",
+      "swiper",
+      "@heroicons/react",
+      "recharts",
+      "@radix-ui/react-accordion",
+    ],
   },
+  // serverExternalPackages is stable in Next.js 15, moved out of experimental
+  serverExternalPackages: ["require-in-the-middle", "import-in-the-middle"],
 }
 
 // Injected Sentry Configuration
