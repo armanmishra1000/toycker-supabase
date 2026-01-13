@@ -9,6 +9,7 @@ import Link from "next/link"
 import { formatIST } from "@/lib/util/date"
 import ReportsChart from "@modules/admin/components/charts/reports-chart"
 import TopProducts from "@modules/admin/components/dashboard/top-products"
+import { cn } from "@lib/util/cn"
 
 export default async function AdminDashboard() {
   const stats = await getDashboardStats()
@@ -110,15 +111,34 @@ export default async function AdminDashboard() {
             <TopProducts products={topProducts} />
           </AdminCard>
 
-          <AdminCard title="Inventory Health">
+          <AdminCard
+            title="Inventory Health"
+            footer={
+              <Link href="/admin/inventory" className="text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Manage inventory</Link>
+            }
+          >
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Out of Stock</span>
-                <span className="text-xs font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">0 items</span>
+                <span className={cn(
+                  "text-xs font-bold px-2 py-1 rounded-lg",
+                  stats.products.outOfStock > 0 ? "text-red-600 bg-red-50" : "text-gray-900 bg-gray-100"
+                )}>
+                  {stats.products.outOfStock} items
+                </span>
               </div>
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Low Stock</span>
+                <span className={cn(
+                  "text-xs font-bold px-2 py-1 rounded-lg",
+                  stats.products.lowStock > 0 ? "text-amber-600 bg-amber-50" : "text-gray-900 bg-gray-100"
+                )}>
+                  {stats.products.lowStock} items
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Active Products</span>
-                <span className="text-xs font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">{stats.products.value} items</span>
+                <span className="text-xs font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded-lg">{stats.products.value} items</span>
               </div>
             </div>
           </AdminCard>

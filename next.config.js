@@ -71,6 +71,7 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "swiper", "@heroicons/react"],
+    serverExternalPackages: ["require-in-the-middle", "import-in-the-middle"],
   },
 }
 

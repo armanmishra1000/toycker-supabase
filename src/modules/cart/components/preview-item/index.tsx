@@ -28,7 +28,7 @@ const PreviewItem = ({ item, currencyCode }: PreviewItemProps) => {
               alt="Gift wrap"
               width={200}
               height={200}
-              className="w-full h-full object-contain p-2"
+              className="w-full h-full object-contain"
             />
           </div>
         </div>

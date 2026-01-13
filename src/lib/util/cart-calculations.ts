@@ -22,7 +22,7 @@ export interface CartShippingMethod {
     min_order_free_shipping?: number | null
 }
 
-export const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0): CartItem[] => {
+export const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage = 0, giftWrapFee = 50): CartItem[] => {
     return items.map((item) => {
         const product = item.product
         const variant = item.variant
@@ -43,18 +43,29 @@ export const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage =
             ? Math.round(originalPrice * (1 - clubDiscountPercentage / 100))
             : originalPrice
 
+        const metadata = (item.metadata || {}) as Record<string, unknown>
+
+        // Check if this specific line is a Gift Wrap line
+        const isGiftWrapLine = metadata.gift_wrap_line === true
+        const itemGiftWrapFee = Number(metadata.gift_wrap_fee || giftWrapFee)
+
+        // If it's a gift wrap line, the price is ONLY the fee
+        // Otherwise, it's the product price (without the fee)
+        const finalUnitPrice = isGiftWrapLine ? itemGiftWrapFee : discountedPrice
+        const finalOriginalUnitPrice = isGiftWrapLine ? itemGiftWrapFee : originalPrice
+
         return {
             ...item,
-            title: variant?.title || product?.name || "Product",
-            product_title: product?.name || "Product",
-            product_handle: product?.handle,
-            thumbnail: thumbnail ?? undefined,
-            unit_price: discountedPrice,
-            original_unit_price: originalPrice,
-            total: discountedPrice * item.quantity,
-            original_total: originalPrice * item.quantity,
-            subtotal: discountedPrice * item.quantity,
-            has_club_discount: hasClubDiscount,
+            title: isGiftWrapLine ? "Gift Wrap" : (variant?.title || product?.name || "Product"),
+            product_title: isGiftWrapLine ? "Gift Wrap" : (product?.name || "Product"),
+            product_handle: isGiftWrapLine ? undefined : product?.handle,
+            thumbnail: isGiftWrapLine ? undefined : (thumbnail ?? undefined),
+            unit_price: finalUnitPrice,
+            original_unit_price: finalOriginalUnitPrice,
+            total: finalUnitPrice * item.quantity,
+            original_total: finalOriginalUnitPrice * item.quantity,
+            subtotal: finalUnitPrice * item.quantity,
+            has_club_discount: !isGiftWrapLine && hasClubDiscount,
             product: product ?? undefined,
             variant: variant ?? undefined
         }

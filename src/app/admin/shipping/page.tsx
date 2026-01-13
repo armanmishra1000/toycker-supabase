@@ -1,6 +1,6 @@
 import { getAdminShippingOptions, deleteShippingOption } from "@/lib/data/admin"
 import Link from "next/link"
-import { PlusIcon, TrashIcon, TruckIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, TrashIcon, TruckIcon, PencilSquareIcon } from "@heroicons/react/24/outline"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
@@ -64,6 +64,9 @@ export default async function AdminShipping() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link href={`/admin/shipping/${option.id}`} className="p-1.5 text-gray-400 hover:text-black hover:bg-gray-100 rounded transition-colors">
+                        <PencilSquareIcon className="h-4 w-4" />
+                      </Link>
                       <form action={deleteShippingOption.bind(null, option.id)}>
                         <button className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
                           <TrashIcon className="h-4 w-4" />

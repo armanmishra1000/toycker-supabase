@@ -49,7 +49,7 @@ const QuantitySelector = ({
     return (
         <div
             className={cn(
-                "flex items-center bg-slate-50 border border-slate-100 rounded-lg sm:rounded-xl overflow-hidden shadow-sm",
+                "flex items-center bg-slate-50 border border-gray-200 rounded-lg sm:rounded-xl overflow-hidden",
                 {
                     "h-8 px-1": size === "small",
                     "h-10 px-1 sm:h-11 sm:px-1.5": size === "default",
@@ -96,7 +96,7 @@ const QuantitySelector = ({
                     {
                         "w-7 h-7": size === "small",
                         "w-8 h-8 sm:w-9 sm:h-9 text-slate-600": size === "default",
-                        "hover:bg-white hover:shadow-sm": !disabled && !loading && quantity < max,
+                        "hover:bg-white": !disabled && !loading && quantity < max,
                         "opacity-30 cursor-not-allowed": disabled || loading || quantity >= max,
                     }
                 )}

@@ -15,8 +15,6 @@ type SummaryProps = {
   cart: Cart
 }
 
-const FREE_SHIPPING_THRESHOLD = 499 // INR
-
 function getCheckoutStep(cart: Cart) {
   if (!cart?.shipping_address?.address_1 || !cart.email) {
     return "address"
@@ -32,9 +30,10 @@ const Summary = ({ cart }: SummaryProps) => {
   const step = getCheckoutStep(cart)
   const itemCount = cart.items?.length || 0
   const subtotal = cart.item_subtotal || cart.subtotal || 0
-  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal)
+  const threshold = cart.free_shipping_threshold || 499
+  const amountToFreeShipping = Math.max(0, threshold - subtotal)
   const hasFreeShipping = amountToFreeShipping === 0
-  const progressPercentage = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)
+  const progressPercentage = Math.min(100, (subtotal / threshold) * 100)
   const currencyCode = cart.currency_code || "INR"
 
   // Rewards info for club members
