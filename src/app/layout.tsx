@@ -1,6 +1,7 @@
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next"
 import NextTopLoader from "nextjs-toploader"
 import Providers from "./providers"
 import { grandstander, inter } from "@lib/fonts"
@@ -34,6 +35,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
           <main className="relative">{props.children}</main>
         </Providers>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   )
