@@ -1,6 +1,6 @@
 "use client"
 
-import { ButtonHTMLAttributes, ReactNode } from "react"
+import { ButtonHTMLAttributes } from "react"
 import { Loader2, LucideIcon } from "lucide-react"
 import { cn } from "@lib/util/cn"
 

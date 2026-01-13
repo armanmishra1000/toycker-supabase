@@ -19,7 +19,7 @@ import { useSearchResults } from "@modules/layout/hooks/useSearchResults"
 import { useVoiceSearch } from "@modules/layout/hooks/useVoiceSearch"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
-import type { SearchResultsPayload, SearchProductSummary, SearchCategorySummary, SearchCollectionSummary } from "@lib/data/search"
+import type { SearchProductSummary, SearchCategorySummary, SearchCollectionSummary } from "@lib/data/search"
 
 type SearchDrawerProps = {
   isOpen: boolean
