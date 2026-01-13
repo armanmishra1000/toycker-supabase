@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-
+import { useDebounce } from "@/lib/hooks/use-debounce"
 import type { SearchResultsPayload } from "@lib/data/search"
 
 type SearchStatus = "idle" | "loading" | "success" | "error"
@@ -18,20 +18,13 @@ export const useSearchResults = ({
   taxonomyLimit = 5,
 }: UseSearchResultsArgs) => {
   const [query, setQuery] = useState("")
-  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const debouncedQuery = useDebounce(query.trim(), 200)
   const [results, setResults] = useState<SearchResultsPayload | null>(null)
   const [status, setStatus] = useState<SearchStatus>("idle")
   const [error, setError] = useState<string | null>(null)
   const cacheRef = useRef<Map<string, SearchResultsPayload>>(new Map())
   const fetchIdRef = useRef(0)
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDebouncedQuery(query.trim())
-    }, 150)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [query])
 
   useEffect(() => {
     if (!debouncedQuery) {

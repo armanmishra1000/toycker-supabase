@@ -1,21 +1,18 @@
 "use client"
 
-import Image from "next/image"
+import { Fragment, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Fragment, useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowUpRightIcon,
   MagnifyingGlassIcon,
-  MicrophoneIcon,
   SparklesIcon,
-  StopIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline"
 import { Dialog, Transition } from "@headlessui/react"
+import Image from "next/image"
 
 import { useBodyScrollLock } from "@modules/layout/hooks/useBodyScrollLock"
 import { useSearchResults } from "@modules/layout/hooks/useSearchResults"
-import { useVoiceSearch } from "@modules/layout/hooks/useVoiceSearch"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
 import type { SearchResultsPayload, SearchProductSummary, SearchCategorySummary, SearchCollectionSummary } from "@lib/data/search"
@@ -34,20 +31,10 @@ const fallbackSuggestions = [
   "Action figures",
 ]
 
-type SearchStatus = "idle" | "loading" | "success" | "error"
-
-const IMAGE_SEARCH_ENABLED = true // Enabled for prototype
-
 const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const countryCode = DEFAULT_COUNTRY_CODE
-  const [activeTab, setActiveTab] = useState<"text" | "image">("text")
-  const [imageStatus, setImageStatus] = useState<SearchStatus>("idle")
-  const [imageResults, setImageResults] = useState<SearchResultsPayload | null>(null)
-  const [imageError, setImageError] = useState<string | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const isImageSearchAvailable = IMAGE_SEARCH_ENABLED
 
   const buildLocalizedPath = (path: string) => {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`
@@ -69,86 +56,12 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
     taxonomyLimit: 5,
   })
 
-  const {
-    isSupported: isVoiceSupported,
-    isListening,
-    transcript,
-    error: voiceError,
-    startListening,
-    stopListening,
-  } = useVoiceSearch({
-    onResult: (value: string) => setQuery(value),
-  })
-
-  const statusForDisplay = activeTab === "image" ? imageStatus : status
-  const resultsForDisplay = activeTab === "image" ? imageResults : results
-  const errorForDisplay = activeTab === "image" ? imageError : error
-  const canViewAll = activeTab === "text" && Boolean(query.trim())
-
-  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    if (!isImageSearchAvailable) {
-      setImagePreview(null)
-      setImageResults(null)
-      setImageError("Image search is coming soon")
-      setImageStatus("idle")
-      return
-    }
-
-    setImageError(null)
-    setImageStatus("loading")
-    setImagePreview(URL.createObjectURL(file))
-
-    const params = new URLSearchParams({
-      countryCode,
-      limit: "6",
-    })
-
-    const formData = new FormData()
-    formData.append("file", file)
-
-    try {
-      const response = await fetch(`/api/storefront/search/image?${params.toString()}`, {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { message?: string; error?: string }
-        throw new Error(payload.error || payload.message || "Unable to search by image")
-      }
-
-      const payload = (await response.json()) as SearchResultsPayload
-      setImageResults(payload)
-      setImageStatus("success")
-    } catch (fetchError) {
-      const message = fetchError instanceof Error ? fetchError.message : "Unexpected error"
-      setImageError(message)
-      setImageStatus(message === "Image search provider not configured" ? "idle" : "error")
-    }
-  }
-
-  const isActiveEmpty = activeTab === "image"
-    ? Boolean(
-      resultsForDisplay &&
-      resultsForDisplay.products.length === 0 &&
-      resultsForDisplay.categories.length === 0 &&
-      resultsForDisplay.collections.length === 0
-    )
-    : isEmpty
+  const canViewAll = Boolean(query.trim())
 
   useBodyScrollLock({ isLocked: isOpen })
 
   useEffect(() => {
     if (!isOpen) {
-      stopListening()
-      setActiveTab("text")
-      setImageStatus("idle")
-      setImageError(null)
-      setImageResults(null)
-      setImagePreview(null)
       return
     }
 
@@ -157,7 +70,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
     }, 120)
 
     return () => window.clearTimeout(timer)
-  }, [isOpen, stopListening])
+  }, [isOpen])
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -169,22 +82,6 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
     router.push(buildLocalizedPath(`/store?q=${encodeURIComponent(query.trim())}`))
     onClose()
   }
-
-  const voiceStatusLabel = useMemo(() => {
-    if (!isVoiceSupported) {
-      return "Voice search is unavailable in this browser"
-    }
-
-    if (isListening) {
-      return "Listening... speak naturally"
-    }
-
-    if (transcript) {
-      return `Heard: “${transcript}”`
-    }
-
-    return "Use voice to search for toys hands-free"
-  }, [isListening, isVoiceSupported, transcript])
 
   const renderEmptyState = () => (
     <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 px-6 py-12 text-center">
@@ -246,122 +143,31 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
               </div>
 
               <div className="border-b border-slate-100 px-6 pb-2 pt-3 space-y-3">
-                <div className="inline-flex gap-2 rounded-full bg-slate-100 p-1">
-                  {["text", "image"].map((tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setActiveTab(tab as typeof activeTab)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === tab
-                        ? "bg-white shadow-sm text-slate-900"
-                        : "text-slate-500 hover:text-slate-900"
-                        }`}
-                    >
-                      {tab === "text" && "Text + Voice"}
-                      {tab === "image" && "Image"}
-                    </button>
-                  ))}
-                </div>
-
-                {activeTab === "text" && (
-                  <form onSubmit={handleSubmit} className="space-y-2">
-                    <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm ring-offset-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                      <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Search for toys, brands, themes..."
-                        className="flex-1 border-0 bg-transparent text-base text-slate-900 placeholder-slate-400 focus:outline-none"
-                        aria-label="Search catalog"
-                      />
-                      {query && (
-                        <button
-                          type="button"
-                          onClick={clear}
-                          className="text-sm font-medium text-slate-500 hover:text-slate-900"
-                        >
-                          Clear
-                        </button>
-                      )}
-                      {isVoiceSupported && (
-                        <button
-                          type="button"
-                          onClick={isListening ? stopListening : startListening}
-                          className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${isListening
-                            ? "border-red-500 bg-red-50 text-red-600"
-                            : "border-slate-200 text-slate-600 hover:border-primary hover:text-primary"
-                            }`}
-                          aria-label={isListening ? "Stop voice search" : "Start voice search"}
-                        >
-                          {isListening ? (
-                            <StopIcon className="h-5 w-5" />
-                          ) : (
-                            <MicrophoneIcon className="h-5 w-5" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                    {isVoiceSupported && (
-                      <p className="text-xs text-slate-500">
-                        {voiceStatusLabel}
-                        {voiceError && (
-                          <span className="ml-1 text-red-500">{voiceError}</span>
-                        )}
-                      </p>
-                    )}
-                  </form>
-                )}
-
-                {activeTab === "image" && (
-                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4">
-                    <label
-                      className={`flex flex-col items-center justify-center gap-3 ${isImageSearchAvailable ? "cursor-pointer" : "cursor-not-allowed opacity-70"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <SparklesIcon className="h-5 w-5" />
-                        <span className="text-sm font-medium">Upload a product photo</span>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageChange}
-                        disabled={!isImageSearchAvailable}
-                      />
-                      {imagePreview && (
-                        <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-slate-200">
-                          <Image
-                            src={imagePreview}
-                            alt="Preview"
-                            fill
-                            className="object-cover"
-                            sizes="96px"
-                          />
-                        </div>
-                      )}
-                      {/* Removed Coming Soon badge */}
-                      <p className="text-xs text-slate-500 text-center">
-                        We will find visually similar items. Supported: png, jpg, webp.
-                      </p>
-                      <span
-                        className={`px-4 py-2 rounded-full text-sm font-semibold ${isImageSearchAvailable
-                          ? "bg-primary text-white"
-                          : "bg-slate-200 text-slate-500"
-                          }`}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 shadow-sm ring-offset-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                    <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="Search for toys, brands, themes..."
+                      className="flex-1 border-0 bg-transparent text-base text-slate-900 placeholder-slate-400 focus:outline-none"
+                      aria-label="Search catalog"
+                    />
+                    {query && (
+                      <button
+                        type="button"
+                        onClick={clear}
+                        className="text-sm font-medium text-slate-500 hover:text-slate-900 px-2"
                       >
-                        {isImageSearchAvailable ? "Choose image" : "Upload Image"}
-                      </span>
-                    </label>
-                    {imageError && (
-                      <p className="mt-2 text-xs text-red-500">{imageError}</p>
+                        Clear
+                      </button>
                     )}
                   </div>
-                )}
+                </form>
 
-                {activeTab === "text" && (suggestions.length > 0 || fallbackSuggestions.length > 0) && (
+                {(suggestions.length > 0 || fallbackSuggestions.length > 0) && (
                   <div className="border-t border-slate-100 pt-3">
                     <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
                       Smart suggestions
@@ -372,7 +178,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                           key={suggestion}
                           type="button"
                           onClick={() => setQuery(suggestion)}
-                          className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600 hover:border-primary hover:bg-primary/5 hover:text-primary"
+                          className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600 hover:border-primary hover:bg-primary/5 hover:text-primary transition-colors"
                         >
                           {suggestion}
                         </button>
@@ -383,10 +189,10 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
               </div>
 
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 bg-slate-50/60">
-                {statusForDisplay === "idle" && activeTab === "text" && !query && (
+                {status === "idle" && !query && (
                   <div className="rounded-3xl border border-dashed border-slate-200 bg-white/80 p-8 text-center">
                     <p className="text-base font-medium text-slate-900">
-                      Start typing or use your voice to discover toys faster.
+                      Start typing to discover toys faster.
                     </p>
                     <p className="mt-2 text-sm text-slate-500">
                       We’ll surface matching products, categories, and collections instantly.
@@ -394,7 +200,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                   </div>
                 )}
 
-                {statusForDisplay === "loading" && (
+                {status === "loading" && (
                   <div className="space-y-4">
                     {[...Array(3)].map((_, index) => (
                       <div
@@ -411,22 +217,22 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                   </div>
                 )}
 
-                {statusForDisplay === "error" && (
+                {status === "error" && (
                   <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {errorForDisplay}
+                    {error}
                   </div>
                 )}
 
-                {statusForDisplay === "success" && resultsForDisplay && (
+                {status === "success" && results && (
                   <div className="space-y-6">
-                    {resultsForDisplay.products.length > 0 && (
-                      <ResultSection title="Products" count={resultsForDisplay.products.length}>
+                    {results.products.length > 0 && (
+                      <ResultSection title="Products" count={results.products.length}>
                         <div className="space-y-3">
-                          {resultsForDisplay.products.map((product: SearchProductSummary) => (
+                          {results.products.map((product: SearchProductSummary) => (
                             <LocalizedClientLink
                               key={product.id}
                               href={`/products/${product.handle}`}
-                              className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 transition hover:border-primary/40"
+                              className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 transition hover:border-primary/40 group"
                               onClick={onClose}
                             >
                               {product.thumbnail ? (
@@ -443,24 +249,24 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                                 <div className="h-16 w-16 rounded-2xl bg-slate-100" />
                               )}
                               <div className="flex-1 min-w-0">
-                                <p className="truncate text-base font-medium text-slate-900">
+                                <p className="truncate text-base font-medium text-slate-900 group-hover:text-primary transition-colors">
                                   {product.title}
                                 </p>
                                 {product.price && (
-                                  <p className="text-sm text-primary">{product.price.formatted}</p>
+                                  <p className="text-sm text-primary font-semibold">{product.price.formatted}</p>
                                 )}
                               </div>
-                              <ArrowUpRightIcon className="h-5 w-5 text-slate-300" />
+                              <ArrowUpRightIcon className="h-5 w-5 text-slate-300 group-hover:text-primary transition-colors" />
                             </LocalizedClientLink>
                           ))}
                         </div>
                       </ResultSection>
                     )}
 
-                    {resultsForDisplay.categories.length > 0 && (
-                      <ResultSection title="Categories" count={resultsForDisplay.categories.length}>
-                        <div className="flex flex-wrap gap-3">
-                          {resultsForDisplay.categories.map((category: SearchCategorySummary) => (
+                    {results.categories.length > 0 && (
+                      <ResultSection title="Categories" count={results.categories.length}>
+                        <div className="flex flex-wrap gap-2">
+                          {results.categories.map((category: SearchCategorySummary) => (
                             <LocalizedClientLink
                               key={category.id}
                               href={`/categories/${category.handle}`}
@@ -475,10 +281,10 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                       </ResultSection>
                     )}
 
-                    {resultsForDisplay.collections.length > 0 && (
-                      <ResultSection title="Collections" count={resultsForDisplay.collections.length}>
-                        <div className="flex flex-wrap gap-3">
-                          {resultsForDisplay.collections.map((collection: SearchCollectionSummary) => (
+                    {results.collections.length > 0 && (
+                      <ResultSection title="Collections" count={results.collections.length}>
+                        <div className="flex flex-wrap gap-2">
+                          {results.collections.map((collection: SearchCollectionSummary) => (
                             <LocalizedClientLink
                               key={collection.id}
                               href={`/collections/${collection.handle}`}
@@ -493,7 +299,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                       </ResultSection>
                     )}
 
-                    {isActiveEmpty && renderEmptyState()}
+                    {isEmpty && renderEmptyState()}
                   </div>
                 )}
               </div>
@@ -502,7 +308,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                 <LocalizedClientLink
                   href={canViewAll ? `/store?q=${encodeURIComponent(query.trim())}` : "#"}
                   className={`flex h-12 items-center justify-center rounded-full text-sm font-semibold transition ${canViewAll
-                    ? "bg-primary text-white hover:bg-primary/90"
+                    ? "bg-primary text-white hover:bg-primary/90 shadow-md active:scale-95 transition-all"
                     : "bg-slate-100 text-slate-400 cursor-not-allowed pointer-events-none"
                     }`}
                   aria-disabled={!canViewAll}
@@ -534,9 +340,9 @@ const ResultSection = ({
   children: React.ReactNode
 }) => (
   <section className="space-y-3">
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between px-1">
       <p className="text-sm font-semibold text-slate-700">{title}</p>
-      <span className="text-xs uppercase tracking-[0.2em] text-slate-400">
+      <span className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
         {count} hit{count === 1 ? "" : "s"}
       </span>
     </div>

@@ -56,13 +56,12 @@ export const searchEntities = async ({
 
     // 1. Parallelize queries for speed
     const [productsRes, categoriesRes, collectionsRes] = await Promise.all([
-        // Search Products
-        supabase
-            .from("products")
-            .select("id, name, handle, image_url, price, currency_code, thumbnail")
-            .ilike("name", `%${normalizedQuery}%`)
-            .limit(productLimit)
-            .order("created_at", { ascending: false }),
+        // Search Products using Advanced RPC
+        supabase.rpc("search_products_advanced", {
+            search_query: normalizedQuery,
+            similarity_threshold: 0.2, // Lower threshold for more results
+            result_limit: productLimit,
+        }),
 
         // Search Categories
         supabase
@@ -87,7 +86,7 @@ export const searchEntities = async ({
         thumbnail: p.image_url || p.thumbnail,
         price: {
             amount: p.price,
-            currencyCode: p.currency_code,
+            currencyCode: p.currency_code || "INR",
             formatted: `₹${p.price}`,
         },
     }))
@@ -104,7 +103,7 @@ export const searchEntities = async ({
         handle: c.handle,
     }))
 
-    // 3. Generate Suggestions
+    // 3. Generate Smart Suggestions
     const suggestionPool = [
         normalizedQuery,
         ...products.map((p: { title: string }) => p.title),
@@ -120,3 +119,4 @@ export const searchEntities = async ({
         suggestions: uniqueSuggestions,
     }
 }
+
