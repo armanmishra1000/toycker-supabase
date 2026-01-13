@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { approveReview, rejectReview, deleteReview, type ReviewWithMedia } from "@/lib/actions/reviews"
 import { Star, Eye, Check, X, Trash2, Video, Mic, Image as ImageIcon } from "lucide-react"
+import { IconButton, ActionButton } from "@/modules/admin/components"
 import clsx from "clsx"
 import { formatIST } from "@/lib/util/date"
 
@@ -137,32 +138,29 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                                             </button>
                                             {review.approval_status === "pending" && (
                                                 <>
-                                                    <button
+                                                    <IconButton
+                                                        icon={Check}
+                                                        variant="success"
+                                                        isLoading={isProcessing}
+                                                        tooltip="Approve"
                                                         onClick={() => handleAction("approve", review.id)}
-                                                        className="rounded p-1 text-green-600 hover:bg-green-50"
-                                                        title="Approve"
-                                                        disabled={isProcessing}
-                                                    >
-                                                        <Check className="h-4 w-4" />
-                                                    </button>
-                                                    <button
+                                                    />
+                                                    <IconButton
+                                                        icon={X}
+                                                        variant="danger"
+                                                        isLoading={isProcessing}
+                                                        tooltip="Reject"
                                                         onClick={() => handleAction("reject", review.id)}
-                                                        className="rounded p-1 text-red-600 hover:bg-red-50"
-                                                        title="Reject"
-                                                        disabled={isProcessing}
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </button>
+                                                    />
                                                 </>
                                             )}
-                                            <button
+                                            <IconButton
+                                                icon={Trash2}
+                                                variant="danger"
+                                                isLoading={isProcessing}
+                                                tooltip="Delete"
                                                 onClick={() => handleAction("delete", review.id)}
-                                                className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                                                title="Delete"
-                                                disabled={isProcessing}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
+                                            />
                                         </div>
                                     </td>
                                 </tr>
@@ -240,29 +238,34 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                         <div className="border-t border-gray-100 px-6 py-4 bg-gray-50 flex justify-end gap-3 shrink-0">
                             {selectedReview.approval_status === "pending" && (
                                 <>
-                                    <button
+                                    <ActionButton
+                                        variant="secondary"
+                                        isLoading={isProcessing}
+                                        loadingText="Processing..."
                                         onClick={() => handleAction("reject", selectedReview.id)}
-                                        className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-200 transition-colors"
-                                        disabled={isProcessing}
+                                        className="text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200"
                                     >
                                         Reject
-                                    </button>
-                                    <button
+                                    </ActionButton>
+                                    <ActionButton
+                                        variant="success"
+                                        isLoading={isProcessing}
+                                        loadingText="Processing..."
                                         onClick={() => handleAction("approve", selectedReview.id)}
-                                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm transition-colors"
-                                        disabled={isProcessing}
                                     >
                                         Approve & Publish
-                                    </button>
+                                    </ActionButton>
                                 </>
                             )}
-                            <button
+                            <ActionButton
+                                variant="secondary"
+                                isLoading={isProcessing}
+                                loadingText="Deleting..."
                                 onClick={() => handleAction("delete", selectedReview.id)}
-                                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                                disabled={isProcessing}
+                                className="text-gray-600 hover:text-red-600 hover:bg-red-50"
                             >
                                 Delete
-                            </button>
+                            </ActionButton>
                         </div>
                     </div >
                 </div >

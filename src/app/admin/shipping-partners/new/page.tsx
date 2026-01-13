@@ -1,4 +1,5 @@
 import { createShippingPartner } from "@/lib/data/admin"
+import { SubmitButton } from "@/modules/admin/components"
 import Link from "next/link"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 import AdminCard from "@modules/admin/components/admin-card"
@@ -41,12 +42,9 @@ export default function NewShippingPartner() {
                         >
                             Cancel
                         </Link>
-                        <button
-                            type="submit"
-                            className="px-5 py-2.5 text-sm font-bold text-white bg-black rounded-lg hover:bg-gray-800 transition-all shadow-sm"
-                        >
+                        <SubmitButton loadingText="Adding...">
                             Add Partner
-                        </button>
+                        </SubmitButton>
                     </div>
                 </form>
             </AdminCard>

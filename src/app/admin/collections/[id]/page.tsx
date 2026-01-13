@@ -1,4 +1,5 @@
 import { getAdminCollection, updateCollection } from "@/lib/data/admin"
+import { SubmitButton } from "@/modules/admin/components"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
@@ -11,15 +12,6 @@ export default async function EditCollection({ params }: { params: Promise<{ id:
 
   if (!collection) notFound()
 
-  const actions = (
-    <div className="flex gap-2">
-      <Link href="/admin/collections" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">Discard</Link>
-      <button form="collection-form" type="submit" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all shadow-sm">
-        Save Changes
-      </button>
-    </div>
-  )
-
   return (
     <div className="space-y-8">
       <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
@@ -29,9 +21,9 @@ export default async function EditCollection({ params }: { params: Promise<{ id:
         </Link>
       </nav>
 
-      <AdminPageHeader title={collection.title} actions={actions} />
+      <AdminPageHeader title={collection.title} />
 
-      <form id="collection-form" action={updateCollection}>
+      <form action={updateCollection}>
         <input type="hidden" name="id" value={collection.id} />
         <AdminCard title="General Information">
           <div className="space-y-4">
@@ -45,6 +37,13 @@ export default async function EditCollection({ params }: { params: Promise<{ id:
             </div>
           </div>
         </AdminCard>
+
+        <div className="flex gap-2 mt-6">
+          <Link href="/admin/collections" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">Discard</Link>
+          <SubmitButton loadingText="Saving...">
+            Save Changes
+          </SubmitButton>
+        </div>
       </form>
     </div>
   )

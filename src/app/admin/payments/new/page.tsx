@@ -1,19 +1,11 @@
 import { createPaymentMethod } from "@/lib/data/admin"
+import { SubmitButton } from "@/modules/admin/components"
 import Link from "next/link"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { ChevronLeftIcon } from "@heroicons/react/24/outline"
 
 export default function NewPaymentMethod() {
-  const actions = (
-    <div className="flex gap-2">
-      <Link href="/admin/payments" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Cancel</Link>
-      <button form="payment-form" type="submit" className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all">
-        Save Method
-      </button>
-    </div>
-  )
-
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
@@ -23,9 +15,9 @@ export default function NewPaymentMethod() {
         </Link>
       </nav>
 
-      <AdminPageHeader title="Add Payment Method" actions={actions} />
+      <AdminPageHeader title="Add Payment Method" />
 
-      <form id="payment-form" action={createPaymentMethod}>
+      <form action={createPaymentMethod}>
         <AdminCard title="Method Details">
           <div className="space-y-4">
             <div>
@@ -43,6 +35,13 @@ export default function NewPaymentMethod() {
             </div>
           </div>
         </AdminCard>
+
+        <div className="flex gap-2 mt-6">
+          <Link href="/admin/payments" className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900">Cancel</Link>
+          <SubmitButton loadingText="Saving...">
+            Save Method
+          </SubmitButton>
+        </div>
       </form>
     </div>
   )

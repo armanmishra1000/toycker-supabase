@@ -35,10 +35,16 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // use getSession for faster performance in middleware
-  // security is handled by RLS and safe component checks
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
+  // Use getClaims() for secure local JWT validation with asymmetric keys
+  // This validates the JWT locally without a network call, improving performance
+  // while maintaining security through cryptographic signature verification
+  const { data, error } = await supabase.auth.getClaims()
+  const user = data?.claims?.sub ? { id: data.claims.sub } : null
+
+  // Log validation errors in development for debugging
+  if (error && process.env.NODE_ENV === "development") {
+    console.warn("JWT validation error in middleware:", error.message)
+  }
 
   // Early redirect for checkout if not authenticated
   if (request.nextUrl.pathname.startsWith('/checkout') && !user) {
@@ -66,11 +72,14 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - api/payu/callback (payment callback needs to be clean)
+     * - api/auth/callback (Supabase auth callback)
+     * - auth/confirm (email confirmation)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - favicon.ico, robots.txt, sitemap.xml (SEO files)
+     * - assets (public assets folder)
+     * - All static file extensions (images, fonts, manifests)
      */
-    '/((?!api/payu/callback|api/auth/callback|auth/confirm|_next/static|_next/image|assets|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|json)$).*)',
+    '/((?!api/payu/callback|api/auth/callback|auth/confirm|_next/static|_next/image|assets|favicon.ico|robots.txt|sitemap.xml|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|avif|woff|woff2|ttf|otf|eot|json)$).*)',
   ],
 }

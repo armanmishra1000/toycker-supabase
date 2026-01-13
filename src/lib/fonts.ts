@@ -10,21 +10,6 @@ export const inter = Inter({
 export const grandstander = localFont({
     src: [
         {
-            path: "../../public/assets/fonts/Grandstander-Thin.ttf",
-            weight: "100",
-            style: "normal",
-        },
-        {
-            path: "../../public/assets/fonts/Grandstander-ExtraLight.ttf",
-            weight: "200",
-            style: "normal",
-        },
-        {
-            path: "../../public/assets/fonts/Grandstander-Light.ttf",
-            weight: "300",
-            style: "normal",
-        },
-        {
             path: "../../public/assets/fonts/Grandstander-Regular.ttf",
             weight: "400",
             style: "normal",
@@ -49,12 +34,8 @@ export const grandstander = localFont({
             weight: "800",
             style: "normal",
         },
-        {
-            path: "../../public/assets/fonts/Grandstander-Black.ttf",
-            weight: "900",
-            style: "normal",
-        },
     ],
     variable: "--font-Grandstander",
     display: "swap",
+    preload: true,
 })

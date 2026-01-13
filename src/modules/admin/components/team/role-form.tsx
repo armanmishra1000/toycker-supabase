@@ -2,6 +2,7 @@
 
 import { useTransition } from "react"
 import AdminCard from "@modules/admin/components/admin-card"
+import { ActionButton } from "@/modules/admin/components"
 import Link from "next/link"
 import { getPermissionLabel } from "@/lib/permissions"
 import { AdminRole } from "@/lib/supabase/types"
@@ -99,17 +100,15 @@ export default function RoleForm({ initialData, onSubmit }: RoleFormProps) {
                     >
                         Cancel
                     </Link>
-                    <button
+                    <ActionButton
                         type="submit"
-                        disabled={isPending}
-                        className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        variant="primary"
+                        isLoading={isPending}
+                        loadingText="Saving..."
+                        className="bg-black hover:bg-gray-800"
                     >
-                        {isPending
-                            ? "Saving..."
-                            : initialData
-                                ? "Update Role"
-                                : "Create Role"}
-                    </button>
+                        {initialData ? "Update Role" : "Create Role"}
+                    </ActionButton>
                 </div>
             </form>
         </AdminCard>

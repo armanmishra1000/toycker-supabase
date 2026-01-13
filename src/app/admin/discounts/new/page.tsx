@@ -1,4 +1,5 @@
 import { createPromotion } from "@/lib/data/promotions"
+import { SubmitButton } from "@/modules/admin/components"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import Link from "next/link"
@@ -153,12 +154,9 @@ export default function NewDiscount() {
                         </AdminCard>
 
                         <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 space-y-4">
-                            <button
-                                type="submit"
-                                className="w-full px-6 py-3 bg-black hover:bg-gray-800 text-white font-bold rounded-xl transition-all shadow-sm active:scale-[0.98]"
-                            >
+                            <SubmitButton className="w-full px-6 py-3 active:scale-[0.98]" loadingText="Creating...">
                                 Create Discount
-                            </button>
+                            </SubmitButton>
                             <Link
                                 href="/admin/discounts"
                                 className="block w-full text-center px-6 py-3 bg-white border border-gray-200 hover:border-gray-400 text-gray-700 font-bold rounded-xl transition-all shadow-sm active:scale-[0.98]"
