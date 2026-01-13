@@ -106,6 +106,7 @@ export type DashboardStats = {
     products: {
         value: number
         lowStock: number
+        outOfStock: number
     }
     customers: {
         value: number
@@ -138,7 +139,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         return {
             revenue: { value: 0, change: 0, trend: 'neutral' },
             orders: { value: 0, change: 0, trend: 'neutral' },
-            products: { value: 0, lowStock: 0 },
+            products: { value: 0, lowStock: 0, outOfStock: 0 },
             customers: { value: 0, newThisMonth: 0 }
         }
     }
@@ -190,6 +191,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         .gte("created_at", startOfCurrentMonth.toISOString())
 
 
+    // 4. Low Stock & Out of Stock (similar to getLowStockStats but in analytics context)
+    const threshold = 5
+    const [{ count: lowStockProducts }, { count: outOfStockProducts }, { count: lowStockVariants }, { count: outOfStockVariants }] = await Promise.all([
+        supabase.from("products").select("*", { count: "exact", head: true }).lte("stock_count", threshold).gt("stock_count", 0),
+        supabase.from("products").select("*", { count: "exact", head: true }).eq("stock_count", 0),
+        supabase.from("product_variants").select("*", { count: "exact", head: true }).lte("inventory_quantity", threshold).gt("inventory_quantity", 0),
+        supabase.from("product_variants").select("*", { count: "exact", head: true }).eq("inventory_quantity", 0)
+    ])
+
     return {
         revenue: {
             value: revenueCurrent, // in cents
@@ -203,7 +213,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         },
         products: {
             value: activeProducts || 0,
-            lowStock: 0 // Placeholder or separate query if needed. Plan said "Inventory Status" or similar.
+            lowStock: (lowStockProducts || 0) + (lowStockVariants || 0),
+            outOfStock: (outOfStockProducts || 0) + (outOfStockVariants || 0)
         },
         customers: {
             value: totalCustomers || 0,
