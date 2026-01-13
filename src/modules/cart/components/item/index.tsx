@@ -62,7 +62,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
               alt="Gift wrap"
               width={200}
               height={200}
-              className="w-full h-full object-contain p-2"
+              className="w-full h-full object-contain"
             />
           </div>
         </div>
@@ -126,6 +126,12 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         {!giftWrapLine && (
           <div className="mt-1">
             <LineItemOptions variant={item.variant} data-testid="product-variant" />
+          </div>
+        )}
+
+        {(item.metadata as any)?.gift_wrap && (
+          <div className="mt-1.5 flex items-center gap-1">
+            <span className="text-[10px] font-bold text-pink-500 uppercase tracking-wider">Includes Gift Wrap</span>
           </div>
         )}
 

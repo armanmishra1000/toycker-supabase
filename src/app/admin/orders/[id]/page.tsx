@@ -2,7 +2,7 @@ import { getAdminOrder, getActiveShippingPartners, getOrderTimeline, getCustomer
 import { formatCustomerDisplayId } from "@/lib/util/customer"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ChevronLeftIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, CheckIcon, TruckIcon, CreditCardIcon } from "@heroicons/react/24/outline"
+import { ChevronLeftIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, CheckIcon, TruckIcon, CreditCardIcon, GiftIcon } from "@heroicons/react/24/outline"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
@@ -89,6 +89,12 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-900">{item.title}</p>
                     <p className="text-xs text-gray-400 font-bold uppercase tracking-tighter mt-1">SKU: {item.variant?.sku || 'N/A'}</p>
+                    {(item as any).metadata?.gift_wrap && (
+                      <div className="mt-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-pink-50 border border-pink-100 w-fit">
+                        <GiftIcon className="h-3 w-3 text-pink-500" />
+                        <span className="text-[10px] font-bold text-pink-600 uppercase tracking-wider">Gift Wrapped</span>
+                      </div>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold text-gray-900">{convertToLocale({ amount: item.unit_price, currency_code: order.currency_code })} × {item.quantity}</p>

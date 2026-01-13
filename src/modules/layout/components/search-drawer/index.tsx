@@ -382,7 +382,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-slate-50/60">
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 bg-slate-50/60">
                 {statusForDisplay === "idle" && activeTab === "text" && !query && (
                   <div className="rounded-3xl border border-dashed border-slate-200 bg-white/80 p-8 text-center">
                     <p className="text-base font-medium text-slate-900">

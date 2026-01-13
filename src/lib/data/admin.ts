@@ -1499,6 +1499,42 @@ export async function createShippingOption(formData: FormData) {
   redirect("/admin/shipping")
 }
 
+export async function getShippingOption(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("shipping_options")
+    .select("*")
+    .eq("id", id)
+    .single()
+
+  if (error) throw error
+  return data as ShippingOption
+}
+
+export async function updateShippingOption(id: string, formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const option = {
+    name: formData.get("name") as string,
+    amount: parseFloat(formData.get("amount") as string),
+    min_order_free_shipping: formData.get("min_order_free_shipping")
+      ? parseFloat(formData.get("min_order_free_shipping") as string)
+      : null,
+    is_active: formData.get("is_active") === "true",
+  }
+
+  const { error } = await supabase
+    .from("shipping_options")
+    .update(option)
+    .eq("id", id)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/admin/shipping")
+  redirect("/admin/shipping")
+}
+
 export async function deleteShippingOption(id: string) {
   await ensureAdmin()
   const supabase = await createClient()

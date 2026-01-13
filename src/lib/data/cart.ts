@@ -76,7 +76,12 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     }
   }
 
-  const items = mapCartItems(cartData.items as any || [], clubDiscountPercentage)
+  // Get global settings for gift wrap fee
+  const { getGlobalSettings } = await import("@lib/data/settings")
+  const globalSettings = await getGlobalSettings()
+  const giftWrapFee = globalSettings?.gift_wrap_fee ?? 50
+
+  const items = mapCartItems(cartData.items as any || [], clubDiscountPercentage, giftWrapFee)
   const totals = calculateCartTotals({
     items,
     promotion: cartData.promotion as Promotion,
@@ -87,11 +92,23 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     clubDiscountPercentage,
   })
 
+  // Get shipping threshold from active shipping options
+  const { data: shippingOptions } = await supabase
+    .from("shipping_options")
+    .select("min_order_free_shipping, name")
+    .eq("is_active", true)
+
+  const standardOption = shippingOptions?.find(so => so.name.toLowerCase().includes('standard'))
+  const freeShippingThreshold = standardOption?.min_order_free_shipping
+    || shippingOptions?.find(so => so.min_order_free_shipping !== null)?.min_order_free_shipping
+    || 499 // Fallback
+
   const cart: Cart = {
     ...cartData,
     ...totals,
     items,
-    promotions: cartData.promotion ? [cartData.promotion as Promotion] : []
+    promotions: cartData.promotion ? [cartData.promotion as Promotion] : [],
+    free_shipping_threshold: freeShippingThreshold
   }
 
   return cart
@@ -138,10 +155,12 @@ export async function addToCart({
   productId,
   quantity,
   variantId,
+  metadata,
 }: {
   productId: string
   quantity: number
   variantId?: string
+  metadata?: Record<string, unknown>
 }) {
   const cartId = (await getCartId()) || (await getOrSetCart()).id
   const supabase = await createClient()
@@ -159,7 +178,7 @@ export async function addToCart({
     }
   }
 
-  // Find if item already exists in cart. For single products (no variants), targetVariantId will be null.
+  // Find if item already exists in cart with EXACT SAME metadata.
   const query = supabase
     .from("cart_items")
     .select("*")
@@ -172,7 +191,23 @@ export async function addToCart({
     query.is("variant_id", null)
   }
 
-  const { data: existingItem } = await query.maybeSingle()
+  if (metadata) {
+    query.contains("metadata", metadata)
+  } else {
+    query.is("metadata", null)
+  }
+
+  const { data: existingItems } = await query
+
+  // Filter for exact metadata match to be safe
+  const existingItem = existingItems?.find(item => {
+    const itemMeta = item.metadata || {}
+    const searchMeta = metadata || {}
+    const itemKeys = Object.keys(itemMeta)
+    const searchKeys = Object.keys(searchMeta)
+    if (itemKeys.length !== searchKeys.length) return false
+    return searchKeys.every(key => itemMeta[key] === searchMeta[key])
+  })
 
   if (existingItem) {
     const currentQuantity = typeof existingItem.quantity === 'number' ? existingItem.quantity : 0
@@ -188,6 +223,7 @@ export async function addToCart({
         product_id: productId,
         variant_id: targetVariantId,
         quantity,
+        metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null
       })
   }
 
@@ -666,6 +702,7 @@ export async function createBuyNowCart({
   }
 
   if (targetProductId) {
+    // Insert main product
     await supabase.from("cart_items").insert({
       cart_id: newCartId,
       product_id: targetProductId,
@@ -673,6 +710,21 @@ export async function createBuyNowCart({
       quantity: quantity,
       metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null
     })
+
+    // If gift wrap is selected, add as a separate line
+    if (metadata && metadata.gift_wrap === true) {
+      await supabase.from("cart_items").insert({
+        cart_id: newCartId,
+        product_id: targetProductId,
+        variant_id: null,
+        quantity: 1,
+        metadata: {
+          gift_wrap_line: true,
+          gift_wrap_fee: metadata.gift_wrap_fee || 50,
+          parent_line_id: `parent-${variantId || productId}`
+        }
+      })
+    }
   }
 
   await setCartId(newCartId)

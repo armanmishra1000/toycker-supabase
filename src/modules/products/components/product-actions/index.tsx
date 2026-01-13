@@ -34,7 +34,6 @@ import { useCartStore } from "@modules/cart/context/cart-store-context"
 import { Product } from "@/lib/supabase/types"
 import { isSimpleProduct } from "@lib/util/product"
 
-const GIFT_WRAP_FEE = 50
 
 type ProductActionsProps = {
   product: Product
@@ -65,6 +64,24 @@ export default function ProductActions({ product, disabled, showSupportActions =
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [giftWrap, setGiftWrap] = useState(false)
+  const [giftWrapSettings, setGiftWrapSettings] = useState<{ fee: number, enabled: boolean }>({ fee: 50, enabled: true })
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { getGlobalSettings } = await import("@lib/data/settings")
+        const settings = await getGlobalSettings()
+        setGiftWrapSettings({
+          fee: settings.gift_wrap_fee,
+          enabled: settings.is_gift_wrap_enabled
+        })
+      } catch (error) {
+        console.error("Failed to fetch gift wrap settings", error)
+      }
+    }
+    fetchSettings()
+  }, [])
+
   const wishlist = useOptionalWishlist()
   const [isQuestionOpen, setIsQuestionOpen] = useState(false)
   const [questionStatus, setQuestionStatus] = useState<"idle" | "success">(
@@ -274,26 +291,44 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
     return {
       gift_wrap: true,
-      gift_wrap_fee: GIFT_WRAP_FEE,
+      gift_wrap_fee: giftWrapSettings.fee,
       gift_wrap_packages: Math.max(1, quantity),
     }
-  }, [giftWrap, quantity])
+  }, [giftWrap, giftWrapSettings.fee, quantity])
 
   const addVariantToCart = useCallback(async () => {
     if (!selectedVariant?.id) {
       throw new Error("Missing selected variant")
     }
 
+    // 1. Add the product itself
     optimisticAdd({
       product,
       variant: selectedVariant,
       quantity,
       countryCode,
-      metadata: buildLineItemMetadata(),
+      metadata: giftWrap ? { gift_wrap: true } : undefined, // flag that it is wrapped, but no fee here
     })
+
+    // 2. If gift wrap is selected, add it as a separate line item
+    if (giftWrap) {
+      optimisticAdd({
+        product,
+        variant: undefined, // Gift wrap line doesn't need the specific variant
+        quantity: 1, // Usually 1 wrap per set, or we can pin to quantity
+        countryCode,
+        metadata: {
+          gift_wrap_line: true,
+          gift_wrap_fee: giftWrapSettings.fee,
+          parent_line_id: `parent-${selectedVariant.id}-${Date.now()}` // Linking reference
+        },
+      })
+    }
+
     onActionComplete?.()
   }, [
-    buildLineItemMetadata,
+    giftWrap,
+    giftWrapSettings.fee,
     countryCode,
     optimisticAdd,
     product,
@@ -313,17 +348,34 @@ export default function ProductActions({ product, disabled, showSupportActions =
     startAddToCart(async () => {
       try {
         openCart()
-        if (selectedVariant?.id) {
-          addVariantToCart()
-        } else {
-          optimisticAdd({
-            product,
-            variant: undefined,
-            quantity,
-            countryCode,
-            metadata: buildLineItemMetadata(),
-          })
-          onActionComplete?.()
+        if (selectedVariant?.id || (product.variants && product.variants.length === 0)) {
+          if (selectedVariant?.id) {
+            addVariantToCart()
+          } else {
+            // Simple product without variants
+            optimisticAdd({
+              product,
+              variant: undefined,
+              quantity,
+              countryCode,
+              metadata: giftWrap ? { gift_wrap: true } : undefined,
+            })
+
+            if (giftWrap) {
+              optimisticAdd({
+                product,
+                variant: undefined,
+                quantity: 1,
+                countryCode,
+                metadata: {
+                  gift_wrap_line: true,
+                  gift_wrap_fee: giftWrapSettings.fee,
+                  parent_line_id: `parent-${product.id}-${Date.now()}`
+                },
+              })
+            }
+            onActionComplete?.()
+          }
         }
         const endTime = performance.now()
         console.log(`[Add to Cart] Completed in ${(endTime - startTime).toFixed(2)}ms`)
@@ -580,38 +632,40 @@ export default function ProductActions({ product, disabled, showSupportActions =
         )
       })()}
 
-      <div className="space-y-3">
-        <span className="text-sm font-medium text-slate-700">Add-ons</span>
-        <label
-          htmlFor={giftWrapInputId}
-          className={`flex w-full cursor-pointer items-center justify-between rounded-2xl border bg-white px-4 py-3 text-sm shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition ${giftWrap ? "border-[#FF6B6B] shadow-[0_4px_12px_rgba(255,107,107,0.15)]" : "border-slate-200"
-            }`}
-        >
-          <input
-            id={giftWrapInputId}
-            type="checkbox"
-            checked={giftWrap}
-            onChange={(event) => setGiftWrap(event.target.checked)}
-            className="peer sr-only"
-          />
-          <span className="flex items-center gap-3">
-            <span
-              className={`flex h-5 w-5 items-center justify-center rounded border text-white transition ${giftWrap ? "border-[#FF6B6B] bg-[#FF6B6B]" : "border-slate-300 bg-white"
-                }`}
-              aria-hidden
-            >
-              <Check className={`h-3 w-3 ${giftWrap ? "opacity-100" : "opacity-0"}`} />
+      {giftWrapSettings.enabled && (
+        <div className="space-y-3">
+          <span className="text-sm font-medium text-slate-700">Add-ons</span>
+          <label
+            htmlFor={giftWrapInputId}
+            className={`flex w-full cursor-pointer items-center justify-between rounded-2xl border bg-white px-4 py-3 text-sm shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition ${giftWrap ? "border-[#FF6B6B] shadow-[0_4px_12px_rgba(255,107,107,0.15)]" : "border-slate-200"
+              }`}
+          >
+            <input
+              id={giftWrapInputId}
+              type="checkbox"
+              checked={giftWrap}
+              onChange={(event) => setGiftWrap(event.target.checked)}
+              className="peer sr-only"
+            />
+            <span className="flex items-center gap-3">
+              <span
+                className={`flex h-5 w-5 items-center justify-center rounded border text-white transition ${giftWrap ? "border-[#FF6B6B] bg-[#FF6B6B]" : "border-slate-300 bg-white"
+                  }`}
+                aria-hidden
+              >
+                <Check className={`h-3 w-3 ${giftWrap ? "opacity-100" : "opacity-0"}`} />
+              </span>
+              <Gift className="h-5 w-5 text-[#FF6B6B]" aria-hidden />
+              <span className="text-base font-medium text-slate-800">
+                Add a Gift Wrap
+              </span>
             </span>
-            <Gift className="h-5 w-5 text-[#FF6B6B]" aria-hidden />
-            <span className="text-base font-medium text-slate-800">
-              Add a Gift Wrap
+            <span className="text-sm font-semibold text-slate-500">
+              + ₹{giftWrapSettings.fee}
             </span>
-          </span>
-          <span className="text-sm font-semibold text-slate-500">
-            + ₹{GIFT_WRAP_FEE}
-          </span>
-        </label>
-      </div>
+          </label>
+        </div>
+      )}
 
       <div className="space-y-3">
         <p className="text-sm font-medium text-slate-700">Quantity</p>

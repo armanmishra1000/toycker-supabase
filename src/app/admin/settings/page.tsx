@@ -1,7 +1,11 @@
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
+import { getGlobalSettings } from "@/lib/data/settings"
+import GiftWrapSettings from "@modules/admin/components/settings/gift-wrap-settings"
 
-export default function AdminSettings() {
+export default async function AdminSettings() {
+  const globalSettings = await getGlobalSettings()
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <AdminPageHeader title="Store Settings" subtitle="Manage your store details and preferences." />
@@ -24,6 +28,14 @@ export default function AdminSettings() {
               </div>
             </div>
           </AdminCard>
+        </div>
+
+        <div className="lg:col-span-1 border-t border-gray-200 pt-8">
+          <h2 className="text-sm font-semibold text-gray-900">Add-ons</h2>
+          <p className="text-sm text-gray-500 mt-1">Configure additional services like gift wrapping.</p>
+        </div>
+        <div className="lg:col-span-2 border-t border-gray-200 pt-8">
+          <GiftWrapSettings initialSettings={globalSettings} />
         </div>
 
         <div className="lg:col-span-1 pt-8 border-t border-gray-200">

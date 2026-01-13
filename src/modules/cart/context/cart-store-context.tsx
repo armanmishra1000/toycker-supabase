@@ -66,24 +66,31 @@ const buildOptimisticLineItem = (
   _cartRef: Cart,
   metadata?: Record<string, string | number | boolean | null>,
 ): CartItem => {
-  const tempId = `temp-${variant?.id || product.id}-${Date.now()}`
-  const price = variant?.price || product.price
-  const total = price * quantity
+  const meta = (metadata as Record<string, unknown>) ?? {}
+  const tempId = `temp-${variant?.id || product.id}-${meta.gift_wrap_line ? 'gift' : 'prod'}-${Date.now()}`
+  const basePrice = variant?.price || product.price
+
+  // Calculate price: If it's a separate gift wrap line, use fee. Otherwise use product price.
+  const isGiftWrapLine = meta.gift_wrap_line === true
+  const giftWrapFee = Number(meta.gift_wrap_fee || 0)
+
+  const unitPrice = isGiftWrapLine ? giftWrapFee : basePrice
+  const total = unitPrice * quantity
 
   return {
     id: tempId,
-    title: variant?.title || product.name,
-    thumbnail: product.thumbnail || product.image_url || undefined,
+    title: isGiftWrapLine ? "Gift Wrap" : (variant?.title || product.name),
+    thumbnail: isGiftWrapLine ? "/assets/images/gift-wrap.png" : (product.thumbnail || product.image_url || undefined),
     quantity,
-    variant_id: variant?.id || null,
+    variant_id: isGiftWrapLine ? null : (variant?.id || null),
     product_id: product.id,
     cart_id: "temp",
-    metadata: (metadata as Record<string, unknown>) ?? {},
-    variant: variant || undefined,
+    metadata: meta,
+    variant: isGiftWrapLine ? undefined : (variant || undefined),
     product: product,
-    product_title: product.name,
-    product_handle: product.handle ?? undefined,
-    unit_price: price,
+    product_title: isGiftWrapLine ? "Gift Wrap" : product.name,
+    product_handle: isGiftWrapLine ? undefined : (product.handle ?? undefined),
+    unit_price: unitPrice,
     total,
     subtotal: total,
     created_at: new Date().toISOString(),
@@ -242,6 +249,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
             productId: product.id,
             quantity,
             variantId: variant?.id,
+            metadata: metadata as Record<string, unknown>,
           })
 
           if (serverCart) {
@@ -363,13 +371,19 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
 
       const nextItems = cart.items?.map((item) => {
         if (item.id === lineId) {
-          const unitPrice = item.unit_price ?? 0
-          const originalUnitPrice = item.original_unit_price ?? unitPrice
+          const baseUnitPrice = item.unit_price ?? 0
+          const meta = (item.metadata || {}) as Record<string, unknown>
+          const giftWrapFee = meta.gift_wrap === true ? Number(meta.gift_wrap_fee || 0) : 0
+
+          // Note: unit_price should already include gift wrap fee if it was fetched correctly,
+          // but we ensure it matches the metadata for consistent optimistic UI.
+          const total = baseUnitPrice * quantity
+
           return {
             ...item,
             quantity,
-            total: unitPrice * quantity,
-            original_total: originalUnitPrice * quantity,
+            total: total,
+            original_total: (item.original_unit_price ?? baseUnitPrice) * quantity,
             updated_at: new Date().toISOString(),
           }
         }

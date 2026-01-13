@@ -146,6 +146,7 @@ export interface Cart {
   rewards_to_apply?: number;
   rewards_discount?: number;
   available_rewards?: number;
+  free_shipping_threshold?: number;
 }
 
 export interface PaymentCollection {
@@ -399,4 +400,11 @@ export interface StaffMember {
   admin_role_id: string | null;
   admin_role?: AdminRole[] | AdminRole | null;
   created_at: string;
+}
+
+export interface GlobalSettings {
+  id: string;
+  gift_wrap_fee: number;
+  is_gift_wrap_enabled: boolean;
+  updated_at: string;
 }
