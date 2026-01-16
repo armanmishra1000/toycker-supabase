@@ -35,7 +35,7 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
 
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[60]" onClose={onClose}>
+      <Dialog as="div" className="relative z-[150]" onClose={onClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-200"
