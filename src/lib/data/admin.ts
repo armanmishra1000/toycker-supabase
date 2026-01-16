@@ -599,11 +599,14 @@ export async function updateProduct(formData: FormData) {
   const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null
 
   // Get current product to preserve existing metadata, price, stock and images
-  const { data: currentProduct } = await supabase.from("products").select("metadata, price, stock_count, images").eq("id", id).single()
+  const { data: currentProduct } = await supabase.from("products").select("metadata, price, stock_count, images, image_url").eq("id", id).single()
 
   const productPrice = formData.get("price") ? parseFloat(formData.get("price") as string) : currentProduct?.price || 0
   const stockCountString = formData.get("stock_count") as string | null
   const productStockCount = (stockCountString && stockCountString.trim() !== "") ? parseInt(stockCountString) : currentProduct?.stock_count || 0
+
+  const newImageUrl = formData.get("image_url") as string
+  const imageUrlChanged = newImageUrl !== currentProduct?.image_url
 
   const updates: any = {
     name: formData.get("name") as string,
@@ -611,7 +614,7 @@ export async function updateProduct(formData: FormData) {
     description: formData.get("description") as string,
     price: productPrice,
     stock_count: productStockCount,
-    image_url: formData.get("image_url") as string,
+    image_url: newImageUrl,
     collection_id: primaryCollectionId && primaryCollectionId.trim() !== "" ? primaryCollectionId : null, // Update primary collection
     category_id: primaryCategoryId, // Update category
     status: formData.get("status") as string,
@@ -622,6 +625,11 @@ export async function updateProduct(formData: FormData) {
     short_description: formData.get("short_description") as string,
     video_url: formData.get("video_url") as string,
     images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : (currentProduct?.images || []),
+  }
+
+  // If image changed, clear the embedding so it gets regenerated
+  if (imageUrlChanged && newImageUrl) {
+    updates.image_embedding = null
   }
 
   const { error } = await supabase.from("products").update(updates).eq("id", id)
@@ -667,9 +675,44 @@ export async function updateProduct(formData: FormData) {
     await supabase.from("product_categories").insert(categoriesToInsert)
   }
 
+  // Regenerate image embedding if image URL changed
+  if (imageUrlChanged && newImageUrl) {
+    // Run in background - don't await
+    regenerateImageEmbedding(id, newImageUrl).catch(err => {
+      console.error(`Failed to regenerate embedding for product ${id}:`, err)
+    })
+  }
+
   revalidatePath("/admin/products")
   revalidatePath(`/admin/products/${id}`)
   redirect(`/admin/products/${id}`)
+}
+
+/**
+ * Regenerate image embedding for a product
+ * Runs in background to avoid slowing down product updates
+ */
+async function regenerateImageEmbedding(productId: string, imageUrl: string) {
+  try {
+    // Import dynamically to avoid loading CLIP model on every page load
+    const { generateImageEmbedding } = await import("@/lib/ml/embeddings")
+    const { createAdminClient } = await import("@/lib/supabase/admin")
+
+    console.log(`Generating new embedding for product ${productId}...`)
+    const embedding = await generateImageEmbedding(imageUrl)
+
+    const supabase = await createAdminClient()
+    const { error } = await supabase
+      .from("products")
+      .update({ image_embedding: embedding })
+      .eq("id", productId)
+
+    if (error) throw error
+    console.log(`✓ Successfully updated embedding for product ${productId}`)
+  } catch (error) {
+    console.error(`✗ Failed to regenerate embedding for product ${productId}:`, error)
+    throw error
+  }
 }
 
 export async function deleteProduct(id: string, redirectTo?: string) {
