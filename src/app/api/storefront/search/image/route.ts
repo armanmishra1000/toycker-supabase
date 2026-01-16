@@ -14,6 +14,99 @@ interface SearchProduct {
     relevance_score: number
 }
 
+/**
+ * Process and clean image with multiple fallback strategies
+ * Handles corrupt JPEGs, malformed images, etc.
+ */
+async function processImage(inputBuffer: Buffer): Promise<Buffer> {
+    // Strategy 1: Try standard Sharp processing with JPEG output
+    try {
+        console.log("Strategy 1: Standard JPEG cleaning...")
+        const cleaned = await sharp(inputBuffer, { failOnError: false })
+            .resize(512, 512, {
+                fit: "inside",
+                withoutEnlargement: true
+            })
+            .jpeg({
+                quality: 90,
+                mozjpeg: true,
+                force: true // Force JPEG even if input is corrupt
+            })
+            .toBuffer()
+
+        console.log("✓ Strategy 1 succeeded")
+        return cleaned
+    } catch (error) {
+        console.log("✗ Strategy 1 failed:", error instanceof Error ? error.message : String(error))
+    }
+
+    // Strategy 2: Convert to PNG first (more forgiving), then to JPEG
+    try {
+        console.log("Strategy 2: PNG intermediate conversion...")
+        const pngBuffer = await sharp(inputBuffer, { failOnError: false })
+            .png({ compressionLevel: 6, force: true })
+            .toBuffer()
+
+        const cleaned = await sharp(pngBuffer)
+            .resize(512, 512, { fit: "inside" })
+            .jpeg({ quality: 90, mozjpeg: true })
+            .toBuffer()
+
+        console.log("✓ Strategy 2 succeeded")
+        return cleaned
+    } catch (error) {
+        console.log("✗ Strategy 2 failed:", error instanceof Error ? error.message : String(error))
+    }
+
+    // Strategy 3: Use raw buffer processing (most forgiving)
+    try {
+        console.log("Strategy 3: Raw buffer processing...")
+        const cleaned = await sharp(inputBuffer, {
+            failOnError: false,
+            unlimited: true // Allow processing of large/unusual images
+        })
+            .withMetadata({ orientation: undefined }) // Strip all metadata
+            .rotate() // Auto-rotate based on EXIF (if any)
+            .resize(512, 512, {
+                fit: "inside",
+                kernel: sharp.kernel.nearest // Faster, less error-prone
+            })
+            .removeAlpha() // Remove alpha channel
+            .toColorspace('srgb') // Standard color space
+            .jpeg({
+                quality: 85,
+                chromaSubsampling: '4:4:4', // Better quality, less corruption
+                force: true
+            })
+            .toBuffer()
+
+        console.log("✓ Strategy 3 succeeded")
+        return cleaned
+    } catch (error) {
+        console.log("✗ Strategy 3 failed:", error instanceof Error ? error.message : String(error))
+    }
+
+    // Strategy 4: Minimal processing - just resize, no format conversion
+    try {
+        console.log("Strategy 4: Minimal processing...")
+        const cleaned = await sharp(inputBuffer, {
+            failOnError: false,
+            unlimited: true,
+            sequentialRead: true // More memory efficient for corrupt files
+        })
+            .resize(512, 512, { fit: "inside" })
+            .toBuffer()
+
+        console.log("✓ Strategy 4 succeeded")
+        return cleaned
+    } catch (error) {
+        console.log("✗ Strategy 4 failed:", error instanceof Error ? error.message : String(error))
+    }
+
+    // All strategies failed
+    throw new Error("Unable to process image. The file may be severely corrupted or in an unsupported format.")
+}
+
 export async function POST(request: Request) {
     try {
         const formData = await request.formData()
@@ -35,34 +128,23 @@ export async function POST(request: Request) {
         }
 
         // Validate file type
-        const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+        const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"]
         if (!validTypes.includes(imageFile.type)) {
             return NextResponse.json(
-                { error: "Invalid image type. Supported: JPEG, PNG, WebP" },
+                { error: "Invalid image type. Supported: JPEG, PNG, WebP, GIF" },
                 { status: 400 }
             )
         }
 
         console.log(`Processing image: ${imageFile.name} (${imageFile.size} bytes, ${imageFile.type})`)
 
-        // Read and clean image using sharp to avoid corruption issues
+        // Read image buffer
         const arrayBuffer = await imageFile.arrayBuffer()
         const inputBuffer = Buffer.from(arrayBuffer)
 
-        // Clean and standardize the image
-        // This removes corrupt metadata and ensures consistent format
-        const cleanedBuffer = await sharp(inputBuffer)
-            .resize(512, 512, {
-                fit: "inside", // Maintain aspect ratio
-                withoutEnlargement: true
-            })
-            .jpeg({
-                quality: 90,
-                mozjpeg: true // Better compression, removes corrupt data
-            })
-            .toBuffer()
-
-        console.log(`Cleaned image: ${cleanedBuffer.length} bytes`)
+        // Process image with fallback strategies
+        const cleanedBuffer = await processImage(inputBuffer)
+        console.log(`Final cleaned image: ${cleanedBuffer.length} bytes`)
 
         // Generate embedding from cleaned buffer
         const embedding = await generateImageEmbedding(cleanedBuffer)
@@ -109,19 +191,23 @@ export async function POST(request: Request) {
         console.error("Image search error:", error)
 
         // Provide user-friendly error messages
-        let userMessage = "Image search failed"
+        let userMessage = "Unable to process this image"
         if (error instanceof Error) {
-            if (error.message.includes("VipsJpeg") || error.message.includes("Corrupt")) {
-                userMessage = "The uploaded image appears to be corrupted. Please try a different image."
+            if (error.message.includes("Unable to process image")) {
+                userMessage = "This image cannot be processed. Please try a different photo."
+            } else if (error.message.includes("VipsJpeg") || error.message.includes("Corrupt")) {
+                userMessage = "Image file is corrupted. Please try taking a new photo."
             } else if (error.message.includes("unsupported")) {
                 userMessage = "Unsupported image format. Please use JPEG, PNG, or WebP."
+            } else if (error.message.includes("Database search failed")) {
+                userMessage = "Search temporarily unavailable. Please try again."
             }
         }
 
         return NextResponse.json(
             {
                 error: userMessage,
-                message: error instanceof Error ? error.message : String(error),
+                details: error instanceof Error ? error.message : String(error),
             },
             { status: 500 }
         )

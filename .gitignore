@@ -58,3 +58,6 @@ dump.rdb
 
 # agents
 .agent/
+
+# Local cache
+.cache/

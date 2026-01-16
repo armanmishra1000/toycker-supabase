@@ -8,11 +8,21 @@ import {
     RawImage,
     Tensor,
 } from "@xenova/transformers"
+import path from "path"
+import fs from "fs"
 
-if (typeof window === "undefined") {
-    env.allowLocalModels = false
-    env.cacheDir = "/tmp/.cache"
+// Configure persistent cache directory in project root
+// This prevents re-downloading on every server restart
+const CACHE_DIR = path.resolve(process.cwd(), ".cache", "huggingface")
+
+// Ensure cache directory exists
+if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true })
 }
+
+env.allowLocalModels = false
+env.useBrowserCache = false
+env.cacheDir = CACHE_DIR
 
 const MODEL_ID = "Xenova/clip-vit-base-patch32"
 
@@ -28,8 +38,14 @@ class ModelContainer {
     private tokenizer: unknown = null
     private visionModel: unknown = null
     private textModel: unknown = null
+    private loading: Promise<void> | null = null
+    private isReady = false
 
-    private constructor() { }
+    private constructor() {
+        // Don't block main thread immediately on import
+        // Wait a brief moment to allow server to start handling requests
+        setTimeout(() => this.warmup(), 1000)
+    }
 
     static getInstance(): ModelContainer {
         if (!ModelContainer.instance) {
@@ -38,34 +54,100 @@ class ModelContainer {
         return ModelContainer.instance
     }
 
+    /**
+     * Preload all models to avoid first-request delay
+     */
+    private async warmup() {
+        if (this.loading || this.isReady) return
+
+        this.loading = (async () => {
+            try {
+                console.log(`🔥 Warming up CLIP models (Cache: ${CACHE_DIR})...`)
+                const start = Date.now()
+
+                // Load models sequentially to avoid blocking the event loop too much
+                await this.getProcessor()
+                await this.getTokenizer()
+                await this.getVisionModel()
+                // Text model is optional/lazy loaded since we mostly do image search
+                // await this.getTextModel()
+
+                this.isReady = true
+                const duration = Date.now() - start
+                console.log(`✅ CLIP models ready in ${duration}ms`)
+            } catch (error) {
+                console.error("Failed to warm up models:", error)
+            }
+        })()
+
+        return this.loading
+    }
+
+    /**
+     * Ensure models are loaded before use
+     */
+    async ensureReady() {
+        if (!this.isReady && this.loading) {
+            await this.loading
+        }
+    }
+
     async getProcessor() {
-        if (!this.processor) this.processor = await AutoProcessor.from_pretrained(MODEL_ID)
+        if (!this.processor) {
+            console.log("Loading processor...")
+            this.processor = await AutoProcessor.from_pretrained(MODEL_ID)
+        }
         return this.processor
     }
 
     async getTokenizer() {
-        if (!this.tokenizer) this.tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID)
+        if (!this.tokenizer) {
+            console.log("Loading tokenizer...")
+            this.tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID)
+        }
         return this.tokenizer
     }
 
     async getVisionModel() {
         if (!this.visionModel) {
-            this.visionModel = await CLIPVisionModelWithProjection.from_pretrained(MODEL_ID, { quantized: true })
+            console.log("Loading vision model...")
+            this.visionModel = await CLIPVisionModelWithProjection.from_pretrained(MODEL_ID, {
+                quantized: true,
+                progress_callback: (progress: any) => {
+                    if (progress.status === 'progress') {
+                        console.log(`Downloading: ${progress.file} - ${Math.round(progress.progress)}%`)
+                    }
+                }
+            })
         }
         return this.visionModel
     }
 
     async getTextModel() {
         if (!this.textModel) {
-            this.textModel = await CLIPTextModelWithProjection.from_pretrained(MODEL_ID, { quantized: true })
+            console.log("Loading text model...")
+            this.textModel = await CLIPTextModelWithProjection.from_pretrained(MODEL_ID, {
+                quantized: true
+            })
         }
         return this.textModel
     }
+
+    isModelsReady(): boolean {
+        return this.isReady
+    }
 }
+
+// Initialize singleton immediately when module loads
+const modelContainer = ModelContainer.getInstance()
 
 export async function generateImageEmbedding(input: string | Buffer | Uint8Array): Promise<number[]> {
     try {
         const container = ModelContainer.getInstance()
+
+        // Ensure models are loaded (will be instant if already warmed up)
+        await container.ensureReady()
+
         const processor = await container.getProcessor()
         const visionModel = await container.getVisionModel()
 
@@ -93,6 +175,8 @@ export async function generateImageEmbedding(input: string | Buffer | Uint8Array
 export async function generateTextEmbedding(text: string): Promise<number[]> {
     try {
         const container = ModelContainer.getInstance()
+        await container.ensureReady()
+
         const tokenizer = await container.getTokenizer()
         const textModel = await container.getTextModel()
         const textInputs = await (tokenizer as any)([text], { padding: true, truncation: true })
@@ -105,4 +189,19 @@ export async function generateTextEmbedding(text: string): Promise<number[]> {
         const message = error instanceof Error ? error.message : String(error)
         throw new Error("Failed to generate text embedding: " + message)
     }
+}
+
+/**
+ * Check if models are ready (useful for health checks)
+ */
+export function areModelsReady(): boolean {
+    return ModelContainer.getInstance().isModelsReady()
+}
+
+/**
+ * Manually trigger model warmup (useful for initialization)
+ */
+export async function warmupModels(): Promise<void> {
+    const container = ModelContainer.getInstance()
+    await container.ensureReady()
 }
