@@ -345,7 +345,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                             <LocalizedClientLink
                               key={product.id}
                               href={`/products/${product.handle}`}
-                              className="group relative flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-3 transition-all duration-300 hover:border-primary/20 hover:shadow-md hover:bg-slate-50/50"
+                              className="group relative flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-3 transition-all duration-300 hover:border-primary/20 hover:bg-slate-50/50"
                               onClick={handleClose}
                             >
                               {/* Image Container */}
@@ -375,11 +375,6 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                                     <p className="text-sm font-bold text-primary">
                                       {product.price.formatted}
                                     </p>
-                                  )}
-                                  {imagePreview && (
-                                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                                      Match
-                                    </span>
                                   )}
                                 </div>
                               </div>
@@ -435,24 +430,26 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                 )}
               </div>
 
-              <div className="border-t border-slate-200 bg-white px-6 py-4">
-                <LocalizedClientLink
-                  href={canViewAll ? `/store?q=${encodeURIComponent(query.trim())}` : "#"}
-                  className={`flex h-12 items-center justify-center rounded-full text-sm font-semibold transition ${canViewAll
-                    ? "bg-primary text-white hover:bg-primary/90 shadow-lg active:scale-95 transition-all"
-                    : "bg-slate-100 text-slate-400 cursor-not-allowed pointer-events-none"
-                    }`}
-                  aria-disabled={!canViewAll}
-                  onClick={() => {
-                    if (!canViewAll) {
-                      return
-                    }
-                    handleClose()
-                  }}
-                >
-                  View all results
-                </LocalizedClientLink>
-              </div>
+              {!imagePreview && (
+                <div className="border-t border-slate-200 bg-white px-6 py-4">
+                  <LocalizedClientLink
+                    href={canViewAll ? `/store?q=${encodeURIComponent(query.trim())}` : "#"}
+                    className={`flex h-12 items-center justify-center rounded-full text-sm font-semibold transition ${canViewAll
+                      ? "bg-primary text-white hover:bg-primary/90 active:scale-95 transition-all"
+                      : "bg-slate-100 text-slate-400 cursor-not-allowed pointer-events-none"
+                      }`}
+                    aria-disabled={!canViewAll}
+                    onClick={() => {
+                      if (!canViewAll) {
+                        return
+                      }
+                      handleClose()
+                    }}
+                  >
+                    View all results
+                  </LocalizedClientLink>
+                </div>
+              )}
             </Dialog.Panel>
           </Transition.Child>
         </div>
