@@ -281,7 +281,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900">Discover Something New</h3>
                       <p className="mt-2 text-sm text-slate-500 max-w-[260px] mx-auto leading-relaxed">
-                        Try searching for <span className="text-primary font-medium">"Robot"</span> or upload a photo to find similar toys.
+                        Try searching for <span className="text-primary font-medium">&quot;Robot&quot;</span> or upload a photo to find similar toys.
                       </p>
                     </div>
                   </div>
