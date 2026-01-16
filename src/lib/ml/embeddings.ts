@@ -11,13 +11,30 @@ import {
 import path from "path"
 import fs from "fs"
 
-// Configure persistent cache directory in project root
-// This prevents re-downloading on every server restart
-const CACHE_DIR = path.resolve(process.cwd(), ".cache", "huggingface")
+// Configure cache directory based on environment
+// Production (Vercel) is read-only except for /tmp
+// Local dev can use project root for persistence
+const IS_PRODUCTION = process.env.NODE_ENV === "production"
+let CACHE_DIR: string
+
+if (IS_PRODUCTION) {
+    // Vercel / Production: Use /tmp (non-persistent but writable)
+    CACHE_DIR = "/tmp/.cache/huggingface"
+} else {
+    // Local Development: Use persistent project folder
+    CACHE_DIR = path.resolve(process.cwd(), ".cache", "huggingface")
+}
 
 // Ensure cache directory exists
 if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true })
+    try {
+        fs.mkdirSync(CACHE_DIR, { recursive: true })
+    } catch (error) {
+        // Fallback to /tmp if local creation fails for any reason
+        console.warn(`Failed to create cache at ${CACHE_DIR}, falling back to /tmp`)
+        CACHE_DIR = "/tmp/.cache/huggingface"
+        fs.mkdirSync(CACHE_DIR, { recursive: true })
+    }
 }
 
 env.allowLocalModels = false

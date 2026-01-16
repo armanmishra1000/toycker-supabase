@@ -33,13 +33,17 @@
 
 ### **Key Improvements:**
 
-1. **Persistent Caching (Crucial for Local Dev)**
+1. **Hybrid Caching Strategy**
    ```typescript
-   // Store models in project folder so they persist across restarts
-   const CACHE_DIR = path.resolve(process.cwd(), ".cache", "huggingface")
-   env.cacheDir = CACHE_DIR
+   // Production (Vercel): Use /tmp (writable)
+   // Local Dev: Use project .cache (persistent)
+   const CACHE_DIR = IS_PRODUCTION 
+     ? "/tmp/.cache/huggingface" 
+     : path.resolve(process.cwd(), ".cache", "huggingface")
    ```
-   **Why:** Without this, models re-download (87MB) every time you restart `pnpm run dev`, causing 15s delays. Now they download once and load instantly (started <1s).
+   **Why:** 
+   - **Local:** Persistent cache prevents 15s download on every restart.
+   - **Production:** Uses `/tmp` to avoid `ENOENT: no such file` errors (read-only filesystem).
 
 2. **Non-Blocking Warmup**
    ```typescript
