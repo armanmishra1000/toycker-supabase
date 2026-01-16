@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { generateImageEmbedding } from "@/lib/ml/embeddings"
+import sharp from "sharp"
 
 interface SearchProduct {
     id: string
@@ -25,20 +26,53 @@ export async function POST(request: Request) {
             )
         }
 
-        // Read file as buffer
-        const arrayBuffer = await imageFile.arrayBuffer()
-        const buffer = Buffer.from(arrayBuffer)
+        // Validate file size (max 10MB)
+        if (imageFile.size > 10 * 1024 * 1024) {
+            return NextResponse.json(
+                { error: "Image too large. Maximum size is 10MB." },
+                { status: 400 }
+            )
+        }
 
-        // Generate embedding directly from buffer
-        console.log(`Processing image: ${imageFile.name} (${buffer.length} bytes)`)
-        const embedding = await generateImageEmbedding(buffer)
+        // Validate file type
+        const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+        if (!validTypes.includes(imageFile.type)) {
+            return NextResponse.json(
+                { error: "Invalid image type. Supported: JPEG, PNG, WebP" },
+                { status: 400 }
+            )
+        }
+
+        console.log(`Processing image: ${imageFile.name} (${imageFile.size} bytes, ${imageFile.type})`)
+
+        // Read and clean image using sharp to avoid corruption issues
+        const arrayBuffer = await imageFile.arrayBuffer()
+        const inputBuffer = Buffer.from(arrayBuffer)
+
+        // Clean and standardize the image
+        // This removes corrupt metadata and ensures consistent format
+        const cleanedBuffer = await sharp(inputBuffer)
+            .resize(512, 512, {
+                fit: "inside", // Maintain aspect ratio
+                withoutEnlargement: true
+            })
+            .jpeg({
+                quality: 90,
+                mozjpeg: true // Better compression, removes corrupt data
+            })
+            .toBuffer()
+
+        console.log(`Cleaned image: ${cleanedBuffer.length} bytes`)
+
+        // Generate embedding from cleaned buffer
+        const embedding = await generateImageEmbedding(cleanedBuffer)
         console.log(`Generated embedding with ${embedding.length} dimensions`)
 
         // Search database
         const supabase = await createClient()
         const { data, error } = await supabase.rpc("search_products_multimodal", {
             search_embedding: embedding,
-            match_threshold: 0.7, // Higher threshold for better accuracy
+            match_threshold: 0.65, // Slightly lower for different angles/lighting
             match_count: 12,
         })
 
@@ -67,15 +101,26 @@ export async function POST(request: Request) {
             products,
             metadata: {
                 total: products.length,
-                threshold: 0.7,
+                threshold: 0.65,
                 embedding_dimensions: embedding.length,
             },
         })
     } catch (error) {
         console.error("Image search error:", error)
+
+        // Provide user-friendly error messages
+        let userMessage = "Image search failed"
+        if (error instanceof Error) {
+            if (error.message.includes("VipsJpeg") || error.message.includes("Corrupt")) {
+                userMessage = "The uploaded image appears to be corrupted. Please try a different image."
+            } else if (error.message.includes("unsupported")) {
+                userMessage = "Unsupported image format. Please use JPEG, PNG, or WebP."
+            }
+        }
+
         return NextResponse.json(
             {
-                error: "Image search failed",
+                error: userMessage,
                 message: error instanceof Error ? error.message : String(error),
             },
             { status: 500 }
