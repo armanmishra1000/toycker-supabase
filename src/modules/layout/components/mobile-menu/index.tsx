@@ -74,7 +74,7 @@ const MobileMenu = ({
       />
 
       {/* Drawer Container - Multiple drawers can exist */}
-      <div className="fixed inset-0 z-50 pointer-events-none">
+      <div className="fixed inset-0 z-[150] pointer-events-none">
         {/* Main Menu Drawer - Full screen on mobile */}
         <div
           className={`absolute left-0 top-0 h-full w-full sm:w-[85%] sm:max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out will-change-transform pointer-events-auto ${viewCount >= 1 ? "translate-x-0" : "-translate-x-full"

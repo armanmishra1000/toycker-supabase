@@ -21,7 +21,7 @@ const WhatsAppButton = () => {
             rel="noopener noreferrer"
             aria-label="Chat with us on WhatsApp"
             className={clx(
-                "fixed right-6 z-[90] flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95",
+                "fixed right-6 z-30 flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95",
                 "bg-[#25D366] text-white",
                 "bottom-24 md:bottom-8", // Above mobile nav (h-16 + spacing) and standard bottom on desktop
                 "animate-bounce-subtle" // Custom subtle bounce
