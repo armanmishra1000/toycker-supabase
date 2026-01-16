@@ -60,6 +60,7 @@ export const searchEntities = async ({
         supabase.rpc("search_products_multimodal", {
             search_query: normalizedQuery,
             match_count: productLimit,
+            match_threshold: 0.1,
         }),
 
         // Search Categories
