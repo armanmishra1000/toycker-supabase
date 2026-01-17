@@ -54,8 +54,8 @@ export async function updateClubSettings(settings: Partial<ClubSettings>) {
         throw new Error(`Failed to update settings: ${error.message}`)
     }
 
-    revalidateTag("club_settings")
-    revalidateTag("products") // Revalidate products as prices might change
+    revalidateTag("club_settings", "max")
+    revalidateTag("products", "max") // Revalidate products as prices might change
 }
 
 // ... existing imports

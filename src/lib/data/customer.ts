@@ -82,7 +82,7 @@ export async function signup(_currentState: unknown, formData: FormData): Promis
 
   revalidatePath("/", "layout")
   revalidatePath("/account", "layout")
-  revalidateTag("customers")
+  revalidateTag("customers", "max")
 
   // redirect MUST NOT be in try-catch (it's not here, but being safe)
   redirect("/account")
@@ -129,7 +129,7 @@ export async function login(_currentState: unknown, formData: FormData): Promise
 
   revalidatePath("/", "layout")
   revalidatePath("/account", "layout")
-  revalidateTag("customers")
+  revalidateTag("customers", "max")
 
   if (isAdmin) {
     redirect("/admin")
@@ -142,8 +142,8 @@ export async function signout() {
   const supabase = await createClient()
   await supabase.auth.signOut()
 
-  revalidateTag("customers")
-  revalidateTag("cart")
+  revalidateTag("customers", "max")
+  revalidateTag("cart", "max")
   redirect("/account")
 }
 
@@ -166,7 +166,7 @@ export async function updateCustomer(data: Partial<CustomerProfile>) {
     throw updateError
   }
 
-  revalidateTag("customers")
+  revalidateTag("customers", "max")
   revalidatePath("/", "layout")
 }
 
@@ -217,7 +217,7 @@ export async function addCustomerAddress(
     return { success: false, error: error.message }
   }
 
-  revalidateTag("customers")
+  revalidateTag("customers", "max")
   revalidatePath("/", "layout")
   return { success: true, error: null }
 }
@@ -253,7 +253,7 @@ export async function updateCustomerAddress(
     return { success: false, error: error.message }
   }
 
-  revalidateTag("customers")
+  revalidateTag("customers", "max")
   revalidatePath("/", "layout")
   return { success: true, error: null }
 }
@@ -269,5 +269,5 @@ export async function deleteCustomerAddress(addressId: string) {
     throw error
   }
 
-  revalidateTag("customers")
+  revalidateTag("customers", "max")
 }

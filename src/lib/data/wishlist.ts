@@ -45,7 +45,7 @@ export async function addToWishlist(productId: string) {
         throw new Error(error.message)
     }
 
-    revalidateTag("wishlist")
+    revalidateTag("wishlist", "max")
 }
 
 export async function removeFromWishlist(productId: string) {
@@ -66,5 +66,5 @@ export async function removeFromWishlist(productId: string) {
         throw new Error(error.message)
     }
 
-    revalidateTag("wishlist")
+    revalidateTag("wishlist", "max")
 }

@@ -47,5 +47,5 @@ export async function updateGlobalSettings(settings: Partial<GlobalSettings>) {
         throw new Error(`Failed to update settings: ${error.message}`)
     }
 
-    revalidateTag("global_settings")
+    revalidateTag("global_settings", "max")
 }

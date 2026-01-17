@@ -141,7 +141,7 @@ export async function getOrSetCart(): Promise<Cart> {
   }
 
   await setCartId(newCart.id)
-  revalidateTag("cart")
+  revalidateTag("cart", "max")
 
   const freshCart = await retrieveCart(newCart.id)
   if (!freshCart) {
@@ -227,7 +227,7 @@ export async function addToCart({
       })
   }
 
-  revalidateTag("cart")
+  revalidateTag("cart", "max")
   return retrieveCartRaw(cartId)
 }
 
@@ -244,7 +244,7 @@ export async function updateLineItem({
     .update({ quantity })
     .eq("id", lineId)
 
-  revalidateTag("cart")
+  revalidateTag("cart", "max")
   return retrieveCartRaw()
 }
 
@@ -256,7 +256,7 @@ export async function deleteLineItem(lineId: string) {
     .delete()
     .eq("id", lineId)
 
-  revalidateTag("cart")
+  revalidateTag("cart", "max")
   return retrieveCartRaw()
 }
 
@@ -350,8 +350,8 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
   // Update shipping method automatically
   await autoSelectStandardShipping(cart.id)
 
-  revalidateTag("cart")
-  revalidateTag("customers")
+  revalidateTag("cart", "max")
+  revalidateTag("customers", "max")
   return { message: "Saved", success: true }
 }
 
@@ -420,7 +420,7 @@ export async function setShippingMethod({
   if (error) throw new Error(error.message)
 
   if (!skipRevalidate) {
-    revalidateTag("cart")
+    revalidateTag("cart", "max")
   }
 
   return methodData
@@ -501,7 +501,7 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
 
   if (error) throw new Error(error.message)
 
-  revalidateTag("cart")
+  revalidateTag("cart", "max")
   revalidatePath("/checkout")
 }
 
@@ -566,8 +566,8 @@ export async function placeOrder() {
   // Handle post-order logic (rewards, membership, etc.)
   await handlePostOrderLogic(order, cart, rewards_discount)
 
-  revalidateTag("rewards")
-  revalidateTag("cart")
+  revalidateTag("rewards", "max")
+  revalidateTag("cart", "max")
 
   redirect(`/order/confirmed/${order.id}`)
 }
@@ -593,7 +593,7 @@ export async function handlePostOrderLogic(order: any, cart: any, rewards_discou
     // 2. Check for club membership activation (if threshold reached)
     const activated = await checkAndActivateMembership(order.user_id, order.total)
     if (activated) {
-      revalidateTag("customers")
+      revalidateTag("customers", "max")
     }
 
     // 3. Credit new rewards for club members
@@ -723,7 +723,7 @@ export async function createBuyNowCart({
   }
 
   await setCartId(newCartId)
-  revalidateTag("cart")
+  revalidateTag("cart", "max")
   return newCartId
 }
 
@@ -764,7 +764,7 @@ export async function applyPromotions(codes: string[]) {
   if (codes.length === 0) {
     const { error } = await supabase.from("carts").update({ promo_code: null, discount_total: 0 }).eq("id", cartId)
     if (error) throw new Error("Could not remove promotion code")
-    revalidateTag("cart")
+    revalidateTag("cart", "max")
     return
   }
 
@@ -822,7 +822,7 @@ export async function applyPromotions(codes: string[]) {
 
   if (error) throw new Error("Could not apply promotion code")
 
-  revalidateTag("cart")
+  revalidateTag("cart", "max")
 }
 export async function updateCartRewards(points: number) {
   const cartId = await getCartId()
@@ -848,5 +848,5 @@ export async function updateCartRewards(points: number) {
 
   if (error) throw new Error("Could not update rewards")
 
-  revalidateTag("cart")
+  revalidateTag("cart", "max")
 }
