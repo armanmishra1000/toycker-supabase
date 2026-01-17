@@ -30,7 +30,7 @@ const Summary = ({ cart }: SummaryProps) => {
   const step = getCheckoutStep(cart)
   const itemCount = cart.items?.length || 0
   const subtotal = cart.item_subtotal || cart.subtotal || 0
-  const threshold = cart.free_shipping_threshold || 499
+  const threshold = cart.free_shipping_threshold || 500
   const amountToFreeShipping = Math.max(0, threshold - subtotal)
   const hasFreeShipping = amountToFreeShipping === 0
   const progressPercentage = Math.min(100, (subtotal / threshold) * 100)

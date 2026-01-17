@@ -80,6 +80,7 @@ export interface CalculateTotalsParams {
     cartMetadata: Record<string, unknown>
     isClubMember: boolean
     clubDiscountPercentage: number
+    defaultShippingOption?: CartShippingMethod | null
 }
 
 export const calculateCartTotals = ({
@@ -90,6 +91,7 @@ export const calculateCartTotals = ({
     cartMetadata,
     isClubMember,
     clubDiscountPercentage,
+    defaultShippingOption,
 }: CalculateTotalsParams) => {
     const item_subtotal = items.reduce((sum, item) => sum + item.total, 0)
     const original_subtotal = items.reduce((sum, item) => sum + (item.original_total || item.total), 0)
@@ -128,6 +130,14 @@ export const calculateCartTotals = ({
             shipping_total = 0
         } else {
             shipping_total = baseAmount
+        }
+    } else if (defaultShippingOption && !isFreeShipping) {
+        // Fallback to default option if no method selected yet
+        const threshold = defaultShippingOption.min_order_free_shipping
+        if (threshold !== null && threshold !== undefined && item_subtotal >= Number(threshold)) {
+            shipping_total = 0
+        } else {
+            shipping_total = Number(defaultShippingOption.amount || 0)
         }
     }
 
