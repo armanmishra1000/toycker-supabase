@@ -20,11 +20,11 @@ export default async function AdminSettings() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Store Name</label>
-                <input type="text" defaultValue="Toycker" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors shadow-sm" />
+                <input type="text" defaultValue="Toycker" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors shadow-sm" disabled />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Support Email</label>
-                <input type="email" defaultValue="customercare@toycker.com" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors shadow-sm" />
+                <input type="email" defaultValue="customercare@toycker.com" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 transition-colors shadow-sm"  disabled/>
               </div>
             </div>
           </AdminCard>
@@ -46,7 +46,7 @@ export default async function AdminSettings() {
           <AdminCard>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-              <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 bg-white shadow-sm" defaultValue="INR">
+              <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 bg-white shadow-sm" defaultValue="INR" disabled>
                 <option value="INR">Indian Rupee (₹)</option>
                 <option value="USD">US Dollar ($)</option>
               </select>
