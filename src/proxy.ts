@@ -16,7 +16,7 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           if (process.env.NODE_ENV === "development") {
-            console.log("Middleware setAll cookies:", cookiesToSet.map(c => c.name))
+            console.log("Proxy setAll cookies:", cookiesToSet.map(c => c.name))
           }
           cookiesToSet.forEach(({ name, value, options: _options }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
@@ -43,7 +43,7 @@ export async function updateSession(request: NextRequest) {
 
   // Log validation errors in development for debugging
   if (error && process.env.NODE_ENV === "development") {
-    console.warn("JWT validation error in middleware:", error.message)
+    console.warn("JWT validation error in proxy:", error.message)
   }
 
   // Early redirect for checkout if not authenticated
@@ -56,7 +56,7 @@ export async function updateSession(request: NextRequest) {
   return supabaseResponse
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // CRITICAL: Bypass middleware for PayU callbacks to prevent auth errors on POST requests
   if (request.nextUrl.pathname.startsWith('/api/payu/callback')) {
     return NextResponse.next()
