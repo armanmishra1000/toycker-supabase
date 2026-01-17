@@ -76,6 +76,8 @@ const nextConfig = {
       "@heroicons/react",
       "recharts",
       "@radix-ui/react-accordion",
+      "@supabase/supabase-js",
+      "react-intersection-observer",
     ],
   },
   // serverExternalPackages is stable in Next.js 15, moved out of experimental

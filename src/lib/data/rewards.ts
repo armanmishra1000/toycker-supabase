@@ -187,7 +187,7 @@ export async function creditRewards(
         console.log("DEBUG: Successfully recorded reward transaction (EARNED) for wallet:", wallet.id)
     }
 
-    revalidateTag("rewards")
+    revalidateTag("rewards", "max")
     return pointsEarned
 }
 
@@ -243,7 +243,7 @@ export async function deductRewards(
         console.log("DEBUG: Successfully recorded reward transaction (SPENT) for wallet:", wallet.id)
     }
 
-    revalidateTag("rewards")
+    revalidateTag("rewards", "max")
     return true
 }
 
@@ -280,7 +280,7 @@ export async function setRewardsToApply(cartId: string, points: number): Promise
         throw new Error("Failed to apply rewards")
     }
 
-    revalidateTag("cart")
+    revalidateTag("cart", "max")
 }
 
 /**
@@ -312,5 +312,5 @@ export async function clearRewardsFromCart(cartId: string): Promise<void> {
         console.error("Error clearing rewards from cart:", error)
     }
 
-    revalidateTag("cart")
+    revalidateTag("cart", "max")
 }

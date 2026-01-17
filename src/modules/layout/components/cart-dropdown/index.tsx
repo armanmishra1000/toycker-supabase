@@ -26,7 +26,7 @@ const CartDropdown = ({
 }) => {
   const { cart: storeCart } = useCartStore()
   const cart = cartState ?? storeCart
-  const [activeTimer, setActiveTimer] = useState<NodeJS.Timer | undefined>(
+  const [activeTimer, setActiveTimer] = useState<number | undefined>(
     undefined
   )
   const [cartDropdownOpen, setCartDropdownOpen] = useState(false)
@@ -45,7 +45,7 @@ const CartDropdown = ({
   const timedOpen = useCallback(() => {
     open()
 
-    const timer = setTimeout(close, 5000)
+    const timer = setTimeout(close, 5000) as any as number
 
     setActiveTimer(timer)
   }, [close, open])

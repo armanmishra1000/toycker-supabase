@@ -10,7 +10,7 @@ import Modal from "@modules/common/components/modal"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import QuantitySelector from "@modules/common/components/quantity-selector"
 import { useOptionalWishlist } from "@modules/products/context/wishlist"
-import { isEqual } from "lodash"
+import isEqual from "lodash/isEqual"
 import {
   FormEvent,
   useCallback,

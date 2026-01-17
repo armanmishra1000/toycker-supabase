@@ -1,5 +1,6 @@
 "use server"
 
+import { cache } from 'react'
 import { Region } from "@/lib/supabase/types"
 
 const DEFAULT_REGION: Region = {
@@ -15,14 +16,14 @@ const DEFAULT_REGION: Region = {
   ],
 }
 
-export const getRegion = async (): Promise<Region> => {
+export const getRegion = cache(async (): Promise<Region> => {
   return DEFAULT_REGION
-}
+})
 
-export const listRegions = async (): Promise<Region[]> => {
+export const listRegions = cache(async (): Promise<Region[]> => {
   return [DEFAULT_REGION]
-}
+})
 
-export const retrieveRegion = async (_id: string): Promise<Region> => {
+export const retrieveRegion = cache(async (_id: string): Promise<Region> => {
   return DEFAULT_REGION
-}
+})

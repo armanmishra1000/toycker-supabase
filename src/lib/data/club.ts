@@ -1,5 +1,6 @@
 "use server"
 
+import { cache } from 'react'
 import { createClient } from "@/lib/supabase/server"
 import { ClubSettings } from "@/lib/supabase/types"
 import { revalidateTag, unstable_cache } from "next/cache"
@@ -27,12 +28,15 @@ const getClubSettingsInternal = async (): Promise<ClubSettings> => {
     return data as ClubSettings
 }
 
-export const getClubSettings = async () =>
-    unstable_cache(
+// Wrap with React cache() for request-level deduplication
+// Combined with unstable_cache for cross-request persistence
+export const getClubSettings = cache(async () => {
+    return await unstable_cache(
         getClubSettingsInternal,
         ["club-settings"],
         { revalidate: 3600, tags: ["club_settings"] }
     )()
+})
 
 export async function updateClubSettings(settings: Partial<ClubSettings>) {
     const supabase = await createClient()
@@ -50,8 +54,8 @@ export async function updateClubSettings(settings: Partial<ClubSettings>) {
         throw new Error(`Failed to update settings: ${error.message}`)
     }
 
-    revalidateTag("club_settings")
-    revalidateTag("products") // Revalidate products as prices might change
+    revalidateTag("club_settings", "max")
+    revalidateTag("products", "max") // Revalidate products as prices might change
 }
 
 // ... existing imports

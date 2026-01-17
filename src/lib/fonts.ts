@@ -15,11 +15,6 @@ export const grandstander = localFont({
             style: "normal",
         },
         {
-            path: "../../public/assets/fonts/Grandstander-Medium.ttf",
-            weight: "500",
-            style: "normal",
-        },
-        {
             path: "../../public/assets/fonts/Grandstander-SemiBold.ttf",
             weight: "600",
             style: "normal",
@@ -27,11 +22,6 @@ export const grandstander = localFont({
         {
             path: "../../public/assets/fonts/Grandstander-Bold.ttf",
             weight: "700",
-            style: "normal",
-        },
-        {
-            path: "../../public/assets/fonts/Grandstander-ExtraBold.ttf",
-            weight: "800",
             style: "normal",
         },
     ],
