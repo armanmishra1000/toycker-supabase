@@ -678,18 +678,13 @@ export async function createBuyNowCart({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Require authentication for buy now (RLS policy requirement)
-  if (!user) {
-    throw new Error("Authentication required for buy now")
-  }
-
   const newCartId = randomUUID()
 
   const { error } = await supabase.from("carts").insert({
     id: newCartId,
-    user_id: user.id,  // Always has user_id (required by RLS)
+    user_id: user?.id || null,
     currency_code: "inr",
-    email: user.email
+    email: user?.email || null
   })
 
   if (error) throw new Error(error.message)

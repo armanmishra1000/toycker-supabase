@@ -4,4 +4,4 @@ export { SubmitButton } from "./submit-button"
 export { default as DeleteProductButton } from "./delete-product-button"
 export { default as DeleteCustomerButton } from "./delete-customer-button"
 export { default as DeletePromotionButton } from "./delete-promotion-button"
-export { default as MedusaSyncButton } from "./medusa-sync-button"
+

@@ -39,9 +39,9 @@ export default async function Home() {
         <PopularToySet />
       </Suspense>
 
-      <LazyLoadSection minHeight="400px">
+      {/* <LazyLoadSection minHeight="400px"> */}
         <ShopByAge />
-      </LazyLoadSection>
+      {/* </LazyLoadSection> */}
 
       <Suspense fallback={<div className="h-[500px] animate-pulse bg-ui-bg-subtle" />}>
         <LazyLoadSection minHeight="500px">

@@ -6,7 +6,6 @@ import { convertToLocale } from "@lib/util/money"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import ProductCsvImport from "@modules/admin/components/product-csv-import"
-import MedusaSyncButton from "@modules/admin/components/medusa-sync-button"
 import { AdminPagination } from "@modules/admin/components/admin-pagination"
 import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import { cn } from "@lib/util/cn"
@@ -55,7 +54,6 @@ export default async function AdminProducts({
         title="Products"
         actions={
           <div className="flex items-center gap-3">
-            <MedusaSyncButton />
             <ProductCsvImport />
             <Link href="/admin/products/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
               <PlusIcon className="h-4 w-4 mr-2" />

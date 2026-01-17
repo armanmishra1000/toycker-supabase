@@ -1,14 +1,10 @@
 ﻿"use client"
 
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react"
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, Pause, Play, Star, X } from "lucide-react"
-import { Swiper, SwiperSlide } from "swiper/react"
-import { Navigation } from "swiper/modules"
-import type { Swiper as SwiperInstance } from "swiper/types"
-
-import "swiper/css"
-import "swiper/css/navigation"
+import useEmblaCarousel from "embla-carousel-react"
+import { cn } from "@lib/util/cn"
 
 type ReviewType = "text" | "video"
 
@@ -319,9 +315,15 @@ const ReviewCard = ({ review }: { review: Review }) => {
 }
 
 const ReviewMediaHub = () => {
-  const swiperRef = useRef<SwiperInstance | null>(null)
-  const prevRef = useRef<HTMLButtonElement | null>(null)
-  const nextRef = useRef<HTMLButtonElement | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "start",
+    containScroll: "trimSnaps",
+  })
+
+  const [canScrollPrev, setCanScrollPrev] = useState(false)
+  const [canScrollNext, setCanScrollNext] = useState(false)
+
   const [isAudioModalOpen, setIsAudioModalOpen] = useState(false)
   const audioRefs = useRef<Record<string, HTMLAudioElement | null>>({})
   const [activeAudioId, setActiveAudioId] = useState<string | null>(null)
@@ -330,17 +332,31 @@ const ReviewMediaHub = () => {
   const [audioDurations, setAudioDurations] = useState<Record<string, number>>({})
   const [audioCurrentTime, setAudioCurrentTime] = useState<Record<string, number>>({})
 
-  useEffect(() => {
-    const swiper = swiperRef.current
-    if (!swiper || typeof swiper.params.navigation === "boolean" || !swiper.params.navigation) {
-      return
-    }
-    swiper.params.navigation.prevEl = prevRef.current
-    swiper.params.navigation.nextEl = nextRef.current
-    swiper.navigation.destroy()
-    swiper.navigation.init()
-    swiper.navigation.update()
+  type EmblaApiType = NonNullable<ReturnType<typeof useEmblaCarousel>[1]>
+
+  const onSelect = useCallback((api: EmblaApiType) => {
+    setCanScrollPrev(api.canScrollPrev())
+    setCanScrollNext(api.canScrollNext())
   }, [])
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!emblaApi) return
+    onSelect(emblaApi)
+    emblaApi.on("select", () => onSelect(emblaApi))
+    emblaApi.on("reInit", () => onSelect(emblaApi))
+  }, [emblaApi, onSelect])
+
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev()
+  }, [emblaApi])
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext()
+  }, [emblaApi])
 
   useEffect(() => {
     if (isAudioModalOpen) {
@@ -497,51 +513,49 @@ const ReviewMediaHub = () => {
             </button>
           </div>
 
-          <div className="relative">
-            <Swiper
-              modules={[Navigation]}
-              spaceBetween={32}
-              slidesPerView={1}
-              breakpoints={{
-                640: { slidesPerView: 1.2 },
-                768: { slidesPerView: 2 },
-                1280: { slidesPerView: 3 },
-              }}
-              navigation={{
-                prevEl: prevRef.current,
-                nextEl: nextRef.current,
-              }}
-              onSwiper={(swiper) => {
-                swiperRef.current = swiper
-              }}
-              className="!overflow-hidden"
-            >
-              {REVIEWS.map((review) => (
-                <SwiperSlide key={review.id} className="!h-auto">
-                  <ReviewCard review={review} />
-                </SwiperSlide>
-              ))}
-            </Swiper>
+          {!isMounted ? (
+            <div className="h-[480px] animate-pulse bg-ui-bg-subtle rounded-3xl" />
+          ) : (
+            <div className="relative">
+              <div className="overflow-hidden" ref={emblaRef}>
+                <div className="flex -ml-8">
+                  {REVIEWS.map((review) => (
+                    <div
+                      key={review.id}
+                      className="flex-[0_0_100%] pl-8 min-w-0 sm:flex-[0_0_83.333%] md:flex-[0_0_50%] xl:flex-[0_0_33.333%]"
+                    >
+                      <ReviewCard review={review} />
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            <div className="pointer-events-none absolute -bottom-20 left-0 right-0 flex justify-between px-4 pb-4 z-10 sm:left-auto sm:flex-none sm:justify-normal sm:gap-4 sm:pr-4">
-              <button
-                type="button"
-                ref={prevRef}
-                aria-label="Previous reviews"
-                className="pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition cursor-pointer"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                ref={nextRef}
-                aria-label="Next reviews"
-                className="pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition cursor-pointer"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
+              <div className="absolute -bottom-20 left-0 right-0 flex justify-between px-4 pb-4 z-10 sm:left-auto sm:flex-none sm:justify-normal sm:gap-4 sm:pr-4">
+                <button
+                  type="button"
+                  onClick={scrollPrev}
+                  aria-label="Previous reviews"
+                  className={cn(
+                    "inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition",
+                    !canScrollPrev && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={scrollNext}
+                  aria-label="Next reviews"
+                  className={cn(
+                    "inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition",
+                    !canScrollNext && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="mt-24 flex justify-center sm:mt-20 lg:hidden">
             <button
@@ -618,8 +632,8 @@ const ReviewMediaHub = () => {
                           type="button"
                           onClick={() => handleAudioToggle(audio.id)}
                           className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${activeAudioId === audio.id
-                              ? "border-transparent bg-[#ff8a00] text-white shadow-[0_12px_30px_rgba(255,138,0,0.35)]"
-                              : "border-[#ffd7a0] bg-white text-[#b45309] hover:bg-[#fff5e5]"
+                            ? "border-transparent bg-[#ff8a00] text-white shadow-[0_12px_30px_rgba(255,138,0,0.35)]"
+                            : "border-[#ffd7a0] bg-white text-[#b45309] hover:bg-[#fff5e5]"
                             }`}
                           aria-label={`${activeAudioId === audio.id ? "Pause" : "Play"} ${audio.title}`}
                         >

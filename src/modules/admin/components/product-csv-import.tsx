@@ -1,23 +1,23 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { ArrowUpTrayIcon, ArrowDownTrayIcon, XMarkIcon } from "@heroicons/react/24/outline"
+import { ArrowUpTrayIcon, ArrowDownTrayIcon, DocumentArrowDownIcon } from "@heroicons/react/24/outline"
+import { ImportStats } from "@/lib/types/import"
+import { useToast } from "@modules/common/context/toast-context"
 
-interface ImportResult {
+interface ImportResult extends Partial<ImportStats> {
     success: boolean
-    productsImported?: number
-    variantsImported?: number
     message?: string
     error?: string
     details?: string
 }
 
 export default function ProductCsvImport() {
+    const { showToast } = useToast()
     const [isImporting, setIsImporting] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
     const [showConfirmModal, setShowConfirmModal] = useState(false)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
-    const [result, setResult] = useState<ImportResult | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +37,6 @@ export default function ProductCsvImport() {
 
         setShowConfirmModal(false)
         setIsImporting(true)
-        setResult(null)
 
         try {
             const formData = new FormData()
@@ -51,24 +50,21 @@ export default function ProductCsvImport() {
             const data = await response.json() as ImportResult
 
             if (response.ok && data.success) {
-                setResult(data)
-                // Reload the page to show updated products
+                // Format stats for toast
+                const stats = `Created: ${data.productsCreated || 0}, Updated: ${data.productsUpdated || 0}`
+                showToast(stats, "success", "Import Successful")
+
+                // Reload to show updates
                 setTimeout(() => {
                     window.location.reload()
                 }, 2000)
             } else {
-                setResult({
-                    success: false,
-                    error: data.error || "Import failed",
-                    details: data.details,
-                })
+                const errorMsg = data.error || "Import failed"
+                const details = data.details || (data.errors ? data.errors.slice(0, 2).join(", ") + (data.errors.length > 2 ? "..." : "") : "")
+                showToast(details ? `${errorMsg}: ${details}` : errorMsg, "error", "Import Error")
             }
         } catch (error) {
-            setResult({
-                success: false,
-                error: "Network error",
-                details: error instanceof Error ? error.message : "Unknown error",
-            })
+            showToast("Network error occurred during import", "error")
         } finally {
             setIsImporting(false)
             setSelectedFile(null)
@@ -94,16 +90,12 @@ export default function ProductCsvImport() {
 
             if (!response.ok) {
                 const error = await response.json()
-                setResult({
-                    success: false,
-                    error: error.error || "Export failed",
-                })
+                showToast(error.error || "Export failed", "error")
                 return
             }
 
-            // Get the filename from Content-Disposition header or use default
             const contentDisposition = response.headers.get("Content-Disposition")
-            let filename = "toycker-products-export.csv"
+            let filename = "toycker-products.csv"
             if (contentDisposition) {
                 const match = contentDisposition.match(/filename="(.+)"/)
                 if (match) {
@@ -111,7 +103,6 @@ export default function ProductCsvImport() {
                 }
             }
 
-            // Download the file
             const blob = await response.blob()
             const url = window.URL.createObjectURL(blob)
             const a = document.createElement("a")
@@ -122,24 +113,43 @@ export default function ProductCsvImport() {
             document.body.removeChild(a)
             window.URL.revokeObjectURL(url)
 
-            setResult({
-                success: true,
-                message: "Export downloaded successfully",
-            })
+            showToast("CSV exported successfully", "success", "Export Complete")
         } catch (error) {
-            setResult({
-                success: false,
-                error: "Export failed",
-                details: error instanceof Error ? error.message : "Unknown error",
-            })
+            showToast("Export failed due to network error", "error")
         } finally {
             setIsExporting(false)
         }
     }
 
+    const downloadTemplate = () => {
+        const headers = [
+            "Handle", "Title", "Description", "Short Description", "Subtitle", "Status",
+            "Product Type", "Thumbnail URL", "Image URLs", "Video URL", "Category Handles", "Collection Handles",
+            "Currency", "SKU", "Price", "Compare At Price", "Stock", "Barcode",
+            "Option 1 Name", "Option 1 Value", "Option 2 Name", "Option 2 Value", "Option 3 Name", "Option 3 Value"
+        ]
+
+        const exampleRows = [
+            ["simple-toy", "Simple Wooden Toy", "A high-quality wooden toy", "Wooden toy", "", "active", "single", "", "", "", "", "", "INR", "TOY-001", "499", "699", "100", "", "", "", "", "", "", ""],
+            ["variant-guitar", "Musical Guitar", "Fun musical guitar for kids", "Kids guitar", "", "active", "variable", "", "", "", "", "", "INR", "GTR-PNK", "999", "1299", "20", "", "Color", "Pink", "", "", "", ""],
+            ["variant-guitar", "Musical Guitar", "Fun musical guitar for kids", "Kids guitar", "", "active", "variable", "", "", "", "", "", "INR", "GTR-BLU", "999", "1299", "15", "", "Color", "Blue", "", "", "", ""]
+        ]
+
+        const csvString = [headers, ...exampleRows]
+            .map(row => row.map(cell => `"${(cell || "").toString().replace(/"/g, '""')}"`).join(","))
+            .join("\n")
+
+        const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvString)
+        const link = document.createElement("a")
+        link.setAttribute("href", encodedUri)
+        link.setAttribute("download", "product_import_template.csv")
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
+
     return (
         <>
-            {/* Hidden file input */}
             <input
                 ref={fileInputRef}
                 type="file"
@@ -148,12 +158,20 @@ export default function ProductCsvImport() {
                 className="hidden"
             />
 
-            {/* Import/Export buttons */}
             <div className="flex items-center gap-2">
+                <button
+                    onClick={downloadTemplate}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    title="Download Template"
+                >
+                    <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+                    Template
+                </button>
+
                 <button
                     onClick={handleExport}
                     disabled={isExporting}
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                     {isExporting ? (
                         <span className="animate-spin h-4 w-4 mr-2 border-2 border-gray-400 border-t-transparent rounded-full" />
@@ -166,7 +184,7 @@ export default function ProductCsvImport() {
                 <button
                     onClick={handleImportClick}
                     disabled={isImporting}
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                     {isImporting ? (
                         <span className="animate-spin h-4 w-4 mr-2 border-2 border-gray-400 border-t-transparent rounded-full" />
@@ -177,55 +195,18 @@ export default function ProductCsvImport() {
                 </button>
             </div>
 
-            {/* Result notification */}
-            {result && (
-                <div
-                    className={`fixed bottom-4 right-4 max-w-md p-4 rounded-lg shadow-lg ${result.success
-                            ? "bg-green-50 border border-green-200"
-                            : "bg-red-50 border border-red-200"
-                        }`}
-                >
-                    <div className="flex items-start">
-                        <div className="flex-1">
-                            <p
-                                className={`text-sm font-medium ${result.success ? "text-green-800" : "text-red-800"
-                                    }`}
-                            >
-                                {result.success ? result.message : result.error}
-                            </p>
-                            {result.success && result.productsImported !== undefined && (
-                                <p className="text-sm text-green-600 mt-1">
-                                    Imported {result.productsImported} products, {result.variantsImported} variants
-                                </p>
-                            )}
-                            {!result.success && result.details && (
-                                <p className="text-sm text-red-600 mt-1">{result.details}</p>
-                            )}
-                        </div>
-                        <button
-                            onClick={() => setResult(null)}
-                            className="ml-4 text-gray-400 hover:text-gray-600"
-                        >
-                            <XMarkIcon className="h-5 w-5" />
-                        </button>
-                    </div>
-                </div>
-            )}
-
             {/* Confirmation Modal */}
             {showConfirmModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            Confirm Import
-                        </h3>
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                            <p className="text-sm text-amber-800 font-medium">
-                                ⚠️ Warning: This will replace all existing products
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Import Products</h3>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                            <p className="text-sm text-blue-800 font-medium">
+                                ℹ️ Update Mode
                             </p>
-                            <p className="text-sm text-amber-700 mt-1">
-                                All current products and their variants will be deleted and
-                                replaced with data from the CSV file.
+                            <p className="text-sm text-blue-700 mt-1">
+                                Products with the same <strong>Handle</strong> will be updated.
+                                New products will be created. Missing variants in the file will not be deleted automatically.
                             </p>
                         </div>
                         <p className="text-sm text-gray-600 mb-4">
@@ -234,15 +215,15 @@ export default function ProductCsvImport() {
                         <div className="flex justify-end gap-3">
                             <button
                                 onClick={handleCancelImport}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleConfirmImport}
-                                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
                             >
-                                Replace All Products
+                                Start Import
                             </button>
                         </div>
                     </div>

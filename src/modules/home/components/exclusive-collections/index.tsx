@@ -1,13 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState, useCallback } from "react"
 import Image from "next/image"
-import { Swiper, SwiperSlide } from "swiper/react"
-import { Autoplay } from "swiper/modules"
-import type { Swiper as SwiperInstance } from "swiper/types"
+import useEmblaCarousel from "embla-carousel-react"
+import Autoplay from "embla-carousel-autoplay"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-
-import "swiper/css"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { getProductPrice } from "@lib/util/get-product-price"
@@ -126,13 +123,12 @@ const ExclusiveCard = ({
   const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
   const hasVideo = Boolean(item.video_url && item.video_url.trim().length > 0)
 
-  // Show only skeleton until loaded
+  // Show skeleton until both data and media are ready
   if (!isLoaded) {
     return (
-      <>
+      <div className="relative">
         <ExclusiveCardSkeleton />
-        {/* Hidden video/image that loads in background */}
-        <div className="hidden">
+        <div className="invisible absolute inset-0 -z-50 size-0 overflow-hidden">
           {hasVideo ? (
             <video
               src={item.video_url}
@@ -150,17 +146,17 @@ const ExclusiveCard = ({
             />
           )}
         </div>
-      </>
+      </div>
     )
   }
 
   // Show actual content only when loaded
   return (
-    <article className="flex h-full flex-col rounded-xl overflow-hidden">
-      <div className="relative overflow-hidden rounded-xl">
+    <article className="flex h-full flex-col rounded-xl overflow-hidden bg-white shadow-sm border border-black/5">
+      <div className="relative overflow-hidden flex-1 min-h-[320px]">
         {hasVideo ? (
           <video
-            className="h-full w-full object-cover d-block"
+            className="h-full w-full object-cover block"
             src={item.video_url}
             autoPlay
             loop
@@ -172,54 +168,91 @@ const ExclusiveCard = ({
             Your browser does not support the video tag.
           </video>
         ) : (
-          <div className="relative h-64 w-full">
+          <Image
+            src={poster}
+            alt={title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 20vw"
+          />
+        )}
+      </div>
+      <LocalizedClientLink
+        href={`/products/${productHandle}`}
+        className="flex items-center gap-3 bg-[#dbfca7] p-4 text-[#3a5017] hover:bg-[#cff798] transition-colors"
+      >
+        <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-white/60 shrink-0">
+          {productImage ? (
             <Image
-              src={poster}
+              src={productImage}
               alt={title}
               fill
+              sizes="56px"
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 20vw"
             />
-          </div>
-        )}
-        <LocalizedClientLink
-          href={`/products/${productHandle}`}
-          className="flex items-center gap-3 bg-[#dbfca7] p-3 text-[#3a5017] z-10"
-        >
-          <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-white/60 shrink-0">
-            {productImage ? (
-              <Image
-                src={productImage}
-                alt={title}
-                fill
-                sizes="64px"
-                className="object-cover"
-              />
-            ) : (
-              <div className="h-full w-full bg-white/40" aria-hidden="true" />
-            )}
-          </div>
-          <div className="flex min-h-[3.5rem] flex-1 flex-col justify-center overflow-hidden">
-            <p className="text-sm font-semibold leading-tight truncate">{title}</p>
-            <PriceStack price={displayPrice} clubPrice={clubPrice} />
-          </div>
-        </LocalizedClientLink>
-      </div>
+          ) : (
+            <div className="h-full w-full bg-white/40" aria-hidden="true" />
+          )}
+        </div>
+        <div className="flex flex-1 flex-col justify-center overflow-hidden min-w-0">
+          <p className="text-sm font-bold leading-tight truncate">{title}</p>
+          <PriceStack price={displayPrice} clubPrice={clubPrice} />
+        </div>
+      </LocalizedClientLink>
     </article>
   )
 }
 
 const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollectionsProps) => {
   const [isMounted, setIsMounted] = useState(false)
-  const swiperRef = useRef<SwiperInstance | null>(null)
 
   const showcaseItems = useMemo(() => items ?? [], [items])
   const hasItems = showcaseItems.length > 0
   const shouldLoop = showcaseItems.length > 5
 
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      loop: shouldLoop,
+      align: "start",
+      skipSnaps: false,
+    },
+    [
+      Autoplay({
+        delay: 4500,
+        stopOnInteraction: false,
+        stopOnMouseEnter: true,
+      }),
+    ]
+  )
+
+  const [canScrollPrev, setCanScrollPrev] = useState(false)
+  const [canScrollNext, setCanScrollNext] = useState(false)
+
+  type EmblaApiType = NonNullable<ReturnType<typeof useEmblaCarousel>[1]>
+
+  const onSelect = useCallback((api: EmblaApiType) => {
+    setCanScrollPrev(api.canScrollPrev())
+    setCanScrollNext(api.canScrollNext())
+  }, [])
+
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (!emblaApi) return
+    onSelect(emblaApi)
+    emblaApi.on("select", () => onSelect(emblaApi))
+    emblaApi.on("reInit", () => onSelect(emblaApi))
+  }, [emblaApi, onSelect])
+
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev()
+  }, [emblaApi])
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext()
+  }, [emblaApi])
 
   if (!hasItems) {
     return null
@@ -250,69 +283,47 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
             ))}
           </div>
         ) : (
-          <div className="relative overflow-hidden rounded-xl">
-            <Swiper
-              modules={[Autoplay]}
-              loop={shouldLoop}
-              speed={600}
-              spaceBetween={16}
-              slidesPerView={1}
-              breakpoints={{
-                540: {
-                  slidesPerView: 1,
-                },
-                768: {
-                  slidesPerView: 2,
-                },
-                1024: {
-                  slidesPerView: 3,
-                },
-                1280: {
-                  slidesPerView: 5.25,
-                },
-              }}
-              autoplay={{
-                delay: 4500,
-                disableOnInteraction: false,
-                pauseOnMouseEnter: true,
-              }}
-              onSwiper={(_swiper) => {
-                swiperRef.current = _swiper
-              }}
-              onSlideChange={(_swiper) => {
-                // Handle slide change if needed
-              }}
-              className="exclusive-swiper pb-6"
-              aria-roledescription="Exclusive collections slider"
-            >
-              {showcaseItems.map((item, index) => (
-                <SwiperSlide
-                  key={item.id}
-                  role="group"
-                  aria-label={`Video ${index + 1} of ${showcaseItems.length}`}
-                >
-                  <ExclusiveCard
-                    item={item}
-                    clubDiscountPercentage={clubDiscountPercentage}
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
+          <div className="relative group">
+            <div className="overflow-hidden rounded-xl" ref={emblaRef}>
+              <div className="flex -ml-4">
+                {showcaseItems.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="flex-[0_0_100%] pl-4 min-w-0 md:flex-[0_0_50%] lg:flex-[0_0_33.333%] xl:flex-[0_0_19%] py-4"
+                    role="group"
+                    aria-label={`Video ${index + 1} of ${showcaseItems.length}`}
+                  >
+                    <ExclusiveCard
+                      item={item}
+                      clubDiscountPercentage={clubDiscountPercentage}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <button
               type="button"
-              className="exclusive-nav-button absolute left-2 top-1/2 z-30 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition hover:bg-gray-50"
+              onClick={scrollPrev}
+              className={cn(
+                "absolute left-2 md:left-4 top-1/2 size-9 md:size-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition-all z-30 hover:bg-gray-50 flex",
+                !canScrollPrev && "opacity-50 cursor-not-allowed"
+              )}
               aria-label="Previous video"
-              onClick={() => swiperRef.current?.slidePrev()}
             >
-              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
             </button>
+
             <button
               type="button"
-              className="exclusive-nav-button absolute right-2 top-1/2 z-30 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition hover:bg-gray-50"
+              onClick={scrollNext}
+              className={cn(
+                "absolute right-2 md:right-4 top-1/2 size-9 md:size-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-900 shadow-sm transition-all z-30 hover:bg-gray-50 flex",
+                !canScrollNext && "opacity-50 cursor-not-allowed"
+              )}
               aria-label="Next video"
-              onClick={() => swiperRef.current?.slideNext()}
             >
-              <ChevronRight className="h-5 w-5" aria-hidden="true" />
+              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
             </button>
           </div>
         )}

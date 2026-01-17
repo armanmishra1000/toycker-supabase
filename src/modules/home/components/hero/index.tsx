@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import Image from "next/image"
-import { Swiper, SwiperSlide } from "swiper/react"
-import { Autoplay, Navigation } from "swiper/modules"
-import type { Swiper as SwiperInstance } from "swiper/types"
+import Autoplay from "embla-carousel-autoplay"
+import useEmblaCarousel from "embla-carousel-react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import type { HomeHeroBanner } from "@lib/data/home-banners"
@@ -24,31 +23,6 @@ const FALLBACK_BANNERS: HomeHeroBanner[] = [
   },
 ]
 
-import "swiper/css"
-import "swiper/css/navigation"
-
-const HERO_SWIPER_OPTIONS = {
-  modules: [Autoplay, Navigation],
-  grabCursor: true,
-  spaceBetween: 16,
-  slidesPerView: 1,
-  autoplay: {
-    delay: 5000,
-    disableOnInteraction: false,
-  },
-  breakpoints: {
-    640: {
-      slidesPerView: 1,
-    },
-    1024: {
-      slidesPerView: 2,
-    },
-    1440: {
-      slidesPerView: 2.50,
-    },
-  },
-}
-
 const IMAGE_SIZES = "(min-width: 1440px) 40vw, (min-width: 1024px) 50vw, 100vw"
 
 type HeroProps = {
@@ -57,37 +31,53 @@ type HeroProps = {
 
 const Hero = ({ banners }: HeroProps) => {
   const [isMounted, setIsMounted] = useState(false)
-  const swiperRef = useRef<SwiperInstance | null>(null)
   const [loadedIds, setLoadedIds] = useState<Set<string>>(new Set())
-  const prevElRef = useRef<HTMLButtonElement | null>(null)
-  const nextElRef = useRef<HTMLButtonElement | null>(null)
+
+  const bannersToRender = banners.length ? banners : FALLBACK_BANNERS
+
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      loop: true,
+      align: "start",
+      skipSnaps: false,
+    },
+    [
+      Autoplay({
+        delay: 5000,
+        stopOnInteraction: false,
+        stopOnMouseEnter: true,
+      }),
+    ]
+  )
+
+  const [canScrollPrev, setCanScrollPrev] = useState(false)
+  const [canScrollNext, setCanScrollNext] = useState(false)
+
+  type EmblaApiType = NonNullable<ReturnType<typeof useEmblaCarousel>[1]>
+
+  const onSelect = useCallback((api: EmblaApiType) => {
+    setCanScrollPrev(api.canScrollPrev())
+    setCanScrollNext(api.canScrollNext())
+  }, [])
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
-  const bannersToRender = banners.length ? banners : FALLBACK_BANNERS
+  useEffect(() => {
+    if (!emblaApi) return
+    onSelect(emblaApi)
+    emblaApi.on("select", () => onSelect(emblaApi))
+    emblaApi.on("reInit", () => onSelect(emblaApi))
+  }, [emblaApi, onSelect])
 
-  const maxSlidesPerView = Math.ceil(
-    Math.max(
-      HERO_SWIPER_OPTIONS.slidesPerView,
-      ...Object.values(HERO_SWIPER_OPTIONS.breakpoints).map(
-        (bp) => bp.slidesPerView
-      )
-    )
-  )
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev()
+  }, [emblaApi])
 
-  const buildSwiperOptions = (slideCount: number) => ({
-    ...HERO_SWIPER_OPTIONS,
-    loop: slideCount > maxSlidesPerView,
-  })
-
-  const getNavConfig = () => ({
-    prevEl: prevElRef.current,
-    nextEl: nextElRef.current,
-  })
-
-
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext()
+  }, [emblaApi])
 
   if (!isMounted) {
     return (
@@ -117,7 +107,6 @@ const Hero = ({ banners }: HeroProps) => {
               ))}
             </div>
 
-            {/* Placeholder Nav Buttons to prevent popping in after hydration */}
             <button
               type="button"
               className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-ui-border-base bg-white text-ui-fg-base shadow-sm z-20 cursor-default opacity-50"
@@ -141,101 +130,85 @@ const Hero = ({ banners }: HeroProps) => {
   return (
     <section className="w-full">
       <div className="w-full md:px-4 md:py-8">
-        <div className="relative overflow-hidden">
-          <Swiper
-            {...buildSwiperOptions(bannersToRender.length)}
-            navigation={getNavConfig()}
-            onBeforeInit={(swiper) => {
-              swiperRef.current = swiper
-              const navConfig = getNavConfig()
-              swiper.params.navigation = {
-                ...(typeof swiper.params.navigation === "object"
-                  ? swiper.params.navigation
-                  : {}),
-                ...navConfig,
-              }
-            }}
-            onSwiper={(swiper) => {
-              swiperRef.current = swiper
-              const navConfig = getNavConfig()
-              swiper.params.navigation = {
-                ...(typeof swiper.params.navigation === "object"
-                  ? swiper.params.navigation
-                  : {}),
-                ...navConfig,
-              }
-              swiper.navigation?.destroy()
-              swiper.navigation?.init()
-              swiper.navigation?.update()
-            }}
-            className="hero-swiper"
-          >
-            {bannersToRender.map((slide, index) => {
-              const BannerContent = () => (
-                <div className="relative w-full overflow-hidden md:rounded-2xl bg-slate-200 aspect-[16/9]">
-                  {index > 0 && (
-                    <div
-                      className={`absolute inset-0 ${loadedIds.has(slide.id)
-                        ? "opacity-0"
-                        : "animate-pulse bg-ui-bg-subtle"
-                        } transition-opacity duration-300`}
-                    />
-                  )}
-                  <Image
-                    src={slide.image_url}
-                    alt={slide.alt_text || slide.title || "Homepage banner"}
-                    fill
-                    priority={index === 0}
-                    sizes={IMAGE_SIZES}
-                    className="object-cover"
-                    onLoad={() => {
-                      setLoadedIds((prev) => {
-                        const next = new Set(prev)
-                        next.add(slide.id)
-                        return next
-                      })
-                    }}
-                  />
-                </div>
-              )
-
-              return (
-                <SwiperSlide key={slide.id}>
-                  <div className="w-full">
-                    {slide.link_url ? (
-                      <a
-                        href={slide.link_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block cursor-pointer hover:opacity-90 transition-opacity"
-                      >
-                        <BannerContent />
-                      </a>
-                    ) : (
-                      <BannerContent />
+        <div className="relative group">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex -ml-4">
+              {bannersToRender.map((slide, index) => {
+                const BannerContent = () => (
+                  <div className="relative w-full overflow-hidden md:rounded-2xl bg-slate-200 aspect-[16/9]">
+                    {index > 0 && (
+                      <div
+                        className={cn(
+                          "absolute inset-0 transition-opacity duration-300",
+                          loadedIds.has(slide.id) ? "opacity-0" : "animate-pulse bg-ui-bg-subtle"
+                        )}
+                      />
                     )}
+                    <Image
+                      src={slide.image_url}
+                      alt={slide.alt_text || slide.title || "Homepage banner"}
+                      fill
+                      priority={index === 0}
+                      sizes={IMAGE_SIZES}
+                      className="object-cover"
+                      onLoad={() => {
+                        setLoadedIds((prev) => {
+                          const next = new Set(prev)
+                          next.add(slide.id)
+                          return next
+                        })
+                      }}
+                    />
                   </div>
-                </SwiperSlide>
-              )
-            })}
-          </Swiper>
+                )
+
+                return (
+                  <div
+                    key={slide.id}
+                    className="flex-[0_0_100%] pl-4 sm:flex-[0_0_50%] lg:flex-[0_0_40%] min-w-0"
+                  >
+                    <div className="w-full">
+                      {slide.link_url ? (
+                        <a
+                          href={slide.link_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block cursor-pointer hover:opacity-90 transition-opacity"
+                        >
+                          <BannerContent />
+                        </a>
+                      ) : (
+                        <BannerContent />
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
           <button
             type="button"
-            className="hero-swiper-prev absolute left-2 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-ui-bg-base text-ui-fg-base shadow-sm transition hover:bg-ui-bg-subtle z-20 bg-white"
+            onClick={scrollPrev}
+            className={cn(
+              "absolute left-2 md:left-4 top-1/2 size-9 md:size-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-white text-ui-fg-base shadow-sm transition-all z-20 hover:bg-gray-50 flex",
+              !canScrollPrev && "opacity-50 cursor-not-allowed"
+            )}
             aria-label="Previous banner"
-            ref={prevElRef}
-
           >
-            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
           </button>
+
           <button
             type="button"
-            className="hero-swiper-next absolute right-2 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-ui-bg-base text-ui-fg-base shadow-sm transition hover:bg-ui-bg-subtle z-20 bg-white"
+            onClick={scrollNext}
+            className={cn(
+              "absolute right-2 md:right-4 top-1/2 size-9 md:size-10 -translate-y-1/2 items-center justify-center rounded-full border border-ui-border-base bg-white text-ui-fg-base shadow-sm transition-all z-20 hover:bg-gray-50 flex",
+              !canScrollNext && "opacity-50 cursor-not-allowed"
+            )}
             aria-label="Next banner"
-            ref={nextElRef}
-
           >
-            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+            <ChevronRight className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
           </button>
         </div>
       </div>
