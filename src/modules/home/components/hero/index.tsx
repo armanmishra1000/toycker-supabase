@@ -134,7 +134,7 @@ const Hero = ({ banners }: HeroProps) => {
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex -ml-4">
               {bannersToRender.map((slide, index) => {
-                const BannerContent = () => (
+                const content = (
                   <div className="relative w-full overflow-hidden md:rounded-2xl bg-slate-200 aspect-[16/9]">
                     {index > 0 && (
                       <div
@@ -153,6 +153,7 @@ const Hero = ({ banners }: HeroProps) => {
                       className="object-cover"
                       onLoad={() => {
                         setLoadedIds((prev) => {
+                          if (prev.has(slide.id)) return prev
                           const next = new Set(prev)
                           next.add(slide.id)
                           return next
@@ -175,10 +176,10 @@ const Hero = ({ banners }: HeroProps) => {
                           rel="noopener noreferrer"
                           className="block cursor-pointer hover:opacity-90 transition-opacity"
                         >
-                          <BannerContent />
+                          {content}
                         </a>
                       ) : (
-                        <BannerContent />
+                        content
                       )}
                     </div>
                   </div>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useDebounce } from "@/lib/hooks/use-debounce"
 import type { SearchResultsPayload } from "@lib/data/search"
+import { resizeImage } from "@/lib/util/image-processing"
 
 type SearchStatus = "idle" | "loading" | "success" | "error"
 
@@ -127,8 +128,9 @@ export const useSearchResults = ({
     setQuery("") // Clear text query when starting image search
 
     try {
+      const processedBlob = await resizeImage(file, 800) // 800px is a good balance for CLIP
       const formData = new FormData()
-      formData.append("image", file)
+      formData.append("image", processedBlob, "search.jpg")
 
       const response = await fetch("/api/storefront/search/image", {
         method: "POST",
@@ -138,8 +140,9 @@ export const useSearchResults = ({
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as {
           message?: string
+          error?: string
         }
-        throw new Error(payload.message || "Unable to fetch image search results")
+        throw new Error(payload.error || payload.message || "Unable to fetch image search results")
       }
 
       const payload = (await response.json()) as SearchResultsPayload
