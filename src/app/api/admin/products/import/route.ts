@@ -1,182 +1,248 @@
-/**
- * API Route: POST /api/admin/products/import
- * Handles CSV file upload and imports products into Supabase
- */
-
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { parseCsvText, transformCsvToProducts } from "@/lib/csv/csv-parser"
+import { CsvProductRow, ImportStats } from "@/lib/types/import"
+import Papa from "papaparse"
 import { revalidatePath } from "next/cache"
+
+// Set max duration to 5 mins only for Vercel/similar (Next.js config)
+export const maxDuration = 300
 
 export async function POST(request: NextRequest) {
     try {
-        // Check admin auth
         const supabase = await createClient()
+
+        // 1. Auth Check
         const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-        if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        }
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+        if (profile?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-        // Check if user is admin (same logic as admin.ts)
-        const ADMIN_EMAILS = ["admin@toycker.com", "tutanymo@fxzig.com"]
-        const isHardcodedAdmin = ADMIN_EMAILS.includes(user.email || "")
-
-        if (!isHardcodedAdmin) {
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("role")
-                .eq("id", user.id)
-                .single()
-
-            if (profile?.role !== "admin") {
-                return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-            }
-        }
-
-        // Parse the multipart form data
+        // 2. Parse File
         const formData = await request.formData()
-        const file = formData.get("file") as File | null
+        const file = formData.get("file") as File
 
         if (!file) {
             return NextResponse.json({ error: "No file provided" }, { status: 400 })
         }
 
-        // Read file content
         const csvText = await file.text()
+        const parseResult = Papa.parse<CsvProductRow>(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader: (header) => header.trim() // Trim header whitespace
+        })
 
-        if (!csvText.trim()) {
-            return NextResponse.json({ error: "Empty file" }, { status: 400 })
+        if (parseResult.errors.length > 0) {
+            return NextResponse.json({
+                error: "Invalid CSV format",
+                details: parseResult.errors[0].message
+            }, { status: 400 })
         }
 
-        // Parse CSV
-        const rows = parseCsvText(csvText)
-
+        const rows = parseResult.data
         if (rows.length === 0) {
-            return NextResponse.json({ error: "No valid rows found in CSV" }, { status: 400 })
+            return NextResponse.json({ error: "Empty CSV" }, { status: 400 })
         }
 
-        // Transform to Supabase format
-        const { products } = transformCsvToProducts(rows)
+        // 3. Group by Handle
+        const groups = new Map<string, CsvProductRow[]>()
+        rows.forEach(row => {
+            if (!row.Handle) return // Skip rows without handle
+            const handle = row.Handle.trim()
+            if (!groups.has(handle)) groups.set(handle, [])
+            groups.get(handle)!.push(row)
+        })
 
-        // Clear cart_items first (references products)
-        const { error: cartItemsError } = await supabase
-            .from("cart_items")
-            .delete()
-            .neq("id", "00000000-0000-0000-0000-000000000000")
-
-        if (cartItemsError) {
-            console.error("Error clearing cart items:", cartItemsError)
-            // Continue anyway - cart_items may not exist or be empty
+        const stats: ImportStats = {
+            productsCreated: 0,
+            productsUpdated: 0,
+            variantsCreated: 0,
+            variantsUpdated: 0,
+            categoriesFoundOrCreated: 0,
+            collectionsFoundOrCreated: 0,
+            errors: []
         }
 
-        // Clear product_variants (references products)
-        const { error: variantsDeleteError } = await supabase
-            .from("product_variants")
-            .delete()
-            .neq("id", "00000000-0000-0000-0000-000000000000")
+        // 4. Process Groups
+        // Use Array.from to fix TS iteration error on Map
+        for (const [handle, groupRows] of Array.from(groups)) {
+            try {
+                // Determine Product Data (use first row as master)
+                const master = groupRows[0]
 
-        if (variantsDeleteError) {
-            console.error("Error clearing variants:", variantsDeleteError)
-            // Continue anyway
-        }
+                // === A. Upsert Product ===
 
-        // Delete all existing products
-        const { error: deleteError } = await supabase
-            .from("products")
-            .delete()
-            .neq("id", "00000000-0000-0000-0000-000000000000")
+                // Check if exists
+                const existingProductCheck = await supabase
+                    .from("products")
+                    .select("id")
+                    .eq("handle", handle)
+                    .single()
 
-        if (deleteError) {
-            console.error("Error deleting existing products:", deleteError)
-            return NextResponse.json({
-                error: "Failed to clear existing products",
-                details: deleteError.message
-            }, { status: 500 })
-        }
+                const isUpdate = !!existingProductCheck.data
+                let productId = existingProductCheck.data?.id
 
-        // Insert new products
-        const productsToInsert = products.map(p => ({
-            handle: p.handle,
-            name: p.name,
-            description: p.description,
-            status: p.status,
-            thumbnail: p.thumbnail,
-            image_url: p.image_url,
-            images: p.images,
-            price: p.price,
-            stock_count: p.stock_count,
-            currency_code: p.currency_code,
-            metadata: p.metadata,
-        }))
+                // Prepare Data
+                const productData = {
+                    handle: handle,
+                    name: master.Title || handle,
+                    description: master.Description || "",
+                    short_description: master["Short Description"] || "",
+                    subtitle: master.Subtitle || "",
+                    status: (master.Status?.toLowerCase() === "active" ? "active" :
+                        master.Status?.toLowerCase() === "archived" ? "archived" : "draft"),
+                    thumbnail: master["Thumbnail URL"] || null,
+                    images: master["Image URLs"] ? master["Image URLs"].split(";").map((s: string) => s.trim()).filter(Boolean) : null,
+                    video_url: master["Video URL"] || null,
+                    currency_code: master.Currency?.toLowerCase() || "inr",
+                    // We calculate base price/stock later from variants or use master row default
+                    price: master.Price ? Number(master.Price) : 0,
+                    stock_count: master.Stock ? Number(master.Stock) : 0,
+                    image_url: master["Thumbnail URL"] || (master["Image URLs"] ? master["Image URLs"].split(";")[0] : null)
+                }
 
-        const { data: insertedProducts, error: insertError } = await supabase
-            .from("products")
-            .insert(productsToInsert)
-            .select("id, handle")
+                if (isUpdate && productId) {
+                    await supabase.from("products").update(productData).eq("id", productId)
+                    stats.productsUpdated++
+                } else {
+                    const { data: newProd, error: insertError } = await supabase
+                        .from("products")
+                        .insert(productData)
+                        .select("id")
+                        .single()
 
-        if (insertError) {
-            console.error("Error inserting products:", insertError)
-            return NextResponse.json({
-                error: "Failed to insert products",
-                details: insertError.message
-            }, { status: 500 })
-        }
+                    if (insertError) throw new Error(`Product insert failed: ${insertError.message}`)
+                    productId = newProd.id
+                    stats.productsCreated++
+                }
 
-        // Create a map of handle -> product ID
-        const productIdMap = new Map<string, string>()
-        for (const prod of insertedProducts || []) {
-            productIdMap.set(prod.handle, prod.id)
-        }
+                // === B. Relations (Categories/Collections) ===
 
-        // Insert one default variant for each product
-        let variantsInserted = 0
+                // Categories
+                if (master["Category Handles"]) {
+                    const catHandles = master["Category Handles"].split(";").map((s: string) => s.trim()).filter(Boolean)
+                    for (const catHandle of catHandles) {
+                        // Find category ID
+                        const { data: cat } = await supabase.from("categories").select("id").eq("handle", catHandle).single()
+                        if (cat) {
+                            // Link
+                            await supabase.from("product_categories").upsert(
+                                { product_id: productId, category_id: cat.id },
+                                { onConflict: "product_id, category_id" }
+                            )
+                            stats.categoriesFoundOrCreated++ // Just counting links here really
+                        }
+                    }
+                }
 
-        for (const product of products) {
-            const productId = productIdMap.get(product.handle)
-            if (!productId) continue
+                // Collections
+                if (master["Collection Handles"]) {
+                    const colHandles = master["Collection Handles"].split(";").map((s: string) => s.trim()).filter(Boolean)
+                    for (const colHandle of colHandles) {
+                        // Find collection ID
+                        const { data: col } = await supabase.from("collections").select("id").eq("handle", colHandle).single()
+                        if (col) {
+                            // Link
+                            await supabase.from("product_collections").upsert(
+                                { product_id: productId, collection_id: col.id },
+                                { onConflict: "product_id, collection_id" }
+                            )
+                            stats.collectionsFoundOrCreated++
+                        }
+                    }
+                }
 
-            // Create a default variant for each product
-            const variantToInsert = {
-                product_id: productId,
-                title: "Default",
-                sku: null,
-                barcode: null,
-                price: product.price,
-                inventory_quantity: product.stock_count,
-                manage_inventory: true,
-                allow_backorder: false,
-                options: [],
-                metadata: {},
+                // === C. Variants ===
+                const isSingle = master["Product Type"]?.toLowerCase() === "single" || (!master["Product Type"] && groupRows.length === 1)
+
+                if (isSingle) {
+                    // For single products, we ensure NO variants exist in the DB
+                    await supabase.from("product_variants").delete().eq("product_id", productId)
+
+                    // Price and Stock are already set on the product record in step A
+                } else {
+                    // For variable products, process variants from rows
+                    for (const row of groupRows) {
+                        const sku = row.SKU || `${handle}-${Math.random().toString(36).substring(7)}` // Fallback SKU
+
+                        const options = []
+                        if (row["Option 1 Name"]) options.push({ name: row["Option 1 Name"], value: row["Option 1 Value"] })
+                        if (row["Option 2 Name"]) options.push({ name: row["Option 2 Name"], value: row["Option 2 Value"] })
+                        if (row["Option 3 Name"]) options.push({ name: row["Option 3 Name"], value: row["Option 3 Value"] })
+
+                        const variantData = {
+                            product_id: productId,
+                            sku: sku,
+                            title: options.length > 0 ? options.map(o => o.value).join(" / ") : (row.Title || "Default"),
+                            price: Number(row.Price) || 0,
+                            compare_at_price: row["Compare At Price"] ? Number(row["Compare At Price"]) : null,
+                            inventory_quantity: Number(row.Stock) || 0,
+                            barcode: row.Barcode || null,
+                            options: options, // JSONB
+                            manage_inventory: true
+                        }
+
+                        // Try to find variant by SKU or Title
+                        let variantId = null
+                        if (row.SKU) {
+                            const existingVar = await supabase.from("product_variants").select("id").eq("sku", row.SKU).single()
+                            variantId = existingVar.data?.id
+                        }
+
+                        if (!variantId) {
+                            // Fallback: match by title within this product
+                            const titleToMatch = options.length > 0 ? options.map(o => o.value).join(" / ") : (row.Title || "Default")
+                            const { data: matchedVar } = await supabase
+                                .from("product_variants")
+                                .select("id")
+                                .eq("product_id", productId)
+                                .eq("title", titleToMatch)
+                                .maybeSingle()
+                            variantId = matchedVar?.id
+                        }
+
+                        if (variantId) {
+                            await supabase.from("product_variants").update(variantData).eq("id", variantId)
+                            stats.variantsUpdated++
+                        } else {
+                            await supabase.from("product_variants").insert(variantData)
+                            stats.variantsCreated++
+                        }
+                    }
+
+                    // Update total stock count and min price on product (for variable products)
+                    const { data: allVars } = await supabase.from("product_variants")
+                        .select("inventory_quantity, price")
+                        .eq("product_id", productId)
+
+                    if (allVars && allVars.length > 0) {
+                        const totalStock = allVars.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0)
+                        const minPrice = Math.min(...allVars.map(v => v.price))
+
+                        await supabase.from("products").update({
+                            stock_count: totalStock,
+                            price: minPrice
+                        }).eq("id", productId)
+                    }
+                }
+
+            } catch (err: any) {
+                console.error(`Error processing handle ${handle}:`, err)
+                stats.errors.push(`Handle ${handle}: ${err.message}`)
             }
-
-            const { error: variantError } = await supabase
-                .from("product_variants")
-                .insert([variantToInsert])
-
-            if (!variantError) {
-                variantsInserted += 1
-            } else {
-                console.error("Error inserting variant for", product.handle, variantError)
-            }
         }
 
-        // Revalidate the admin products page
         revalidatePath("/admin/products")
-        revalidatePath("/store")
+        revalidatePath("/")
 
         return NextResponse.json({
             success: true,
-            productsImported: insertedProducts?.length || 0,
-            variantsImported: variantsInserted,
-            message: `Successfully imported ${insertedProducts?.length || 0} products`
+            ...stats
         })
 
-    } catch (error) {
-        console.error("Import error:", error)
-        return NextResponse.json({
-            error: "Import failed",
-            details: error instanceof Error ? error.message : "Unknown error"
-        }, { status: 500 })
+    } catch (error: any) {
+        console.error("Global import error:", error)
+        return NextResponse.json({ error: "Server error", details: error.message }, { status: 500 })
     }
 }

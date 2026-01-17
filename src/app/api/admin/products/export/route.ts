@@ -1,112 +1,138 @@
-/**
- * API Route: GET /api/admin/products/export
- * Exports all products as CSV file
- */
-
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { generateProductCsv } from "@/lib/csv/csv-parser"
+import { CsvProductRow } from "@/lib/types/import"
+import Papa from "papaparse"
 
 export async function GET(_request: NextRequest) {
     try {
-        // Check admin auth
         const supabase = await createClient()
+
+        // Check Admin Auth
         const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-        if (!user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        }
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+        if (profile?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-        // Check if user is admin
-        const ADMIN_EMAILS = ["admin@toycker.com", "tutanymo@fxzig.com"]
-        const isHardcodedAdmin = ADMIN_EMAILS.includes(user.email || "")
-
-        if (!isHardcodedAdmin) {
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("role")
-                .eq("id", user.id)
-                .single()
-
-            if (profile?.role !== "admin") {
-                return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-            }
-        }
-
-        // Fetch all products with their variants
+        // 1. Fetch ALL products with relations
         const { data: products, error } = await supabase
             .from("products")
             .select(`
-        id,
-        handle,
-        name,
-        description,
-        status,
-        image_url,
-        thumbnail,
-        images,
-        price,
-        stock_count,
-        currency_code,
-        variants:product_variants(
-          id,
-          title,
-          sku,
-          price,
-          inventory_quantity
-        )
-      `)
-            .order("created_at", { ascending: false })
+                *,
+                variants:product_variants(*),
+                collections:product_collections(collection:collections(handle)),
+                categories:product_categories(category:categories(handle))
+            `)
+            .neq("id", "00000000-0000-0000-0000-000000000000") // Exclude potential dummy
 
-        if (error) {
-            console.error("Error fetching products for export:", error)
-            return NextResponse.json({
-                error: "Failed to fetch products",
-                details: error.message
-            }, { status: 500 })
+        if (error) throw error
+
+        // 2. Define standard columns for consistency
+        const COLUMNS = [
+            "Handle", "Title", "Description", "Short Description", "Subtitle", "Status",
+            "Product Type", "Thumbnail URL", "Image URLs", "Video URL", "Category Handles", "Collection Handles",
+            "Currency", "SKU", "Price", "Compare At Price", "Stock", "Barcode",
+            "Option 1 Name", "Option 1 Value", "Option 2 Name", "Option 2 Value", "Option 3 Name", "Option 3 Value"
+        ]
+
+        // 3. Transform to CSV Rows
+        const csvRows: any[] = []
+
+        for (const product of products || []) {
+            const baseRow: Partial<CsvProductRow> = {
+                Handle: product.handle,
+                Title: product.name,
+                Description: product.description || "",
+                "Short Description": product.short_description || "",
+                Subtitle: product.subtitle || "",
+                Status: product.status as "active" | "draft" | "archived",
+                "Product Type": (product.variants && product.variants.length > 0) ? "variable" : "single",
+                "Thumbnail URL": product.thumbnail || product.image_url || "",
+                "Image URLs": (product.images || []).join(";"),
+                "Video URL": product.video_url || "",
+                "Category Handles": product.categories?.map((c: any) => c.category?.handle).filter(Boolean).join(";") || "",
+                "Collection Handles": product.collections?.map((c: any) => c.collection?.handle).filter(Boolean).join(";") || "",
+                Currency: product.currency_code || "INR"
+            }
+
+            const variants = product.variants || []
+
+            if (variants.length === 0) {
+                // If no variants (which shouldn't happen for valid products in our schema usually, but handled gracefully)
+                // We export just the product row with base price/stock
+                csvRows.push({
+                    ...baseRow,
+                    SKU: "",
+                    Price: product.price,
+                    "Compare At Price": product.metadata?.compare_at_price || "",
+                    Stock: product.stock_count || 0,
+                    Barcode: "",
+                } as CsvProductRow)
+            } else {
+                // One row per variant
+                // For the first variant, we can include the full product metadata (actually, CSV convention often duplicates it, stripping it is harder for import logic)
+                // We will duplicate product data for every row to make it robust and easy to read/filter in Excel
+
+                for (const variant of variants) {
+                    const variantRow: CsvProductRow = {
+                        ...baseRow, // Spread base row
+                        SKU: variant.sku || "",
+                        Price: variant.price,
+                        "Compare At Price": variant.compare_at_price || "",
+                        Stock: variant.inventory_quantity || 0,
+                        Barcode: variant.barcode || "",
+                    } as CsvProductRow
+
+                    // Map options to columns
+                    // 1. Try JSONB field first (from our new import)
+                    // 2. Fallback to parsing title (for existing/Medusa data)
+                    const rawOptions = (variant.options as any) || []
+                    if (Array.isArray(rawOptions) && rawOptions.length > 0) {
+                        rawOptions.forEach((opt: any, index: number) => {
+                            if (index < 3) {
+                                const i = index + 1
+                                // @ts-ignore
+                                variantRow[`Option ${i} Name`] = opt.name || opt.title || `Option ${i}`
+                                // @ts-ignore
+                                variantRow[`Option ${i} Value`] = opt.value || ""
+                            }
+                        })
+                    } else if (variant.title && variant.title !== product.name && variant.title.toLowerCase() !== "default") {
+                        // For variable products, the title usually contains the options
+                        const parts = variant.title.split(" / ").map((s: string) => s.trim())
+                        parts.forEach((val: string, index: number) => {
+                            if (index < 3) {
+                                const i = index + 1
+                                // @ts-ignore
+                                variantRow[`Option ${i} Name`] = `Option ${i}`
+                                // @ts-ignore
+                                variantRow[`Option ${i} Value`] = val
+                            }
+                        })
+                    }
+
+                    csvRows.push(variantRow)
+                }
+            }
         }
 
-        if (!products || products.length === 0) {
-            return NextResponse.json({ error: "No products to export" }, { status: 404 })
-        }
+        // 4. Generate CSV with fixed columns
+        const csv = Papa.unparse({
+            fields: COLUMNS,
+            data: csvRows
+        })
 
-        // Transform products to the expected format
-        const productsForExport = products.map(p => ({
-            id: p.id,
-            handle: p.handle,
-            name: p.name,
-            description: p.description,
-            status: p.status || "draft",
-            image_url: p.image_url,
-            thumbnail: p.thumbnail,
-            images: Array.isArray(p.images) ? p.images as string[] : null,
-            price: p.price,
-            stock_count: p.stock_count,
-            currency_code: p.currency_code,
-            variants: p.variants || [],
-        }))
-
-        // Generate CSV
-        const csvContent = generateProductCsv(productsForExport)
-
-        // Create filename with timestamp
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)
-        const filename = `toycker-products-export-${timestamp}.csv`
-
-        // Return as downloadable CSV file
-        return new NextResponse(csvContent, {
+        // 4. Return as file
+        return new NextResponse(csv, {
             status: 200,
             headers: {
-                "Content-Type": "text/csv; charset=utf-8",
-                "Content-Disposition": `attachment; filename="${filename}"`,
+                "Content-Type": "text/csv",
+                "Content-Disposition": `attachment; filename="toycker-products-${new Date().toISOString().split('T')[0]}.csv"`,
             },
         })
 
     } catch (error) {
         console.error("Export error:", error)
-        return NextResponse.json({
-            error: "Export failed",
-            details: error instanceof Error ? error.message : "Unknown error"
-        }, { status: 500 })
+        return NextResponse.json({ error: "Export failed" }, { status: 500 })
     }
 }
