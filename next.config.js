@@ -51,6 +51,11 @@ const nextConfig = {
         hostname: "*.cdn.toycker.in",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
       ...(R2_HOSTNAME
         ? [
           {

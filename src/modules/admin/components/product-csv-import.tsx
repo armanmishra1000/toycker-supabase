@@ -170,7 +170,7 @@ export default function ProductCsvImport() {
                 "999",
                 "12",
                 "8909876543210",
-                "Animal", "Fox",
+                "Color", "Red",
                 "", "",
                 "", ""
             ],
@@ -193,7 +193,7 @@ export default function ProductCsvImport() {
                 "999",
                 "8",
                 "8909876543211",
-                "Animal", "Rabbit",
+                "Color", "Blue",
                 "", "",
                 "", ""
             ]

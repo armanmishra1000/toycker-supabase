@@ -170,14 +170,9 @@ const Hero = ({ banners }: HeroProps) => {
                   >
                     <div className="w-full">
                       {slide.link_url ? (
-                        <a
-                          href={slide.link_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block cursor-pointer hover:opacity-90 transition-opacity"
-                        >
+                        <>
                           {content}
-                        </a>
+                        </>
                       ) : (
                         content
                       )}
