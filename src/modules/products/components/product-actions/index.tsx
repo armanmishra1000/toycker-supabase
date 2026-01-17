@@ -95,7 +95,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
   })
   const [shareCopied, setShareCopied] = useState(false)
   const [isAdding, startAddToCart] = useTransition()
-  const [isBuying, setIsBuying] = useState(false)
+  const [isBuying, startBuyNow] = useTransition()
   const countryCode = DEFAULT_COUNTRY_CODE
   const { openCart } = useCartSidebar()
   const { optimisticAdd } = useCartStore()
@@ -385,27 +385,26 @@ export default function ProductActions({ product, disabled, showSupportActions =
     })
   }
 
-  const handleBuyNowClick = async () => {
+  const handleBuyNowClick = () => {
     if (isBuying || (!selectedVariant?.id && product.variants && product.variants.length > 0)) {
       return
     }
 
-    setIsBuying(true)
-    try {
-      await createBuyNowCart({
-        variantId: selectedVariant?.id || null,
-        productId: product.id,
-        quantity,
-        countryCode,
-        metadata: buildLineItemMetadata(),
-      })
-      onActionComplete?.()
-      router.push(`/checkout?step=address`)
-    } catch (error) {
-      console.error("Failed to start checkout", error)
-    } finally {
-      setIsBuying(false)
-    }
+    startBuyNow(async () => {
+      try {
+        await createBuyNowCart({
+          variantId: selectedVariant?.id || null,
+          productId: product.id,
+          quantity,
+          countryCode,
+          metadata: buildLineItemMetadata(),
+        })
+        onActionComplete?.()
+        router.push(`/checkout?step=address`)
+      } catch (error) {
+        console.error("Failed to start checkout", error)
+      }
+    })
   }
 
   const handleQuestionSubmit = (event: FormEvent<HTMLFormElement>) => {
