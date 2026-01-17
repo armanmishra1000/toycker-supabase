@@ -130,9 +130,73 @@ export default function ProductCsvImport() {
         ]
 
         const exampleRows = [
-            ["simple-toy", "Simple Wooden Toy", "A high-quality wooden toy", "Wooden toy", "", "active", "single", "", "", "", "", "", "INR", "TOY-001", "499", "699", "100", "", "", "", "", "", "", ""],
-            ["variant-guitar", "Musical Guitar", "Fun musical guitar for kids", "Kids guitar", "", "active", "variable", "", "", "", "", "", "INR", "GTR-PNK", "999", "1299", "20", "", "Color", "Pink", "", "", "", ""],
-            ["variant-guitar", "Musical Guitar", "Fun musical guitar for kids", "Kids guitar", "", "active", "variable", "", "", "", "", "", "INR", "GTR-BLU", "999", "1299", "15", "", "Color", "Blue", "", "", "", ""]
+            [
+                "wooden-learning-bus",
+                "Educational Wooden Learning Bus",
+                "Discover the joys of learning with our Educational Wooden Learning Bus. This multi-functional toy features shape sorting, bead counting, and smooth-rolling wheels. Made from sustainably sourced beech wood and finished with non-toxic, water-based paints.",
+                "Multi-functional 3-in-1 wooden learning bus for toddlers.",
+                "Play, Learn & Grow",
+                "active",
+                "single",
+                "https://images.unsplash.com/photo-1545558014-8692077e9b5c?q=80&w=800&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1545558014-8692077e9b5c?q=80&w=1000&auto=format&fit=crop;https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=1000&auto=format&fit=crop",
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "educational-toys;wooden-toys",
+                "best-sellers",
+                "INR",
+                "EDU-BUS-001",
+                "1299",
+                "1599",
+                "45",
+                "8901234567890",
+                "", "", "", "", "", ""
+            ],
+            [
+                "soft-animal-plush",
+                "Friendly Forest Animal Plush",
+                "Ultra-soft forest animal plushies designed for cuddling. Available in different animal styles. Each plush is made from premium hypoallergenic material and is machine washable.",
+                "Cuddly 12-inch forest animal plush companion.",
+                "Your Child's New Best Friend",
+                "active",
+                "variable",
+                "https://images.unsplash.com/photo-1560008511-11c63416e52d?q=80&w=800&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1560008511-11c63416e52d?q=80&w=1000&auto=format&fit=crop",
+                "",
+                "plush-toys;gift-items",
+                "new-arrivals",
+                "INR",
+                "PLSH-FOX-01",
+                "799",
+                "999",
+                "12",
+                "8909876543210",
+                "Animal", "Fox",
+                "", "",
+                "", ""
+            ],
+            [
+                "soft-animal-plush",
+                "Friendly Forest Animal Plush",
+                "Ultra-soft forest animal plushies designed for cuddling. Available in different animal styles. Each plush is made from premium hypoallergenic material and is machine washable.",
+                "Cuddly 12-inch forest animal plush companion.",
+                "Your Child's New Best Friend",
+                "active",
+                "variable",
+                "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=800&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=1000&auto=format&fit=crop",
+                "",
+                "plush-toys;gift-items",
+                "new-arrivals",
+                "INR",
+                "PLSH-RAB-01",
+                "799",
+                "999",
+                "8",
+                "8909876543211",
+                "Animal", "Rabbit",
+                "", "",
+                "", ""
+            ]
         ]
 
         const csvString = [headers, ...exampleRows]
