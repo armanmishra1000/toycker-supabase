@@ -82,6 +82,23 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   const giftWrapFee = globalSettings?.gift_wrap_fee ?? 50
 
   const items = mapCartItems(cartData.items as any || [], clubDiscountPercentage, giftWrapFee)
+
+  // Get shipping threshold from active shipping options
+  const { data: shippingOptions } = await supabase
+    .from("shipping_options")
+    .select("*")
+    .eq("is_active", true)
+
+  const shippingOptionsData = (shippingOptions || []).map(opt => ({
+    shipping_option_id: opt.id,
+    name: opt.name,
+    amount: opt.amount,
+    min_order_free_shipping: opt.min_order_free_shipping
+  })) as CartShippingMethod[]
+
+  const standardOption = shippingOptionsData.find(so => so.name.toLowerCase().includes('standard'))
+  const defaultShippingOption = standardOption || shippingOptionsData.find(so => so.min_order_free_shipping !== null)
+
   const totals = calculateCartTotals({
     items,
     promotion: cartData.promotion as Promotion,
@@ -90,18 +107,12 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     cartMetadata: (cartData.metadata || {}) as Record<string, unknown>,
     isClubMember,
     clubDiscountPercentage,
+    defaultShippingOption,
   })
 
-  // Get shipping threshold from active shipping options
-  const { data: shippingOptions } = await supabase
-    .from("shipping_options")
-    .select("min_order_free_shipping, name")
-    .eq("is_active", true)
-
-  const standardOption = shippingOptions?.find(so => so.name.toLowerCase().includes('standard'))
   const freeShippingThreshold = standardOption?.min_order_free_shipping
-    || shippingOptions?.find(so => so.min_order_free_shipping !== null)?.min_order_free_shipping
-    || 499 // Fallback
+    || shippingOptionsData.find(so => so.min_order_free_shipping !== null)?.min_order_free_shipping
+    || 500 // Fallback
 
   const cart: Cart = {
     ...cartData,

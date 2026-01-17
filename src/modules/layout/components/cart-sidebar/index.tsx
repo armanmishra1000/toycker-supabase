@@ -75,7 +75,7 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                   {hasItems && (
                     <div className="pt-2">
                       {(() => {
-                        const threshold = cart?.free_shipping_threshold || 499
+                        const threshold = cart?.free_shipping_threshold || 500
                         const subtotalAmount = cart?.subtotal || 0
                         const amountToFree = Math.max(0, threshold - subtotalAmount)
                         const isFree = amountToFree === 0

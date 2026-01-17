@@ -14,6 +14,7 @@ type CartTotalsProps = {
     currency_code: string
     item_subtotal?: number | null
     shipping_subtotal?: number | null
+    shipping_total?: number | null
     discount_subtotal?: number | null
   }
   cart?: Cart
@@ -68,7 +69,12 @@ const CartTotals: React.FC<CartTotalsProps> = ({
       return order.shipping_total
     }
 
-    // 2. Check methods in cart
+    // 2. Calculated total from lib (includes tentative/default shipping)
+    if (typeof totals.shipping_total === "number") {
+      return totals.shipping_total
+    }
+
+    // 3. Fallback to check methods in cart (legacy/safety)
     if (cart?.shipping_methods && cart.shipping_methods.length > 0) {
       const method = cart.shipping_methods[cart.shipping_methods.length - 1]
       const baseAmount = Number(method.amount || method.total || method.subtotal || 0)
@@ -80,17 +86,12 @@ const CartTotals: React.FC<CartTotalsProps> = ({
       return baseAmount
     }
 
-    // 3. Fallback to top-level totals
-    if (totals.shipping_subtotal && totals.shipping_subtotal > 0) {
-      return totals.shipping_subtotal
-    }
-
-    // 4. Use the selected shipping price from context (for newly selected methods)
+    // 4. Use the selected shipping price from context
     if (selectedShippingPrice && selectedShippingPrice > 0) {
       return selectedShippingPrice
     }
 
-    // Default to the provided shipping_subtotal (might be 0)
+    // Default to the provided shipping_subtotal
     return totals.shipping_subtotal ?? cart?.shipping_subtotal ?? 0
   }
 
