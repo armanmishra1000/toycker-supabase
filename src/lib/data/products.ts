@@ -53,6 +53,7 @@ export const listProducts = cache(async function listProducts(options: {
   queryParams?: {
     limit?: number
     collection_id?: string[]
+    category_id?: string[]
   }
 } = {}): Promise<{ response: { products: Product[]; count: number } }> {
   const supabase = await createClient()
@@ -70,6 +71,17 @@ export const listProducts = cache(async function listProducts(options: {
         product_collections!inner(collection_id)
       `, { count: "exact" })
       .in("product_collections.collection_id", collectionIds)
+  }
+
+  if (options.queryParams?.category_id?.length) {
+    const categoryIds = options.queryParams.category_id
+    query = supabase
+      .from("products")
+      .select(`
+        ${PRODUCT_SELECT},
+        product_categories!inner(category_id)
+      `, { count: "exact" })
+      .in("product_categories.category_id", categoryIds)
   }
 
   // Apply limit AFTER collection filter
@@ -140,7 +152,16 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
     query = query.in("id", ids)
   }
 
-  if (queryParams?.category_id) query = query.in("category_id", queryParams.category_id as string[])
+  if (queryParams?.category_id) {
+    const categoryIds = Array.isArray(queryParams.category_id) ? queryParams.category_id : [queryParams.category_id]
+    query = supabase
+      .from("products")
+      .select(`
+        ${PRODUCT_SELECT},
+        product_categories!inner(category_id)
+      `, { count: "exact" })
+      .in("product_categories.category_id", categoryIds)
+  }
 
   if (queryParams?.collection_id) {
     const collectionIds = queryParams.collection_id as string[]

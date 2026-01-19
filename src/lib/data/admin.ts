@@ -290,7 +290,7 @@ interface GetAdminCategoriesParams {
 }
 
 interface PaginatedCategoriesResponse {
-  categories: Category[]
+  categories: (Category & { products: { count: number }[] })[]
   count: number
   totalPages: number
   currentPage: number
@@ -323,7 +323,10 @@ export async function getAdminCategories(params: GetAdminCategoriesParams = {}):
   // Fetch paginated data
   let query = supabase
     .from("categories")
-    .select("*")
+    .select(`
+      *,
+      products:product_categories(count)
+    `)
     .order("name")
 
   if (!isFetchAll) {
@@ -338,7 +341,7 @@ export async function getAdminCategories(params: GetAdminCategoriesParams = {}):
   if (error) throw error
 
   return {
-    categories: (data || []) as Category[],
+    categories: (data || []) as (Category & { products: { count: number }[] })[],
     count: count || 0,
     totalPages,
     currentPage: page
@@ -348,15 +351,108 @@ export async function getAdminCategories(params: GetAdminCategoriesParams = {}):
 export async function createCategory(formData: FormData) {
   await ensureAdmin()
   const supabase = await createClient()
+
+  const productIds = formData.getAll("product_ids") as string[]
+
   const category = {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
-    description: formData.get("description") as string || null,
+    description: formData.get("description") as string,
   }
-  const { error } = await supabase.from("categories").insert(category)
+
+  const { data: newCategory, error } = await supabase
+    .from("categories")
+    .insert(category)
+    .select("id")
+    .single()
+
   if (error) throw new Error(error.message)
+
+  // Handle product associations
+  if (productIds.length > 0 && newCategory) {
+    const productCategories = productIds.map(productId => ({
+      product_id: productId,
+      category_id: newCategory.id
+    }))
+
+    const { error: relError } = await supabase
+      .from("product_categories")
+      .insert(productCategories)
+
+    if (relError) {
+      console.error("Error linking products to category:", relError)
+    }
+  }
+
   revalidatePath("/admin/categories")
   redirect("/admin/categories")
+}
+
+export async function updateCategory(formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const id = formData.get("id") as string
+  const productIds = formData.getAll("product_ids") as string[]
+
+  const updates = {
+    name: formData.get("name") as string,
+    handle: formData.get("handle") as string,
+    description: formData.get("description") as string,
+  }
+
+  const { error } = await supabase.from("categories").update(updates).eq("id", id)
+  if (error) throw new Error(error.message)
+
+  // Update product associations: Delete-Insert pattern
+  // 1. Delete existing associations
+  await supabase.from("product_categories").delete().eq("category_id", id)
+
+  // 2. Insert new associations
+  if (productIds.length > 0) {
+    const productCategories = productIds.map(productId => ({
+      product_id: productId,
+      category_id: id
+    }))
+
+    const { error: relError } = await supabase
+      .from("product_categories")
+      .insert(productCategories)
+
+    if (relError) {
+      console.error("Error updating category products:", relError)
+    }
+  }
+
+  revalidatePath("/admin/categories")
+  revalidatePath(`/admin/categories/${id}`)
+  redirect("/admin/categories")
+}
+
+export async function getAdminCategory(id: string): Promise<Category | null> {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase.from("categories").select("*").eq("id", id).single()
+  if (error) {
+    console.error("Error fetching category:", error)
+    return null
+  }
+  return data as Category
+}
+
+export async function getCategoryProducts(categoryId: string): Promise<string[]> {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("product_categories")
+    .select("product_id")
+    .eq("category_id", categoryId)
+
+  if (error) {
+    console.error("Error fetching category products:", error)
+    return []
+  }
+
+  return (data || []).map(cp => cp.product_id)
 }
 
 export async function deleteCategory(id: string) {
@@ -408,18 +504,25 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
 
   const { count } = await countQuery
 
-  // Calculate pagination
-  const offset = (page - 1) * limit
+  // Check if we want all items
+  const isFetchAll = limit === -1
+
+  // Calculate pagination only if not fetching all
+  const offset = isFetchAll ? 0 : (page - 1) * limit
   const from = offset
-  const to = offset + limit - 1
-  const totalPages = count ? Math.ceil(count / limit) : 1
+  const to = isFetchAll ? -1 : offset + limit - 1
+  const totalPages = count && !isFetchAll ? Math.ceil(count / limit) : 1
 
   // Fetch paginated data
   let query = supabase
     .from("products")
     .select("*, variants:product_variants(*)")
     .order("created_at", { ascending: false })
-    .range(from, to)
+
+  // Only apply range if not fetching all
+  if (!isFetchAll) {
+    query = query.range(from, to)
+  }
 
   if (status && status !== 'all') {
     query = query.eq('status', status)
@@ -1107,12 +1210,39 @@ export async function getProductCategories(productId: string) {
 export async function createCollection(formData: FormData) {
   await ensureAdmin()
   const supabase = await createClient()
+
   const collection = {
     title: formData.get("title") as string,
     handle: formData.get("handle") as string,
   }
-  const { error } = await supabase.from("collections").insert(collection)
+
+  // Insert collection and get ID
+  const { data: newCollection, error } = await supabase
+    .from("collections")
+    .insert(collection)
+    .select("id")
+    .single()
+
   if (error) throw new Error(error.message)
+
+  // Handle product associations
+  const productIds = formData.getAll("product_ids") as string[]
+  if (productIds.length > 0 && newCollection) {
+    const productCollections = productIds.map(productId => ({
+      product_id: productId,
+      collection_id: newCollection.id
+    }))
+
+    const { error: junctionError } = await supabase
+      .from("product_collections")
+      .insert(productCollections)
+
+    if (junctionError) {
+      console.error("Error linking products:", junctionError)
+      // Non-blocking: collection created successfully, associations failed
+    }
+  }
+
   revalidatePath("/admin/collections")
   redirect("/admin/collections")
 }
@@ -1121,13 +1251,43 @@ export async function updateCollection(formData: FormData) {
   await ensureAdmin()
   const supabase = await createClient()
   const id = formData.get("id") as string
+
   const updates = {
     title: formData.get("title") as string,
     handle: formData.get("handle") as string,
   }
-  const { error } = await supabase.from("collections").update(updates).eq("id", id)
+
+  const { error } = await supabase
+    .from("collections")
+    .update(updates)
+    .eq("id", id)
+
   if (error) throw new Error(error.message)
+
+  // Update product associations using delete-insert pattern
+  const productIds = formData.getAll("product_ids") as string[]
+
+  // 1. Delete existing associations
+  await supabase.from("product_collections").delete().eq("collection_id", id)
+
+  // 2. Insert new associations
+  if (productIds.length > 0) {
+    const productCollections = productIds.map(productId => ({
+      product_id: productId,
+      collection_id: id
+    }))
+
+    const { error: junctionError } = await supabase
+      .from("product_collections")
+      .insert(productCollections)
+
+    if (junctionError) {
+      console.error("Error updating product associations:", junctionError)
+    }
+  }
+
   revalidatePath("/admin/collections")
+  revalidatePath(`/admin/collections/${id}`)
   redirect("/admin/collections")
 }
 
@@ -1137,6 +1297,24 @@ export async function deleteCollection(id: string) {
   await supabase.from("collections").delete().eq("id", id)
   revalidatePath("/admin/collections")
 }
+
+export async function getCollectionProducts(collectionId: string): Promise<string[]> {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("product_collections")
+    .select("product_id")
+    .eq("collection_id", collectionId)
+
+  if (error) {
+    console.error("Error fetching collection products:", error)
+    return []
+  }
+
+  return data.map(item => item.product_id)
+}
+
 
 export async function getProductCollections(productId: string) {
   await ensureAdmin()

@@ -66,7 +66,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         {/* Logo Section */}
         <div className="h-16 flex items-center px-6 border-b border-gray-200 shrink-0">
           <Link href="/admin" className="flex items-center gap-3 group">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/30 transition-all">
+            <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-sm transition-all">
               T
             </div>
             <div className="flex flex-col">

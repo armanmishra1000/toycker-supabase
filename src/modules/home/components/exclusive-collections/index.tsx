@@ -152,7 +152,7 @@ const ExclusiveCard = ({
 
   // Show actual content only when loaded
   return (
-    <article className="flex h-full flex-col rounded-xl overflow-hidden bg-white shadow-sm border border-black/5">
+    <article className="flex h-full flex-col rounded-xl overflow-hidden bg-white">
       <div className="relative overflow-hidden flex-1 min-h-[320px]">
         {hasVideo ? (
           <video

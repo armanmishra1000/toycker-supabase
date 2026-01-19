@@ -303,7 +303,6 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       const errorMessage = (error as Error)?.message ?? "Failed to apply promotion"
       setLastError(errorMessage)
-      showToast?.(errorMessage, "error")
       throw error
     } finally {
       setIsSyncing(false)
@@ -335,7 +334,6 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       const errorMessage = (error as Error)?.message ?? "Failed to apply rewards"
       setLastError(errorMessage)
-      showToast?.(errorMessage, "error")
       throw error
     } finally {
       setIsSyncing(false)
