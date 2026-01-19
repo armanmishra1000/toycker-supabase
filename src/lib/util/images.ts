@@ -4,10 +4,20 @@ export const CDN_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || `https://${proce
 
 export const fixUrl = (url: string | null | undefined) => {
     if (!url) return null
-    if (url.startsWith("http") || url.startsWith("/")) return url
-    // remove leading slash if present to avoid double slash
-    const path = url.startsWith('/') ? url.substring(1) : url
-    return `${CDN_URL}/${path}`
+    const trimmed = url.trim()
+    if (trimmed.startsWith("http")) return trimmed
+
+    // Remove all leading slashes to prevent relative path bugs (/uploads/... -> cdn.com/uploads/...)
+    let cleanPath = trimmed
+    while (cleanPath.startsWith('/')) {
+        cleanPath = cleanPath.substring(1)
+    }
+
+    if (!cleanPath) return null
+
+    // Safely join baseUrl and cleanPath without double slashes
+    const baseUrl = CDN_URL.endsWith('/') ? CDN_URL.slice(0, -1) : CDN_URL
+    return `${baseUrl}/${cleanPath}`
 }
 
 export const normalizeProductImage = (product: Product): Product => {

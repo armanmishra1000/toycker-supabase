@@ -20,6 +20,7 @@ import { useVoiceSearch } from "@modules/layout/hooks/useVoiceSearch"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
 import type { SearchProductSummary, SearchCategorySummary, SearchCollectionSummary } from "@lib/data/search"
+import { fixUrl } from "@lib/util/images"
 
 type SearchDrawerProps = {
   isOpen: boolean
@@ -352,7 +353,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 border border-slate-100">
                                 {product.thumbnail ? (
                                   <Image
-                                    src={product.thumbnail}
+                                    src={fixUrl(product.thumbnail)!}
                                     alt={product.title}
                                     fill
                                     sizes="80px"

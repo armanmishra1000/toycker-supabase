@@ -9,6 +9,7 @@ import ProductActions from "@modules/products/components/product-actions"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
 import { useEffect, useMemo, useState } from "react"
+import { fixUrl } from "@lib/util/images"
 
 type ProductQuickViewModalProps = {
   product: Product
@@ -95,7 +96,7 @@ const ProductQuickViewModal = ({
       return [
         {
           id: `${resolvedProduct.id}-thumbnail`,
-          url: resolvedProduct.thumbnail,
+          url: fixUrl(resolvedProduct.thumbnail) || '',
         },
       ]
     }
