@@ -787,6 +787,7 @@ export async function applyPromotions(codes: string[]) {
     .select("*")
     .eq("code", code)
     .eq("is_active", true)
+    .eq("is_deleted", false)
     .maybeSingle()
 
   if (promoError || !promotion) {

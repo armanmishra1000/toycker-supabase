@@ -12,6 +12,7 @@ export async function getAdminPromotions(): Promise<Promotion[]> {
     const { data, error } = await supabase
         .from("promotions")
         .select("*")
+        .eq("is_deleted", false)
         .order("created_at", { ascending: false })
 
     if (error) throw error
@@ -25,6 +26,7 @@ export async function getPromotion(id: string): Promise<Promotion> {
         .from("promotions")
         .select("*")
         .eq("id", id)
+        .eq("is_deleted", false)
         .single()
 
     if (error) throw error
@@ -56,7 +58,10 @@ export async function createPromotion(formData: FormData) {
 export async function deletePromotion(id: string) {
     await ensureAdmin()
     const supabase = await createClient()
-    const { error } = await supabase.from("promotions").delete().eq("id", id)
+    const { error } = await supabase
+        .from("promotions")
+        .update({ is_deleted: true, is_active: false })
+        .eq("id", id)
 
     if (error) throw error
     revalidatePath("/admin/discounts")
