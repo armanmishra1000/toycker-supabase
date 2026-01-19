@@ -1,4 +1,5 @@
 const checkEnvVariables = require("./check-env-variables")
+const withSerwistInit = require("@serwist/next").default;
 
 checkEnvVariables()
 
@@ -9,6 +10,12 @@ const R2_PATHNAME = process.env.NEXT_PUBLIC_R2_MEDIA_PATHNAME || "/uploads/**"
 const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 })
+
+const withSerwist = withSerwistInit({
+  swSrc: "src/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+});
 
 /**
  * @type {import('next').NextConfig}
@@ -118,7 +125,7 @@ const sentryOptions = {
 };
 
 module.exports = withSentryConfig(
-  withBundleAnalyzer(nextConfig),
+  withSerwist(withBundleAnalyzer(nextConfig)),
   sentryWebpackPluginOptions,
   sentryOptions
 );
