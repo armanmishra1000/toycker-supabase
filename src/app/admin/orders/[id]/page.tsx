@@ -10,6 +10,7 @@ import Image from "next/image"
 import FulfillmentModal from "./fulfillment-modal"
 import { MarkAsPaidButton } from "./mark-as-paid-button"
 import { formatIST } from "@/lib/util/date"
+import { fixUrl } from "@/lib/util/images"
 
 export default async function AdminOrderDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -84,7 +85,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
               {order.items?.map((item: { id: string; thumbnail?: string; title: string; variant?: { sku?: string }; unit_price: number; quantity: number; total: number }) => (
                 <div key={item.id} className="p-6 flex items-center gap-5 group">
                   <div className="h-20 w-20 relative rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0 transition-all group-hover:border-gray-300">
-                    {item.thumbnail && <Image src={item.thumbnail} alt="" fill className="object-cover" />}
+                    {item.thumbnail && <Image src={fixUrl(item.thumbnail)!} alt="" fill className="object-cover" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-900">{item.title}</p>
@@ -108,7 +109,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                 <span>Subtotal</span>
                 <span className="text-gray-900 font-bold">{convertToLocale({ amount: order.subtotal || (order.total_amount + rewardsUsed), currency_code: order.currency_code })}</span>
               </div>
-              {(order.metadata as any)?.club_savings && Number((order.metadata as any).club_savings) > 0 && (
+              {Number((order.metadata as any)?.club_savings || 0) > 0 && (
                 <div className="flex justify-between text-sm font-medium">
                   <div className="flex items-center gap-2">
                     <span className="text-blue-600">Club Savings</span>
@@ -123,7 +124,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                   <span className="font-bold">-{convertToLocale({ amount: rewardsUsed, currency_code: order.currency_code })}</span>
                 </div>
               )}
-              {(order.metadata as any)?.promo_discount && Number((order.metadata as any).promo_discount) > 0 && (
+              {Number((order.metadata as any)?.promo_discount || 0) > 0 && (
                 <div className="flex justify-between text-sm font-medium text-orange-600">
                   <span>Promo Discount</span>
                   <span className="font-bold">-{convertToLocale({ amount: Number((order.metadata as any).promo_discount), currency_code: order.currency_code })}</span>

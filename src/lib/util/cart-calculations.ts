@@ -1,4 +1,5 @@
 import { CartItem, Product, ProductVariant, Promotion } from "@/lib/supabase/types"
+import { fixUrl } from "./images"
 
 /** Raw cart item from database with nested product/variant objects */
 export interface DatabaseCartItem {
@@ -27,13 +28,13 @@ export const mapCartItems = (items: DatabaseCartItem[], clubDiscountPercentage =
         const product = item.product
         const variant = item.variant
 
-        let thumbnail = product?.image_url
+        let thumbnail = fixUrl(product?.image_url)
         if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
             const firstImg = product.images[0]
             if (typeof firstImg === 'string') {
-                thumbnail = firstImg
+                thumbnail = fixUrl(firstImg)
             } else if (firstImg && typeof firstImg === 'object' && 'url' in firstImg) {
-                thumbnail = (firstImg as { url: string }).url || thumbnail
+                thumbnail = fixUrl((firstImg as { url: string }).url) || thumbnail
             }
         }
 
