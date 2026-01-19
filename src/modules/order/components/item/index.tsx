@@ -16,6 +16,7 @@ const Item = ({ item, currencyCode }: ItemProps) => {
         <div className="flex gap-x-4 items-center">
           <div className="relative w-16 h-20 sm:w-20 sm:h-28 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-sm transition-transform group-hover:scale-105 border border-slate-100">
             {item.thumbnail ? (
+              <>
               <Image
                 src={fixUrl(item.thumbnail)!}
                 alt={item.title}
@@ -23,6 +24,7 @@ const Item = ({ item, currencyCode }: ItemProps) => {
                 className="object-cover"
                 sizes="(max-width: 640px) 128px, 160px"
               />
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
                 📦
