@@ -1,6 +1,7 @@
 import { cn } from "@lib/util/cn"
 import Image from "next/image"
 import React from "react"
+import { fixUrl } from "@lib/util/images"
 
 import PlaceholderImage from "@modules/common/icons/placeholder-image"
 
@@ -22,8 +23,8 @@ const Thumbnail: React.FC<ThumbnailProps> = ({
   "data-testid": dataTestid,
 }) => {
   const gallery = (images ?? []).filter((image) => Boolean(image?.url))
-  const primaryImage = thumbnail || gallery[0]?.url || null
-  const secondaryImage = gallery.find((image) => image.url && image.url !== primaryImage)?.url || null
+  const primaryImage = fixUrl(thumbnail) || fixUrl(gallery[0]?.url) || null
+  const secondaryImage = fixUrl(gallery.find((image) => image.url && fixUrl(image.url) !== primaryImage)?.url) || null
   const hasHoverImage = Boolean(primaryImage && secondaryImage)
 
   return (
