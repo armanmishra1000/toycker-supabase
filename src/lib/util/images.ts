@@ -4,7 +4,16 @@ export const CDN_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || `https://${proce
 
 export const fixUrl = (url: string | null | undefined) => {
     if (!url) return null
-    const trimmed = url.trim()
+    let trimmed = url.trim()
+
+    // If it's a legacy toycker.in absolute URL, strip the domain so we can prepend CDN_URL
+    if (trimmed.includes("toycker.in/uploads/")) {
+        const parts = trimmed.split("toycker.in/")
+        if (parts.length > 1) {
+            trimmed = parts[1]
+        }
+    }
+
     if (trimmed.startsWith("http")) return trimmed
 
     // Remove all leading slashes to prevent relative path bugs (/uploads/... -> cdn.com/uploads/...)

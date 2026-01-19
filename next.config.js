@@ -48,6 +48,16 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "toycker.in",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.toycker.in",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "*.cdn.toycker.in",
         pathname: "/**",
       },
