@@ -21,14 +21,6 @@ export default function PWAInstallPrompt() {
     const [isIOS, setIsIOS] = useState(false);
 
     useEffect(() => {
-        // Allow force-showing the modal in development with a query parameter
-        const isTestMode = typeof window !== "undefined" && window.location.search.includes("test_pwa=true");
-
-        if (process.env.NODE_ENV !== "production" && !isTestMode) {
-            console.log("PWA Modal: Guarded in development. Use ?test_pwa=true to force show.");
-            return;
-        }
-
         // Check if already dismissed
         const isDismissed = localStorage.getItem("pwa_prompt_dismissed");
         if (isDismissed) return;
@@ -90,6 +82,7 @@ export default function PWAInstallPrompt() {
                         fill
                         className="object-cover"
                         priority
+                        unoptimized
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
@@ -168,7 +161,7 @@ export default function PWAInstallPrompt() {
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-md bg-emerald-600 flex items-center justify-center overflow-hidden">
-                            <Image src="/favicon.jpg" width={24} height={24} alt="T" />
+                            <Image src="/favicon.jpg" width={24} height={24} alt="T" unoptimized />
                         </div>
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Toycker Official</span>
                     </div>
