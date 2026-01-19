@@ -5,7 +5,9 @@ export const CDN_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || `https://${proce
 export const fixUrl = (url: string | null | undefined) => {
     if (!url) return null
     if (url.startsWith("http") || url.startsWith("/")) return url
-    return `${CDN_URL}/${url.startsWith('/') ? '' : '/'}${url}`
+    // remove leading slash if present to avoid double slash
+    const path = url.startsWith('/') ? url.substring(1) : url
+    return `${CDN_URL}/${path}`
 }
 
 export const normalizeProductImage = (product: Product): Product => {

@@ -109,7 +109,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                 <span>Subtotal</span>
                 <span className="text-gray-900 font-bold">{convertToLocale({ amount: order.subtotal || (order.total_amount + rewardsUsed), currency_code: order.currency_code })}</span>
               </div>
-              {(order.metadata as any)?.club_savings && Number((order.metadata as any).club_savings) > 0 && (
+              {Number((order.metadata as any)?.club_savings || 0) > 0 && (
                 <div className="flex justify-between text-sm font-medium">
                   <div className="flex items-center gap-2">
                     <span className="text-blue-600">Club Savings</span>
@@ -124,7 +124,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                   <span className="font-bold">-{convertToLocale({ amount: rewardsUsed, currency_code: order.currency_code })}</span>
                 </div>
               )}
-              {(order.metadata as any)?.promo_discount && Number((order.metadata as any).promo_discount) > 0 && (
+              {Number((order.metadata as any)?.promo_discount || 0) > 0 && (
                 <div className="flex justify-between text-sm font-medium text-orange-600">
                   <span>Promo Discount</span>
                   <span className="font-bold">-{convertToLocale({ amount: Number((order.metadata as any).promo_discount), currency_code: order.currency_code })}</span>
