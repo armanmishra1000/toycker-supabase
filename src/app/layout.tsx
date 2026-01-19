@@ -5,6 +5,8 @@ import { Analytics } from "@vercel/analytics/next"
 import NextTopLoader from "nextjs-toploader"
 import Providers from "./providers"
 import { grandstander, inter } from "@lib/fonts"
+import PWARegistration from "@/components/pwa-registration"
+import PWAInstallPrompt from "@modules/layout/components/pwa-install-prompt"
 import "@/styles/globals.css"
 
 export const metadata: Metadata = {
@@ -33,6 +35,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         <NextTopLoader color="#059669" showSpinner={false} height={3} />
         <Providers>
           <main className="relative">{props.children}</main>
+          <PWARegistration />
+          <PWAInstallPrompt />
         </Providers>
         <SpeedInsights />
         <Analytics />
