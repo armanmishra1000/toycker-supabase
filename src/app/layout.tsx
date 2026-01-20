@@ -5,8 +5,17 @@ import { Analytics } from "@vercel/analytics/next"
 import NextTopLoader from "nextjs-toploader"
 import Providers from "./providers"
 import { grandstander, inter } from "@lib/fonts"
-import PWARegistration from "@/components/pwa-registration"
-import PWAInstallPrompt from "@modules/layout/components/pwa-install-prompt"
+import dynamic from "next/dynamic"
+
+const PWARegistration = dynamic(() => import("@/components/pwa-registration"), {
+  ssr: false,
+})
+const PWAInstallPrompt = dynamic(
+  () => import("@modules/layout/components/pwa-install-prompt"),
+  {
+    ssr: false,
+  }
+)
 import "@/styles/globals.css"
 
 export const metadata: Metadata = {

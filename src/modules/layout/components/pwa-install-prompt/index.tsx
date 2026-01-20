@@ -29,21 +29,18 @@ export default function PWAInstallPrompt() {
         const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
         if (isStandalone) return;
 
-        // Detect iOS (using a better check)
+        // Detect iOS
         const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !((window as any).MSStream);
         setIsIOS(ios);
 
-        if (ios) {
-            // For iOS, show after a delay to feel more natural
-            const timer = setTimeout(() => setShowModal(true), 3000);
-            return () => clearTimeout(timer);
-        } else {
-            // For Chromium/Android
+        // Show immediately
+        setShowModal(true);
+
+        if (!ios) {
+            // For Chromium/Android, still listen for the prompt
             const handler = (e: Event) => {
                 e.preventDefault();
                 setDeferredPrompt(e as BeforeInstallPromptEvent);
-                // Show after a delay
-                setTimeout(() => setShowModal(true), 2000);
             };
 
             window.addEventListener("beforeinstallprompt", handler);
@@ -72,7 +69,7 @@ export default function PWAInstallPrompt() {
     if (!showModal) return null;
 
     return (
-        <Modal isOpen={showModal} close={handleDismiss} size="medium" panelPadding="none" overflowHidden>
+        <Modal isOpen={showModal} close={() => { }} size="medium" panelPadding="none" overflowHidden>
             <div className="relative flex flex-col w-full h-full overflow-hidden">
                 {/* Background Image Header */}
                 <div className="relative w-full aspect-square sm:aspect-video overflow-hidden">
