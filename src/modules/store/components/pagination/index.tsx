@@ -2,6 +2,7 @@
 
 import { cn } from "@lib/util/cn"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { useOptionalStorefrontFilters } from "@modules/store/context/storefront-filters"
 
@@ -45,78 +46,58 @@ export function Pagination({
   ) => (
     <button
       key={p}
-      className={cn(
-        "h-10 min-w-[2.5rem] rounded-full px-3 text-sm font-semibold transition",
-        isCurrent
-          ? "bg-gray-900 text-white shadow-sm"
-          : "bg-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-      )}
-      disabled={isCurrent}
-      aria-current={isCurrent ? "page" : undefined}
       onClick={() => handlePageChange(p)}
+      aria-label={`Goto page ${p}`}
+      aria-current={isCurrent ? "page" : undefined}
+      className={cn(
+        "h-9 w-9 md:h-10 md:w-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xs md:text-sm font-bold transition-all duration-300 ease-in-out",
+        isCurrent
+          ? "bg-[#ed1c24] text-white shadow-md scale-105"
+          : "bg-transparent text-gray-600 hover:bg-gray-50 hover:text-[#ed1c24]"
+      )}
     >
       {label}
     </button>
   )
 
-  // Function to render ellipsis
   const renderEllipsis = (key: string) => (
     <span
       key={key}
-      className="px-2 text-base font-semibold text-gray-500"
+      className="flex h-9 w-9 md:h-10 md:w-10 flex-shrink-0 items-center justify-center text-xs md:text-sm font-bold text-gray-400"
     >
-      …
+      &hellip;
     </span>
   )
 
-  // Function to render page buttons based on the current page and total pages
   const renderPageButtons = () => {
-    const buttons = []
+    const pages: (number | string)[] = []
+    const siblingCount = 1
 
     if (pagesCount <= 7) {
-      // Show all pages
-      buttons.push(
-        ...arrayRange(1, pagesCount).map((p) =>
-          renderPageButton(p, p, p === currentPage)
-        )
-      )
+      pages.push(...arrayRange(1, pagesCount))
     } else {
-      // Handle different cases for displaying pages and ellipses
-      if (currentPage <= 4) {
-        // Show 1, 2, 3, ..., lastpage
-        buttons.push(
-          ...arrayRange(1, 3).map((p) => renderPageButton(p, p, p === currentPage))
-        )
-        buttons.push(renderEllipsis("ellipsis1"))
-        buttons.push(
-          renderPageButton(pagesCount, pagesCount, pagesCount === currentPage)
-        )
-      } else if (currentPage >= pagesCount - 3) {
-        // Show 1, ..., lastpage - 4, lastpage - 3, lastpage - 2, lastpage - 1, lastpage
-        buttons.push(renderPageButton(1, 1, 1 === currentPage))
-        buttons.push(renderEllipsis("ellipsis2"))
-        buttons.push(
-          ...arrayRange(pagesCount - 4, pagesCount).map((p) =>
-            renderPageButton(p, p, p === currentPage)
-          )
-        )
+      const leftSiblingIndex = Math.max(currentPage - siblingCount, 1)
+      const rightSiblingIndex = Math.min(currentPage + siblingCount, pagesCount)
+
+      const shouldShowLeftDots = leftSiblingIndex > 2
+      const shouldShowRightDots = rightSiblingIndex < pagesCount - 1
+
+      if (!shouldShowLeftDots && shouldShowRightDots) {
+        const leftItemCount = 3 + 2 * siblingCount
+        pages.push(...arrayRange(1, leftItemCount), "DOTS-RIGHT", pagesCount)
+      } else if (shouldShowLeftDots && !shouldShowRightDots) {
+        const rightItemCount = 3 + 2 * siblingCount
+        pages.push(1, "DOTS-LEFT", ...arrayRange(pagesCount - rightItemCount + 1, pagesCount))
       } else {
-        // Show 1, ..., page - 1, page, page + 1, ..., lastpage
-        buttons.push(renderPageButton(1, 1, 1 === currentPage))
-        buttons.push(renderEllipsis("ellipsis3"))
-        buttons.push(
-          ...arrayRange(currentPage - 1, currentPage + 1).map((p) =>
-            renderPageButton(p, p, p === currentPage)
-          )
-        )
-        buttons.push(renderEllipsis("ellipsis4"))
-        buttons.push(
-          renderPageButton(pagesCount, pagesCount, pagesCount === currentPage)
-        )
+        pages.push(1, "DOTS-LEFT", ...arrayRange(leftSiblingIndex, rightSiblingIndex), "DOTS-RIGHT", pagesCount)
       }
     }
 
-    return buttons
+    return pages.map((page, index) => {
+      if (page === "DOTS-LEFT") return renderEllipsis("dots-left")
+      if (page === "DOTS-RIGHT") return renderEllipsis("dots-right")
+      return renderPageButton(page as number, page as number, page === currentPage)
+    })
   }
 
   // Render the component
@@ -136,26 +117,30 @@ export function Pagination({
   }
 
   return (
-    <div className="mt-12 flex w-full flex-col items-center gap-3" data-testid={dataTestid}>
-      <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1 shadow-sm">
+    <nav className="mt-12 flex w-full flex-col items-center" aria-label="Pagination Navigation" data-testid={dataTestid}>
+      <div className="flex items-center rounded-2xl border border-gray-100 bg-white p-1 shadow-sm md:p-1.5 transition-all duration-500 ease-in-out">
         <button
           type="button"
           onClick={goToPrevious}
           disabled={isFirstPage}
-          className="h-9 rounded-full px-4 text-sm font-semibold text-gray-900 transition disabled:opacity-40"
+          aria-label="Previous Page"
+          className="flex h-9 w-9 md:h-10 md:w-20 items-center justify-center gap-1 text-sm font-bold text-gray-400 hover:text-[#ed1c24] transition-all duration-300 ease-in-out disabled:opacity-20 disabled:hover:text-gray-400 group"
         >
-          Prev
+          <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+          <span className="hidden md:block">Prev</span>
         </button>
-        <div className="flex items-center gap-1">{renderPageButtons()}</div>
+        <div className="flex items-center gap-1 md:gap-2 px-1">{renderPageButtons()}</div>
         <button
           type="button"
           onClick={goToNext}
           disabled={isLastPage}
-          className="h-9 rounded-full px-4 text-sm font-semibold text-gray-900 transition disabled:opacity-40"
+          aria-label="Next Page"
+          className="flex h-9 w-9 md:h-10 md:w-20 items-center justify-center gap-1 text-sm font-bold text-gray-800 hover:text-[#ed1c24] transition-all duration-300 ease-in-out disabled:opacity-20 group"
         >
-          Next
+          <span className="hidden md:block">Next</span>
+          <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
         </button>
       </div>
-    </div>
+    </nav>
   )
 }
