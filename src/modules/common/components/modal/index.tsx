@@ -17,6 +17,8 @@ type ModalProps = {
   overflowHidden?: boolean
   panelClassName?: string
   children: React.ReactNode
+  closeOnOutsideClick?: boolean
+  closeOnEscape?: boolean
   'data-testid'?: string
 }
 
@@ -32,8 +34,15 @@ const Modal = ({
   overflowHidden = false,
   panelClassName,
   children,
+  closeOnOutsideClick = true,
+  closeOnEscape = true,
   'data-testid': dataTestId
 }: ModalProps) => {
+  const handleClose = () => {
+    if (closeOnOutsideClick) {
+      close()
+    }
+  }
   const resolvedRounded: "none" | "sm" | "md" | "lg" | "xl" = (() => {
     if (roundedSize) return roundedSize
     return rounded ? "lg" : "none"
@@ -48,7 +57,7 @@ const Modal = ({
   }
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[75]" onClose={close}>
+      <Dialog as="div" className="relative z-[75]" onClose={handleClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"

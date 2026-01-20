@@ -1,6 +1,9 @@
 const checkEnvVariables = require("./check-env-variables")
 const withSerwistInit = require("@serwist/next").default;
 
+// Silence Serwist Turbopack warning as we have already disabled it in development
+process.env.SERWIST_SUPPRESS_TURBOPACK_WARNING = "1";
+
 checkEnvVariables()
 
 const R2_PROTOCOL = process.env.NEXT_PUBLIC_R2_MEDIA_PROTOCOL || "https"
@@ -14,7 +17,7 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
 const withSerwist = withSerwistInit({
   swSrc: "src/sw.ts",
   swDest: "public/sw.js",
-  disable: process.env.NODE_ENV === "development",
+  disable: process.env.NODE_ENV !== "production",
 });
 
 /**
