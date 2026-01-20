@@ -1,6 +1,9 @@
 const checkEnvVariables = require("./check-env-variables")
 const withSerwistInit = require("@serwist/next").default;
 
+// Silence Serwist Turbopack warning as we have already disabled it in development
+process.env.SERWIST_SUPPRESS_TURBOPACK_WARNING = "1";
+
 checkEnvVariables()
 
 const R2_PROTOCOL = process.env.NEXT_PUBLIC_R2_MEDIA_PROTOCOL || "https"

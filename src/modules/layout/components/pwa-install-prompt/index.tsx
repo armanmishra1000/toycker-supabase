@@ -69,7 +69,15 @@ export default function PWAInstallPrompt() {
     if (!showModal) return null;
 
     return (
-        <Modal isOpen={showModal} close={() => { }} size="medium" panelPadding="none" overflowHidden>
+        <Modal
+            isOpen={showModal}
+            close={handleDismiss}
+            closeOnOutsideClick={false}
+            closeOnEscape={false}
+            size="medium"
+            panelPadding="none"
+            overflowHidden
+        >
             <div className="relative flex flex-col w-full h-full overflow-hidden">
                 {/* Background Image Header */}
                 <div className="relative w-full aspect-square sm:aspect-video overflow-hidden">
