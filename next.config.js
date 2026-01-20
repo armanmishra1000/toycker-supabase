@@ -92,7 +92,7 @@ const nextConfig = {
         : []),
     ],
     qualities: IMAGE_QUALITIES,
-    unoptimized: false,
+    unoptimized: true,
   },
   experimental: {
     optimizePackageImports: [
