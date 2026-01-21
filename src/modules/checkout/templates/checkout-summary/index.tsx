@@ -16,7 +16,11 @@ const CheckoutSummary = ({
   cart: Cart
 }) => {
   const { cart: clientCart } = useCartStore()
-  const cart = clientCart ?? serverCart
+
+  // Prioritize serverCart during initial render to avoid "delay" when arriving from "Buy It Now"
+  // If absolute consistency is needed, we prefer clientCart ONLY if it has items and matches basic ID
+  const cart = (clientCart?.items && clientCart.items.length > 0) ? clientCart : serverCart
+
   return (
     <div className="sticky top-4 flex flex-col gap-3 sm:gap-4">
       {/* Cart Summary Card */}
