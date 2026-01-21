@@ -26,8 +26,21 @@ const OrderCard = ({ order }: OrderCardProps) => {
 
   // Get order status
   const getStatusInfo = () => {
-    const status = order.fulfillment_status || order.status || "pending"
-    switch (status.toLowerCase()) {
+    const status = order.status || "pending"
+    const fulfillmentStatus = order.fulfillment_status || "not_fulfilled"
+
+    // Explicitly handle Cancelled/Failed first as they take priority
+    if (status.toLowerCase() === "cancelled" || order.payment_status === "failed") {
+      return {
+        label: "Cancelled",
+        icon: Package,
+        bgColor: "bg-red-50",
+        textColor: "text-red-700",
+        iconColor: "text-red-600",
+      }
+    }
+
+    switch (fulfillmentStatus.toLowerCase()) {
       case "fulfilled":
       case "delivered":
         return {
@@ -48,7 +61,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
       case "pending":
       case "not_fulfilled":
         return {
-          label: "Processing",
+          label: status.toLowerCase() === "pending" ? "Processing" : (status.charAt(0).toUpperCase() + status.slice(1)),
           icon: Clock,
           bgColor: "bg-amber-50",
           textColor: "text-amber-700",
@@ -56,7 +69,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
         }
       default:
         return {
-          label: "Processing",
+          label: status.charAt(0).toUpperCase() + status.slice(1),
           icon: Package,
           bgColor: "bg-gray-50",
           textColor: "text-gray-700",

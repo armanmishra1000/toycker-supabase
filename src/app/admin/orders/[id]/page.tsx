@@ -199,7 +199,13 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                   <p className="text-xs text-gray-500">
                     {paymentMethod.includes('Cash on Delivery') || paymentMethod.includes('Manual')
                       ? (order.payment_status === 'paid' || order.payment_status === 'captured' ? 'COD - Collected' : 'COD - Pending')
-                      : (order.payment_status === 'paid' || order.payment_status === 'captured' ? 'Paid' : order.payment_status)}
+                      : (order.payment_status === 'paid' || order.payment_status === 'captured'
+                        ? 'Paid'
+                        : order.payment_status === 'failed'
+                          ? 'Payment Cancelled'
+                          : (order.payment_status?.charAt(0).toUpperCase() + order.payment_status?.slice(1) || '—')
+                      )
+                    }
                   </p>
                 </div>
               </div>
