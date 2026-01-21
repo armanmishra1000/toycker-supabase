@@ -16,6 +16,8 @@ type CartTotalsProps = {
     shipping_subtotal?: number | null
     shipping_total?: number | null
     discount_subtotal?: number | null
+    payment_discount?: number | null
+    payment_discount_percentage?: number | null
   }
   cart?: Cart
   order?: Order
@@ -45,7 +47,9 @@ const CartTotals: React.FC<CartTotalsProps> = ({
   if (order) {
     // For orders, extract from metadata
     const metadata = order.metadata as Record<string, unknown> | null
-    rewards_discount = typeof metadata?.rewards_discount === 'number' ? metadata.rewards_discount : 0
+    // Check both naming conventions for rewards
+    rewards_discount = (typeof metadata?.rewards_discount === 'number' ? metadata.rewards_discount : 0) ||
+      (typeof metadata?.rewards_used === 'number' ? metadata.rewards_used : 0)
     club_savings = typeof metadata?.club_savings === 'number' ? metadata.club_savings : 0
     promoDiscount = typeof metadata?.promo_discount === 'number' ? metadata.promo_discount : 0
     is_club_member = metadata?.is_club_member === true
@@ -55,6 +59,18 @@ const CartTotals: React.FC<CartTotalsProps> = ({
     club_savings = cart?.club_savings ?? 0
     promoDiscount = cart?.discount_total || totals.discount_subtotal || 0
     is_club_member = cart?.is_club_member ?? false
+  }
+
+  // Extract payment discount
+  let payment_discount = 0
+  let payment_discount_percentage = 0
+  if (order) {
+    const metadata = order.metadata as Record<string, unknown> | null
+    payment_discount = typeof metadata?.payment_discount_amount === 'number' ? metadata.payment_discount_amount : 0
+    payment_discount_percentage = typeof metadata?.payment_discount_percentage === 'number' ? metadata.payment_discount_percentage : 0
+  } else {
+    payment_discount = (totals as any).payment_discount ?? 0
+    payment_discount_percentage = (totals as any).payment_discount_percentage ?? 0
   }
 
   const discountSubtotal = promoDiscount + rewards_discount
@@ -170,6 +186,23 @@ const CartTotals: React.FC<CartTotalsProps> = ({
           </div>
         )}
 
+        {payment_discount > 0 && (
+          <div className="flex items-center justify-between py-1">
+            <span className="font-medium text-pink-600 uppercase tracking-widest text-sm">Payment Discount ({payment_discount_percentage}%)</span>
+            <span
+              className="font-bold text-pink-600"
+              data-testid="cart-payment-discount"
+              data-value={payment_discount}
+            >
+              -{" "}
+              {convertToLocale({
+                amount: payment_discount,
+                currency_code: normalizedCurrency,
+              })}
+            </span>
+          </div>
+        )}
+
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-slate-500 uppercase tracking-widest text-sm">Shipping</span>
           <span className="font-bold text-slate-900" data-testid="cart-shipping" data-value={displayShippingSubtotal}>
@@ -209,10 +242,10 @@ const CartTotals: React.FC<CartTotalsProps> = ({
             <span
               className="text-4xl font-black text-slate-900 tracking-tighter leading-none"
               data-testid="cart-total"
-              data-value={Math.max(0, itemSubtotal + displayShippingSubtotal + (tax_total || 0) - (order ? (order.discount_total || 0) : discountSubtotal))}
+              data-value={Math.max(0, itemSubtotal + displayShippingSubtotal + (tax_total || 0) - (order ? (order.discount_total || 0) : (discountSubtotal + payment_discount)))}
             >
               {convertToLocale({
-                amount: Math.max(0, itemSubtotal + displayShippingSubtotal + (tax_total || 0) - (order ? (order.discount_total || 0) : discountSubtotal)),
+                amount: Math.max(0, itemSubtotal + displayShippingSubtotal + (tax_total || 0) - (order ? (order.discount_total || 0) : (discountSubtotal + payment_discount))),
                 currency_code: normalizedCurrency,
               })}
             </span>

@@ -36,7 +36,20 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   const { data: cartData, error } = await supabase
     .from("carts")
     .select(`
-      *,
+      id,
+      email,
+      user_id,
+      region_id,
+      currency_code,
+      shipping_address,
+      billing_address,
+      shipping_methods,
+      payment_collection,
+      metadata,
+      created_at,
+      updated_at,
+      promo_code,
+      discount_total,
       items:cart_items(
         *,
         product:products(*),
@@ -83,6 +96,22 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
 
   const items = mapCartItems(cartData.items as any || [], clubDiscountPercentage, giftWrapFee)
 
+  // Get payment discount percentage if a method is selected
+  const selectedPaymentProviderId = cartData.payment_collection?.payment_sessions?.find(
+    (s: any) => s.status === "pending"
+  )?.provider_id
+
+  let paymentDiscountPercentage = 0
+  if (selectedPaymentProviderId) {
+    const { data: provider } = await supabase
+      .from("payment_providers")
+      .select("discount_percentage")
+      .eq("id", selectedPaymentProviderId)
+      .maybeSingle()
+
+    paymentDiscountPercentage = provider?.discount_percentage || 0
+  }
+
   // Get shipping threshold from active shipping options
   const { data: shippingOptions } = await supabase
     .from("shipping_options")
@@ -101,12 +130,13 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
 
   const totals = calculateCartTotals({
     items,
-    promotion: cartData.promotion as Promotion,
+    promotion: (cartData.promotion as any) as Promotion,
     shippingMethods: cartData.shipping_methods as CartShippingMethod[],
     availableRewards,
     cartMetadata: (cartData.metadata || {}) as Record<string, unknown>,
     isClubMember,
     clubDiscountPercentage,
+    paymentDiscountPercentage,
     defaultShippingOption,
   })
 
@@ -118,7 +148,7 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     ...cartData,
     ...totals,
     items,
-    promotions: cartData.promotion ? [cartData.promotion as Promotion] : [],
+    promotions: cartData.promotion ? [(cartData.promotion as any) as Promotion] : [],
     free_shipping_threshold: freeShippingThreshold
   }
 
@@ -435,6 +465,36 @@ export async function setShippingMethod({
   }
 
   return methodData
+}
+
+export async function setPaymentProvider(providerId: string) {
+  const cartId = await getCartId()
+  if (!cartId) return
+
+  const supabase = await createClient()
+
+  const paymentCollection = {
+    payment_sessions: [{
+      provider_id: providerId,
+      status: "pending",
+      data: {}
+    }]
+  }
+
+  const { error } = await supabase
+    .from("carts")
+    .update({
+      payment_collection: paymentCollection as any
+    })
+    .eq("id", cartId)
+
+  if (error) {
+    console.error("Error setting payment provider:", error)
+    throw new Error(error.message)
+  }
+
+  revalidateTag("cart", "max")
+  revalidatePath("/checkout")
 }
 
 export async function initiatePaymentSession(cartInput: { id: string }, data: { provider_id: string, data?: Record<string, unknown> }) {

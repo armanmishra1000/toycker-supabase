@@ -81,6 +81,7 @@ export interface CalculateTotalsParams {
     cartMetadata: Record<string, unknown>
     isClubMember: boolean
     clubDiscountPercentage: number
+    paymentDiscountPercentage?: number
     defaultShippingOption?: CartShippingMethod | null
 }
 
@@ -92,6 +93,7 @@ export const calculateCartTotals = ({
     cartMetadata,
     isClubMember,
     clubDiscountPercentage,
+    paymentDiscountPercentage = 0,
     defaultShippingOption,
 }: CalculateTotalsParams) => {
     const item_subtotal = items.reduce((sum, item) => sum + item.total, 0)
@@ -150,7 +152,11 @@ export const calculateCartTotals = ({
     const rewards_discount = rewards_to_apply
 
     const tax_total = 0
-    const total = Math.max(0, item_subtotal + tax_total + shipping_total - discount_total - rewards_discount)
+
+    // Calculate payment discount (on item subtotal)
+    const payment_discount = Math.round(item_subtotal * (paymentDiscountPercentage / 100))
+
+    const total = Math.max(0, item_subtotal + tax_total + shipping_total - discount_total - rewards_discount - payment_discount)
 
     return {
         item_subtotal,
@@ -164,6 +170,8 @@ export const calculateCartTotals = ({
         club_savings,
         is_club_member: isClubMember,
         club_discount_percentage: clubDiscountPercentage,
+        payment_discount_percentage: paymentDiscountPercentage,
+        payment_discount,
         rewards_to_apply,
         rewards_discount,
         available_rewards: availableRewards,

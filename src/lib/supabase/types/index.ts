@@ -147,6 +147,8 @@ export interface Cart {
   rewards_discount?: number;
   available_rewards?: number;
   free_shipping_threshold?: number;
+  payment_discount?: number;
+  payment_discount_percentage?: number;
 }
 
 export interface PaymentCollection {
@@ -316,6 +318,7 @@ export interface PaymentProvider {
   name: string;
   description: string | null;
   is_active: boolean;
+  discount_percentage?: number;
   created_at: string;
 }
 

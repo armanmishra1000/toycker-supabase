@@ -107,7 +107,12 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
             <div className="p-8 bg-gray-50/50 border-t border-gray-100 space-y-3">
               <div className="flex justify-between text-sm font-medium text-gray-500">
                 <span>Subtotal</span>
-                <span className="text-gray-900 font-bold">{convertToLocale({ amount: order.subtotal || (order.total_amount + rewardsUsed), currency_code: order.currency_code })}</span>
+                <span className="text-gray-900 font-bold">
+                  {convertToLocale({
+                    amount: (order.subtotal || 0) + Number((order.metadata as any)?.club_savings || 0),
+                    currency_code: order.currency_code
+                  })}
+                </span>
               </div>
               {Number((order.metadata as any)?.club_savings || 0) > 0 && (
                 <div className="flex justify-between text-sm font-medium">
@@ -128,6 +133,12 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                 <div className="flex justify-between text-sm font-medium text-orange-600">
                   <span>Promo Discount</span>
                   <span className="font-bold">-{convertToLocale({ amount: Number((order.metadata as any).promo_discount), currency_code: order.currency_code })}</span>
+                </div>
+              )}
+              {Number((order.metadata as any)?.payment_discount_amount || 0) > 0 && (
+                <div className="flex justify-between text-sm font-medium text-pink-600">
+                  <span>Payment Discount ({Number((order.metadata as any).payment_discount_percentage)}%)</span>
+                  <span className="font-bold">-{convertToLocale({ amount: Number((order.metadata as any).payment_discount_amount), currency_code: order.currency_code })}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-medium text-gray-500">

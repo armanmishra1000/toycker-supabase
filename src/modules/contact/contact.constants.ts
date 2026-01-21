@@ -79,6 +79,6 @@ export const contactLocations: ContactLocation[] = [
       href: "tel:+919099144170",
     },
     mapQuery: "Gujarat Gas circle, krishna Nagar Society, Premjinagar Society-1, Gita Nagar, Adajan, Surat",
-    virtualTourUrl: "https://maps.app.goo.gl/eGNbyMecEDwgeJ3FA",
+    virtualTourUrl: "https://maps.app.goo.gl/uYk1gy1mbWQqoeb16",
   },
 ]

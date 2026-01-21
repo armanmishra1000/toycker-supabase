@@ -33,6 +33,19 @@ export default function NewPaymentMethod() {
               <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
               <textarea name="description" rows={3} placeholder="Instruction for the customer..." className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Discount (%)</label>
+                <input name="discount_percentage" type="number" step="0.01" min="0" max="100" defaultValue="0" className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
+                <select name="is_active" className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-black focus:ring-0">
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </div>
+            </div>
           </div>
         </AdminCard>
 

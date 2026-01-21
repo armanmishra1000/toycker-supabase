@@ -54,6 +54,10 @@ export default function ProductPrice({
           </Link>
         </div>
       )}
+
+      <div className="flex items-center gap-2 mt-2 text-pink-700 bg-pink-50 px-3 py-1 rounded-full w-fit border border-pink-100">
+        <span className="text-xs font-bold uppercase tracking-wider">Extra 5% OFF on Prepaid</span>
+      </div>
     </div>
   )
 }
