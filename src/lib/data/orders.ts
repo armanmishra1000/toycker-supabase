@@ -1,12 +1,14 @@
 "use server"
 
+import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { Order } from "@/lib/supabase/types"
+import { getAuthUser } from "./auth"
 
-export async function listOrders() {
+export const listOrders = cache(async () => {
+  const user = await getAuthUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     return []
   }
@@ -23,7 +25,7 @@ export async function listOrders() {
   }
 
   return data as Order[]
-}
+})
 
 export async function retrieveOrder(id: string) {
   const supabase = await createClient()

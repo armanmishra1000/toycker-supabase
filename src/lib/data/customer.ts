@@ -271,3 +271,59 @@ export async function deleteCustomerAddress(addressId: string) {
 
   revalidateTag("customers", "max")
 }
+
+export async function requestPasswordReset(_currentState: unknown, formData: FormData): Promise<ActionResult<string>> {
+  const email = (formData.get("email") as string || "").trim()
+  const supabase = await createClient()
+
+  if (!email) {
+    return { success: false, error: "Email is required" }
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getBaseURL()}/api/auth/callback?next=/account/reset-password`,
+  })
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  return { success: true, data: "success" }
+}
+
+export async function resetPassword(_currentState: unknown, formData: FormData): Promise<ActionResult<string>> {
+  const password = formData.get("password") as string
+  const oldPassword = formData.get("old_password") as string
+  const supabase = await createClient()
+
+  if (!password) {
+    return { success: false, error: "Password is required" }
+  }
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // If we have a user and they provided an old password, verify it first
+  // Note: Recovery flow might not have a confirmed email session yet, so we only do this if a user is returned
+  if (user && oldPassword) {
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email!,
+      password: oldPassword,
+    })
+
+    if (signInError) {
+      return { success: false, error: "Incorrect old password. Please try again." }
+    }
+  }
+
+  const { error } = await supabase.auth.updateUser({ password })
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath("/", "layout")
+  revalidatePath("/account", "layout")
+  revalidateTag("customers", "max")
+
+  return { success: true, data: "Your password has been updated successfully!" }
+}

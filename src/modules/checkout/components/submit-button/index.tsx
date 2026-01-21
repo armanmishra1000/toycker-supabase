@@ -10,6 +10,7 @@ export function SubmitButton({
   size = "large",
   className,
   isLoading: isLoadingProp,
+  disabled,
   "data-testid": dataTestId,
 }: {
   children: React.ReactNode
@@ -17,6 +18,7 @@ export function SubmitButton({
   size?: "small" | "base" | "large"
   className?: string
   isLoading?: boolean
+  disabled?: boolean
   "data-testid"?: string
 }) {
   const { pending } = useFormStatus()
@@ -28,6 +30,7 @@ export function SubmitButton({
       className={className}
       type="submit"
       isLoading={isLoading}
+      disabled={disabled}
       variant={variant || "primary"}
       data-testid={dataTestId}
     >

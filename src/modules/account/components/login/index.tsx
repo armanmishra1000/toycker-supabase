@@ -1,11 +1,11 @@
 "use client"
 
+import { useActionState, useEffect } from "react"
+import { useToast } from "@modules/common/context/toast-context"
 import { login } from "@lib/data/customer"
 import { LOGIN_VIEW, LoginView } from "@modules/account/templates/login-template"
-import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
-import { useActionState } from "react"
 
 type Props = {
   setCurrentView: (_view: LoginView) => void
@@ -13,7 +13,14 @@ type Props = {
 }
 
 const Login = ({ setCurrentView, returnUrl }: Props) => {
+  const { showToast } = useToast()
   const [state, formAction, isPending] = useActionState(login, { success: true, data: undefined } as any)
+
+  useEffect(() => {
+    if (state?.success === false && state?.error) {
+      showToast(state.error, "error", "Login Failed")
+    }
+  }, [state, showToast])
 
   return (
     <div className="w-full flex flex-col gap-y-6" data-testid="login-page">
@@ -37,11 +44,19 @@ const Login = ({ setCurrentView, returnUrl }: Props) => {
             autoComplete="current-password"
             required
             disabled={isPending}
-            data-testid="password-input"
           />
         </div>
+        <div className="flex justify-end mt-2">
+          <button
+            type="button"
+            onClick={() => setCurrentView(LOGIN_VIEW.FORGOT_PASSWORD)}
+            className="text-small-regular text-ui-fg-subtle hover:text-black transition-colors underline"
+            data-testid="forgot-password-link"
+          >
+            Forgot password?
+          </button>
+        </div>
         <div aria-live="polite" className="min-h-[24px] mt-3">
-          <ErrorMessage error={state?.success === false ? state.error : null} data-testid="login-error-message" />
         </div>
         <SubmitButton
           data-testid="sign-in-button"

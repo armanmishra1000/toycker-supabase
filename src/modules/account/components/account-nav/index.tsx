@@ -1,7 +1,7 @@
 "use client"
 
-import React from "react"
-import { LogOut, Sparkles, Wallet, MessageSquare } from "lucide-react"
+import React, { useState } from "react"
+import { LogOut, Sparkles, Wallet, MessageSquare, Key, Loader2 } from "lucide-react"
 import { usePathname, useParams } from "next/navigation"
 import { cn } from "@lib/util/cn"
 
@@ -18,8 +18,15 @@ const AccountNav = ({
   customer: any
 }) => {
   const route = usePathname()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
   const handleLogout = async () => {
-    await signout()
+    setIsLoggingOut(true)
+    try {
+      await signout()
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   return (
@@ -77,16 +84,27 @@ const AccountNav = ({
                   label="Orders"
                   data-testid="orders-link"
                 />
+                <MobileLink
+                  href="/account/reset-password"
+                  icon={<Key size={20} />}
+                  label="Reset Password"
+                  data-testid="reset-password-link"
+                />
                 <li>
                   <button
                     type="button"
-                    className="flex items-center justify-between py-4 border-t border-gray-200 px-4 w-full"
+                    className="flex items-center justify-between py-4 border-t border-gray-200 px-4 w-full disabled:opacity-50"
                     onClick={handleLogout}
+                    disabled={isLoggingOut}
                     data-testid="logout-button"
                   >
                     <div className="flex items-center gap-x-2">
-                      <LogOut className="h-4 w-4" />
-                      <span>Log out</span>
+                      {isLoggingOut ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <LogOut className="h-4 w-4" />
+                      )}
+                      <span>{isLoggingOut ? "Logging out..." : "Log out"}</span>
                     </div>
                     <ChevronDown className="transform -rotate-90" />
                   </button>
@@ -168,14 +186,29 @@ const AccountNav = ({
                   <NavRow icon={<Package size={18} />} label="Orders" />
                 </AccountNavLink>
               </li>
+              <li>
+                <AccountNavLink
+                  href="/account/reset-password"
+                  route={route!}
+                  data-testid="reset-password-link"
+                >
+                  <NavRow icon={<Key size={18} />} label="Reset Password" />
+                </AccountNavLink>
+              </li>
               <li className="pt-2">
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="text-gray-500 hover:text-gray-900 transition-colors"
+                  disabled={isLoggingOut}
+                  className="flex items-center gap-x-2 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-50"
                   data-testid="logout-button"
                 >
-                  Log out
+                  {isLoggingOut ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <LogOut className="h-4 w-4" />
+                  )}
+                  <span>{isLoggingOut ? "Logging out..." : "Log out"}</span>
                 </button>
               </li>
             </ul>

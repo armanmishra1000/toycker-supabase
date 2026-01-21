@@ -29,7 +29,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const showToast = useCallback((message: string, type: ToastType, title?: string) => {
     const id = Math.random().toString(36).substring(7)
     setToasts((prev) => [...prev, { id, title, message, type }])
-    setTimeout(() => removeToast(id), 4000)
+    setTimeout(() => removeToast(id), 5000)
   }, [removeToast])
 
   const value = useMemo(

@@ -7,10 +7,12 @@ import Register from "@modules/account/components/register"
 import Login from "@modules/account/components/login"
 import AuthShell from "@modules/account/components/auth-shell"
 import ErrorMessage from "@modules/checkout/components/error-message"
+import ForgotPassword from "@modules/account/components/forgot-password"
 
 export const LOGIN_VIEW = {
   SIGN_IN: "sign-in",
   REGISTER: "register",
+  FORGOT_PASSWORD: "forgot-password",
 } as const
 export type LoginView = (typeof LOGIN_VIEW)[keyof typeof LOGIN_VIEW]
 
@@ -49,11 +51,17 @@ const LoginTemplateContent = ({ returnUrl }: { returnUrl?: string }) => {
           subtitle:
             "Sign in to access your saved addresses, order history, and a smoother checkout.",
         }
-        : {
-          title: "Join Toycker",
-          subtitle:
-            "Create your account to track orders, save addresses, and speed through checkout.",
-        },
+        : currentView === LOGIN_VIEW.REGISTER
+          ? {
+            title: "Join Toycker",
+            subtitle:
+              "Create your account to track orders, save addresses, and speed through checkout.",
+          }
+          : {
+            title: "Forgot Password",
+            subtitle:
+              "Enter your email address and we'll send you a link to reset your password.",
+          },
     [currentView]
   )
 
@@ -74,8 +82,10 @@ const LoginTemplateContent = ({ returnUrl }: { returnUrl?: string }) => {
       )}
       {currentView === LOGIN_VIEW.SIGN_IN ? (
         <Login setCurrentView={setCurrentView} returnUrl={returnUrl} />
-      ) : (
+      ) : currentView === LOGIN_VIEW.REGISTER ? (
         <Register setCurrentView={setCurrentView} /> // Todo: Register might also need returnUrl
+      ) : (
+        <ForgotPassword setCurrentView={setCurrentView} />
       )}
     </AuthShell>
   )

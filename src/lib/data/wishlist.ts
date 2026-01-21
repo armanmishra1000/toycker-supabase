@@ -1,10 +1,11 @@
 "use server"
 
+import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { revalidateTag } from "next/cache"
 import { getAuthUser } from "./auth"
 
-export async function getWishlistItems() {
+export const getWishlistItems = cache(async () => {
     const user = await getAuthUser()
     const supabase = await createClient()
 
@@ -23,7 +24,7 @@ export async function getWishlistItems() {
     }
 
     return data.map((item) => item.product_id)
-}
+})
 
 export async function addToWishlist(productId: string) {
     const supabase = await createClient()
