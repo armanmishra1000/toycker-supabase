@@ -192,6 +192,42 @@ export async function POST(request: NextRequest) {
     // Handle Failure
     const failureReason = payload.error_Message || "payment_failed"
     console.log("[PAYU] Payment failed:", { status, reason: failureReason })
+
+    // Optional: Update order to failed/cancelled status
+    try {
+      const supabase = await createAdminClient()
+      const { data: orderToUpdate } = await supabase
+        .from("orders")
+        .select("id")
+        .contains("metadata", { cart_id: cartId })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (orderToUpdate) {
+        await supabase
+          .from("orders")
+          .update({
+            status: "cancelled",
+            payment_status: "failed",
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", orderToUpdate.id)
+
+        // Log "Payment Failed" event
+        const { logOrderEvent } = await import("@/lib/data/admin")
+        await logOrderEvent(
+          orderToUpdate.id,
+          "payment_failed",
+          "Payment Failed",
+          `Payment attempt failed or was cancelled via PayU. Reason: ${failureReason}`,
+          "system"
+        )
+      }
+    } catch (updateErr) {
+      console.error("[PAYU] Failed to update order status for failure:", updateErr)
+    }
+
     return htmlRedirect(`/checkout?step=payment&error=${encodeURIComponent(failureReason)}&status=${encodeURIComponent(status)}`)
   } catch (error) {
     console.error("[PAYU] Callback fatal error:", error)

@@ -176,6 +176,7 @@ BEGIN
         'is_club_member', v_is_club_member
       ),
       promo_code = v_promo_code,
+      payment_method = p_payment_provider,
       updated_at = NOW()
     WHERE id = v_existing_order_id;
     
@@ -200,6 +201,7 @@ BEGIN
       shipping_methods,
       metadata,
       promo_code,
+      payment_method,
       status,
       payment_status,
       fulfillment_status,
@@ -233,6 +235,7 @@ BEGIN
         'is_club_member', v_is_club_member
       ),
       v_promo_code,
+      p_payment_provider,
       'pending',
       'pending',
       'not_shipped',

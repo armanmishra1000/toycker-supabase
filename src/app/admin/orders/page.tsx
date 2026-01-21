@@ -29,7 +29,7 @@ function getPaymentBadge(paymentStatus: string, paymentMethod?: string | null) {
     case "pending":
       return { variant: "warning" as const, label: "Pending" }
     case "failed":
-      return { variant: "error" as const, label: "Failed" }
+      return { variant: "error" as const, label: "Payment Cancelled" }
     case "refunded":
       return { variant: "neutral" as const, label: "Refunded" }
     default:
