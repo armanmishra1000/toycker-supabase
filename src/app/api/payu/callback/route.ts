@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
       // 3. Update Existing Order or Create New One
       // We prefer updating the one created by the RPC in completeCheckout
       let orderIdToUse: string | null = null
+      let finalizedOrderData: any = null
 
       const { data: existingOrder } = await supabase
         .from("orders")
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
         console.log("[PAYU] Found existing order, updating:", existingOrder.id)
         orderIdToUse = existingOrder.id
 
-        const { error: updateError } = await supabase
+        const { data: updatedOrder, error: updateError } = await supabase
           .from("orders")
           .update({
             status: "paid",
@@ -117,16 +118,18 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString()
           })
           .eq("id", orderIdToUse)
+          .select()
+          .single()
 
         if (updateError) {
           console.error("[PAYU] Order update failed:", updateError.message)
           return htmlRedirect("/checkout?error=order_update_failed_payment_success")
         }
+        finalizedOrderData = updatedOrder
       } else {
         console.log("[PAYU] No existing order found, creating new one")
         // Fallback: Create New Order in Database
-        // Use JSON serialization to properly type the complex objects
-        const { data: order, error } = await supabase
+        const { data: createdOrder, error } = await supabase
           .from("orders")
           .insert({
             user_id: cart.user_id,
@@ -156,10 +159,19 @@ export async function POST(request: NextRequest) {
           console.error("[PAYU] Order creation failed:", error.message)
           return htmlRedirect("/checkout?error=order_creation_failed_payment_success")
         }
-        orderIdToUse = order.id
+        orderIdToUse = createdOrder.id
+        finalizedOrderData = createdOrder
       }
 
       console.log("[PAYU] Order processed successfully:", orderIdToUse)
+
+      // 4. Trigger Post-Order Logic (Rewards, Club, etc.)
+      const { handlePostOrderLogic: finalizePostOrder } = await import("@lib/data/cart")
+      const rewardsToApply = (finalizedOrderData?.metadata as any)?.rewards_used || 0
+
+      if (cart && finalizedOrderData) {
+        await finalizePostOrder(finalizedOrderData, cart, rewardsToApply)
+      }
 
       // Log "Order Placed" event
       const { logOrderEvent } = await import("@/lib/data/admin")

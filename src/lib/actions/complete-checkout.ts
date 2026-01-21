@@ -79,15 +79,11 @@ export async function completeCheckout(
             .eq("id", result.order_id)
             .single()
 
-        // Step 3: Handle post-order club and rewards logic
-        // This was missing in the new atomic flow and is critical for club functionality
-        const { retrieveCart, handlePostOrderLogic } = await import("@lib/data/cart")
-        const currentCart = await retrieveCart() // To get club_savings info
-        if (orderData && currentCart) {
-            await handlePostOrderLogic(orderData, currentCart, validatedData.rewardsToApply)
-        }
+        // Step 3: Handle post-order logic (MOVED TO PAYMENT CALLBACK)
+        // We no longer trigger rewards/club updates here to avoid ghost orders.
+        // These will be handled in the secure payment callback (e.g. PayU/Stripe) 
+        // after the hash or signature is verified.
 
-        // We will do redirect in the client to avoid issues with some actions
         // Cart clearing is handled by ClearCartOnMount on the confirmation page
         // to avoid "Not Found" race conditions during payment gateway handoffs.
 
