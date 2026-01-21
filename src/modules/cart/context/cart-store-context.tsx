@@ -50,12 +50,27 @@ const mergeLineItems = (
   nextItems: CartItem[],
 ): Cart => {
   const itemSubtotal = nextItems.reduce((sum, item) => sum + (item.total ?? 0), 0)
+
+  // Preserve existing discounts in optimistic calculations
+  const promoDiscount = current.discount_total || 0
+  const rewardsDiscount = current.rewards_discount || 0
+  const paymentDiscount = current.payment_discount || 0
+
+  const total = Math.max(0,
+    itemSubtotal +
+    (current.shipping_total ?? current.shipping_subtotal ?? 0) +
+    (current.tax_total ?? 0) -
+    promoDiscount -
+    rewardsDiscount -
+    paymentDiscount
+  )
+
   return {
     ...current,
     items: nextItems,
     item_subtotal: itemSubtotal,
     subtotal: itemSubtotal,
-    total: itemSubtotal + (current.shipping_subtotal ?? 0) + (current.tax_total ?? 0),
+    total: total,
   }
 }
 

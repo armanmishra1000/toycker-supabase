@@ -65,14 +65,14 @@ const StripePaymentButton = ({
 }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const { state } = useCheckout()
+  const { state, isPaymentUpdating } = useCheckout()
   const router = useRouter()
 
   const stripe = useStripe()
   const elements = useElements()
   const card = elements?.getElement("card")
 
-  const disabled = !stripe || !elements || notReady
+  const disabled = !stripe || !elements || notReady || isPaymentUpdating
 
   const handlePayment = async () => {
     setSubmitting(true)
@@ -181,7 +181,7 @@ const ManualTestPaymentButton = ({
 }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const { state } = useCheckout()
+  const { state, isPaymentUpdating } = useCheckout()
   const router = useRouter()
 
   const handlePayment = async () => {
@@ -223,7 +223,7 @@ const ManualTestPaymentButton = ({
   return (
     <>
       <Button
-        disabled={notReady || submitting}
+        disabled={notReady || submitting || isPaymentUpdating}
         isLoading={submitting}
         onClick={handlePayment}
         size="large"
@@ -251,7 +251,7 @@ const PayUPaymentButton = ({
 }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const { state } = useCheckout()
+  const { state, isPaymentUpdating } = useCheckout()
   const router = useRouter()
 
   const handlePayment = async () => {
@@ -312,7 +312,7 @@ const PayUPaymentButton = ({
   return (
     <>
       <Button
-        disabled={notReady || submitting}
+        disabled={notReady || submitting || isPaymentUpdating}
         onClick={handlePayment}
         size="large"
         isLoading={submitting}

@@ -5,7 +5,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Help from "@modules/order/components/help"
 import Items from "@modules/order/components/items"
 import OrderDetails from "@modules/order/components/order-details"
-import OrderSummary from "@modules/order/components/order-summary"
+import CartTotals from "@modules/common/components/cart-totals"
 import ShippingDetails from "@modules/order/components/shipping-details"
 import React from "react"
 import { Order } from "@/lib/supabase/types"
@@ -36,7 +36,7 @@ const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
         <OrderDetails order={order} showStatus />
         <Items order={order} />
         <ShippingDetails order={order} />
-        <OrderSummary order={order} />
+        <CartTotals totals={order} order={order} />
         <Help />
       </div>
     </div>

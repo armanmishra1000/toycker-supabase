@@ -1660,7 +1660,10 @@ export async function getAdminPaymentMethods() {
     .select("*")
     .order("created_at", { ascending: false })
 
-  if (error) throw error
+  if (error) {
+    console.error("Error fetching payment methods:", error)
+    throw new Error(error.message || "Failed to fetch payment methods")
+  }
   return data as PaymentProvider[]
 }
 
@@ -1671,14 +1674,56 @@ export async function createPaymentMethod(formData: FormData) {
     id: formData.get("id") as string,
     name: formData.get("name") as string,
     description: formData.get("description") as string || null,
-    is_active: true,
+    discount_percentage: Number(formData.get("discount_percentage") || 0),
+    is_active: formData.get("is_active") === "true",
   }
 
   const { error } = await supabase.from("payment_providers").insert(method)
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("Error creating payment method:", error)
+    throw new Error(error.message || "Failed to create payment method")
+  }
 
   revalidatePath("/admin/payments")
   redirect("/admin/payments")
+}
+
+export async function updatePaymentMethod(id: string, formData: FormData) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const method = {
+    name: formData.get("name") as string,
+    description: formData.get("description") as string || null,
+    discount_percentage: parseFloat(formData.get("discount_percentage") as string) || 0,
+    is_active: formData.get("is_active") === "true",
+  }
+
+  const { error } = await supabase
+    .from("payment_providers")
+    .update(method)
+    .eq("id", id)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/admin/payments")
+  revalidatePath(`/admin/payments/${id}`)
+  redirect("/admin/payments")
+}
+
+export async function getAdminPaymentMethod(id: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("payment_providers")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle()
+
+  if (error) {
+    console.error(`Error fetching payment provider ${id}:`, error)
+    throw new Error(error.message || "Failed to fetch payment method")
+  }
+  return data as PaymentProvider | null
 }
 
 export async function deletePaymentMethod(id: string) {

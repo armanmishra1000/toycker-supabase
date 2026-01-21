@@ -4,6 +4,8 @@ import React, { createContext, useContext, ReactNode } from "react"
 import { useCheckoutState, CheckoutState, Address } from "../hooks/useCheckoutState"
 import { Cart } from "@/lib/supabase/types"
 
+import { useCartStore } from "@modules/cart/context/cart-store-context"
+
 interface CheckoutContextType {
     state: CheckoutState
     setEmail: (_email: string) => void
@@ -13,6 +15,7 @@ interface CheckoutContextType {
     toggleSameAsBilling: () => void
     setRewardsToApply: (_points: number) => void
     reset: () => void
+    isPaymentUpdating: boolean
 }
 
 export const CheckoutContext = createContext<CheckoutContextType | undefined>(undefined)
@@ -24,6 +27,8 @@ export const CheckoutProvider = ({
     children: ReactNode
     cart?: Cart | null
 }) => {
+    const [isPaymentUpdating, setIsPaymentUpdating] = React.useState(false)
+    const { reloadFromServer } = useCartStore()
     // Initialize with cart data if available
     const initialData = cart ? {
         email: cart.email || null,
@@ -57,8 +62,24 @@ export const CheckoutProvider = ({
 
     const checkout = useCheckoutState(initialData)
 
+    // Eagerly persist payment method selection to trigger discount calculation
+    const setPaymentMethod = async (method: string) => {
+        checkout.setPaymentMethod(method)
+        setIsPaymentUpdating(true)
+        try {
+            const { setPaymentProvider } = await import("@lib/data/cart")
+            await setPaymentProvider(method)
+            // Reload the cart store to fetch the new totals/discount from the server
+            await reloadFromServer()
+        } catch (error) {
+            console.error("Failed to persist payment method:", error)
+        } finally {
+            setIsPaymentUpdating(false)
+        }
+    }
+
     return (
-        <CheckoutContext.Provider value={checkout}>
+        <CheckoutContext.Provider value={{ ...checkout, setPaymentMethod, isPaymentUpdating }}>
             {children}
         </CheckoutContext.Provider>
     )

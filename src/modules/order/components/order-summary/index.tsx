@@ -26,12 +26,37 @@ const OrderSummary = ({ order }: OrderSummaryProps) => {
           <span>{getAmount(order.subtotal)}</span>
         </div>
         <div className="flex flex-col gap-y-1">
-          {order.discount_total > 0 && (
-            <div className="flex items-center justify-between">
-              <span>Discount</span>
-              <span>- {getAmount(order.discount_total)}</span>
-            </div>
-          )}
+          {(() => {
+            const metadata = order.metadata as Record<string, any> || {}
+            const paymentDiscount = metadata.payment_discount_amount || 0
+            const paymentPercentage = metadata.payment_discount_percentage || 0
+
+            if (paymentDiscount > 0) {
+              return (
+                <div className="flex items-center justify-between">
+                  <span>Payment Discount ({paymentPercentage}%)</span>
+                  <span>- {getAmount(paymentDiscount)}</span>
+                </div>
+              )
+            }
+            return null
+          })()}
+          {order.discount_total > 0 && (() => {
+            const metadata = order.metadata as Record<string, any> || {}
+            const paymentDiscount = metadata.payment_discount_amount || 0
+            const rewardsDiscount = metadata.rewards_discount || 0
+            const promoDiscount = order.discount_total - paymentDiscount - rewardsDiscount
+
+            if (promoDiscount > 0) {
+              return (
+                <div className="flex items-center justify-between">
+                  <span>Promo Discount</span>
+                  <span>- {getAmount(promoDiscount)}</span>
+                </div>
+              )
+            }
+            return null
+          })()}
           {order.gift_card_total > 0 && (
             <div className="flex items-center justify-between">
               <span>Discount</span>
