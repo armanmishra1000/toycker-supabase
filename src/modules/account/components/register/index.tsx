@@ -1,9 +1,9 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useEffect } from "react"
+import { useToast } from "@modules/common/context/toast-context"
 import Input from "@modules/common/components/input"
 import { LOGIN_VIEW, LoginView } from "@modules/account/templates/login-template"
-import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signup } from "@lib/data/customer"
@@ -13,7 +13,16 @@ type Props = {
 }
 
 const Register = ({ setCurrentView }: Props) => {
+  const { showToast } = useToast()
   const [state, formAction, isPending] = useActionState(signup, { success: true, data: undefined } as any)
+
+  useEffect(() => {
+    if (state?.success === true && state?.data) {
+      showToast(state.data, "success", "Welcome!")
+    } else if (state?.success === false && state?.error) {
+      showToast(state.error, "error", "Registration Failed")
+    }
+  }, [state, showToast])
 
   return (
     <div className="w-full flex flex-col gap-y-6" data-testid="register-page">
@@ -63,11 +72,6 @@ const Register = ({ setCurrentView }: Props) => {
           />
         </div>
         <div aria-live="polite" className="min-h-[24px] mt-3">
-          <ErrorMessage
-            error={state?.success === false ? state.error : (state?.success === true ? state.data : null)}
-            variant={state?.success === true ? "info" : "error"}
-            data-testid="register-error"
-          />
         </div>
         <span className="text-left text-ui-fg-subtle text-small-regular mt-4 leading-relaxed">
           By creating an account, you agree to Toycker Store&apos;s {" "}
