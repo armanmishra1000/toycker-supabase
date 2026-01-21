@@ -60,6 +60,16 @@ export const CheckoutProvider = ({
         rewardsToApply: cart.rewards_to_apply || 0,
     } : undefined
 
+    const { setFromServer } = useCartStore()
+
+    // Sync server-fetched cart to the global store on mount/change
+    // This eliminates the delay when arriving from "Buy It Now"
+    React.useEffect(() => {
+        if (cart) {
+            setFromServer(cart)
+        }
+    }, [cart, setFromServer])
+
     const checkout = useCheckoutState(initialData)
 
     // Eagerly persist payment method selection to trigger discount calculation
