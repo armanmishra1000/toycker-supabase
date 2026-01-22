@@ -227,7 +227,7 @@ export interface Order {
   email: string;
   total_amount: number;
   currency_code: string;
-  status: 'pending' | 'paid' | 'failed' | 'shipped' | 'cancelled';
+  status: 'pending' | 'order_placed' | 'accepted' | 'shipped' | 'delivered' | 'cancelled' | 'failed';
   fulfillment_status: string;
   payment_status: string;
   payu_txn_id: string | null;

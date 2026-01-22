@@ -14,6 +14,41 @@ const OrderDetails = ({ order }: OrderDetailsProps) => {
 
   const rewardsEarned = (order.metadata?.rewards_earned as number) || 0
 
+  const rawPaymentStatus = (order.payment_status || "").toLowerCase()
+  const isOrderCancelled = order.status === "cancelled" || order.status === "failed"
+
+  const normalizedPaymentStatus = (() => {
+    if (isOrderCancelled && (rawPaymentStatus === "" || rawPaymentStatus === "pending" || rawPaymentStatus === "awaiting")) {
+      return "cancelled"
+    }
+    return rawPaymentStatus || (isOrderCancelled ? "cancelled" : "pending")
+  })()
+
+  const paymentTone =
+    normalizedPaymentStatus === "failed" || normalizedPaymentStatus === "cancelled"
+      ? "bg-red-100 text-red-700 border border-red-200"
+      : normalizedPaymentStatus === "refunded"
+        ? "bg-slate-100 text-slate-700 border border-slate-200"
+        : normalizedPaymentStatus === "pending"
+          ? "bg-amber-100 text-amber-700 border border-amber-200"
+          : "bg-emerald-100 text-emerald-700 border border-emerald-200"
+
+  const paymentLabel = isCOD
+    ? normalizedPaymentStatus === "paid" || normalizedPaymentStatus === "captured"
+      ? "COD Collected"
+      : normalizedPaymentStatus === "cancelled" || normalizedPaymentStatus === "failed"
+        ? "COD Cancelled"
+        : normalizedPaymentStatus === "refunded"
+          ? "COD Refunded"
+          : "COD Pending"
+    : normalizedPaymentStatus === "paid" || normalizedPaymentStatus === "captured"
+      ? "Paid"
+      : normalizedPaymentStatus === "cancelled" || normalizedPaymentStatus === "failed"
+        ? "Payment Cancelled"
+        : normalizedPaymentStatus === "refunded"
+          ? "Refunded"
+          : "Pending"
+
   return (
     <div className="flex flex-col gap-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -33,25 +68,39 @@ const OrderDetails = ({ order }: OrderDetailsProps) => {
 
         <div className="flex flex-col md:items-end gap-y-1">
           <p className="text-sm font-bold uppercase tracking-widest text-slate-400">
+            Order Status
+          </p>
+          <div className="flex items-center gap-x-2">
+            <span
+              className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm ${order.status === "delivered"
+                ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                : (order.status === "shipped" || order.status === "accepted")
+                  ? "bg-blue-100 text-blue-700 border border-blue-200"
+                  : (order.status === "cancelled" || order.status === "failed")
+                    ? "bg-red-100 text-red-700 border border-red-200"
+                    : "bg-amber-100 text-amber-700 border border-amber-200"
+                }`}
+            >
+              {(order.status === 'order_placed' || order.status === 'pending') ? 'New Order' :
+                order.status === 'accepted' ? 'Ready to Ship' :
+                  order.status === 'shipped' ? 'Shipped' :
+                    order.status === 'delivered' ? 'Delivered' :
+                      order.status === 'cancelled' ? 'Cancelled' :
+                        order.status === 'failed' ? 'Failed' :
+                          (order.status as string).charAt(0).toUpperCase() + (order.status as string).slice(1)}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col md:items-end gap-y-1">
+          <p className="text-sm font-bold uppercase tracking-widest text-slate-400">
             Payment Status
           </p>
           <div className="flex items-center gap-x-2">
             <span
-              className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm ${order.payment_status === "failed"
-                  ? "bg-red-100 text-red-700 border border-red-200"
-                  : order.payment_status === "pending"
-                    ? "bg-amber-100 text-amber-700 border border-amber-200"
-                    : "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                }`}
+              className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm ${paymentTone}`}
             >
-              {isCOD
-                ? (order.payment_status === "paid" || order.payment_status === "captured" ? "COD Collected" : "COD Pending")
-                : (order.payment_status === "paid" || order.payment_status === "captured"
-                  ? "Paid"
-                  : order.payment_status === "failed"
-                    ? "Payment Failed"
-                    : "Pending")
-              }
+              {paymentLabel}
             </span>
           </div>
         </div>
