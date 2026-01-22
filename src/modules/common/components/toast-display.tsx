@@ -41,36 +41,50 @@ const TOAST_STYLES = {
   }
 }
 
-const TOAST_DURATION = 5000
+const TOAST_DURATION = 8000
 
 function ToastItem({ toast, onRemove }: { toast: any, onRemove: (_id: string) => void }) {
-  const [progress, setProgress] = useState(100)
+  const [timeLeft, setTimeLeft] = useState(TOAST_DURATION)
+  const [isPaused, setIsPaused] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
   const style = TOAST_STYLES[toast.type as keyof typeof TOAST_STYLES] || TOAST_STYLES.info
 
   useEffect(() => {
-    const startTime = Date.now()
-    const timer = setInterval(() => {
-      const elapsed = Date.now() - startTime
-      const remaining = Math.max(0, 100 - (elapsed / TOAST_DURATION) * 100)
-      setProgress(remaining)
+    if (isPaused || isExiting) return
 
-      if (remaining === 0) {
-        setIsExiting(true)
-        clearInterval(timer)
-      }
-    }, 10)
+    const interval = 10
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        const next = Math.max(0, prev - interval)
+        if (next === 0) {
+          setIsExiting(true)
+          clearInterval(timer)
+        }
+        return next
+      })
+    }, interval)
 
     return () => clearInterval(timer)
-  }, [])
+  }, [isPaused, isExiting])
+
+  useEffect(() => {
+    if (isExiting) {
+      const timer = setTimeout(() => onRemove(toast.id), 700)
+      return () => clearTimeout(timer)
+    }
+  }, [isExiting, onRemove, toast.id])
+
+  const progress = (timeLeft / TOAST_DURATION) * 100
 
   return (
     <div
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
       className={`
         pointer-events-auto relative overflow-hidden
         flex items-start gap-4 p-4 rounded-2xl border shadow-lg
-        transition-all duration-300 transform
-        ${isExiting ? "opacity-0 translate-x-12 scale-95" : "animate-in slide-in-from-right-12 fade-in"}
+        transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] transform
+        ${isExiting ? "opacity-0 translate-x-12 scale-90 blur-sm" : "animate-in slide-in-from-right-12 fade-in"}
         ${style.bg} ${style.border}
       `}
     >
@@ -99,9 +113,9 @@ function ToastItem({ toast, onRemove }: { toast: any, onRemove: (_id: string) =>
 
       {/* Close Button */}
       <button
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation()
           setIsExiting(true)
-          setTimeout(() => onRemove(toast.id), 300)
         }}
         className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
         aria-label="Close toast"

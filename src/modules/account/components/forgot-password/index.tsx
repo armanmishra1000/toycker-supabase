@@ -2,7 +2,6 @@
 
 import { requestPasswordReset } from "@lib/data/customer"
 import { LOGIN_VIEW, LoginView } from "@modules/account/templates/login-template"
-import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
 import { useToast } from "@modules/common/context/toast-context"
@@ -17,14 +16,14 @@ const ForgotPassword = ({ setCurrentView }: Props) => {
     const [state, formAction, isPending] = useActionState(requestPasswordReset, { success: false, data: null } as any)
 
     useEffect(() => {
-        if (state?.success === true && state?.data === "success") {
+        if (state?.success === true && state?.data) {
             showToast(
-                "If an account exists for this email, you will receive a password reset link shortly.",
+                state.data,
                 "success",
                 "Email Sent"
             )
         } else if (state?.success === false && state?.error) {
-            showToast(state.error, "error", "Request Failed")
+            showToast(state.error, "error", "Account Not Found")
         }
     }, [state, showToast])
 
@@ -42,11 +41,6 @@ const ForgotPassword = ({ setCurrentView }: Props) => {
                         disabled={isPending}
                         data-testid="email-input"
                     />
-                </div>
-                <div aria-live="polite" className="min-h-[24px] mt-3">
-                    {state?.success === false && state?.error && (
-                        <ErrorMessage error={state.error} data-testid="forgot-password-error-message" />
-                    )}
                 </div>
                 <SubmitButton
                     data-testid="reset-password-button"
