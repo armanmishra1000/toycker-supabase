@@ -8,6 +8,7 @@ import ClubWelcomeBanner from "@modules/order/components/club-welcome-banner"
 import { ClearCartOnMount } from "@modules/order/components/clear-cart-on-mount"
 import { Check, XCircle, AlertCircle } from "lucide-react"
 import CancelOrderButton from "@modules/order/components/cancel-order-button"
+import OrderTracking from "@modules/order/components/order-tracking"
 
 type OrderCompletedTemplateProps = {
   order: Order
@@ -84,6 +85,23 @@ export default async function OrderCompletedTemplate({
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10">
               <OrderDetails order={order} />
+            </div>
+
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Track your order</p>
+                  <h3 className="text-2xl font-black text-slate-900">Stay updated on every step</h3>
+                  <p className="text-sm text-slate-500">Live updates as we prepare, ship, and deliver your package.</p>
+                </div>
+                <div className="hidden sm:flex flex-col items-end text-right text-xs text-slate-500 font-semibold">
+                  <span>Order ID</span>
+                  <span className="text-sm font-black text-slate-900">#{order.display_id}</span>
+                </div>
+              </div>
+              <div className="mt-6">
+                <OrderTracking order={order} />
+              </div>
             </div>
 
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">

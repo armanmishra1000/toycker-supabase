@@ -85,18 +85,18 @@ export default async function AdminOrderDetails({ params }: Props) {
     paymentMethod = `PayU - ${mode}${bank}`.trim()
   }
 
-  const normalizedMethod = normalizePaymentMethod(order.payment_method, order.payu_txn_id)
-  const isCodPayment = normalizedMethod === "cod" || normalizedMethod === "manual"
   const normalizedPaymentStatus = (() => {
     const ps = (order.payment_status || "").toLowerCase()
     if ((order.status === "cancelled" || order.status === "failed") && (ps === "" || ps === "pending" || ps === "awaiting" || ps === "unpaid")) {
       return "cancelled"
     }
-    return ps
+    return ps || (order.status === "cancelled" || order.status === "failed" ? "cancelled" : "pending")
   })()
 
+  const normalizedMethod = normalizePaymentMethod(order.payment_method, order.payu_txn_id)
+  const isCodPayment = normalizedMethod === "cod" || normalizedMethod === "manual"
   const paymentStatusPending = ["pending", "awaiting", "unpaid"].includes(normalizedPaymentStatus)
-  const canMarkAsPaid = paymentStatusPending && order.status === "delivered"
+  const canMarkAsPaid = !isCodPayment && paymentStatusPending && order.status === "delivered"
 
   const rewardsUsed = Number(order.metadata?.rewards_used || 0)
 
