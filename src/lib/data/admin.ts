@@ -1950,11 +1950,21 @@ export async function markOrderAsDelivered(orderId: string) {
   const supabase = await createClient()
   const actorDisplay = await getAdminActorDisplay()
 
+  const { data: existing } = await supabase
+    .from("orders")
+    .select("payment_method, payment_status")
+    .eq("id", orderId)
+    .maybeSingle()
+
+  const normalizedMethod = (existing?.payment_method || "").toLowerCase()
+  const isCod = normalizedMethod.includes("cod") || normalizedMethod.includes("cash") || normalizedMethod.includes("pp_system_default") || normalizedMethod === "manual"
+
   const { error } = await supabase
     .from("orders")
     .update({
       status: "delivered",
       fulfillment_status: "delivered",
+      payment_status: isCod ? "captured" : existing?.payment_status,
       updated_at: new Date().toISOString()
     })
     .eq("id", orderId)
@@ -1965,7 +1975,9 @@ export async function markOrderAsDelivered(orderId: string) {
     orderId,
     "delivered",
     "Order Delivered",
-    "Order has been successfully delivered to the customer.",
+    isCod
+      ? "Order delivered. COD marked as collected."
+      : "Order has been successfully delivered to the customer.",
     "admin",
     {},
     actorDisplay
