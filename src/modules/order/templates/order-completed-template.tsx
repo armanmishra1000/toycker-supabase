@@ -7,6 +7,7 @@ import { Order } from "@/lib/supabase/types"
 import ClubWelcomeBanner from "@modules/order/components/club-welcome-banner"
 import { ClearCartOnMount } from "@modules/order/components/clear-cart-on-mount"
 import { Check, XCircle, AlertCircle } from "lucide-react"
+import CancelOrderButton from "@modules/order/components/cancel-order-button"
 
 type OrderCompletedTemplateProps = {
   order: Order
@@ -24,6 +25,7 @@ export default async function OrderCompletedTemplate({
     : 10
 
   const isCancelled = order.status === "cancelled" || order.payment_status === "failed"
+  const canUserCancel = order.status === "order_placed" || order.status === "pending"
 
   return (
     <div className="py-12 min-h-[calc(100vh-64px)] bg-slate-50/50">
@@ -63,6 +65,11 @@ export default async function OrderCompletedTemplate({
               : "Thank you for shopping with Toycker. We're getting your order ready for delivery."
             }
           </p>
+          {!isCancelled && canUserCancel && (
+            <div className="mt-6">
+              <CancelOrderButton orderId={order.id} />
+            </div>
+          )}
         </div>
 
         {/* Main Content Grid */}

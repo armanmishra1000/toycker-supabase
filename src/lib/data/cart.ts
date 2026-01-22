@@ -605,7 +605,7 @@ export async function placeOrder() {
       discount_total: discount_total + rewards_discount,
       gift_card_total: gift_card_total,
       currency_code: cart.currency_code,
-      status: "paid",
+      status: "order_placed",
       payment_status: "captured",
       fulfillment_status: "not_shipped",
       shipping_address: cart.shipping_address,

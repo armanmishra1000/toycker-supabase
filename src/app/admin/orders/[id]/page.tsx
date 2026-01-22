@@ -9,10 +9,33 @@ import { convertToLocale } from "@lib/util/money"
 import Image from "next/image"
 import FulfillmentModal from "./fulfillment-modal"
 import { MarkAsPaidButton } from "./mark-as-paid-button"
+import { AcceptOrderButton, CancelOrderButton, MarkAsDeliveredButton } from "./order-action-buttons"
 import { formatIST } from "@/lib/util/date"
 import { fixUrl } from "@/lib/util/images"
+import { RealtimeOrderManager } from "@modules/common/components/realtime-order-manager"
 
-export default async function AdminOrderDetails({ params }: { params: Promise<{ id: string }> }) {
+const normalizePaymentMethod = (method?: string | null, hasPayuTxn?: string | null) => {
+  if (!method && hasPayuTxn) return "payu"
+  const m = (method || "").toLowerCase()
+  if (m.includes("cod") || m.includes("cash") || m.includes("pp_system_default")) return "cod"
+  if (m.includes("payu")) return "payu"
+  if (!method) return "manual"
+  return method
+}
+
+const formatPaymentMethodDisplay = (method?: string | null, hasPayuTxn?: string | null) => {
+  const normalized = normalizePaymentMethod(method, hasPayuTxn)
+  if (normalized === "payu") return "PayU"
+  if (normalized === "cod" || normalized === "manual") return "Cash on Delivery (COD)"
+  const label = (method || "").replace(/_/g, " ").trim()
+  return label ? label.replace(/\b\w/g, c => c.toUpperCase()) : "—"
+}
+
+type Props = {
+  params: Promise<{ id: string }>
+}
+
+export default async function AdminOrderDetails({ params }: Props) {
   const { id } = await params
   const order = await getAdminOrder(id)
 
@@ -29,17 +52,23 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
 
   const actions = (
     <div className="flex gap-2">
-      {(order.payment_status === 'awaiting' || order.payment_status === 'pending') && (
-        <MarkAsPaidButton orderId={order.id} />
+      {(order.status === 'order_placed' || order.status === 'pending') && (
+        <>
+          <AcceptOrderButton orderId={order.id} />
+          <CancelOrderButton orderId={order.id} />
+        </>
       )}
-      {canFulfill && (
+      {order.status === 'accepted' && (
         <FulfillmentModal orderId={order.id} shippingPartners={shippingPartners} />
+      )}
+      {order.status === 'shipped' && (
+        <MarkAsDeliveredButton orderId={order.id} />
       )}
     </div>
   )
 
   // Determine payment method display with specific sub-method for PayU
-  let paymentMethod = order.payment_method || (order.payu_txn_id ? "PayU" : "Cash on Delivery")
+  let paymentMethod = formatPaymentMethodDisplay(order.payment_method, order.payu_txn_id)
   if (order.payu_txn_id && order.metadata?.payu_payload) {
     const payload = order.metadata.payu_payload as any
     const modeMap: Record<string, string> = {
@@ -56,10 +85,24 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
     paymentMethod = `PayU - ${mode}${bank}`.trim()
   }
 
+  const normalizedMethod = normalizePaymentMethod(order.payment_method, order.payu_txn_id)
+  const isCodPayment = normalizedMethod === "cod" || normalizedMethod === "manual"
+  const normalizedPaymentStatus = (() => {
+    const ps = (order.payment_status || "").toLowerCase()
+    if ((order.status === "cancelled" || order.status === "failed") && (ps === "" || ps === "pending" || ps === "awaiting" || ps === "unpaid")) {
+      return "cancelled"
+    }
+    return ps
+  })()
+
+  const paymentStatusPending = ["pending", "awaiting", "unpaid"].includes(normalizedPaymentStatus)
+  const canMarkAsPaid = paymentStatusPending && order.status === "delivered"
+
   const rewardsUsed = Number(order.metadata?.rewards_used || 0)
 
   return (
     <div className="space-y-6">
+      <RealtimeOrderManager orderId={order.id} />
       <nav className="flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest">
         <Link href="/admin/orders" className="flex items-center hover:text-black transition-colors">
           <ChevronLeftIcon className="h-3 w-3 mr-1" strokeWidth={3} />
@@ -70,8 +113,21 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-black text-gray-900 tracking-tighter">Order #{order.display_id}</h1>
-          <AdminBadge variant={order.fulfillment_status === 'shipped' || order.fulfillment_status === 'delivered' ? "info" : "warning"}>
-            {order.fulfillment_status === 'shipped' ? 'Shipped' : order.fulfillment_status === 'delivered' ? 'Delivered' : 'Unfulfilled'}
+          <AdminBadge
+            variant={
+              order.status === 'delivered' ? "success" :
+                (order.status === 'shipped' || order.status === 'accepted') ? "info" :
+                  order.status === 'cancelled' || order.status === 'failed' ? "critical" :
+                    "warning"
+            }
+          >
+            {(order.status === 'order_placed' || order.status === 'pending') ? 'New Order' :
+              order.status === 'accepted' ? 'Ready to Ship' :
+                order.status === 'shipped' ? 'Shipped' :
+                  order.status === 'delivered' ? 'Delivered' :
+                    order.status === 'cancelled' ? 'Cancelled' :
+                      order.status === 'failed' ? 'Failed' :
+                        (order.status as string).charAt(0).toUpperCase() + (order.status as string).slice(1)}
           </AdminBadge>
         </div>
         {actions}
@@ -198,13 +254,20 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                   <p className="text-sm font-bold text-gray-900">{paymentMethod}</p>
                   <p className="text-xs text-gray-500">
                     {paymentMethod.includes('Cash on Delivery') || paymentMethod.includes('Manual')
-                      ? (order.payment_status === 'paid' || order.payment_status === 'captured' ? 'COD - Collected' : 'COD - Pending')
-                      : (order.payment_status === 'paid' || order.payment_status === 'captured'
+                      ? normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'captured'
+                        ? 'COD - Collected'
+                        : normalizedPaymentStatus === 'cancelled' || normalizedPaymentStatus === 'failed'
+                          ? 'COD - Cancelled'
+                          : normalizedPaymentStatus === 'refunded'
+                            ? 'COD - Refunded'
+                            : 'COD - Pending'
+                      : normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'captured'
                         ? 'Paid'
-                        : order.payment_status === 'failed'
+                        : normalizedPaymentStatus === 'cancelled' || normalizedPaymentStatus === 'failed'
                           ? 'Payment Cancelled'
-                          : (order.payment_status?.charAt(0).toUpperCase() + order.payment_status?.slice(1) || '—')
-                      )
+                          : normalizedPaymentStatus === 'refunded'
+                            ? 'Refunded'
+                            : (normalizedPaymentStatus?.charAt(0).toUpperCase() + normalizedPaymentStatus?.slice(1) || '—')
                     }
                   </p>
                 </div>
@@ -213,6 +276,14 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                 <div className="pt-3 border-t border-gray-100">
                   <p className="text-xs text-gray-500">Transaction ID</p>
                   <p className="text-sm font-mono text-gray-700 mt-1">{order.payu_txn_id}</p>
+                </div>
+              )}
+              {canMarkAsPaid && (
+                <div className="pt-4 border-t border-gray-100 space-y-2">
+                  <MarkAsPaidButton orderId={order.id} />
+                  {isCodPayment && (
+                    <p className="text-xs text-gray-500">COD: collect payment after delivery, then mark it as paid.</p>
+                  )}
                 </div>
               )}
             </div>

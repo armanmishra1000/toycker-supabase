@@ -8,13 +8,35 @@ import Link from "next/link"
 import { ShoppingBagIcon } from "@heroicons/react/24/outline"
 import { formatIST } from "@/lib/util/date"
 import { ClickableTableRow } from "@modules/admin/components/clickable-table-row"
+import RealtimeOrdersListener from "@modules/admin/components/realtime-orders-listener"
 
 // Helper to format payment status for display
-function getPaymentBadge(paymentStatus: string, paymentMethod?: string | null) {
-  // COD orders should show "COD" status, not "Paid"
-  const isCOD = paymentMethod === 'manual' || paymentMethod === 'cod' || paymentMethod === 'Cash on Delivery';
+function normalizePaymentMethod(method?: string | null, hasPayuTxn?: string | null) {
+  if (!method && hasPayuTxn) return "payu"
+  const m = (method || "").toLowerCase()
+  if (m.includes("cod") || m.includes("cash") || m.includes("pp_system_default")) return "cod"
+  if (m.includes("payu")) return "payu"
+  if (!method) return "manual"
+  return method
+}
+
+function formatPaymentMethodDisplay(method?: string | null, hasPayuTxn?: string | null) {
+  const normalized = normalizePaymentMethod(method, hasPayuTxn)
+  if (normalized === "payu") return "PayU"
+  if (normalized === "cod" || normalized === "manual") return "Cash on Delivery (COD)"
+  const label = (method || "").replace(/_/g, " ").trim()
+  return label ? label.replace(/\b\w/g, c => c.toUpperCase()) : "—"
+}
+
+function getPaymentBadge(paymentStatus: string, paymentMethod?: string | null, hasPayuTxn?: string | null, orderStatus?: string | null) {
+  const normalizedMethod = normalizePaymentMethod(paymentMethod, hasPayuTxn)
+  const isCOD = normalizedMethod === "cod" || normalizedMethod === "manual"
+  const isCancelled = orderStatus === "cancelled" || paymentStatus === "cancelled" || paymentStatus === "failed"
 
   if (isCOD) {
+    if (isCancelled) {
+      return { variant: "error" as const, label: "COD Cancelled" }
+    }
     if (paymentStatus === 'captured' || paymentStatus === 'paid') {
       return { variant: "success" as const, label: "COD Collected" }
     }
@@ -29,6 +51,7 @@ function getPaymentBadge(paymentStatus: string, paymentMethod?: string | null) {
     case "pending":
       return { variant: "warning" as const, label: "Pending" }
     case "failed":
+    case "cancelled":
       return { variant: "error" as const, label: "Payment Cancelled" }
     case "refunded":
       return { variant: "neutral" as const, label: "Refunded" }
@@ -83,6 +106,7 @@ export default async function AdminOrders({
 
   return (
     <div className="space-y-8">
+      <RealtimeOrdersListener />
       <AdminPageHeader title="Orders" />
 
       {/* Search Bar */}
@@ -109,13 +133,12 @@ export default async function AdminOrders({
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {orders.length > 0 ? orders.map((order) => {
-                // Determine actual payment method (same logic as order detail page)
-                const actualPaymentMethod = order.payment_method || (order.payu_txn_id ? 'payu' : 'manual')
-                const isCOD = actualPaymentMethod === 'manual' || actualPaymentMethod === 'cod' || actualPaymentMethod === 'Cash on Delivery'
+                const normalizedMethod = normalizePaymentMethod(order.payment_method, order.payu_txn_id)
+                const isCOD = normalizedMethod === "cod" || normalizedMethod === "manual"
 
-                const paymentBadge = getPaymentBadge(order.payment_status, actualPaymentMethod)
+                const paymentBadge = getPaymentBadge(order.payment_status, order.payment_method, order.payu_txn_id, order.status)
                 const fulfillmentBadge = getFulfillmentBadge(order.fulfillment_status)
-                const paymentMethodDisplay = isCOD ? 'COD' : (order.payu_txn_id ? 'PayU' : order.payment_method || '—')
+                const paymentMethodDisplay = formatPaymentMethodDisplay(order.payment_method, order.payu_txn_id)
 
                 return (
                   <ClickableTableRow

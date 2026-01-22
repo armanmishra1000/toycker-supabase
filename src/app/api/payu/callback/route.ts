@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         const { data: updatedOrder, error: updateError } = await supabase
           .from("orders")
           .update({
-            status: "paid",
+            status: "order_placed",
             payment_status: "captured",
             payu_txn_id: txnid,
             updated_at: new Date().toISOString()
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
             shipping_total: cart.shipping_total || 0,
             discount_total: cart.discount_total || 0,
             currency_code: cart.currency_code || "inr",
-            status: "paid",
+            status: "order_placed",
             payment_status: "captured",
             fulfillment_status: "not_shipped",
             payu_txn_id: txnid,

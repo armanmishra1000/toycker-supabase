@@ -1451,8 +1451,8 @@ export async function updateOrderStatus(id: string, status: string) {
   const supabase = await createClient()
 
   const updates: any = { status }
-  if (status === 'paid') {
-    updates.payment_status = 'paid'
+  if (status === 'order_placed') {
+    updates.payment_status = 'captured'
   }
 
   const { error } = await supabase.from("orders").update(updates).eq("id", id)
@@ -1870,31 +1870,35 @@ export async function getOrderTimeline(orderId: string) {
   return data as OrderTimeline[]
 }
 
+async function getAdminActorDisplay(): Promise<string> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return "Admin"
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, email")
+    .eq("id", user.id)
+    .maybeSingle()
+
+  const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim()
+  return name || profile?.email || user.email || "Admin"
+}
+
 export async function logOrderEvent(
   orderId: string,
   eventType: OrderEventType,
   title: string,
   description: string,
   actor: string = "system",
-  metadata: Record<string, unknown> = {}
+  metadata: Record<string, unknown> = {},
+  actorDisplayOverride?: string
 ) {
   const supabase = await createAdminClient()
 
-  // If actor is "admin", try to get the actual admin name
-  let actorDisplay = actor
-  if (actor === "admin") {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("first_name, last_name")
-        .eq("id", user.id)
-        .single()
-
-      if (profile) {
-        actorDisplay = `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || user.email || "Admin"
-      }
-    }
+  let actorDisplay = actorDisplayOverride || actor
+  if (actor === "admin" && !actorDisplayOverride) {
+    actorDisplay = await getAdminActorDisplay()
   }
 
   const { error } = await supabase.from("order_timeline").insert({
@@ -1911,10 +1915,173 @@ export async function logOrderEvent(
   }
 }
 
+// --- Order Actions ---
+export async function acceptOrder(orderId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const actorDisplay = await getAdminActorDisplay()
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      status: "accepted",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", orderId)
+
+  if (error) throw error
+
+  await logOrderEvent(
+    orderId,
+    "processing",
+    "Order Accepted",
+    "Admin has accepted the order and it is now being prepared for shipping.",
+    "admin",
+    {},
+    actorDisplay
+  )
+
+  revalidatePath(`/admin/orders/${orderId}`)
+  revalidatePath("/admin/orders")
+}
+
+export async function markOrderAsDelivered(orderId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const actorDisplay = await getAdminActorDisplay()
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      status: "delivered",
+      fulfillment_status: "delivered",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", orderId)
+
+  if (error) throw error
+
+  await logOrderEvent(
+    orderId,
+    "delivered",
+    "Order Delivered",
+    "Order has been successfully delivered to the customer.",
+    "admin",
+    {},
+    actorDisplay
+  )
+
+  revalidatePath(`/admin/orders/${orderId}`)
+  revalidatePath("/admin/orders")
+}
+
+export async function cancelOrder(orderId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const actorDisplay = await getAdminActorDisplay()
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("status")
+    .eq("id", orderId)
+    .maybeSingle()
+
+  if (!order) throw new Error("Order not found")
+  if (order.status === "cancelled" || order.status === "failed") return { success: true, alreadyCancelled: true }
+  if (order.status === "delivered" || order.status === "shipped") throw new Error("Cannot cancel an order that has already shipped or delivered.")
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      status: "cancelled",
+      fulfillment_status: "cancelled",
+      payment_status: "cancelled",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", orderId)
+
+  if (error) throw error
+
+  await logOrderEvent(
+    orderId,
+    "cancelled",
+    "Order Cancelled",
+    "Order was cancelled by admin.",
+    "admin",
+    {},
+    actorDisplay
+  )
+
+  revalidatePath(`/admin/orders/${orderId}`)
+  revalidatePath("/admin/orders")
+
+  return { success: true }
+}
+
+export async function markOrderAsPaid(orderId: string) {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const actorDisplay = await getAdminActorDisplay()
+
+  const { data: order, error: fetchError } = await supabase
+    .from("orders")
+    .select("id, status, payment_status, payment_method, metadata")
+    .eq("id", orderId)
+    .single()
+
+  if (fetchError || !order) {
+    throw new Error(fetchError?.message || "Order not found")
+  }
+
+  if (order.status === "cancelled" || order.status === "failed") {
+    throw new Error("Cannot mark payment for cancelled or failed orders.")
+  }
+
+  if (order.status !== "delivered") {
+    throw new Error("Payment can only be marked after the order is delivered.")
+  }
+
+  const paymentMethodRaw = (order.payment_method || (order.metadata as any)?.payment_method || "").toString().toLowerCase()
+  const isCod = paymentMethodRaw.includes("cod") || paymentMethodRaw.includes("cash on delivery") || paymentMethodRaw.includes("cash")
+
+  const alreadyPaid = order.payment_status === "paid" || order.payment_status === "captured"
+  if (alreadyPaid) {
+    return { success: true, alreadyPaid: true }
+  }
+
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({
+      payment_status: "paid",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", orderId)
+
+  if (updateError) throw new Error(updateError.message)
+
+  await logOrderEvent(
+    orderId,
+    "payment_captured",
+    isCod ? "COD Payment Collected" : "Payment Marked as Paid",
+    isCod
+      ? "Cash on Delivery payment collected and marked as paid."
+      : "Payment marked as paid by admin.",
+    "admin",
+    { payment_method: order.payment_method || (order.metadata as any)?.payment_method || "unknown" },
+    actorDisplay
+  )
+
+  revalidatePath(`/admin/orders/${orderId}`)
+  revalidatePath("/admin/orders")
+
+  return { success: true }
+}
+
 // --- Order Fulfillment ---
 export async function fulfillOrder(orderId: string, formData: FormData) {
   await ensureAdmin()
   const supabase = await createClient()
+  const actorDisplay = await getAdminActorDisplay()
 
   const shippingPartnerId = formData.get("shipping_partner_id") as string
   const trackingNumber = formData.get("tracking_number") as string
@@ -1938,9 +2105,11 @@ export async function fulfillOrder(orderId: string, formData: FormData) {
   const { error } = await supabase
     .from("orders")
     .update({
+      status: "shipped",
       fulfillment_status: "shipped",
       shipping_partner_id: shippingPartnerId,
       tracking_number: trackingNumber || null,
+      updated_at: new Date().toISOString()
     })
     .eq("id", orderId)
 
@@ -1957,7 +2126,8 @@ export async function fulfillOrder(orderId: string, formData: FormData) {
     "Order Shipped",
     description,
     "admin",
-    { shipping_partner: partnerName, tracking_number: trackingNumber }
+    { shipping_partner: partnerName, tracking_number: trackingNumber },
+    actorDisplay
   )
 
   revalidatePath(`/admin/orders/${orderId}`)

@@ -1,7 +1,7 @@
 import React from "react"
 import { cn } from "@lib/util/cn"
 
-type AdminBadgeVariant = "success" | "warning" | "error" | "info" | "neutral"
+type AdminBadgeVariant = "success" | "warning" | "error" | "info" | "neutral" | "critical" | "caution"
 
 type AdminBadgeProps = {
   children: React.ReactNode
