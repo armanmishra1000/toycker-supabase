@@ -2,6 +2,7 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getAuthUser } from "./auth"
 import { redirect } from "next/navigation"
@@ -274,10 +275,27 @@ export async function deleteCustomerAddress(addressId: string) {
 
 export async function requestPasswordReset(_currentState: unknown, formData: FormData): Promise<ActionResult<string>> {
   const email = (formData.get("email") as string || "").trim()
-  const supabase = await createClient()
 
   if (!email) {
     return { success: false, error: "Email is required" }
+  }
+
+  const supabase = await createClient()
+  const adminClient = await createAdminClient()
+
+  // Verify if user exists first to provide better feedback
+  // Every registered user should have a record in the 'profiles' table
+  const { data: profile, error: profileError } = await adminClient
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle()
+
+  if (profileError || !profile) {
+    return {
+      success: false,
+      error: "We couldn't find an account with this email. Please check your email!"
+    }
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -288,7 +306,7 @@ export async function requestPasswordReset(_currentState: unknown, formData: For
     return { success: false, error: error.message }
   }
 
-  return { success: true, data: "success" }
+  return { success: true, data: "Success! We've sent a password reset link to your email inbox." }
 }
 
 export async function resetPassword(_currentState: unknown, formData: FormData): Promise<ActionResult<string>> {
