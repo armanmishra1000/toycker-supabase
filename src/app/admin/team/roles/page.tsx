@@ -1,9 +1,9 @@
 import { getAdminRoles, deleteRole } from "@/lib/data/admin"
-import { getPermissionLabel } from "@/lib/permissions"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { DeleteRoleButton } from "./delete-role-button"
+import { ExpandablePermissionList } from "./expandable-permission-list"
 import Link from "next/link"
 import { PlusIcon, LockClosedIcon, PencilIcon } from "@heroicons/react/24/outline"
 
@@ -73,20 +73,8 @@ export default async function AdminRoles() {
                         </div>
 
                         {/* Permissions list */}
-                        <div className="mt-3 flex flex-wrap gap-1">
-                            {role.permissions.slice(0, 6).map((perm) => (
-                                <span
-                                    key={perm}
-                                    className="text-[10px] font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded"
-                                >
-                                    {getPermissionLabel(perm)}
-                                </span>
-                            ))}
-                            {role.permissions.length > 6 && (
-                                <span className="text-[10px] font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
-                                    +{role.permissions.length - 6} more
-                                </span>
-                            )}
+                        <div className="mt-3">
+                            <ExpandablePermissionList permissions={role.permissions} />
                         </div>
                     </AdminCard>
                 ))}

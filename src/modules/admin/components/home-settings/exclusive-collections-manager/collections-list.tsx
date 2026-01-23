@@ -17,6 +17,8 @@ import {
     GripVertical,
     Hash
 } from "lucide-react"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 import {
     DndContext,
@@ -79,13 +81,15 @@ function SortableCollectionItem({ collection, onEdit, onDelete, onToggle, deleti
                 }`}
         >
             {/* Drag Handle Overlay */}
-            <div
-                {...attributes}
-                {...listeners}
-                className="absolute top-4 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing bg-black/40 backdrop-blur-md p-1.5 rounded-full border border-white/20 text-white"
-            >
-                <GripVertical className="w-4 h-4" />
-            </div>
+            <ProtectedAction permission={PERMISSIONS.HOME_SETTINGS_UPDATE} hideWhenDisabled>
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="absolute top-4 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing bg-black/40 backdrop-blur-md p-1.5 rounded-full border border-white/20 text-white"
+                >
+                    <GripVertical className="w-4 h-4" />
+                </div>
+            </ProtectedAction>
 
             {/* Video Header Profile */}
             <div className="relative aspect-[9/12] w-full bg-gray-900 rounded-t-2xl overflow-hidden shadow-inner flex-shrink-0">
@@ -146,49 +150,55 @@ function SortableCollectionItem({ collection, onEdit, onDelete, onToggle, deleti
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 mt-auto">
-                    <button
-                        onClick={() => onToggle(collection)}
-                        disabled={togglingId === collection.id}
-                        className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${collection.is_active
-                            ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200/50"
-                            } disabled:opacity-50`}
-                    >
-                        {togglingId === collection.id ? (
-                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        ) : collection.is_active ? (
-                            <>
-                                <EyeOff className="h-4 w-4" />
-                                <span>Hide</span>
-                            </>
-                        ) : (
-                            <>
-                                <Eye className="h-4 w-4" />
-                                <span>Show</span>
-                            </>
-                        )}
-                    </button>
+                    <ProtectedAction permission={PERMISSIONS.HOME_SETTINGS_UPDATE} hideWhenDisabled>
+                        <button
+                            onClick={() => onToggle(collection)}
+                            disabled={togglingId === collection.id}
+                            className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${collection.is_active
+                                ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200/50"
+                                } disabled:opacity-50`}
+                        >
+                            {togglingId === collection.id ? (
+                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            ) : collection.is_active ? (
+                                <>
+                                    <EyeOff className="h-4 w-4" />
+                                    <span>Hide</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Eye className="h-4 w-4" />
+                                    <span>Show</span>
+                                </>
+                            )}
+                        </button>
+                    </ProtectedAction>
 
-                    <button
-                        onClick={() => onEdit(collection)}
-                        className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold bg-white text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all"
-                    >
-                        <Pencil className="h-4 w-4" />
-                        <span>Edit</span>
-                    </button>
+                    <ProtectedAction permission={PERMISSIONS.HOME_SETTINGS_UPDATE} hideWhenDisabled>
+                        <button
+                            onClick={() => onEdit(collection)}
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold bg-white text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all"
+                        >
+                            <Pencil className="h-4 w-4" />
+                            <span>Edit</span>
+                        </button>
+                    </ProtectedAction>
 
-                    <button
-                        onClick={() => onDelete(collection.id, collection.product?.name || "Collection")}
-                        disabled={deletingId === collection.id}
-                        className="flex-none inline-flex items-center justify-center w-11 h-11 text-red-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
-                        title="Remove Collection"
-                    >
-                        {deletingId === collection.id ? (
-                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            <Trash2 className="h-4 w-4" />
-                        )}
-                    </button>
+                    <ProtectedAction permission={PERMISSIONS.HOME_SETTINGS_UPDATE} hideWhenDisabled>
+                        <button
+                            onClick={() => onDelete(collection.id, collection.product?.name || "Collection")}
+                            disabled={deletingId === collection.id}
+                            className="flex-none inline-flex items-center justify-center w-11 h-11 text-red-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
+                            title="Remove Collection"
+                        >
+                            {deletingId === collection.id ? (
+                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <Trash2 className="h-4 w-4" />
+                            )}
+                        </button>
+                    </ProtectedAction>
                 </div>
             </div>
         </div>

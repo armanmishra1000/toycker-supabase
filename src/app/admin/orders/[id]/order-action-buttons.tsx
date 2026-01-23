@@ -5,6 +5,8 @@ import { acceptOrder, cancelOrder, markOrderAsDelivered } from "@/lib/data/admin
 import { cn } from "@lib/util/cn"
 import { CheckIcon, HandThumbUpIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import Modal from "@modules/common/components/modal"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 type ConfirmDialogProps = {
     open: boolean
@@ -58,7 +60,7 @@ export function AcceptOrderButton({ orderId }: { orderId: string }) {
     const [open, setOpen] = useState(false)
 
     return (
-        <>
+        <ProtectedAction permission={PERMISSIONS.ORDERS_UPDATE} hideWhenDisabled>
             <button
                 onClick={() => setOpen(true)}
                 disabled={isPending}
@@ -89,7 +91,7 @@ export function AcceptOrderButton({ orderId }: { orderId: string }) {
                 description="Are you sure you want to accept this order?"
                 confirmLabel="Accept"
             />
-        </>
+        </ProtectedAction>
     )
 }
 
@@ -98,7 +100,7 @@ export function MarkAsDeliveredButton({ orderId }: { orderId: string }) {
     const [open, setOpen] = useState(false)
 
     return (
-        <>
+        <ProtectedAction permission={PERMISSIONS.ORDERS_UPDATE} hideWhenDisabled>
             <button
                 onClick={() => setOpen(true)}
                 disabled={isPending}
@@ -129,7 +131,7 @@ export function MarkAsDeliveredButton({ orderId }: { orderId: string }) {
                 description="Confirm this order has been delivered to the customer."
                 confirmLabel="Mark Delivered"
             />
-        </>
+        </ProtectedAction>
     )
 }
 
@@ -138,7 +140,7 @@ export function CancelOrderButton({ orderId }: { orderId: string }) {
     const [open, setOpen] = useState(false)
 
     return (
-        <>
+        <ProtectedAction permission={PERMISSIONS.ORDERS_UPDATE} hideWhenDisabled>
             <button
                 onClick={() => setOpen(true)}
                 disabled={isPending}
@@ -170,6 +172,6 @@ export function CancelOrderButton({ orderId }: { orderId: string }) {
                 confirmLabel="Cancel Order"
                 confirmTone="danger"
             />
-        </>
+        </ProtectedAction>
     )
 }

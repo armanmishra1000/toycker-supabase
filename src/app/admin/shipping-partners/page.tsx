@@ -5,6 +5,8 @@ import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { formatIST } from "@/lib/util/date"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default async function AdminShippingPartners() {
     const partners = await getShippingPartners()
@@ -15,10 +17,12 @@ export default async function AdminShippingPartners() {
                 title="Shipping Partners"
                 subtitle="Manage delivery partners for order fulfillment."
                 actions={
-                    <Link href="/admin/shipping-partners/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                        Add Partner
-                    </Link>
+                    <ProtectedAction permission={PERMISSIONS.SHIPPING_PARTNERS_CREATE} hideWhenDisabled>
+                        <Link href="/admin/shipping-partners/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
+                            <PlusIcon className="h-4 w-4 mr-2" />
+                            Add Partner
+                        </Link>
+                    </ProtectedAction>
                 }
             />
 
@@ -56,11 +60,13 @@ export default async function AdminShippingPartners() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <form action={deleteShippingPartner.bind(null, partner.id)}>
-                                                <button className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            </form>
+                                            <ProtectedAction permission={PERMISSIONS.SHIPPING_PARTNERS_DELETE} hideWhenDisabled>
+                                                <form action={deleteShippingPartner.bind(null, partner.id)}>
+                                                    <button className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
+                                                        <TrashIcon className="h-4 w-4" />
+                                                    </button>
+                                                </form>
+                                            </ProtectedAction>
                                         </div>
                                     </td>
                                 </tr>

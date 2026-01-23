@@ -4,6 +4,8 @@ import { ClubSettings } from "@lib/supabase/types"
 import { updateClubSettings } from "@lib/data/club"
 import { useState } from "react"
 import { Button } from "@modules/common/components/button"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default function ClubSettingsForm({ settings }: { settings: ClubSettings }) {
     const [minPurchase, setMinPurchase] = useState(settings.min_purchase_amount)
@@ -112,13 +114,15 @@ export default function ClubSettingsForm({ settings }: { settings: ClubSettings 
             </div>
 
             <div className="pt-4 border-t border-gray-100 flex justify-end">
-                <Button
-                    type="submit"
-                    disabled={saving}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                    {saving ? "Saving..." : "Save Changes"}
-                </Button>
+                <ProtectedAction permission={PERMISSIONS.CLUB_SETTINGS_UPDATE} hideWhenDisabled>
+                    <Button
+                        type="submit"
+                        disabled={saving}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                        {saving ? "Saving..." : "Save Changes"}
+                    </Button>
+                </ProtectedAction>
             </div>
         </form>
     )

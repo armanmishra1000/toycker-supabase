@@ -1,9 +1,13 @@
 import { getAdminCollections, deleteCollection } from "@/lib/data/admin"
 import Link from "next/link"
-import { PlusIcon, PencilIcon, RectangleStackIcon, ArrowTopRightOnSquareIcon, TrashIcon } from "@heroicons/react/24/outline"
+import { PencilIcon, RectangleStackIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { AdminPagination } from "@modules/admin/components/admin-pagination"
 import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
+import { CreateCollectionButton } from "./create-collection-button"
+import { DeleteCollectionButton } from "./delete-collection-button"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default async function AdminCollections({
   searchParams
@@ -33,13 +37,9 @@ export default async function AdminCollections({
   }
 
   const actions = (
-    <Link
-      href="/admin/collections/new"
-      className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-black hover:bg-gray-800 transition-all"
-    >
-      <PlusIcon className="h-4 w-4 mr-2" strokeWidth={3} />
-      Create collection
-    </Link>
+    <ProtectedAction permission={PERMISSIONS.COLLECTIONS_CREATE} hideWhenDisabled>
+      <CreateCollectionButton />
+    </ProtectedAction>
   )
 
   return (
@@ -92,14 +92,14 @@ export default async function AdminCollections({
                       >
                         <ArrowTopRightOnSquareIcon className="h-4 w-4" />
                       </a>
-                      <Link href={`/admin/collections/${collection.id}`} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
-                        <PencilIcon className="h-4 w-4" />
-                      </Link>
-                      <form action={deleteCollection.bind(null, collection.id)}>
-                        <button className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </form>
+                      <ProtectedAction permission={PERMISSIONS.COLLECTIONS_UPDATE} hideWhenDisabled>
+                        <Link href={`/admin/collections/${collection.id}`} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
+                          <PencilIcon className="h-4 w-4" />
+                        </Link>
+                      </ProtectedAction>
+                      <ProtectedAction permission={PERMISSIONS.COLLECTIONS_DELETE} hideWhenDisabled>
+                        <DeleteCollectionButton collectionId={collection.id} deleteAction={deleteCollection} />
+                      </ProtectedAction>
                     </div>
                   </td>
                 </tr>

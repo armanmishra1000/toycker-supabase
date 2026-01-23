@@ -4,8 +4,9 @@ import { useTransition } from "react"
 import AdminCard from "@modules/admin/components/admin-card"
 import { ActionButton } from "@/modules/admin/components"
 import Link from "next/link"
-import { getPermissionLabel } from "@/lib/permissions"
+import { getPermissionLabel, getPermissionDescription, PERMISSION_GROUPS } from "@/lib/permissions"
 import { AdminRole } from "@/lib/supabase/types"
+import { InformationCircleIcon } from "@heroicons/react/24/outline"
 
 interface RoleFormProps {
     initialData?: AdminRole
@@ -14,15 +15,6 @@ interface RoleFormProps {
 
 export default function RoleForm({ initialData, onSubmit }: RoleFormProps) {
     const [isPending, startTransition] = useTransition()
-
-    const permissionGroups = {
-        Orders: ["orders:read", "orders:update", "orders:delete"],
-        Products: ["products:read", "products:create", "products:update", "products:delete"],
-        Inventory: ["inventory:read", "inventory:update"],
-        Customers: ["customers:read", "customers:update"],
-        Team: ["team:manage"],
-        Settings: ["settings:read", "settings:update"],
-    }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -64,27 +56,40 @@ export default function RoleForm({ initialData, onSubmit }: RoleFormProps) {
                         Permissions
                     </label>
                     <div className="space-y-4">
-                        {Object.entries(permissionGroups).map(([group, permissions]) => (
+                        {Object.entries(PERMISSION_GROUPS).map(([group, permissions]: [string, readonly string[]]) => (
                             <div key={group} className="border border-gray-200 rounded-lg p-4 bg-gray-50/50">
                                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
                                     {group}
                                 </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                    {permissions.map((perm) => (
+                                <div className="grid grid-cols-1 gap-3">
+                                    {permissions.map((perm: string) => (
                                         <label
                                             key={perm}
-                                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:border-indigo-300 cursor-pointer transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50"
+                                            className="group inline-flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:border-indigo-300 cursor-pointer transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50"
                                         >
-                                            <input
-                                                type="checkbox"
-                                                name={`perm_${perm}`}
-                                                value={perm}
-                                                defaultChecked={initialData?.permissions.includes(perm)}
-                                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                            />
-                                            <span className="text-xs font-medium text-gray-700">
-                                                {getPermissionLabel(perm)}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    name={`perm_${perm}`}
+                                                    value={perm}
+                                                    defaultChecked={initialData?.permissions.includes(perm)}
+                                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                />
+                                                <span className="text-xs font-medium text-gray-700">
+                                                    {getPermissionLabel(perm)}
+                                                </span>
+                                            </div>
+                                            <div className="relative group/tooltip">
+                                                <InformationCircleIcon className="h-4 w-4 text-gray-400 hover:text-indigo-600 transition-colors cursor-help" />
+                                                <div className="absolute right-0 bottom-full mb-2 hidden group-hover/tooltip:block z-10 w-64">
+                                                    <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
+                                                        {getPermissionDescription(perm)}
+                                                        <div className="absolute top-full right-4 -mt-1">
+                                                            <div className="border-4 border-transparent border-t-gray-900"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </label>
                                     ))}
                                 </div>

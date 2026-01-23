@@ -3,6 +3,8 @@
 import { useFormStatus } from "react-dom"
 import { TrashIcon } from "@heroicons/react/24/outline"
 import { Loader2 } from "lucide-react"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 function DeleteButton() {
     const { pending } = useFormStatus()
@@ -30,8 +32,10 @@ interface DeleteRoleButtonProps {
 
 export function DeleteRoleButton({ roleId, deleteAction }: DeleteRoleButtonProps) {
     return (
-        <form action={deleteAction.bind(null, roleId)}>
-            <DeleteButton />
-        </form>
+        <ProtectedAction permission={PERMISSIONS.TEAM_MANAGE} hideWhenDisabled>
+            <form action={deleteAction.bind(null, roleId)}>
+                <DeleteButton />
+            </form>
+        </ProtectedAction>
     )
 }

@@ -5,6 +5,8 @@ import { PlusIcon } from "@heroicons/react/24/outline"
 import { type HomeExclusiveCollection } from "@/lib/types/home-exclusive-collections"
 import CollectionsList from "./collections-list"
 import CollectionFormModal from "./collection-form-modal"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 type Props = {
     initialCollections: HomeExclusiveCollection[]
@@ -66,13 +68,15 @@ export default function ExclusiveCollectionsManager({ initialCollections }: Prop
                         {collections.length} collection{collections.length !== 1 ? 's' : ''} currently active
                     </p>
                 </div>
-                <button
-                    onClick={handleAddCollection}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 transition-all duration-300"
-                >
-                    <PlusIcon className="h-4 w-4 stroke-[3]" />
-                    Add Collection
-                </button>
+                <ProtectedAction permission={PERMISSIONS.HOME_SETTINGS_UPDATE} hideWhenDisabled>
+                    <button
+                        onClick={handleAddCollection}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 transition-all duration-300"
+                    >
+                        <PlusIcon className="h-4 w-4 stroke-[3]" />
+                        Add Collection
+                    </button>
+                </ProtectedAction>
             </div>
 
             <CollectionsList

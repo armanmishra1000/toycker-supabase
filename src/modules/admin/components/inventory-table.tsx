@@ -11,6 +11,8 @@ import {
   LayersIcon,
   AlertCircle
 } from "lucide-react"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 import Image from "next/image"
 import Link from "next/link"
 import { useState, Fragment } from "react"
@@ -136,26 +138,31 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
                   <td className="px-6 py-4 whitespace-nowrap text-right relative">
                     <div className="flex items-center justify-end gap-2">
                       {isUpdatingProduct && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
-                      <input
-                        type="number"
-                        defaultValue={product.stock_count || 0}
-                        disabled={hasVariants || isUpdatingProduct}
-                        onBlur={(e) => {
-                          const val = parseInt(e.target.value)
-                          if (!isNaN(val) && val !== product.stock_count) {
-                            handleStockChange(product.id, val)
-                          }
-                        }}
-                        className={cn(
-                          "w-24 rounded-lg border px-3 py-1.5 text-sm font-medium text-right transition-all focus:ring-2 focus:ring-indigo-500/20",
-                          hasVariants ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed" : "border-gray-300 focus:border-indigo-500",
-                          !hasVariants && (product.stock_count || 0) === 0 && "border-red-300 text-red-600 bg-red-50/30",
-                          !hasVariants && (product.stock_count || 0) > 0 && (product.stock_count || 0) <= LOW_STOCK_THRESHOLD && "border-amber-300 text-amber-600 bg-amber-50/30",
-                          !hasVariants && (product.stock_count || 0) > LOW_STOCK_THRESHOLD && "text-gray-900",
-                          isUpdatingProduct && "opacity-50"
-                        )}
-                        title={hasVariants ? "Manage stock at variant level" : "Update base stock"}
-                      />
+                      <ProtectedAction
+                        permission={PERMISSIONS.INVENTORY_UPDATE}
+                        fallback={<span className="text-sm font-bold text-gray-900 pr-3">{product.stock_count || 0}</span>}
+                      >
+                        <input
+                          type="number"
+                          defaultValue={product.stock_count || 0}
+                          disabled={hasVariants || isUpdatingProduct}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value)
+                            if (!isNaN(val) && val !== product.stock_count) {
+                              handleStockChange(product.id, val)
+                            }
+                          }}
+                          className={cn(
+                            "w-24 rounded-lg border px-3 py-1.5 text-sm font-medium text-right transition-all focus:ring-2 focus:ring-indigo-500/20",
+                            hasVariants ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed" : "border-gray-300 focus:border-indigo-500",
+                            !hasVariants && (product.stock_count || 0) === 0 && "border-red-300 text-red-600 bg-red-50/30",
+                            !hasVariants && (product.stock_count || 0) > 0 && (product.stock_count || 0) <= LOW_STOCK_THRESHOLD && "border-amber-300 text-amber-600 bg-amber-50/30",
+                            !hasVariants && (product.stock_count || 0) > LOW_STOCK_THRESHOLD && "text-gray-900",
+                            isUpdatingProduct && "opacity-50"
+                          )}
+                          title={hasVariants ? "Manage stock at variant level" : "Update base stock"}
+                        />
+                      </ProtectedAction>
                     </div>
                   </td>
                 </tr>
@@ -196,24 +203,29 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
                                   <td className="py-2 pl-4 pr-0 text-right w-[150px]">
                                     <div className="flex items-center justify-end gap-2">
                                       {isUpdatingVariant && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
-                                      <input
-                                        type="number"
-                                        defaultValue={variant.inventory_quantity || 0}
-                                        disabled={isUpdatingVariant}
-                                        onBlur={(e) => {
-                                          const val = parseInt(e.target.value)
-                                          if (!isNaN(val) && val !== variant.inventory_quantity) {
-                                            handleStockChange(product.id, val, variant.id)
-                                          }
-                                        }}
-                                        className={cn(
-                                          "w-24 rounded-md border bg-white px-2 py-1 text-xs font-semibold text-right transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20",
-                                          (variant.inventory_quantity || 0) === 0 ? "border-red-300 text-red-600 bg-red-50/30" :
-                                            (variant.inventory_quantity || 0) <= LOW_STOCK_THRESHOLD ? "border-amber-300 text-amber-600 bg-amber-50/30" :
-                                              "border-gray-200 text-gray-800",
-                                          isUpdatingVariant && "opacity-50"
-                                        )}
-                                      />
+                                      <ProtectedAction
+                                        permission={PERMISSIONS.INVENTORY_UPDATE}
+                                        fallback={<span className="text-xs font-bold text-gray-800 pr-2">{variant.inventory_quantity || 0}</span>}
+                                      >
+                                        <input
+                                          type="number"
+                                          defaultValue={variant.inventory_quantity || 0}
+                                          disabled={isUpdatingVariant}
+                                          onBlur={(e) => {
+                                            const val = parseInt(e.target.value)
+                                            if (!isNaN(val) && val !== variant.inventory_quantity) {
+                                              handleStockChange(product.id, val, variant.id)
+                                            }
+                                          }}
+                                          className={cn(
+                                            "w-24 rounded-md border bg-white px-2 py-1 text-xs font-semibold text-right transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20",
+                                            (variant.inventory_quantity || 0) === 0 ? "border-red-300 text-red-600 bg-red-50/30" :
+                                              (variant.inventory_quantity || 0) <= LOW_STOCK_THRESHOLD ? "border-amber-300 text-amber-600 bg-amber-50/30" :
+                                                "border-gray-200 text-gray-800",
+                                            isUpdatingVariant && "opacity-50"
+                                          )}
+                                        />
+                                      </ProtectedAction>
                                     </div>
                                   </td>
                                 </tr>
