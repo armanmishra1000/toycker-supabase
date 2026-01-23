@@ -2,7 +2,7 @@
 import { getAdminCustomer } from "@/lib/data/admin"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ChevronLeftIcon, ShoppingBagIcon, StarIcon, BanknotesIcon, MapIcon, CreditCardIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "@heroicons/react/24/outline"
+import { ChevronLeftIcon, ShoppingBagIcon, StarIcon, BanknotesIcon, MapIcon, CreditCardIcon } from "@heroicons/react/24/outline"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
@@ -11,6 +11,8 @@ import { ProtectedAction } from "@/lib/permissions/components/protected-action"
 import { PERMISSIONS } from "@/lib/permissions"
 import { cn } from "@lib/util/cn"
 import { formatIST } from "@/lib/util/date"
+import CustomerOrderHistory from "@modules/admin/components/customer-order-history"
+import CustomerRewardHistory from "@modules/admin/components/customer-reward-history"
 
 export default async function AdminCustomerDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -18,9 +20,8 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
 
   if (!customer) notFound()
 
-  // Calculate stats
-  // @ts-ignore - types need to be strict but for prototype ensuring it works
-  const totalSpent = customer.orders.reduce((acc: number, order: any) => acc + (order.total_amount || 0), 0)
+  // Use pre-calculated stats from data layer
+  const totalSpent = customer.total_spent || 0
   // @ts-ignore
   const rewardBalance = customer.reward_wallet?.balance || 0
   const clubSavings = customer.total_club_savings || 0
@@ -70,7 +71,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
         />
         <StatsCard
           title="Total Orders"
-          value={customer.orders.length.toString()}
+          value={customer.order_count.toString()}
           subtitle="Lifetime orders"
           icon={<ShoppingBagIcon className="w-5 h-5" />}
           color="blue"
@@ -97,45 +98,11 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
 
           {/* Recent Orders */}
           <AdminCard title="Order History" className="p-0 border-none shadow-sm overflow-hidden">
-            {customer.orders.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-100">
-                  <thead className="bg-gray-50/50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
-                    {/* @ts-ignore */}
-                    {customer.orders.map((order: any) => (
-                      <tr key={order.id} className="hover:bg-gray-50/80 transition-colors cursor-pointer group">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                          <Link href={`/admin/orders/${order.id}`}>#{order.display_id}</Link>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatIST(order.created_at)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <AdminBadge variant={getStatusVariant(order.status)}>{order.status}</AdminBadge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
-                          {convertToLocale({ amount: order.total_amount, currency_code: order.currency_code })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center text-gray-500">
-                <ShoppingBagIcon className="w-12 h-12 text-gray-200 mb-3" />
-                <p className="font-medium">No orders yet</p>
-                <p className="text-sm">This customer hasn&apos;t placed any orders.</p>
-              </div>
-            )}
+            <CustomerOrderHistory
+              userId={customer.id}
+              initialOrders={customer.orders}
+              totalOrders={customer.order_count}
+            />
           </AdminCard>
 
           {/* Addresses */}
@@ -222,76 +189,12 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
       {/* Rewards Ledger */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Reward Transaction History</h2>
-        <AdminCard className="p-0 border-none shadow-sm overflow-hidden">
-          {/* @ts-ignore */}
-          {customer.reward_transactions && customer.reward_transactions.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-100">
-                <thead className="bg-gray-50/50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
-                  {/* @ts-ignore */}
-                  {customer.reward_transactions.map((tx: any) => (
-                    <tr key={tx.id} className="hover:bg-gray-50/80 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {tx.type === 'earned' ? (
-                            <div className="p-1 rounded bg-emerald-50 text-emerald-600">
-                              <ArrowTrendingUpIcon className="w-3.5 h-3.5" />
-                            </div>
-                          ) : (
-                            <div className="p-1 rounded bg-red-50 text-red-600">
-                              <ArrowTrendingDownIcon className="w-3.5 h-3.5" />
-                            </div>
-                          )}
-                          <span className={cn(
-                            "text-xs font-bold uppercase",
-                            tx.type === 'earned' ? "text-emerald-700" : "text-red-700"
-                          )}>
-                            {tx.type}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatIST(tx.created_at)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {tx.description}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {tx.orders ? (
-                          <Link href={`/admin/orders/${tx.order_id}`} className="text-blue-600 hover:underline">
-                            #{tx.orders.display_id}
-                          </Link>
-                        ) : (
-                          <span className="text-gray-400">---</span>
-                        )}
-                      </td>
-                      <td className={cn(
-                        "px-6 py-4 whitespace-nowrap text-sm font-bold text-right",
-                        tx.amount > 0 ? "text-emerald-600" : "text-red-600"
-                      )}>
-                        {tx.amount > 0 ? '+' : ''}{tx.amount}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center text-gray-500">
-              <StarIcon className="w-12 h-12 text-gray-200 mb-3" />
-              <p className="font-medium">No transactions yet</p>
-              <p className="text-sm">This customer hasn&apos;t earned or spent any rewards.</p>
-            </div>
-          )}
+        <AdminCard title="" className="p-0 border-none shadow-sm overflow-hidden">
+          <CustomerRewardHistory
+            userId={customer.id}
+            initialTransactions={customer.reward_transactions}
+            totalTransactions={customer.reward_transaction_total}
+          />
         </AdminCard>
       </div>
 

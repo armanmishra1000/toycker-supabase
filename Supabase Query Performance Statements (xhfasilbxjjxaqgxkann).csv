@@ -1,0 +1,197 @@
+query,rolname,calls,mean_time,min_time,max_time,total_time,rows_read,cache_hit_rate,prop_total_time,index_advisor_result
+"SELECT wal->>$5 as type,
+       wal->>$6 as schema,
+       wal->>$7 as table,
+       COALESCE(wal->>$8, $9) as columns,
+       COALESCE(wal->>$10, $11) as record,
+       COALESCE(wal->>$12, $13) as old_record,
+       wal->>$14 as commit_timestamp,
+       subscription_ids,
+       errors
+FROM realtime.list_changes($1, $2, $3, $4)",supabase_admin,1023338,4.64670747774909,3.364736,2498.164559,4755152.33686497,44,100.0000000000000000,47.714703058259495,null
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $9) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $10) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $11  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $12) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $13 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $14  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $7 OFFSET $8 ) , pgrst_source_count AS (SELECT $15  FROM ""public"".""products"") SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $16) AS body, nullif(current_setting($17, $18), $19) AS response_headers, nullif(current_setting($20, $21), $22) AS response_status, $23 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",anon,17415,99.9581355970708,13.136528,512.104682,1740770.931423,17415,100.0000000000000000,17.467446298483726,"{""has_suggestion"":true,""startup_cost_before"":1390.12,""startup_cost_after"":292.17,""total_cost_before"":1390.14,""total_cost_after"":292.19,""index_statements"":[""CREATE INDEX ON public.products USING btree (short_description)"",""CREATE INDEX ON public.products USING btree (created_at)""]}"
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $9) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $10) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $11  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $12) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $13 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $14  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $7 OFFSET $8 ) , pgrst_source_count AS (SELECT $15  FROM ""public"".""products"") SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $16) AS body, nullif(current_setting($17, $18), $19) AS response_headers, nullif(current_setting($20, $21), $22) AS response_status, $23 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",anon,16999,101.73349777587,1.989542,2889.891254,1729367.728692,16999,100.0000000000000000,17.35302295435559,"{""has_suggestion"":true,""startup_cost_before"":1390.12,""startup_cost_after"":292.17,""total_cost_before"":1390.14,""total_cost_after"":292.19,""index_statements"":[""CREATE INDEX ON public.products USING btree (short_description)"",""CREATE INDEX ON public.products USING btree (created_at)""]}"
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $9) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $10) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $11  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $12) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $13 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $14  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $7 OFFSET $8 ) , pgrst_source_count AS (SELECT $15  FROM ""public"".""products"") SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $16) AS body, nullif(current_setting($17, $18), $19) AS response_headers, nullif(current_setting($20, $21), $22) AS response_status, $23 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",anon,7408,80.5572172540499,14.767455,370.396923,596767.865418003,7408,100.0000000000000000,5.9881575764414805,"{""has_suggestion"":true,""startup_cost_before"":1390.12,""startup_cost_after"":292.17,""total_cost_before"":1390.14,""total_cost_after"":292.19,""index_statements"":[""CREATE INDEX ON public.products USING btree (short_description)"",""CREATE INDEX ON public.products USING btree (created_at)""]}"
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $9) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $10) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $11  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $12) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $13 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $14  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $7 OFFSET $8 ) , pgrst_source_count AS (SELECT $15  FROM ""public"".""products"") SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $16) AS body, nullif(current_setting($17, $18), $19) AS response_headers, nullif(current_setting($20, $21), $22) AS response_status, $23 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",anon,10031,55.3454582249028,8.94202,231.408918,555170.291454001,10031,100.0000000000000000,5.570754357989616,"{""has_suggestion"":true,""startup_cost_before"":1390.12,""startup_cost_after"":292.17,""total_cost_before"":1390.14,""total_cost_after"":292.19,""index_statements"":[""CREATE INDEX ON public.products USING btree (short_description)"",""CREATE INDEX ON public.products USING btree (created_at)""]}"
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $9) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $10) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $11  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $12) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $13 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $14  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $7 OFFSET $8 ) , pgrst_source_count AS (SELECT $15  FROM ""public"".""products"") SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $16) AS body, nullif(current_setting($17, $18), $19) AS response_headers, nullif(current_setting($20, $21), $22) AS response_status, $23 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",anon,7644,15.9813867017268,1.768601,135.511936,122161.719948,7644,99.9999807496880006,1.2258093494115112,"{""has_suggestion"":true,""startup_cost_before"":1390.12,""startup_cost_after"":292.17,""total_cost_before"":1390.14,""total_cost_after"":292.19,""index_statements"":[""CREATE INDEX ON public.products USING btree (short_description)"",""CREATE INDEX ON public.products USING btree (created_at)""]}"
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $9) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $10) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $11  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $12) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $13 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $14  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $7 OFFSET $8 ) , pgrst_source_count AS (SELECT $15  FROM ""public"".""products"") SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $16) AS body, nullif(current_setting($17, $18), $19) AS response_headers, nullif(current_setting($20, $21), $22) AS response_status, $23 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",authenticated,2386,33.8056696601007,2.050849,461.77727,80660.3278090002,2386,100.0000000000000000,0.809371249823243,"{""has_suggestion"":true,""startup_cost_before"":1390.12,""startup_cost_after"":292.17,""total_cost_before"":1390.14,""total_cost_after"":292.19,""index_statements"":[""CREATE INDEX ON public.products USING btree (short_description)"",""CREATE INDEX ON public.products USING btree (created_at)""]}"
+SELECT name FROM pg_timezone_names,authenticator,191,418.724844602094,52.785375,1312.327114,79976.445319,228054,0,0.8025089565410438,null
+"with f as (
+      
+-- CTE with sane arg_modes, arg_names, and arg_types.
+-- All three are always of the same length.
+-- All three include all args, including OUT and TABLE args.
+with functions as (
+  select
+    *,
+    -- proargmodes is null when all arg modes are IN
+    coalesce(
+      p.proargmodes,
+      array_fill($1::text, array[cardinality(coalesce(p.proallargtypes, p.proargtypes))])
+    ) as arg_modes,
+    -- proargnames is null when all args are unnamed
+    coalesce(
+      p.proargnames,
+      array_fill($2::text, array[cardinality(coalesce(p.proallargtypes, p.proargtypes))])
+    ) as arg_names,
+    -- proallargtypes is null when all arg modes are IN
+    coalesce(p.proallargtypes, p.proargtypes) as arg_types,
+    array_cat(
+      array_fill($3, array[pronargs - pronargdefaults]),
+      array_fill($4, array[pronargdefaults])) as arg_has_defaults
+  from
+    pg_proc as p
+  where
+    p.prokind = $5
+)
+select
+  f.oid as id,
+  n.nspname as schema,
+  f.proname as name,
+  l.lanname as language,
+  case
+    when l.lanname = $6 then $7
+    else f.prosrc
+  end as definition,
+  case
+    when l.lanname = $8 then f.prosrc
+    else pg_get_functiondef(f.oid)
+  end as complete_statement,
+  coalesce(f_args.args, $9) as args,
+  pg_get_function_arguments(f.oid) as argument_types,
+  pg_get_function_identity_arguments(f.oid) as identity_argument_types,
+  f.prorettype as return_type_id,
+  pg_get_function_result(f.oid) as return_type,
+  nullif(rt.typrelid, $10) as return_type_relation_id,
+  f.proretset as is_set_returning_function,
+  case
+    when f.provolatile = $11 then $12
+    when f.provolatile = $13 then $14
+    when f.provolatile = $15 then $16
+  end as behavior,
+  f.prosecdef as security_definer,
+  f_config.config_params as config_params
+from
+  functions f
+  left join pg_namespace n on f.pronamespace = n.oid
+  left join pg_language l on f.prolang = l.oid
+  left join pg_type rt on rt.oid = f.prorettype
+  left join (
+    select
+      oid,
+      jsonb_object_agg(param, value) filter (where param is not null) as config_params
+    from
+      (
+        select
+          oid,
+          (string_to_array(unnest(proconfig), $17))[$18] as param,
+          (string_to_array(unnest(proconfig), $19))[$20] as value
+        from
+          functions
+      ) as t
+    group by
+      oid
+  ) f_config on f_config.oid = f.oid
+  left join (
+    select
+      oid,
+      jsonb_agg(jsonb_build_object(
+        $21, t2.mode,
+        $22, name,
+        $23, type_id,
+        -- Cast null into false boolean
+        $24, COALESCE(has_default, $25)
+      )) as args
+    from
+      (
+        select
+          oid,
+          unnest(arg_modes) as mode,
+          unnest(arg_names) as name,
+          -- Coming from: coalesce(p.proallargtypes, p.proargtypes) postgres won't automatically assume
+          -- integer, we need to cast it to be properly parsed
+          unnest(arg_types)::int8 as type_id,
+          unnest(arg_has_defaults) as has_default
+        from
+          functions
+      ) as t1,
+      lateral (
+        select
+          case
+            when t1.mode = $26 then $27
+            when t1.mode = $28 then $29
+            when t1.mode = $30 then $31
+            when t1.mode = $32 then $33
+            else $34
+          end as mode
+      ) as t2
+    group by
+      t1.oid
+  ) f_args on f_args.oid = f.oid
+
+    )
+    select
+      f.*
+    from f
+   where schema NOT IN ($35,$36,$37)
+
+-- source: dashboard
+-- user: dc90aa22-8635-4cc5-97c8-1cd6df69150d
+-- date: 2025-12-26T06:15:18.130Z",postgres,260,267.801740119231,162.585336,610.152659,69628.452431,49553,100.0000000000000000,0.6986739218415188,null
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $9) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $10) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $11  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $12) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $13 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $14  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $7 OFFSET $8 ) , pgrst_source_count AS (SELECT $15  FROM ""public"".""products"") SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $16) AS body, nullif(current_setting($17, $18), $19) AS response_headers, nullif(current_setting($20, $21), $22) AS response_status, $23 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",anon,3854,16.7599842267774,1.645121,98.037028,64592.9792100001,3854,100.0000000000000000,0.6481463903395033,"{""has_suggestion"":true,""startup_cost_before"":1390.12,""startup_cost_after"":292.17,""total_cost_before"":1390.14,""total_cost_after"":292.19,""index_statements"":[""CREATE INDEX ON public.products USING btree (short_description)"",""CREATE INDEX ON public.products USING btree (created_at)""]}"
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_product_collections_1"".""products_product_collections_1"", $13) AS ""product_collections"", COALESCE( ""products_variants_1"".""products_variants_1"", $14) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $15) AS ""options"" FROM ""public"".""products"" INNER JOIN LATERAL ( SELECT json_agg(""products_product_collections_1"")::jsonb AS ""products_product_collections_1"" FROM (SELECT ""product_collections_1"".""collection_id"" FROM ""public"".""product_collections"" AS ""product_collections_1"" WHERE  ""product_collections_1"".""collection_id"" = ANY ($1)  AND ""product_collections_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $2 OFFSET $3 ) AS ""products_product_collections_1"" ) AS ""products_product_collections_1"" ON ""products_product_collections_1"" IS NOT NULL  LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $4 OFFSET $5 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $16  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $17) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $6 OFFSET $7 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $18 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $8 OFFSET $9 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $19  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $10 OFFSET $11 ) , pgrst_source_count AS (SELECT $20  FROM ""public"".""products"" WHERE EXISTS (SELECT $21  FROM ""public"".""product_collections"" AS ""product_collections_1"" WHERE  ""product_collections_1"".""collection_id"" = ANY ($12)  AND ""product_collections_1"".""product_id"" = ""public"".""products"".""id"" )) SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $22) AS body, nullif(current_setting($23, $24), $25) AS response_headers, nullif(current_setting($26, $27), $28) AS response_status, $29 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",anon,5580,6.27581733064517,0.574452,209.035688,35019.060705,5580,100.0000000000000000,0.35139233499717154,"{""has_suggestion"":true,""startup_cost_before"":6188.73,""startup_cost_after"":647.23,""total_cost_before"":6188.75,""total_cost_after"":647.25,""index_statements"":[""CREATE INDEX ON public.products USING btree (created_at)"",""CREATE INDEX ON public.product_collections USING btree (product_id)""]}"
+"with sub_tables as (
+        select
+        rr.entity
+        from
+        pg_publication_tables pub,
+        lateral (
+        select
+        format($7, pub.schemaname, pub.tablename)::regclass entity
+        ) rr
+        where
+        pub.pubname = $1
+        and pub.schemaname like (case $2 when $8 then $9 else $2 end)
+        and pub.tablename like (case $3 when $10 then $11 else $3 end)
+     )
+     insert into realtime.subscription as x(
+        subscription_id,
+        entity,
+        filters,
+        claims
+      )
+      select
+        $4::text::uuid,
+        sub_tables.entity,
+        $6,
+        $5
+      from
+        sub_tables
+        on conflict
+        (subscription_id, entity, filters)
+        do update set
+        claims = excluded.claims,
+        created_at = now()
+      returning
+         id",supabase_admin,357,63.5859058039215,1.181916,368.940327,22700.168372,357,100.0000000000000000,0.22778067168223956,null
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_product_collections_1"".""products_product_collections_1"", $13) AS ""product_collections"", COALESCE( ""products_variants_1"".""products_variants_1"", $14) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $15) AS ""options"" FROM ""public"".""products"" INNER JOIN LATERAL ( SELECT json_agg(""products_product_collections_1"")::jsonb AS ""products_product_collections_1"" FROM (SELECT ""product_collections_1"".""collection_id"" FROM ""public"".""product_collections"" AS ""product_collections_1"" WHERE  ""product_collections_1"".""collection_id"" = ANY ($1)  AND ""product_collections_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $2 OFFSET $3 ) AS ""products_product_collections_1"" ) AS ""products_product_collections_1"" ON ""products_product_collections_1"" IS NOT NULL  LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $4 OFFSET $5 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $16  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $17) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $6 OFFSET $7 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $18 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $8 OFFSET $9 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $19  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $10 OFFSET $11 ) , pgrst_source_count AS (SELECT $20  FROM ""public"".""products"" WHERE EXISTS (SELECT $21  FROM ""public"".""product_collections"" AS ""product_collections_1"" WHERE  ""product_collections_1"".""collection_id"" = ANY ($12)  AND ""product_collections_1"".""product_id"" = ""public"".""products"".""id"" )) SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $22) AS body, nullif(current_setting($23, $24), $25) AS response_headers, nullif(current_setting($26, $27), $28) AS response_status, $29 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",authenticated,6460,3.48954194133127,0.622477,230.286356,22542.4409409999,6460,100.0000000000000000,0.22619798473529018,"{""has_suggestion"":true,""startup_cost_before"":6188.73,""startup_cost_after"":647.23,""total_cost_before"":6188.75,""total_cost_after"":647.25,""index_statements"":[""CREATE INDEX ON public.products USING btree (created_at)"",""CREATE INDEX ON public.product_collections USING btree (product_id)""]}"
+"select set_config('search_path', $1, true), set_config($2, $3, true), set_config('role', $4, true), set_config('request.jwt.claims', $5, true), set_config('request.method', $6, true), set_config('request.path', $7, true), set_config('request.headers', $8, true), set_config('request.cookies', $9, true)",anon,338053,0.0527718764868227,0.011889,67.677624,17839.6911620005,338053,100.0000000000000000,0.17900910552260227,null
+"SELECT
+  e.name,
+  n.nspname AS schema,
+  e.default_version,
+  x.extversion AS installed_version,
+  e.comment
+FROM
+  pg_available_extensions() e(name, default_version, comment)
+  LEFT JOIN pg_extension x ON e.name = x.extname
+  LEFT JOIN pg_namespace n ON x.extnamespace = n.oid
+WHERE
+  $1",postgres,219,74.6035577579909,2.190084,410.717727,16338.179149,17082,100.0000000000000000,0.16394245891208323,null
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $9) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $10) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $11  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $12) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $13 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $14  ORDER BY ""public"".""products"".""created_at"" DESC  LIMIT $7 OFFSET $8 ) , pgrst_source_count AS (SELECT $15  FROM ""public"".""products"") SELECT (SELECT pg_catalog.count(*) FROM pgrst_source_count) AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $16) AS body, nullif(current_setting($17, $18), $19) AS response_headers, nullif(current_setting($20, $21), $22) AS response_status, $23 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",authenticated,572,24.6123081136364,12.82139,86.190577,14078.240241,572,100.0000000000000000,0.14126551687406635,"{""has_suggestion"":true,""startup_cost_before"":1390.12,""startup_cost_after"":292.17,""total_cost_before"":1390.14,""total_cost_after"":292.19,""index_statements"":[""CREATE INDEX ON public.products USING btree (short_description)"",""CREATE INDEX ON public.products USING btree (created_at)""]}"
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $10) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $11) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $12  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $13) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $14 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $15 WHERE  ""public"".""products"".""id"" = $7   LIMIT $8 OFFSET $9 )  SELECT $16::bigint AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $17) AS body, nullif(current_setting($18, $19), $20) AS response_headers, nullif(current_setting($21, $22), $23) AS response_status, $24 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",anon,16689,0.835832954700704,0.071548,170.279321,13949.216181,16689,100.0000000000000000,0.13997084863335763,null
+"select set_config('search_path', $1, true), set_config($2, $3, true), set_config('role', $4, true), set_config('request.jwt.claims', $5, true), set_config('request.method', $6, true), set_config('request.path', $7, true), set_config('request.headers', $8, true), set_config('request.cookies', $9, true)",authenticated,117910,0.0932873909931313,0.017305,83.294948,10999.5162719999,117910,100.0000000000000000,0.11037262647383243,null
+"select
+    schemaname, tablename, format($2, schemaname, tablename)::regclass as oid
+    from pg_publication_tables where pubname = $1",supabase_admin,3937,2.36272230429261,0.295017,46.840924,9302.03771200001,7990,100.0000000000000000,0.09333958952773204,null
+"WITH pgrst_source AS ( SELECT ""public"".""products"".*, COALESCE( ""products_variants_1"".""products_variants_1"", $10) AS ""variants"", COALESCE( ""products_options_1"".""products_options_1"", $11) AS ""options"" FROM ""public"".""products"" LEFT JOIN LATERAL ( SELECT json_agg(""products_variants_1"")::jsonb AS ""products_variants_1"" FROM (SELECT ""product_variants_1"".* FROM ""public"".""product_variants"" AS ""product_variants_1"" WHERE ""product_variants_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $1 OFFSET $2 ) AS ""products_variants_1"" ) AS ""products_variants_1"" ON $12  LEFT JOIN LATERAL ( SELECT json_agg(""products_options_1"")::jsonb AS ""products_options_1"" FROM (SELECT ""product_options_1"".*, COALESCE( ""product_options_values_2"".""product_options_values_2"", $13) AS ""values"" FROM ""public"".""product_options"" AS ""product_options_1"" LEFT JOIN LATERAL ( SELECT json_agg(""product_options_values_2"")::jsonb AS ""product_options_values_2"" FROM (SELECT ""product_option_values_2"".* FROM ""public"".""product_option_values"" AS ""product_option_values_2"" WHERE ""product_option_values_2"".""option_id"" = ""product_options_1"".""id""   LIMIT $3 OFFSET $4 ) AS ""product_options_values_2"" ) AS ""product_options_values_2"" ON $14 WHERE ""product_options_1"".""product_id"" = ""public"".""products"".""id""   LIMIT $5 OFFSET $6 ) AS ""products_options_1"" ) AS ""products_options_1"" ON $15 WHERE  ""public"".""products"".""handle"" = $7   LIMIT $8 OFFSET $9 )  SELECT $16::bigint AS total_result_set, pg_catalog.count(_postgrest_t) AS page_total, coalesce(json_agg(_postgrest_t), $17) AS body, nullif(current_setting($18, $19), $20) AS response_headers, nullif(current_setting($21, $22), $23) AS response_status, $24 AS response_inserted FROM ( SELECT * FROM pgrst_source ) _postgrest_t",anon,16761,0.52403398842551,0.020792,72.073288,8783.33368000001,16761,100.0000000000000000,0.08813474915487465,null
