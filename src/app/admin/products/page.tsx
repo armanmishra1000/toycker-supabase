@@ -10,7 +10,10 @@ import { AdminPagination } from "@modules/admin/components/admin-pagination"
 import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import { cn } from "@lib/util/cn"
 import DeleteProductButton from "@modules/admin/components/delete-product-button"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 import { ClickableTableRow } from "@modules/admin/components/clickable-table-row"
+import { CreateProductButton } from "./create-product-button"
 
 export default async function AdminProducts({
   searchParams
@@ -54,11 +57,12 @@ export default async function AdminProducts({
         title="Products"
         actions={
           <div className="flex items-center gap-3">
-            <ProductCsvImport />
-            <Link href="/admin/products/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add product
-            </Link>
+            <ProtectedAction permission={PERMISSIONS.PRODUCTS_CREATE} hideWhenDisabled>
+              <ProductCsvImport />
+            </ProtectedAction>
+            <ProtectedAction permission={PERMISSIONS.PRODUCTS_CREATE} hideWhenDisabled>
+              <CreateProductButton />
+            </ProtectedAction>
           </div>
         }
       />
@@ -156,19 +160,21 @@ export default async function AdminProducts({
                       >
                         <ArrowTopRightOnSquareIcon className="h-4 w-4" />
                       </a>
-                      <Link
-                        href={`/admin/products/${product.id}`}
-                        className="p-2 text-gray-400 hover:text-black transition-colors"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </Link>
-                      <div>
+                      <ProtectedAction permission={PERMISSIONS.PRODUCTS_UPDATE} hideWhenDisabled>
+                        <Link
+                          href={`/admin/products/${product.id}`}
+                          className="p-2 text-gray-400 hover:text-black transition-colors"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Link>
+                      </ProtectedAction>
+                      <ProtectedAction permission={PERMISSIONS.PRODUCTS_DELETE} hideWhenDisabled>
                         <DeleteProductButton
                           productId={product.id}
                           productName={product.name}
                           variant="icon"
                         />
-                      </div>
+                      </ProtectedAction>
                     </div>
                   </td>
                 </ClickableTableRow>

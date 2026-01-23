@@ -1,9 +1,13 @@
 import { getAdminCategories, deleteCategory } from "@/lib/data/admin"
 import Link from "next/link"
-import { PlusIcon, FolderIcon, ArrowTopRightOnSquareIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline"
+import { FolderIcon, ArrowTopRightOnSquareIcon, PencilIcon } from "@heroicons/react/24/outline"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { AdminPagination } from "@modules/admin/components/admin-pagination"
 import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
+import { CreateCategoryButton } from "./create-category-button"
+import { DeleteCategoryButton } from "./delete-category-button"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default async function AdminCategories({
   searchParams
@@ -37,10 +41,9 @@ export default async function AdminCategories({
       <AdminPageHeader
         title="Categories"
         actions={
-          <Link href="/admin/categories/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add category
-          </Link>
+          <ProtectedAction permission={PERMISSIONS.CATEGORIES_CREATE} hideWhenDisabled>
+            <CreateCategoryButton />
+          </ProtectedAction>
         }
       />
 
@@ -92,18 +95,18 @@ export default async function AdminCategories({
                       >
                         <ArrowTopRightOnSquareIcon className="h-4 w-4" />
                       </a>
-                      <Link
-                        href={`/admin/categories/${category.id}`}
-                        className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-                        title="Edit category"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </Link>
-                      <form action={deleteCategory.bind(null, category.id)}>
-                        <button className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </form>
+                      <ProtectedAction permission={PERMISSIONS.CATEGORIES_UPDATE} hideWhenDisabled>
+                        <Link
+                          href={`/admin/categories/${category.id}`}
+                          className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                          title="Edit category"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Link>
+                      </ProtectedAction>
+                      <ProtectedAction permission={PERMISSIONS.CATEGORIES_DELETE} hideWhenDisabled>
+                        <DeleteCategoryButton categoryId={category.id} deleteAction={deleteCategory} />
+                      </ProtectedAction>
                     </div>
                   </td>
                 </tr>

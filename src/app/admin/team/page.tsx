@@ -5,6 +5,8 @@ import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import RoleSelector from "./role-selector"
 import Link from "next/link"
 import { UserPlusIcon, Cog6ToothIcon, TrashIcon, UserGroupIcon } from "@heroicons/react/24/outline"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 import { formatIST } from "@/lib/util/date"
 
 export default async function AdminTeam({
@@ -45,22 +47,24 @@ export default async function AdminTeam({
                 title="Team"
                 subtitle="Manage staff accounts and roles."
                 actions={
-                    <div className="flex gap-2">
-                        <Link
-                            href="/admin/team/roles"
-                            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all gap-2"
-                        >
-                            <Cog6ToothIcon className="h-4 w-4" />
-                            Manage Roles
-                        </Link>
-                        <Link
-                            href="/admin/team/invite"
-                            className="inline-flex items-center px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all gap-2"
-                        >
-                            <UserPlusIcon className="h-4 w-4" />
-                            Add Staff
-                        </Link>
-                    </div>
+                    <ProtectedAction permission={PERMISSIONS.TEAM_MANAGE} hideWhenDisabled>
+                        <div className="flex gap-2">
+                            <Link
+                                href="/admin/team/roles"
+                                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all gap-2"
+                            >
+                                <Cog6ToothIcon className="h-4 w-4" />
+                                Manage Roles
+                            </Link>
+                            <Link
+                                href="/admin/team/invite"
+                                className="inline-flex items-center px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all gap-2"
+                            >
+                                <UserPlusIcon className="h-4 w-4" />
+                                Add Staff
+                            </Link>
+                        </div>
+                    </ProtectedAction>
                 }
             />
 
@@ -103,25 +107,36 @@ export default async function AdminTeam({
                                         {member.email}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <RoleSelector
-                                            userId={member.id}
-                                            currentRoleId={member.admin_role_id || ''}
-                                            roles={roles}
-                                        />
+                                        <ProtectedAction
+                                            permission={PERMISSIONS.TEAM_MANAGE}
+                                            fallback={
+                                                <div className="text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 inline-block">
+                                                    {roles.find(r => r.id === member.admin_role_id)?.name || 'No Role'}
+                                                </div>
+                                            }
+                                        >
+                                            <RoleSelector
+                                                userId={member.id}
+                                                currentRoleId={member.admin_role_id || ''}
+                                                roles={roles}
+                                            />
+                                        </ProtectedAction>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {formatIST(member.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                                        <form action={removeStaffAccess.bind(null, member.id)}>
-                                            <button
-                                                type="submit"
-                                                className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                                                title="Remove access"
-                                            >
-                                                <TrashIcon className="h-4 w-4" />
-                                            </button>
-                                        </form>
+                                        <ProtectedAction permission={PERMISSIONS.TEAM_MANAGE} hideWhenDisabled>
+                                            <form action={removeStaffAccess.bind(null, member.id)}>
+                                                <button
+                                                    type="submit"
+                                                    className="text-gray-400 hover:text-red-600 transition-colors p-1"
+                                                    title="Remove access"
+                                                >
+                                                    <TrashIcon className="h-4 w-4" />
+                                                </button>
+                                            </form>
+                                        </ProtectedAction>
                                     </td>
                                 </tr>
                             )) : (

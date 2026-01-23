@@ -12,6 +12,8 @@ import ProductVariantEditor from "./product-variant-editor"
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 import { PackageIcon, LayersIcon } from "lucide-react"
 import MediaGallery from "./media-manager"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 import { cn } from "@/lib/util/cn"
 import { useState } from "react"
 import { getYoutubeId, getYoutubeEmbedUrl } from "@/lib/util/youtube"
@@ -315,9 +317,11 @@ export default function EditProductForm({
           <ArrowTopRightOnSquareIcon className="h-4 w-4" />
           View in store
         </a>
-        <SubmitButton className="inline-flex items-center px-5 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-all shadow-sm">
-          Save Product
-        </SubmitButton>
+        <ProtectedAction permission={PERMISSIONS.PRODUCTS_UPDATE} hideWhenDisabled>
+          <SubmitButton className="inline-flex items-center px-5 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-all shadow-sm">
+            Save Product
+          </SubmitButton>
+        </ProtectedAction>
       </div>
     </form>
   )

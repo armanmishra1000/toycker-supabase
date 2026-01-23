@@ -3,7 +3,9 @@
 import { useState } from "react"
 import { approveReview, rejectReview, deleteReview, type ReviewWithMedia } from "@/lib/actions/reviews"
 import { Star, Eye, Check, X, Trash2, Video, Mic, Image as ImageIcon } from "lucide-react"
-import { IconButton, ActionButton } from "@/modules/admin/components"
+import { ActionButton, IconButton } from "@/modules/admin/components"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 import clsx from "clsx"
 import { formatIST } from "@/lib/util/date"
 
@@ -154,13 +156,15 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                                                     />
                                                 </>
                                             )}
-                                            <IconButton
-                                                icon={Trash2}
-                                                variant="danger"
-                                                isLoading={isProcessing}
-                                                tooltip="Delete"
-                                                onClick={() => handleAction("delete", review.id)}
-                                            />
+                                            <ProtectedAction permission={PERMISSIONS.REVIEWS_DELETE} hideWhenDisabled>
+                                                <IconButton
+                                                    icon={Trash2}
+                                                    variant="danger"
+                                                    isLoading={isProcessing}
+                                                    tooltip="Delete"
+                                                    onClick={() => handleAction("delete", review.id)}
+                                                />
+                                            </ProtectedAction>
                                         </div>
                                     </td>
                                 </tr>
@@ -257,15 +261,17 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                                     </ActionButton>
                                 </>
                             )}
-                            <ActionButton
-                                variant="secondary"
-                                isLoading={isProcessing}
-                                loadingText="Deleting..."
-                                onClick={() => handleAction("delete", selectedReview.id)}
-                                className="text-gray-600 hover:text-red-600 hover:bg-red-50"
-                            >
-                                Delete
-                            </ActionButton>
+                            <ProtectedAction permission={PERMISSIONS.REVIEWS_DELETE} hideWhenDisabled>
+                                <ActionButton
+                                    variant="secondary"
+                                    isLoading={isProcessing}
+                                    loadingText="Deleting..."
+                                    onClick={() => handleAction("delete", selectedReview.id)}
+                                    className="text-gray-600 hover:text-red-600 hover:bg-red-50"
+                                >
+                                    Delete
+                                </ActionButton>
+                            </ProtectedAction>
                         </div>
                     </div >
                 </div >

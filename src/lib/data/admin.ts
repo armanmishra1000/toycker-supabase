@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData, AdminRole, StaffMember, RewardTransactionWithOrder } from "@/lib/supabase/types"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { requirePermission } from "@/lib/permissions/server"
+import { PERMISSIONS } from "@/lib/permissions"
 
 // --- Auth Check ---
 export async function ensureAdmin() {
@@ -350,6 +352,7 @@ export async function getAdminCategories(params: GetAdminCategoriesParams = {}):
 
 export async function createCategory(formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.CATEGORIES_CREATE)
   const supabase = await createClient()
 
   const productIds = formData.getAll("product_ids") as string[]
@@ -390,6 +393,7 @@ export async function createCategory(formData: FormData) {
 
 export async function updateCategory(formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.CATEGORIES_UPDATE)
   const supabase = await createClient()
   const id = formData.get("id") as string
   const productIds = formData.getAll("product_ids") as string[]
@@ -457,6 +461,7 @@ export async function getCategoryProducts(categoryId: string): Promise<string[]>
 
 export async function deleteCategory(id: string) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.CATEGORIES_DELETE)
   const supabase = await createClient()
   await supabase.from("categories").delete().eq("id", id)
   revalidatePath("/admin/categories")
@@ -566,6 +571,7 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
 
 export async function createProduct(formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.PRODUCTS_CREATE)
   const supabase = await createClient()
 
   const collectionIds = formData.getAll("collection_ids") as string[]
@@ -679,6 +685,7 @@ export async function createProduct(formData: FormData) {
 
 export async function updateProduct(formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.PRODUCTS_UPDATE)
   const supabase = await createClient()
   const id = formData.get("id") as string
 
@@ -820,6 +827,7 @@ async function regenerateImageEmbedding(productId: string, imageUrl: string) {
 
 export async function deleteProduct(id: string, redirectTo?: string) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.PRODUCTS_DELETE)
   const supabase = await createClient()
 
   const { error } = await supabase.from("products").delete().eq("id", id)
@@ -957,6 +965,7 @@ export async function deleteVariant(variantId: string) {
 
 export async function updateInventory(productId: string, quantity: number, variantId?: string) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.INVENTORY_UPDATE)
   const supabase = await createClient()
 
   if (variantId) {
@@ -1209,6 +1218,7 @@ export async function getProductCategories(productId: string) {
 
 export async function createCollection(formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.COLLECTIONS_CREATE)
   const supabase = await createClient()
 
   const collection = {
@@ -1249,6 +1259,7 @@ export async function createCollection(formData: FormData) {
 
 export async function updateCollection(formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.COLLECTIONS_UPDATE)
   const supabase = await createClient()
   const id = formData.get("id") as string
 
@@ -1293,6 +1304,7 @@ export async function updateCollection(formData: FormData) {
 
 export async function deleteCollection(id: string) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.COLLECTIONS_DELETE)
   const supabase = await createClient()
   await supabase.from("collections").delete().eq("id", id)
   revalidatePath("/admin/collections")
@@ -1630,6 +1642,7 @@ export async function getAdminRewardTransactions(userId: string, supabase?: any)
 export async function deleteCustomer(id: string) {
   try {
     await ensureAdmin()
+    await requirePermission(PERMISSIONS.CUSTOMERS_DELETE)
     const supabase = await createAdminClient()
 
     const { error } = await supabase.auth.admin.deleteUser(id)
@@ -1669,6 +1682,7 @@ export async function getAdminPaymentMethods() {
 
 export async function createPaymentMethod(formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.PAYMENTS_CREATE)
   const supabase = await createClient()
   const method = {
     id: formData.get("id") as string,
@@ -1690,6 +1704,7 @@ export async function createPaymentMethod(formData: FormData) {
 
 export async function updatePaymentMethod(id: string, formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.PAYMENTS_UPDATE)
   const supabase = await createClient()
   const method = {
     name: formData.get("name") as string,
@@ -1728,6 +1743,7 @@ export async function getAdminPaymentMethod(id: string) {
 
 export async function deletePaymentMethod(id: string) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.PAYMENTS_DELETE)
   const supabase = await createClient()
   await supabase.from("payment_providers").delete().eq("id", id)
   revalidatePath("/admin/payments")
@@ -1748,6 +1764,7 @@ export async function getAdminShippingOptions() {
 
 export async function createShippingOption(formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.SHIPPING_CREATE)
   const supabase = await createClient()
   const option = {
     name: formData.get("name") as string,
@@ -1780,6 +1797,7 @@ export async function getShippingOption(id: string) {
 
 export async function updateShippingOption(id: string, formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.SHIPPING_UPDATE)
   const supabase = await createClient()
   const option = {
     name: formData.get("name") as string,
@@ -1803,6 +1821,7 @@ export async function updateShippingOption(id: string, formData: FormData) {
 
 export async function deleteShippingOption(id: string) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.SHIPPING_DELETE)
   const supabase = await createClient()
   await supabase.from("shipping_options").delete().eq("id", id)
   revalidatePath("/admin/shipping")
@@ -1836,6 +1855,7 @@ export async function getActiveShippingPartners() {
 
 export async function createShippingPartner(formData: FormData) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.SHIPPING_PARTNERS_CREATE)
   const supabase = await createClient()
   const partner = {
     name: formData.get("name") as string,
@@ -1851,6 +1871,7 @@ export async function createShippingPartner(formData: FormData) {
 
 export async function deleteShippingPartner(id: string) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.SHIPPING_PARTNERS_DELETE)
   const supabase = await createClient()
   await supabase.from("shipping_partners").delete().eq("id", id)
   revalidatePath("/admin/shipping-partners")
@@ -1918,6 +1939,7 @@ export async function logOrderEvent(
 // --- Order Actions ---
 export async function acceptOrder(orderId: string) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.ORDERS_UPDATE)
   const supabase = await createClient()
   const actorDisplay = await getAdminActorDisplay()
 
@@ -1989,6 +2011,7 @@ export async function markOrderAsDelivered(orderId: string) {
 
 export async function cancelOrder(orderId: string) {
   await ensureAdmin()
+  await requirePermission(PERMISSIONS.ORDERS_UPDATE)
   const supabase = await createClient()
   const actorDisplay = await getAdminActorDisplay()
 

@@ -4,6 +4,8 @@ import { AdminPagination } from "@modules/admin/components/admin-pagination"
 import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import { ArrowPathIcon } from "@heroicons/react/24/outline"
 import InventoryTable from "@modules/admin/components/inventory-table"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 import Link from "next/link"
 import { ArchiveBoxIcon } from "@heroicons/react/24/outline"
 import { AlertCircle } from "lucide-react"
@@ -51,10 +53,12 @@ export default async function AdminInventory({
         title="Inventory"
         subtitle="Track and adjust inventory levels."
         actions={
-          <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all gap-2">
-            <ArrowPathIcon className="h-4 w-4" />
-            Update
-          </button>
+          <ProtectedAction permission={PERMISSIONS.INVENTORY_UPDATE} hideWhenDisabled>
+            <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all gap-2">
+              <ArrowPathIcon className="h-4 w-4" />
+              Update
+            </button>
+          </ProtectedAction>
         }
       />
 

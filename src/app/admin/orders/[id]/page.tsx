@@ -13,6 +13,8 @@ import { AcceptOrderButton, CancelOrderButton, MarkAsDeliveredButton } from "./o
 import { formatIST } from "@/lib/util/date"
 import { fixUrl } from "@/lib/util/images"
 import { RealtimeOrderManager } from "@modules/common/components/realtime-order-manager"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const normalizePaymentMethod = (method?: string | null, hasPayuTxn?: string | null) => {
   if (!method && hasPayuTxn) return "payu"
@@ -53,16 +55,22 @@ export default async function AdminOrderDetails({ params }: Props) {
   const actions = (
     <div className="flex gap-2">
       {(order.status === 'order_placed' || order.status === 'pending') && (
-        <>
-          <AcceptOrderButton orderId={order.id} />
-          <CancelOrderButton orderId={order.id} />
-        </>
+        <ProtectedAction permission={PERMISSIONS.ORDERS_UPDATE} hideWhenDisabled>
+          <div className="flex gap-2">
+            <AcceptOrderButton orderId={order.id} />
+            <CancelOrderButton orderId={order.id} />
+          </div>
+        </ProtectedAction>
       )}
       {order.status === 'accepted' && (
-        <FulfillmentModal orderId={order.id} shippingPartners={shippingPartners} />
+        <ProtectedAction permission={PERMISSIONS.ORDERS_UPDATE} hideWhenDisabled>
+          <FulfillmentModal orderId={order.id} shippingPartners={shippingPartners} />
+        </ProtectedAction>
       )}
       {order.status === 'shipped' && (
-        <MarkAsDeliveredButton orderId={order.id} />
+        <ProtectedAction permission={PERMISSIONS.ORDERS_UPDATE} hideWhenDisabled>
+          <MarkAsDeliveredButton orderId={order.id} />
+        </ProtectedAction>
       )}
     </div>
   )
@@ -280,7 +288,9 @@ export default async function AdminOrderDetails({ params }: Props) {
               )}
               {canMarkAsPaid && (
                 <div className="pt-4 border-t border-gray-100 space-y-2">
-                  <MarkAsPaidButton orderId={order.id} />
+                  <ProtectedAction permission={PERMISSIONS.ORDERS_UPDATE} hideWhenDisabled>
+                    <MarkAsPaidButton orderId={order.id} />
+                  </ProtectedAction>
                   {isCodPayment && (
                     <p className="text-xs text-gray-500">COD: collect payment after delivery, then mark it as paid.</p>
                   )}

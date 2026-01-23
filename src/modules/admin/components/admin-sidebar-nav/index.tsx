@@ -17,23 +17,32 @@ import {
   ReceiptPercentIcon,
   PhotoIcon,
 } from "@heroicons/react/24/outline"
+import { useHasPermission } from "@/lib/permissions/context"
+import { PERMISSIONS, Permission } from "@/lib/permissions"
 
-const NAV_ITEMS = [
-  { label: "Home", href: "/admin", icon: HomeIcon },
-  { label: "Orders", href: "/admin/orders", icon: ShoppingBagIcon },
-  { label: "Products", href: "/admin/products", icon: TagIcon },
-  { label: "Inventory", href: "/admin/inventory", icon: ArchiveBoxIcon },
-  { label: "Collections", href: "/admin/collections", icon: RectangleStackIcon },
-  { label: "Categories", href: "/admin/categories", icon: FolderIcon },
-  { label: "Shipping", href: "/admin/shipping", icon: TruckIcon },
-  { label: "Shipping Partners", href: "/admin/shipping-partners", icon: TruckIcon },
-  { label: "Payments", href: "/admin/payments", icon: CreditCardIcon },
-  { label: "Customers", href: "/admin/customers", icon: UsersIcon },
-  { label: "Club", href: "/admin/club", icon: SparklesIcon },
-  { label: "Reviews", href: "/admin/reviews", icon: StarIcon },
-  { label: "Team", href: "/admin/team", icon: UsersIcon },
-  { label: "Discounts", href: "/admin/discounts", icon: ReceiptPercentIcon },
-  { label: "Home Settings", href: "/admin/home-settings", icon: PhotoIcon },
+type NavItemConfig = {
+  label: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  permission?: Permission // Optional - if not specified, always show
+}
+
+const NAV_ITEMS: NavItemConfig[] = [
+  { label: "Home", href: "/admin", icon: HomeIcon }, // Always visible
+  { label: "Orders", href: "/admin/orders", icon: ShoppingBagIcon, permission: PERMISSIONS.ORDERS_READ },
+  { label: "Products", href: "/admin/products", icon: TagIcon, permission: PERMISSIONS.PRODUCTS_READ },
+  { label: "Inventory", href: "/admin/inventory", icon: ArchiveBoxIcon, permission: PERMISSIONS.INVENTORY_READ },
+  { label: "Collections", href: "/admin/collections", icon: RectangleStackIcon, permission: PERMISSIONS.COLLECTIONS_READ },
+  { label: "Categories", href: "/admin/categories", icon: FolderIcon, permission: PERMISSIONS.CATEGORIES_READ },
+  { label: "Shipping", href: "/admin/shipping", icon: TruckIcon, permission: PERMISSIONS.SHIPPING_READ },
+  { label: "Shipping Partners", href: "/admin/shipping-partners", icon: TruckIcon, permission: PERMISSIONS.SHIPPING_PARTNERS_READ },
+  { label: "Payments", href: "/admin/payments", icon: CreditCardIcon, permission: PERMISSIONS.PAYMENTS_READ },
+  { label: "Customers", href: "/admin/customers", icon: UsersIcon, permission: PERMISSIONS.CUSTOMERS_READ },
+  { label: "Club", href: "/admin/club", icon: SparklesIcon, permission: PERMISSIONS.CLUB_SETTINGS_READ },
+  { label: "Reviews", href: "/admin/reviews", icon: StarIcon, permission: PERMISSIONS.REVIEWS_READ },
+  { label: "Team", href: "/admin/team", icon: UsersIcon, permission: PERMISSIONS.TEAM_MANAGE },
+  { label: "Discounts", href: "/admin/discounts", icon: ReceiptPercentIcon, permission: PERMISSIONS.DISCOUNTS_READ },
+  { label: "Home Settings", href: "/admin/home-settings", icon: PhotoIcon, permission: PERMISSIONS.HOME_SETTINGS_READ },
 ]
 
 function isActive(pathname: string, href: string): boolean {
@@ -74,6 +83,36 @@ function NavItem({ label, href, icon: Icon, pathname, onClick }: NavItemProps) {
   )
 }
 
+/**
+ * Wrapper component that conditionally renders NavItem based on permission
+ */
+function ProtectedNavItem({
+  item,
+  pathname,
+  onClick,
+}: {
+  item: NavItemConfig
+  pathname: string
+  onClick?: () => void
+}) {
+  const hasPermission = useHasPermission(item.permission || ('*' as Permission))
+
+  // If permission is required and user doesn't have it, don't render
+  if (item.permission && !hasPermission) {
+    return null
+  }
+
+  return (
+    <NavItem
+      label={item.label}
+      href={item.href}
+      icon={item.icon}
+      pathname={pathname}
+      onClick={onClick}
+    />
+  )
+}
+
 export function AdminSidebarNav({ onItemClick }: { onItemClick?: () => void } = {}) {
   const pathname = usePathname()
 
@@ -85,11 +124,9 @@ export function AdminSidebarNav({ onItemClick }: { onItemClick?: () => void } = 
         </p>
         <div className="space-y-0.5">
           {NAV_ITEMS.map((item) => (
-            <NavItem
+            <ProtectedNavItem
               key={item.href}
-              label={item.label}
-              href={item.href}
-              icon={item.icon}
+              item={item}
               pathname={pathname}
               onClick={onItemClick}
             />

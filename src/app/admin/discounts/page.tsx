@@ -7,6 +7,8 @@ import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
 import { ClickableTableRow } from "@modules/admin/components/clickable-table-row"
 import DeletePromotionButton from "@modules/admin/components/delete-promotion-button"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default async function AdminDiscounts() {
     const promotions = await getAdminPromotions()
@@ -17,10 +19,12 @@ export default async function AdminDiscounts() {
                 title="Discounts"
                 subtitle="Manage coupon codes and promotional offers."
                 actions={
-                    <Link href="/admin/discounts/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                        Create Discount
-                    </Link>
+                    <ProtectedAction permission={PERMISSIONS.DISCOUNTS_CREATE} hideWhenDisabled>
+                        <Link href="/admin/discounts/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
+                            <PlusIcon className="h-4 w-4 mr-2" />
+                            Create Discount
+                        </Link>
+                    </ProtectedAction>
                 }
             />
 
@@ -88,13 +92,17 @@ export default async function AdminDiscounts() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex justify-end gap-2 relative z-20">
-                                                <Link
-                                                    href={`/admin/discounts/${promo.id}`}
-                                                    className="p-1.5 text-gray-400 hover:text-black hover:bg-gray-100 rounded transition-colors"
-                                                >
-                                                    <PencilIcon className="h-4 w-4" />
-                                                </Link>
-                                                <DeletePromotionButton promoId={promo.id} promoCode={promo.code} />
+                                                <ProtectedAction permission={PERMISSIONS.DISCOUNTS_UPDATE} hideWhenDisabled>
+                                                    <Link
+                                                        href={`/admin/discounts/${promo.id}`}
+                                                        className="p-1.5 text-gray-400 hover:text-black hover:bg-gray-100 rounded transition-colors"
+                                                    >
+                                                        <PencilIcon className="h-4 w-4" />
+                                                    </Link>
+                                                </ProtectedAction>
+                                                <ProtectedAction permission={PERMISSIONS.DISCOUNTS_DELETE} hideWhenDisabled>
+                                                    <DeletePromotionButton promoId={promo.id} promoCode={promo.code} />
+                                                </ProtectedAction>
                                             </div>
                                         </td>
                                     </ClickableTableRow>

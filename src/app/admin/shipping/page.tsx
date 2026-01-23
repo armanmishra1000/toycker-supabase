@@ -5,6 +5,8 @@ import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default async function AdminShipping() {
   const options = await getAdminShippingOptions()
@@ -17,10 +19,12 @@ export default async function AdminShipping() {
         title="Shipping"
         subtitle="Manage shipping rates and delivery zones."
         actions={
-          <Link href="/admin/shipping/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add option
-          </Link>
+          <ProtectedAction permission={PERMISSIONS.SHIPPING_CREATE} hideWhenDisabled>
+            <Link href="/admin/shipping/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add option
+            </Link>
+          </ProtectedAction>
         }
       />
 
@@ -64,14 +68,18 @@ export default async function AdminShipping() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Link href={`/admin/shipping/${option.id}`} className="p-1.5 text-gray-400 hover:text-black hover:bg-gray-100 rounded transition-colors">
-                        <PencilSquareIcon className="h-4 w-4" />
-                      </Link>
-                      <form action={deleteShippingOption.bind(null, option.id)}>
-                        <button className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </form>
+                      <ProtectedAction permission={PERMISSIONS.SHIPPING_UPDATE} hideWhenDisabled>
+                        <Link href={`/admin/shipping/${option.id}`} className="p-1.5 text-gray-400 hover:text-black hover:bg-gray-100 rounded transition-colors">
+                          <PencilSquareIcon className="h-4 w-4" />
+                        </Link>
+                      </ProtectedAction>
+                      <ProtectedAction permission={PERMISSIONS.SHIPPING_DELETE} hideWhenDisabled>
+                        <form action={deleteShippingOption.bind(null, option.id)}>
+                          <button className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </form>
+                      </ProtectedAction>
                     </div>
                   </td>
                 </tr>

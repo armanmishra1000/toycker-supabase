@@ -5,7 +5,9 @@ import { AdminPagination } from "@modules/admin/components/admin-pagination"
 import { AdminSearchInput } from "@modules/admin/components/admin-search-input"
 import Link from "next/link"
 import DeleteCustomerButton from "@modules/admin/components/delete-customer-button"
-import { UsersIcon } from "@heroicons/react/24/outline"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
+import { UsersIcon, EyeIcon } from "@heroicons/react/24/outline"
 import { formatIST } from "@/lib/util/date"
 import { cn } from "@lib/util/cn"
 
@@ -120,8 +122,23 @@ export default async function AdminCustomers({
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatIST(customer.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                    <DeleteCustomerButton customerId={customer.id} customerName={`${customer.first_name || ''} ${customer.last_name || customer.email}`} />
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <Link
+                        href={`/admin/customers/${customer.id}`}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                        title="View Customer Details"
+                      >
+                        <EyeIcon className="w-5 h-5" />
+                      </Link>
+
+                      <ProtectedAction permission={PERMISSIONS.CUSTOMERS_DELETE} hideWhenDisabled>
+                        <DeleteCustomerButton
+                          customerId={customer.id}
+                          customerName={`${customer.first_name || ''} ${customer.last_name || customer.email}`}
+                        />
+                      </ProtectedAction>
+                    </div>
                   </td>
                 </tr>
               )) : (

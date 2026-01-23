@@ -5,6 +5,8 @@ import { PlusIcon } from "@heroicons/react/24/outline"
 import { type HomeBanner } from "@/lib/types/home-banners"
 import BannersList from "./banners-list"
 import BannerFormModal from "./banner-form-modal"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 
 type Props = {
     initialBanners: HomeBanner[]
@@ -66,13 +68,15 @@ export default function BannersManager({ initialBanners }: Props) {
                         {banners.length} banner{banners.length !== 1 ? 's' : ''} currently configured
                     </p>
                 </div>
-                <button
-                    onClick={handleAddBanner}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 transition-all duration-300"
-                >
-                    <PlusIcon className="h-4 w-4 stroke-[3]" />
-                    Add New Banner
-                </button>
+                <ProtectedAction permission={PERMISSIONS.HOME_SETTINGS_UPDATE} hideWhenDisabled>
+                    <button
+                        onClick={handleAddBanner}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 transition-all duration-300"
+                    >
+                        <PlusIcon className="h-4 w-4 stroke-[3]" />
+                        Add New Banner
+                    </button>
+                </ProtectedAction>
             </div>
 
             <BannersList

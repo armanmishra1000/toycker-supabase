@@ -7,6 +7,8 @@ import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
 import DeleteCustomerButton from "@modules/admin/components/delete-customer-button"
+import { ProtectedAction } from "@/lib/permissions/components/protected-action"
+import { PERMISSIONS } from "@/lib/permissions"
 import { cn } from "@lib/util/cn"
 import { formatIST } from "@/lib/util/date"
 
@@ -52,7 +54,9 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
           <p className="text-sm text-gray-500 mt-1">Customer ID: #{customer.customer_display_id || customer.id.slice(0, 8)} • Joined {joinDate}</p>
         </div>
         <div className="flex items-center gap-2">
-          <DeleteCustomerButton customerId={customer.id} customerName={`${customer.first_name || ''} ${customer.last_name || ''}`} />
+          <ProtectedAction permission={PERMISSIONS.CUSTOMERS_DELETE} hideWhenDisabled>
+            <DeleteCustomerButton customerId={customer.id} customerName={`${customer.first_name || ''} ${customer.last_name || ''}`} />
+          </ProtectedAction>
         </div>
       </div>
 
