@@ -39,6 +39,23 @@ const ImageGallery = ({ images, variant = "default" }: ImageGalleryProps) => {
     }
   }, [images, mainSwiper])
 
+  useEffect(() => {
+    const handleVariantImageChange = (e: any) => {
+      const url = e.detail?.url
+      if (!url || !mainSwiper || !images) return
+
+      const index = images.findIndex((img) => img.url === url)
+      if (index !== -1) {
+        mainSwiper.slideTo(index)
+      }
+    }
+
+    window.addEventListener("variant-image-change", handleVariantImageChange)
+    return () => {
+      window.removeEventListener("variant-image-change", handleVariantImageChange)
+    }
+  }, [mainSwiper, images])
+
   const safeThumbs = useMemo(() => {
     if (!thumbsSwiper || thumbsSwiper.destroyed) {
       return null
@@ -110,33 +127,32 @@ const ImageGallery = ({ images, variant = "default" }: ImageGalleryProps) => {
       {showThumbs && (
         <div className="hidden w-[80px] flex-col lg:flex">
           <div className="bg-white/90">
-          <Swiper
-            direction="vertical"
-            modules={[FreeMode, Thumbs]}
-            spaceBetween={0}
-            slidesPerView={Math.min(images.length, 5)}
-            freeMode
-            slideToClickedSlide
-            watchSlidesProgress
-            onSwiper={(swiperInstance) => setThumbsSwiper(swiperInstance)}
-            className="product-thumb-swiper"
-          >
-            {images.map((image, index) => (
-              <SwiperSlide key={image.id ?? index} className="!h-24">
-                <button
-                  type="button"
-                  onClick={() => mainSwiper?.slideTo(index)}
-                  className={`group relative flex h-[80px] w-full items-center justify-center overflow-hidden rounded-xl border bg-[#FBFBFB] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E7353A]/60 ${
-                    activeIndex === index
-                      ? "border-[#E7353A]"
-                      : "border-transparent"
-                  }`}
-                >
-                  <ImageThumb image={image} index={index} />
-                </button>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+            <Swiper
+              direction="vertical"
+              modules={[FreeMode, Thumbs]}
+              spaceBetween={0}
+              slidesPerView={Math.min(images.length, 5)}
+              freeMode
+              slideToClickedSlide
+              watchSlidesProgress
+              onSwiper={(swiperInstance) => setThumbsSwiper(swiperInstance)}
+              className="product-thumb-swiper"
+            >
+              {images.map((image, index) => (
+                <SwiperSlide key={image.id ?? index} className="!h-24">
+                  <button
+                    type="button"
+                    onClick={() => mainSwiper?.slideTo(index)}
+                    className={`group relative flex h-[80px] w-full items-center justify-center overflow-hidden rounded-xl border bg-[#FBFBFB] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E7353A]/60 ${activeIndex === index
+                        ? "border-[#E7353A]"
+                        : "border-transparent"
+                      }`}
+                  >
+                    <ImageThumb image={image} index={index} />
+                  </button>
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
         </div>
       )}
@@ -217,9 +233,8 @@ const ImageGallery = ({ images, variant = "default" }: ImageGalleryProps) => {
                 <button
                   type="button"
                   onClick={() => mainSwiper?.slideTo(index)}
-                  className={`relative h-20 w-full overflow-hidden rounded-2xl border ${
-                    activeIndex === index ? "border-[#E7353A]" : "border-transparent"
-                  }`}
+                  className={`relative h-20 w-full overflow-hidden rounded-2xl border ${activeIndex === index ? "border-[#E7353A]" : "border-transparent"
+                    }`}
                   aria-label={`Show image ${index + 1}`}
                 >
                   <ImageThumb image={image} index={index} />
@@ -228,74 +243,74 @@ const ImageGallery = ({ images, variant = "default" }: ImageGalleryProps) => {
             ))}
           </Swiper>
 
-        <Modal isOpen={isZoomOpen} close={closeZoom} size="xlarge" fullScreen>
-          <div className="relative flex h-full w-full items-center justify-center bg-white">
-            <button
-              type="button"
-              onClick={closeZoom}
-              className="absolute right-4 top-4 z-20 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-ui-fg-base border "
-              aria-label="Close zoomed image"
-            >
-              <X className="h-5 w-5" />
-            </button>
+          <Modal isOpen={isZoomOpen} close={closeZoom} size="xlarge" fullScreen>
+            <div className="relative flex h-full w-full items-center justify-center bg-white">
+              <button
+                type="button"
+                onClick={closeZoom}
+                className="absolute right-4 top-4 z-20 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-ui-fg-base border "
+                aria-label="Close zoomed image"
+              >
+                <X className="h-5 w-5" />
+              </button>
 
-            <Swiper
-              modules={[Navigation]}
-              navigation={false}
-              initialSlide={zoomIndex}
-              onSwiper={setZoomSwiper}
-              onSlideChange={(swiperInstance) => {
-                const nextIndex = swiperInstance.activeIndex ?? 0
-                setZoomIndex(nextIndex)
-              }}
-              className="product-zoom-swiper h-full w-full"
-              spaceBetween={0}
-            >
-              {images.map((image, index) => (
-                <SwiperSlide key={(image.id ?? index) + "-zoom"}>
-                  <div className="flex h-full w-full items-center justify-center">
-                    <div className="relative h-full w-full max-h-screen max-w-screen overflow-hidden bg-white">
-                      {image.url ? (
-                        <Image
-                          src={image.url}
-                          alt={`Zoomed product image ${index + 1}`}
-                          fill
-                          sizes="100vw"
-                          className="object-contain"
-                          priority={index === zoomIndex}
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-ui-bg-subtle" />
-                      )}
+              <Swiper
+                modules={[Navigation]}
+                navigation={false}
+                initialSlide={zoomIndex}
+                onSwiper={setZoomSwiper}
+                onSlideChange={(swiperInstance) => {
+                  const nextIndex = swiperInstance.activeIndex ?? 0
+                  setZoomIndex(nextIndex)
+                }}
+                className="product-zoom-swiper h-full w-full"
+                spaceBetween={0}
+              >
+                {images.map((image, index) => (
+                  <SwiperSlide key={(image.id ?? index) + "-zoom"}>
+                    <div className="flex h-full w-full items-center justify-center">
+                      <div className="relative h-full w-full max-h-screen max-w-screen overflow-hidden bg-white">
+                        {image.url ? (
+                          <Image
+                            src={image.url}
+                            alt={`Zoomed product image ${index + 1}`}
+                            fill
+                            sizes="100vw"
+                            className="object-contain"
+                            priority={index === zoomIndex}
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-ui-bg-subtle" />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
 
-            <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white/95 px-4 py-2 text-sm text-ui-fg-base shadow-md">
-              <button
-                type="button"
-                onClick={() => zoomSwiper?.slidePrev()}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-ui-bg-subtle transition"
-                aria-label="Previous zoomed image"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <span className="min-w-[60px] text-center text-base font-medium">
-                {zoomIndex + 1} / {images.length}
-              </span>
-              <button
-                type="button"
-                onClick={() => zoomSwiper?.slideNext()}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-ui-bg-subtle transition"
-                aria-label="Next zoomed image"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
+              <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white/95 px-4 py-2 text-sm text-ui-fg-base shadow-md">
+                <button
+                  type="button"
+                  onClick={() => zoomSwiper?.slidePrev()}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-ui-bg-subtle transition"
+                  aria-label="Previous zoomed image"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <span className="min-w-[60px] text-center text-base font-medium">
+                  {zoomIndex + 1} / {images.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => zoomSwiper?.slideNext()}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-ui-bg-subtle transition"
+                  aria-label="Next zoomed image"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
             </div>
-          </div>
-        </Modal>
+          </Modal>
         </div>
       )}
     </div>

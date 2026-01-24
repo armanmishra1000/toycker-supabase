@@ -52,6 +52,7 @@ const ProductGridSection = ({
       sortBy: context.filters.sortBy,
       pageSize: context.pageSize,
       isLoading: context.isFetching,
+      isPending: context.isPending,
       error: context.error,
     }
     : {
@@ -62,6 +63,7 @@ const ProductGridSection = ({
       sortBy,
       pageSize,
       isLoading: false,
+      isPending: false,
       error: undefined,
     }
 
@@ -71,11 +73,12 @@ const ProductGridSection = ({
   const gridClassName = getGridClassName(derived.viewMode)
 
   const isLoading = derived.isLoading && context !== null
+  const isTransitioning = derived.isPending && context !== null
 
   const emptyStateHeading = useMemo(() => title || "Products", [title])
 
   return (
-    <section className="space-y-6" data-loading={isLoading ? "true" : undefined}>
+    <section className="space-y-6" data-loading={isLoading ? "true" : undefined} data-pending={isTransitioning ? "true" : undefined}>
       <ResultsToolbar totalCount={effectiveCount} viewMode={derived.viewMode} sortBy={derived.sortBy} />
 
       {derived.error && (
@@ -84,33 +87,35 @@ const ProductGridSection = ({
         </p>
       )}
 
-      {isLoading ? (
+      {isLoading || isTransitioning ? (
         <ProductGridSkeleton viewMode={derived.viewMode} count={derived.pageSize} />
       ) : hasProducts ? (
-        derived.viewMode === "list" ? (
-          <div className={gridClassName} data-testid="products-list">
-            {derived.products.map((product) => (
-              <ProductPreview
-                key={product.id}
-                product={product}
-                viewMode={derived.viewMode}
-                clubDiscountPercentage={clubDiscountPercentage}
-              />
-            ))}
-          </div>
-        ) : (
-          <ul className={gridClassName} data-testid="products-list">
-            {derived.products.map((product) => (
-              <li key={product.id}>
+        <div className="relative">
+          {derived.viewMode === "list" ? (
+            <div className={gridClassName} data-testid="products-list">
+              {derived.products.map((product) => (
                 <ProductPreview
+                  key={product.id}
                   product={product}
                   viewMode={derived.viewMode}
                   clubDiscountPercentage={clubDiscountPercentage}
                 />
-              </li>
-            ))}
-          </ul>
-        )
+              ))}
+            </div>
+          ) : (
+            <ul className={gridClassName} data-testid="products-list">
+              {derived.products.map((product) => (
+                <li key={product.id}>
+                  <ProductPreview
+                    product={product}
+                    viewMode={derived.viewMode}
+                    clubDiscountPercentage={clubDiscountPercentage}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       ) : (
         <EmptyState heading={emptyStateHeading} />
       )}

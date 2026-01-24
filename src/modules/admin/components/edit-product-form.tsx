@@ -223,7 +223,11 @@ export default function EditProductForm({
           </AdminCard>
 
           {productType === "variant" && (
-            <ProductVariantEditor productId={product.id} initialVariants={variants} />
+            <ProductVariantEditor
+              productId={product.id}
+              initialVariants={variants}
+              productImages={product.images?.map(img => typeof img === 'string' ? img : img.url) || []}
+            />
           )}
         </div>
 

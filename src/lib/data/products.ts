@@ -95,6 +95,8 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
   sortBy = "featured",
   queryParams,
   priceFilter,
+  availability,
+  ageFilter,
 }: {
   page?: number
   limit?: number
@@ -108,41 +110,64 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
   const supabase = await createClient()
   const offset = (page - 1) * limit
 
-  let query = supabase
-    .from("products")
-    .select(PRODUCT_SELECT, { count: "exact" })
+  // Determine if we need joins for category or collection filtering
+  const categoryIds = queryParams?.category_id
+    ? (Array.isArray(queryParams.category_id) ? queryParams.category_id : [queryParams.category_id])
+    : []
+  const collectionIds = queryParams?.collection_id
+    ? (Array.isArray(queryParams.collection_id) ? queryParams.collection_id : [queryParams.collection_id])
+    : []
+
+  const needsCategoryJoin = categoryIds.length > 0
+  const needsCollectionJoin = collectionIds.length > 0
+  const needsPriceFilter = priceFilter?.min !== undefined || priceFilter?.max !== undefined
+
+  // Build query with appropriate SELECT based on join requirements
+  // When price filter is applied, we need to join variants to get accurate min price
+  let query = needsCategoryJoin
+    ? supabase.from("products").select(`
+        ${PRODUCT_SELECT},
+        product_categories!inner(category_id)
+      `, { count: "exact" })
+    : needsCollectionJoin
+      ? supabase.from("products").select(`
+        ${PRODUCT_SELECT},
+        product_collections!inner(collection_id)
+      `, { count: "exact" })
+      : supabase.from("products").select(PRODUCT_SELECT, { count: "exact" })
+
+  // Chain filters WITHOUT recreating the query object
+  if (needsCategoryJoin) {
+    query = query.in("product_categories.category_id", categoryIds)
+  }
+
+  if (needsCollectionJoin) {
+    query = query.in("product_collections.collection_id", collectionIds)
+  }
 
   if (queryParams?.id) {
     const ids = Array.isArray(queryParams.id) ? queryParams.id : [queryParams.id]
     query = query.in("id", ids)
   }
 
-  if (queryParams?.category_id) {
-    const categoryIds = Array.isArray(queryParams.category_id) ? queryParams.category_id : [queryParams.category_id]
-    query = supabase
-      .from("products")
-      .select(`
-        ${PRODUCT_SELECT},
-        product_categories!inner(category_id)
-      `, { count: "exact" })
-      .in("product_categories.category_id", categoryIds)
+  if (queryParams?.q) {
+    query = query.ilike("name", `%${queryParams.q}%`)
   }
 
-  if (queryParams?.collection_id) {
-    const collectionIds = queryParams.collection_id as string[]
-    query = supabase
-      .from("products")
-      .select(`
-        ${PRODUCT_SELECT},
-        product_collections!inner(collection_id)
-      `, { count: "exact" })
-      .in("product_collections.collection_id", collectionIds)
+  // NOTE: Price filtering is done CLIENT-SIDE after fetching
+  // because we need to filter by variant prices, not just product.price
+  // See the client-side filter logic below
+
+  // Apply availability filter
+  if (availability) {
+    if (availability === 'in_stock') {
+      query = query.gt("stock_count", 0)
+    } else if (availability === 'out_of_stock') {
+      query = query.eq("stock_count", 0)
+    }
   }
-  if (queryParams?.q) query = query.ilike("name", `%${queryParams.q}%`)
 
-  if (priceFilter?.min !== undefined) query = query.gte("price", priceFilter.min)
-  if (priceFilter?.max !== undefined) query = query.lte("price", priceFilter.max)
-
+  // Apply sorting
   const sortConfigs: Record<string, { col: string; asc: boolean }> = {
     price_asc: { col: "price", asc: true },
     price_desc: { col: "price", asc: false },
@@ -154,15 +179,68 @@ export const listPaginatedProducts = cache(async function listPaginatedProducts(
   const sort = sortConfigs[sortBy] || sortConfigs.featured
   query = query.order(sort.col, { ascending: sort.asc })
 
-  const { data, count, error } = await query.range(offset, offset + limit - 1)
+  // Apply pagination only if NOT doing client-side filtering
+  // If we have a price filter, we must fetch everything to find matches and then paginate manually
+  const needsClientSideFiltering = priceFilter?.min !== undefined || priceFilter?.max !== undefined
+
+  const { data, count, error } = needsClientSideFiltering
+    ? await query // Fetch everything if we need to filter client-side
+    : await query.range(offset, offset + limit - 1)
 
   if (error) {
     return { response: { products: [], count: 0 }, pagination: { page, limit } }
   }
 
+  let products = (data || []).map((p) => normalizeProductImage(p as Product))
+
+  // Apply price filtering (only when price filter is active)
+  if (needsClientSideFiltering) {
+    products = products.filter((product) => {
+      // Calculate the actual displayed price (same logic as getProductPrice)
+      let displayPrice = product.price
+
+      if (product.variants && product.variants.length > 0) {
+        // Find cheapest variant price
+        const cheapestVariant = [...product.variants].sort((a, b) => a.price - b.price)[0]
+        displayPrice = cheapestVariant.price
+      }
+
+      // Exclude products with price 0 when price filter is active
+      if (displayPrice === 0) {
+        return false
+      }
+
+      // Apply min filter
+      if (priceFilter!.min !== undefined && displayPrice < priceFilter!.min) {
+        return false
+      }
+
+      // Apply max filter
+      if (priceFilter!.max !== undefined && displayPrice > priceFilter!.max) {
+        return false
+      }
+
+      return true
+    })
+
+    // Update total count after filtering
+    const totalFilteredCount = products.length
+
+    // Manual offset/limit for paginated response
+    const paginatedProducts = products.slice(offset, offset + limit)
+
+    return {
+      response: {
+        products: paginatedProducts,
+        count: totalFilteredCount,
+      },
+      pagination: { page, limit },
+    }
+  }
+
   return {
     response: {
-      products: (data || []).map((p) => normalizeProductImage(p as Product)),
+      products,
       count: count || 0,
     },
     pagination: { page, limit },

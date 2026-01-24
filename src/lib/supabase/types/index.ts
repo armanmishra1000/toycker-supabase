@@ -48,6 +48,7 @@ export interface ProductVariant {
   };
   prices?: Price[];
   product?: Product;
+  image_url?: string | null;
 }
 
 export interface VariantFormData {
@@ -57,6 +58,7 @@ export interface VariantFormData {
   price: number;
   compare_at_price?: number | null;
   inventory_quantity: number;
+  image_url?: string | null;
 }
 
 export interface ProductImage {
@@ -99,6 +101,7 @@ export interface Category {
   category_children?: Category[];
   parent_category?: Category;
 }
+
 
 export interface Collection {
   id: string;
