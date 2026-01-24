@@ -1566,21 +1566,124 @@ export async function getAdminCustomer(id: string) {
   const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", id).single()
   if (profileError) throw profileError
 
-  const { data: orders } = await supabase.from("orders").select("*").eq("user_id", id).order("created_at", { ascending: false })
+  // Fetch only first 5 orders and transactions for initial load
+  const { data: orders, count: orderCount } = await supabase
+    .from("orders")
+    .select("*", { count: "exact" })
+    .eq("user_id", id)
+    .order("created_at", { ascending: false })
+    .range(0, 4)
+
   const { data: addresses } = await supabase.from("addresses").select("*").eq("user_id", id)
   const { data: wallet } = await supabase.from("reward_wallets").select("*").eq("user_id", id).maybeSingle()
-  const transactions = wallet ? await getAdminRewardTransactions(id, supabase) : []
+
+  // Fetch initial transactions
+  const initialTransactions = wallet ? await getPaginatedCustomerRewardTransactions(id, 1, 5) : { data: [], total: 0 }
+
+  // Total spent calculation - using sum aggregate instead of fetching all orders
+  const { data: totalSpentData } = await supabase
+    .from("orders")
+    .select("total_amount.sum()")
+    .eq("user_id", id)
+    .single()
+
+  // @ts-ignore - sum() return type handling
+  const totalSpent = totalSpentData?.sum || 0
 
   return {
     ...profile,
     orders: orders || [],
+    order_count: orderCount || 0,
     addresses: addresses || [],
     reward_wallet: wallet || null,
-    reward_transactions: transactions,
+    reward_transactions: initialTransactions.data,
+    reward_transaction_total: initialTransactions.total,
+    total_spent: totalSpent,
     // Use fallback values if profile columns are null (though migration should handle this)
     is_club_member: profile.is_club_member || false,
     club_member_since: profile.club_member_since || null,
     total_club_savings: profile.total_club_savings || 0
+  }
+}
+
+export async function getPaginatedCustomerOrders(userId: string, page: number = 1, limit: number = 5) {
+  await ensureAdmin()
+  const supabase = await createAdminClient()
+
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
+  const { data, count, error } = await supabase
+    .from("orders")
+    .select("*", { count: "exact" })
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .range(from, to)
+
+  if (error) throw error
+
+  return {
+    data: data || [],
+    total: count || 0,
+    totalPages: Math.ceil((count || 0) / limit),
+    currentPage: page
+  }
+}
+
+export async function getPaginatedCustomerRewardTransactions(userId: string, page: number = 1, limit: number = 5) {
+  await ensureAdmin()
+  const supabase = await createAdminClient()
+
+  const { data: wallet } = await supabase
+    .from("reward_wallets")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle()
+
+  if (!wallet) return { data: [], total: 0, totalPages: 0, currentPage: page }
+
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
+  // 1. Fetch paginated transactions
+  const { data: transactions, count, error: txError } = await supabase
+    .from("reward_transactions")
+    .select("*", { count: "exact" })
+    .eq("wallet_id", wallet.id)
+    .order("created_at", { ascending: false })
+    .range(from, to)
+
+  if (txError || !transactions) throw txError || new Error("Failed to fetch transactions")
+
+  // 2. Fetch order display IDs for these transactions
+  const orderIds = Array.from(new Set(
+    transactions
+      .filter((tx: any) => tx.order_id)
+      .map((tx: any) => tx.order_id)
+  ))
+
+  let ordersMap: Record<string, any> = {}
+  if (orderIds.length > 0) {
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("id, display_id")
+      .in("id", orderIds)
+
+    orders?.forEach(o => {
+      ordersMap[o.id] = o
+    })
+  }
+
+  const data = transactions.map(tx => ({
+    ...tx,
+    orders: ordersMap[tx.order_id] || null
+  }))
+
+  return {
+    data,
+    total: count || 0,
+    totalPages: Math.ceil((count || 0) / limit),
+    currentPage: page
   }
 }
 
