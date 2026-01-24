@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { ProductVariant, VariantFormData } from "@/lib/supabase/types"
 import { deleteVariant, saveProductVariants } from "@/lib/data/admin"
 import AdminCard from "./admin-card"
@@ -29,6 +29,20 @@ export default function ProductVariantEditor({
             inventory_quantity: v.inventory_quantity,
         }))
     )
+
+    // Sync local state when initialVariants prop changes (e.g. after a refresh)
+    useEffect(() => {
+        setVariants(
+            initialVariants.map((v) => ({
+                id: v.id,
+                title: v.title,
+                sku: v.sku || "",
+                price: v.price,
+                compare_at_price: v.compare_at_price || null,
+                inventory_quantity: v.inventory_quantity,
+            }))
+        )
+    }, [initialVariants])
 
     const handleAddVariant = () => {
         setVariants([
