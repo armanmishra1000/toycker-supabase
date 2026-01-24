@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
 } from "react"
 
 import type { ReactNode } from "react"
@@ -68,6 +69,7 @@ type StorefrontFiltersContextValue = {
   setSearchQuery: (_value?: string) => void
   refresh: () => void
   productsPerPage: number
+  isPending: boolean
 }
 
 const StorefrontFiltersContext = createContext<StorefrontFiltersContextValue | null>(null)
@@ -126,6 +128,7 @@ export const StorefrontFiltersProvider = ({
   }))
   const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | undefined>()
+  const [isPending, startTransition] = useTransition()
   const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => () => abortControllerRef.current?.abort(), [])
@@ -152,7 +155,16 @@ export const StorefrontFiltersProvider = ({
       const effectiveCategoryId = nextFilters.categoryId ?? fixedCategoryId
       const effectiveCollectionId = nextFilters.collectionId ?? fixedCollectionId
       const normalizedAgeFilter = resolveAgeFilterValue(nextFilters.age)
-      const shouldApplyAgeFilter = Boolean(normalizedAgeFilter) && !effectiveCollectionId
+      const shouldApplyAgeFilter = Boolean(normalizedAgeFilter)
+
+      // Normalize to arrays for API consistency
+      const collectionIds = effectiveCollectionId
+        ? (Array.isArray(effectiveCollectionId) ? effectiveCollectionId : [effectiveCollectionId])
+        : undefined
+
+      const categoryIds = effectiveCategoryId
+        ? (Array.isArray(effectiveCategoryId) ? effectiveCategoryId : [effectiveCategoryId])
+        : undefined
 
       try {
         const response = await fetch("/api/storefront/products", {
@@ -165,8 +177,8 @@ export const StorefrontFiltersProvider = ({
             countryCode,
             page: nextFilters.page,
             sortBy: nextFilters.sortBy,
-            categoryId: effectiveCategoryId,
-            collectionId: effectiveCollectionId,
+            categoryId: categoryIds,
+            collectionId: collectionIds,
             searchQuery: nextFilters.searchQuery,
             limit: pageSize,
             filters: {
@@ -196,19 +208,25 @@ export const StorefrontFiltersProvider = ({
           count: number
         }
 
-        setListing({
-          products: dedupeProducts(payload.products),
-          count: payload.count,
+        // Use startTransition to prevent flash of stale products
+        // We include setIsFetching(false) inside the transition so that 
+        // the "loading" state persists until the new products are rendered
+        startTransition(() => {
+          setListing({
+            products: dedupeProducts(payload.products),
+            count: payload.count,
+          })
+          setIsFetching(false)
         })
       } catch (error) {
         if ((error as Error)?.name === "AbortError") {
           return
         }
         setError((error as Error)?.message || "Something went wrong")
+        setIsFetching(false)
       } finally {
         if (abortControllerRef.current === controller) {
           abortControllerRef.current = null
-          setIsFetching(false)
         }
       }
     },
@@ -334,6 +352,7 @@ export const StorefrontFiltersProvider = ({
       isFetching,
       error,
       activeFilterCount,
+      isPending,
       setAvailability,
       setPriceRange,
       setAge,
@@ -357,6 +376,7 @@ export const StorefrontFiltersProvider = ({
       isFetching,
       error,
       activeFilterCount,
+      isPending,
       setAvailability,
       setPriceRange,
       setAge,

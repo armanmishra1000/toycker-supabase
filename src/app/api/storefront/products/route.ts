@@ -52,25 +52,46 @@ export async function POST(request: Request) {
     const sortBy: SortOptions = body.sortBy || "featured"
 
     const queryParams: Record<string, string | string[] | undefined> = {}
-    const resolvedCategoryId = await resolveCategoryIdentifier(body.categoryId)
 
-    if (resolvedCategoryId) {
-      queryParams["category_id"] = [resolvedCategoryId]
-    }
+    // Handle category ID - check if already an ID or needs resolution
+    if (body.categoryId) {
+      const categoryInput = Array.isArray(body.categoryId) ? body.categoryId[0] : body.categoryId
 
-    const collectionIdsInput = normalizeStringArray(body.collectionId)
-    if (collectionIdsInput.length) {
-      const resolvedCollectionIds = await Promise.all(
-        collectionIdsInput.map(async (entry) => (await resolveCollectionIdentifier(entry)) ?? undefined)
-      )
-      const validCollectionIds = resolvedCollectionIds.filter((id): id is string => Boolean(id))
-      if (validCollectionIds.length) {
-        queryParams["collection_id"] = validCollectionIds
+      if (typeof categoryInput === 'string') {
+        let resolvedCategoryId: string | null | undefined = null
+
+        // If it's already a category ID (starts with 'cat_'), use it directly
+        if (categoryInput.startsWith('cat_')) {
+          resolvedCategoryId = categoryInput
+        } else {
+          // Otherwise, resolve by handle
+          resolvedCategoryId = await resolveCategoryIdentifier(categoryInput)
+        }
+
+        if (resolvedCategoryId !== null && resolvedCategoryId !== undefined) {
+          queryParams["category_id"] = [resolvedCategoryId]
+        }
       }
     }
 
-    if (body.productsIds?.length) {
-      queryParams["id"] = body.productsIds
+    const collectionIdsInput = normalizeStringArray(body.collectionId)
+
+    if (collectionIdsInput.length) {
+      const resolvedCollectionIds = await Promise.all(
+        collectionIdsInput.map(async (entry) => {
+          // If it's already a collection ID (starts with 'col_'), use it directly
+          if (entry.startsWith('col_')) {
+            return entry
+          }
+          // Otherwise, resolve by handle
+          return await resolveCollectionIdentifier(entry)
+        })
+      )
+      const validCollectionIds = resolvedCollectionIds.filter((id): id is string => id !== null)
+
+      if (validCollectionIds.length) {
+        queryParams["collection_id"] = validCollectionIds
+      }
     }
 
     if (body.searchQuery) {
