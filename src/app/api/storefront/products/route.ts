@@ -98,6 +98,10 @@ export async function POST(request: Request) {
       queryParams["q"] = body.searchQuery
     }
 
+    if (body.productsIds && body.productsIds.length > 0) {
+      queryParams["id"] = body.productsIds
+    }
+
     const requestedPrice = sanitizePriceRange(body.filters?.price)
     const normalizedAgeFilter = resolveAgeFilterValue(body.filters?.age)
 

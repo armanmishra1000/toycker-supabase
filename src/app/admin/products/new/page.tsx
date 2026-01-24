@@ -24,9 +24,9 @@ export default async function NewProduct() {
 
       <AdminPageHeader title="Add Product" />
 
-      <NewProductForm 
-        collections={collections} 
-        categories={categories} 
+      <NewProductForm
+        collections={collections}
+        categories={categories}
       />
     </div>
   )

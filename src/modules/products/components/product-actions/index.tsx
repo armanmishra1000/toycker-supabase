@@ -33,6 +33,7 @@ import { useCartSidebar } from "@modules/layout/context/cart-sidebar-context"
 import { useCartStore } from "@modules/cart/context/cart-store-context"
 import { Product } from "@/lib/supabase/types"
 import { isSimpleProduct } from "@lib/util/product"
+import { COLOR_SWATCH_MAP } from "@/lib/constants/colors"
 
 
 type ProductActionsProps = {
@@ -192,7 +193,15 @@ export default function ProductActions({ product, disabled, showSupportActions =
     }
   }, [quantity, selectedVariant])
 
-  //check if the selected options produce a valid variant
+  useEffect(() => {
+    if (selectedVariant?.image_url) {
+      window.dispatchEvent(new CustomEvent("variant-image-change", {
+        detail: { url: selectedVariant.image_url }
+      }))
+    }
+  }, [selectedVariant?.image_url])
+
+  // check if the selected options produce a valid variant
   const isValidVariant = useMemo(() => {
     if (isSimple) return true
 
@@ -554,41 +563,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
       {/* Color swatch variant selector when options don't exist OR have no values, but variants do */}
       {!isSimple && !hasValidOptions && (product.variants?.length ?? 0) > 1 && (() => {
-        const colorSwatchMap: Record<string, string> = {
-          red: "#E94235",
-          orange: "#FF8A3C",
-          yellow: "#F6E36C",
-          green: "#3BB273",
-          blue: "#3A7BEB",
-          navy: "#1D3C78",
-          purple: "#8E44AD",
-          pink: "#FF5D8F",
-          black: "#111111",
-          white: "#FAFAFA",
-          grey: "#D9D9D9",
-          gray: "#D9D9D9",
-          brown: "#9B5B2A",
-          gold: "#FFD700",
-          silver: "#C0C0C0",
-          beige: "#F5F5DC",
-          cream: "#FFFDD0",
-          maroon: "#800000",
-          teal: "#008080",
-          coral: "#FF7F50",
-          olive: "#808000",
-          mint: "#98FF98",
-          lavender: "#E6E6FA",
-          cyan: "#00FFFF",
-          turquoise: "#40E0D0",
-          sky: "#87CEEB",
-          indigo: "#4B0082",
-          violet: "#EE82EE",
-          magenta: "#FF00FF",
-          lime: "#00FF00",
-          charcoal: "#36454F",
-          slate: "#708090",
-          crimson: "#DC143C",
-        }
+        const colorSwatchMap = COLOR_SWATCH_MAP
 
         return (
           <div className="flex flex-col gap-y-3">

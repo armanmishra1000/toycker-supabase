@@ -877,6 +877,7 @@ export async function saveProductVariants(
         price: v.price,
         compare_at_price: v.compare_at_price || null,
         inventory_quantity: v.inventory_quantity,
+        image_url: v.image_url || null,
         manage_inventory: true,
         allow_backorder: false,
       })))
@@ -896,6 +897,7 @@ export async function saveProductVariants(
         price: v.price,
         compare_at_price: v.compare_at_price || null,
         inventory_quantity: v.inventory_quantity,
+        image_url: v.image_url || null,
         manage_inventory: true,
         allow_backorder: false,
       })), { onConflict: "id" })
