@@ -38,10 +38,10 @@ export default function ProductSelector({ value, onChange, disabled = false }: P
             }
         }
 
-        if (isOpen && products.length === 0) {
+        if ((isOpen || (value && value !== "")) && products.length === 0) {
             loadProducts()
         }
-    }, [isOpen, products.length])
+    }, [isOpen, products.length, value])
 
     const selectedProduct = products.find((p) => p.id === value)
 

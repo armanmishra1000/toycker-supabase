@@ -25,18 +25,29 @@ type LayoutDataContextValue = {
 const LayoutDataContext = createContext<LayoutDataContextValue | undefined>(undefined)
 
 const fetchLayoutState = async (signal?: AbortSignal) => {
-  const response = await fetch("/api/storefront/layout-state", {
-    cache: "no-store",
-    signal,
-  })
+  try {
+    const response = await fetch("/api/storefront/layout-state", {
+      cache: "no-store",
+      signal,
+    })
 
-  if (!response.ok) {
-    throw new Error("Failed to load layout state")
-  }
+    if (!response.ok) {
+      console.warn("Layout state API returned non-OK status:", response.status)
+      // Return empty state instead of throwing to avoid breaking the app
+      return { cart: null, customer: null }
+    }
 
-  return (await response.json()) as {
-    cart: any
-    customer: any
+    return (await response.json()) as {
+      cart: any
+      customer: any
+    }
+  } catch (error) {
+    if ((error as Error)?.name === "AbortError") {
+      throw error // Re-throw abort errors to be handled by caller
+    }
+    console.warn("Failed to fetch layout state:", error)
+    // Return empty state for network errors
+    return { cart: null, customer: null }
   }
 }
 
