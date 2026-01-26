@@ -622,6 +622,110 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         }
     }, [state.isOpen, state.messages.length, navigateToFlow])
 
+    // Higher-intelligence intent detection
+    const detectIntent = useCallback((text: string): string | null => {
+        const input = text.toLowerCase().trim()
+
+        // 1. Direct Phrase Mapping (High Confidence)
+        const directMapping: Record<string, string[]> = {
+            track_order: [
+                "track my order", "where is my package", "status of my order",
+                "show my recent orders", "i want to track my toy", "when will my order arrive",
+                "where is my delivery", "package status", "order tracking", "track #"
+            ],
+            club_info: [
+                "club membership", "toycker club", "join the club",
+                "membership benefits", "how to be a member", "club discount",
+                "become a club member", "club info", "tell me about the club", "membership perks"
+            ],
+            rewards: [
+                "reward points", "my rewards", "loyalty points",
+                "how to earn rewards", "reward balance", "points info",
+                "spending rewards", "rewards guide", "how much points i have", "loyalty program"
+            ],
+            payment_info: [
+                "payment info", "how to pay", "online payment",
+                "is payment secure", "payment methods", "upi payment",
+                "card payment", "payment help", "bank info", "payment options"
+            ],
+            delivery_info: [
+                "delivery info", "shipping time", "how long to deliver",
+                "delivery charges", "free shipping", "shipping zones",
+                "delivery help", "when will i get it", "courier partners", "dispatch details"
+            ],
+            how_to_order: [
+                "how to order", "place an order", "steps to buy",
+                "how can i purchase", "ordering process", "new order guide",
+                "how to shop here", "buying toyucker", "order help", "order guide",
+                "how to place order"
+            ],
+            contact: [
+                "contact us", "talk to human", "customer care",
+                "phone number", "email address", "office location",
+                "store address", "help desk", "support team", "reach out"
+            ]
+        }
+
+        for (const [intent, variations] of Object.entries(directMapping)) {
+            if (variations.some(v => input === v || input.includes(v))) {
+                // Special check to avoid "how to order" being caught by "order" in tracking
+                if (intent === 'track_order' && (input.includes('how to') || input.includes('buying') || input.includes('purchase'))) {
+                    continue
+                }
+                return intent
+            }
+        }
+
+        // 2. Weighted Keyword Scoring (Medium Confidence)
+        const scores: Record<string, number> = {
+            track_order: 0,
+            club_info: 0,
+            rewards: 0,
+            payment_info: 0,
+            delivery_info: 0,
+            how_to_order: 0,
+            contact: 0
+        }
+
+        // Define keywords with weights
+        const keywords: Record<string, Record<string, number>> = {
+            track_order: { track: 5, status: 5, package: 4, "where is": 4, tracking: 5 },
+            club_info: { club: 5, membership: 5, join: 3, member: 4, benefit: 3 },
+            rewards: { reward: 5, point: 5, balance: 4, earn: 3, loyal: 2 },
+            payment_info: { pay: 4, payment: 5, upi: 5, card: 5, secure: 3, bank: 3 },
+            delivery_info: { deliver: 5, shipping: 5, ship: 4, charges: 4, "how long": 3 },
+            how_to_order: { buy: 5, purchase: 5, shop: 4, process: 3, steps: 3, "how to": 4 },
+            contact: { contact: 5, help: 3, support: 4, phone: 5, email: 5, human: 5, talk: 4 }
+        }
+
+        for (const [intent, dictionary] of Object.entries(keywords)) {
+            for (const [word, weight] of Object.entries(dictionary)) {
+                if (input.includes(word)) {
+                    scores[intent] += weight
+                }
+            }
+        }
+
+        // Special context adjustments
+        if (input.includes('how to') && input.includes('order')) {
+            scores.how_to_order += 10
+            scores.track_order -= 5
+        }
+
+        // Find best intent
+        let bestIntent: string | null = null
+        let highestScore = 0
+
+        for (const [intent, score] of Object.entries(scores)) {
+            if (score > highestScore && score >= 4) { // Threshold for confidence
+                highestScore = score
+                bestIntent = intent
+            }
+        }
+
+        return bestIntent
+    }, [])
+
     // Send user message
     const sendMessage = useCallback((content: string) => {
         if (!content.trim()) return
@@ -629,7 +733,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'ADD_MESSAGE', payload: createUserMessage(content) })
         dispatch({ type: 'SET_USER_INPUT', payload: '' })
 
-        // Check for order number pattern (e.g., #4, #15, 4, 15)
+        // 1. Check for explicit order number pattern (e.g., #4, #15, 4, 15)
         const orderNumberMatch = content.match(/^#?(\d+)$/)
         if (orderNumberMatch) {
             const orderNumber = parseInt(orderNumberMatch[1], 10)
@@ -637,38 +741,33 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
             return
         }
 
-        // Simple keyword matching for free-text input
-        const lower = content.toLowerCase()
+        // 2. Detect Intent using weighted logic
+        const detectedIntent = detectIntent(content)
 
-        if (lower.includes('track') || lower.includes('order') || lower.includes('where')) {
-            navigateToFlow('track_order')
-        } else if (lower.includes('club') || lower.includes('member') || lower.includes('discount')) {
-            navigateToFlow('club_info')
-        } else if (lower.includes('reward') || lower.includes('point')) {
-            navigateToFlow('rewards')
-        } else if (lower.includes('cod') || lower.includes('cash on delivery')) {
-            navigateToFlow('cod_info')
-        } else if (lower.includes('payment') || lower.includes('pay online') || lower.includes('secure') || lower.includes('upi') || lower.includes('card')) {
-            navigateToFlow('payment_info')
-        } else if (lower.includes('deliver') || lower.includes('ship') || lower.includes('time')) {
-            navigateToFlow('delivery_info')
-        } else if (lower.includes('contact') || lower.includes('phone') || lower.includes('call') || lower.includes('email')) {
-            navigateToFlow('contact')
-        } else if (lower.includes('how') && lower.includes('order')) {
-            navigateToFlow('how_to_order')
-        } else if (lower.includes('login') || lower.includes('sign in')) {
+        if (detectedIntent) {
+            navigateToFlow(detectedIntent)
+            return
+        }
+
+        // 3. Special case for login
+        const lower = content.toLowerCase()
+        if (lower.includes('login') || lower.includes('sign in')) {
             if (userInfo?.isLoggedIn) {
                 addBotMessage(`You're already logged in as ${userInfo.email}!`, [BACK_TO_MENU])
             } else {
                 setShowLoginForm(true)
                 addBotMessage("🔐 **Login**\n\nPlease enter your credentials:", [])
             }
-        } else if (lower.includes('menu') || lower.includes('start') || lower.includes('hello') || lower.includes('hi')) {
+            return
+        }
+
+        // 4. Default fallback
+        if (lower.includes('menu') || lower.includes('start') || lower.includes('hello') || lower.includes('hi')) {
             navigateToFlow('main_menu')
         } else {
             addBotMessage(FLOW_MESSAGES.fallback, MAIN_MENU_REPLIES)
         }
-    }, [navigateToFlow, addBotMessage, handleOrderLookup, userInfo])
+    }, [navigateToFlow, addBotMessage, handleOrderLookup, userInfo, detectIntent])
 
     // Handle quick reply selection
     const handleQuickReply = useCallback((reply: QuickReply) => {
