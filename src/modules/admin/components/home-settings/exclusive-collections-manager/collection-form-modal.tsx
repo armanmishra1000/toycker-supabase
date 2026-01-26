@@ -134,13 +134,7 @@ export default function CollectionFormModal({ isOpen, onClose, onSuccess, collec
                             <ProductSelector
                                 value={formData.product_id || ""}
                                 onChange={(productId) => setFormData({ ...formData, product_id: productId })}
-                                disabled={!!collection} // Can't change product after creation
                             />
-                            {collection && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Product cannot be changed after creation
-                                </p>
-                            )}
                         </div>
 
                         {/* Video Upload */}
