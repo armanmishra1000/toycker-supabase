@@ -101,6 +101,57 @@ body {
     animation: slideDown 0.3s ease-out;
   }
 
+  .animate-bounce-subtle {
+    animation: bounce-subtle 3s infinite;
+  }
+
+  .animate-chat-open {
+    animation: chat-open 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    opacity: 0;
+  }
+
+  .animate-message-pop {
+    animation: message-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    opacity: 0;
+  }
+
+  @keyframes chat-open {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.96);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes message-pop {
+    0% {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes typing-dot {
+
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+    }
+
+    30% {
+      transform: translateY(-4px);
+    }
+  }
+
   @keyframes slideDown {
     from {
       transform: translateY(-100%);
@@ -111,10 +162,6 @@ body {
       transform: translateY(0);
       opacity: 1;
     }
-  }
-
-  .animate-bounce-subtle {
-    animation: bounce-subtle 3s infinite;
   }
 
   @keyframes bounce-subtle {
@@ -219,5 +266,25 @@ body {
 
   .rich-text-muted li {
     list-style: disc;
+  }
+
+  /* Custom scrollbar utility */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    /* slate-200 */
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+    /* slate-300 */
   }
 }
