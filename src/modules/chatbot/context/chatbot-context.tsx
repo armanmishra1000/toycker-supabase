@@ -176,14 +176,20 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     const addBotMessage = useCallback((content: string, quickReplies?: QuickReply[]) => {
         dispatch({ type: 'SET_TYPING', payload: true })
 
-        const delay = 400 + Math.random() * 400
+        // more natural delay: base 600ms + 20ms per character
+        // capped at 2.5 seconds to avoid frustration
+        const charCount = content.length
+        const typingDelay = Math.min(600 + (charCount * 20), 2500)
+
+        // add some variance (0-400ms)
+        const finalDelay = typingDelay + Math.random() * 400
 
         setTimeout(() => {
             dispatch({
                 type: 'ADD_BOT_RESPONSE',
                 payload: createBotMessage(content, quickReplies)
             })
-        }, delay)
+        }, finalDelay)
     }, [])
 
     // Handle order lookup
