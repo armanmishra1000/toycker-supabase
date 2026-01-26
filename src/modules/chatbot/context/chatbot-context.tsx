@@ -622,6 +622,144 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         }
     }, [state.isOpen, state.messages.length, navigateToFlow])
 
+    // Higher-intelligence intent detection
+    const detectIntent = useCallback((text: string): string | null => {
+        const input = text.toLowerCase().trim()
+
+        // 1. Direct Phrase Mapping (High Confidence)
+        const directMapping: Record<string, string[]> = {
+            track_order: [
+                "track my order", "where is my package", "order status", "shipping update", "find my order",
+                "tracking link", "package status", "order update", "parcel location", "delivery status",
+                "check my order", "where's my toy", "shipment info", "tracking number please", "order history",
+                "my recent orders", "order status check", "package tracker", "where is my delivery", "trace my order",
+                "mera order kahan hai", "order track karo", "order details chahiye", "status batao", "order kab ayega",
+                "tracking details do", "mera parcel kahan hai", "delivery kab hogi", "order check karein", "mera toy kab milega",
+                "status kya hai", "order tracking dekhna hai", "kahan pohacha mera order", "order update do", "tracking link bhej do",
+                "mera saman kidhar hai", "delivery date batao", "order status dikhao", "kitne baje ayega", "order track krna h"
+            ],
+            club_info: [
+                "club membership", "toycker club", "join club", "membership benefits", "how to be a member",
+                "club discount", "become a member", "club perks", "membership info", "club details",
+                "loyal member program", "toycker club guide", "join the club now", "member advantages", "club rewards info",
+                "membership enrollment", "how to join club", "club membership cost", "free club joining", "premium membership",
+                "club join karna hai", "membership kaise milegi", "club benefits kya hain", "member banna hai", "club ka member kaise banu",
+                "toycker club details", "membership leni hai", "club join kaise krte hain", "member discounts batao", "club perks kya h",
+                "how to join toycker club", "membership rewards", "club info do", "member ke fayde", "club offers",
+                "club join step", "membership details do", "toycker club kya hai", "member banne ke liye kya karein", "club discount chahiye"
+            ],
+            rewards: [
+                "reward points", "my rewards", "loyalty points", "reward balance", "check points",
+                "how to earn points", "use reward points", "points guide", "reward wallet", "my point balance",
+                "toycker rewards", "spending rewards", "redeem points", "reward points info", "how many points i have",
+                "check reward wallet", "point system", "get rewards", "points for shopping", "my cash points",
+                "mere kitne points hain", "reward balance dikhao", "points kaise use karein", "rewards check karna hai", "mere pass kitne reward points h",
+                "points shop kaise karein", "loyalty points kitne hain", "reward points kaise milege", "mere points kitne h", "points use kaise karein",
+                "rewards kitne hain", "reward wallet batao", "points kaise redeem karein", "mere pass kitne points h", "reward points system kya hai",
+                "cashback points", "wallet balance check", "rewards summary", "points history", "rewards kaise kamayein"
+            ],
+            payment_info: [
+                "payment info", "how to pay", "online payment", "is payment secure", "payment methods",
+                "upi payment", "card payment", "payment help", "payu info", "gpay support",
+                "apple pay info", "payment options", "billing help", "secure checkout info", "payment problems",
+                "pay online guide", "bank transfer details", "prepaid orders", "payment discounts", "how to use coupon",
+                "payment kaise karein", "online pay kaise hoga", "cod option h?", "gpay se pay karein", "upi payment support",
+                "site safe h payment ke liye?", "payment methods batao", "phonepe chalega?", "cash on delivery details", "net banking info",
+                "payment problem help", "payment link do", "coupon code kaise dalein", "discount kaise milega", "payment fail ho gaya",
+                "pay kaise krte h", "card se payment", "vpa id payment", "txn details", "payment receipt"
+            ],
+            delivery_info: [
+                "delivery info", "shipping time", "delivery days", "shipping charges", "free shipping threshold",
+                "can you deliver in my city", "delivery speed", "shipping partners", "express delivery", "delivery help",
+                "delivery area check", "shipping locations", "how fast you ship", "shipment time", "dispatch timeline",
+                "delivery issues", "delivery tracking info", "courier service", "home delivery", "pick up info",
+                "delivery kitne din mein hogi", "shipping charges kitne hain", "free delivery kab milti h", "surat mein delivery hogi?", "mere city mein delivery h?",
+                "kitne din me ayega", "delivery charges kya h", "free delivery threshold", "delivery speed kya h", "shipping time batao",
+                "jaldi mangvana h", "express delivery h?", "delivery kyu nhi ho rhi", "delivery address change", "shipment kab niklega",
+                "meray area me delivery", "kitna time lagega", "delivery boy contact", "ghar pe kab ayega", "shipping zone info"
+            ],
+            how_to_order: [
+                "how to order", "place an order", "buying process", "how to buy toys", "ordering guide",
+                "step by step order", "how to shop", "order help", "purchase info", "how can i buy",
+                "ordering process detail", "start shopping guide", "how to add to cart", "ordering support", "buy now guide",
+                "how to check out", "shopping instructions", "order procedure", "how to get toys", "new order help",
+                "order kaise karein", "order kaise dena hai", "mujhe kharidna hai kaise lu", "toys kaise mangvayein", "order process batao",
+                "naya order kaise dalein", "order kese karte h", "shopping kaise krni h", "buy karne ka tarika", "order step batao",
+                "shopping guide chahiye", "kese kharide", "cheez mangvani h", "how to buy toys online", "order krne ki vidhi",
+                "shopping help", "cart me kaise dalein", "order confirm kaise karein", "kese le sakte h", "toy mangvana h"
+            ],
+            contact: [
+                "contact us", "talk to human", "customer care", "support phone number", "email address",
+                "office location", "office address", "help desk", "customer support team", "reach out",
+                "chat with person", "call us now", "store info", "visit our store", "company details",
+                "support hours", "get in touch", "complain desk", "feedback channel", "official contact",
+                "customer care number do", "baat karni hai support se", "support team number", "call par baat krni h", "email address batao",
+                "dukan kahan hai", "office ka pata", "complaint karni hai", "help chahiye kisi se", "talk to agent",
+                "support pe call kaise karein", "official contact details", "branch kahan hai", "store location batao", "contact details do",
+                "address kya h", "help line number", "customer support help", "phone pay baat krni h", "office address do"
+            ]
+        }
+
+        for (const [intent, variations] of Object.entries(directMapping)) {
+            if (variations.some(v => input === v || input.includes(v))) {
+                // Special check to avoid "how to order" being caught by "order" in tracking
+                if (intent === 'track_order' && (input.includes('how to') || input.includes('buying') || input.includes('purchase'))) {
+                    continue
+                }
+                return intent
+            }
+        }
+
+        // 2. Weighted Keyword Scoring (Medium Confidence)
+        const scores: Record<string, number> = {
+            track_order: 0,
+            club_info: 0,
+            rewards: 0,
+            payment_info: 0,
+            delivery_info: 0,
+            how_to_order: 0,
+            contact: 0
+        }
+
+        // Define keywords with weights
+        const keywords: Record<string, Record<string, number>> = {
+            track_order: { track: 5, status: 5, package: 4, "where is": 4, tracking: 5, kahan: 3, kitna: 2, rasta: 2 },
+            club_info: { club: 5, membership: 5, join: 3, member: 4, benefit: 3, banna: 2, lene: 2 },
+            rewards: { reward: 5, point: 5, balance: 4, earn: 3, loyal: 2, kitne: 2, wallet: 3 },
+            payment_info: { pay: 4, payment: 5, upi: 5, card: 5, secure: 3, bank: 3, code: 2, discount: 2 },
+            delivery_info: { deliver: 5, shipping: 5, ship: 4, charges: 4, "how long": 3, time: 2, din: 2 },
+            how_to_order: { buy: 5, purchase: 5, shop: 4, process: 3, steps: 3, "how to": 4, mangvana: 3, lene: 2 },
+            contact: { contact: 5, help: 3, support: 4, phone: 5, email: 5, human: 5, talk: 4, baat: 3, address: 3 }
+        }
+
+        for (const [intent, dictionary] of Object.entries(keywords)) {
+            for (const [word, weight] of Object.entries(dictionary)) {
+                if (input.includes(word)) {
+                    scores[intent] += weight
+                }
+            }
+        }
+
+        // Special context adjustments
+        if (input.includes('how to') && input.includes('order')) {
+            scores.how_to_order += 10
+            scores.track_order -= 5
+        }
+
+        // Find best intent
+        let bestIntent: string | null = null
+        let highestScore = 0
+
+        for (const [intent, score] of Object.entries(scores)) {
+            if (score > highestScore && score >= 4) { // Threshold for confidence
+                highestScore = score
+                bestIntent = intent
+            }
+        }
+
+        return bestIntent
+    }, [])
+
     // Send user message
     const sendMessage = useCallback((content: string) => {
         if (!content.trim()) return
@@ -629,7 +767,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'ADD_MESSAGE', payload: createUserMessage(content) })
         dispatch({ type: 'SET_USER_INPUT', payload: '' })
 
-        // Check for order number pattern (e.g., #4, #15, 4, 15)
+        // 1. Check for explicit order number pattern (e.g., #4, #15, 4, 15)
         const orderNumberMatch = content.match(/^#?(\d+)$/)
         if (orderNumberMatch) {
             const orderNumber = parseInt(orderNumberMatch[1], 10)
@@ -637,38 +775,33 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
             return
         }
 
-        // Simple keyword matching for free-text input
-        const lower = content.toLowerCase()
+        // 2. Detect Intent using weighted logic
+        const detectedIntent = detectIntent(content)
 
-        if (lower.includes('track') || lower.includes('order') || lower.includes('where')) {
-            navigateToFlow('track_order')
-        } else if (lower.includes('club') || lower.includes('member') || lower.includes('discount')) {
-            navigateToFlow('club_info')
-        } else if (lower.includes('reward') || lower.includes('point')) {
-            navigateToFlow('rewards')
-        } else if (lower.includes('cod') || lower.includes('cash on delivery')) {
-            navigateToFlow('cod_info')
-        } else if (lower.includes('payment') || lower.includes('pay online') || lower.includes('secure') || lower.includes('upi') || lower.includes('card')) {
-            navigateToFlow('payment_info')
-        } else if (lower.includes('deliver') || lower.includes('ship') || lower.includes('time')) {
-            navigateToFlow('delivery_info')
-        } else if (lower.includes('contact') || lower.includes('phone') || lower.includes('call') || lower.includes('email')) {
-            navigateToFlow('contact')
-        } else if (lower.includes('how') && lower.includes('order')) {
-            navigateToFlow('how_to_order')
-        } else if (lower.includes('login') || lower.includes('sign in')) {
+        if (detectedIntent) {
+            navigateToFlow(detectedIntent)
+            return
+        }
+
+        // 3. Special case for login
+        const lower = content.toLowerCase()
+        if (lower.includes('login') || lower.includes('sign in')) {
             if (userInfo?.isLoggedIn) {
                 addBotMessage(`You're already logged in as ${userInfo.email}!`, [BACK_TO_MENU])
             } else {
                 setShowLoginForm(true)
                 addBotMessage("🔐 **Login**\n\nPlease enter your credentials:", [])
             }
-        } else if (lower.includes('menu') || lower.includes('start') || lower.includes('hello') || lower.includes('hi')) {
+            return
+        }
+
+        // 4. Default fallback
+        if (lower.includes('menu') || lower.includes('start') || lower.includes('hello') || lower.includes('hi')) {
             navigateToFlow('main_menu')
         } else {
             addBotMessage(FLOW_MESSAGES.fallback, MAIN_MENU_REPLIES)
         }
-    }, [navigateToFlow, addBotMessage, handleOrderLookup, userInfo])
+    }, [navigateToFlow, addBotMessage, handleOrderLookup, userInfo, detectIntent])
 
     // Handle quick reply selection
     const handleQuickReply = useCallback((reply: QuickReply) => {
