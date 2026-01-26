@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     template: "%s | Toycker",
     default: "Toycker | Premium Toys & Collectibles",
   },
-  description: "Shop the best selection of action figures, building sets, and educational toys at Toycker. Exclusive collections and free shipping on orders over ₹999.",
+  description: "Shop the best selection of action figures, building sets, and educational toys at Toycker. Exclusive collections and free shipping on orders over ₹500.",
   keywords: ["toys", "action figures", "building blocks", "educational toys", "Toycker"],
   metadataBase: new URL(getBaseURL()),
   icons: {

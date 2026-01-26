@@ -49,7 +49,7 @@ export default function ChatbotWidget() {
                     className="
                         fixed 
                         bottom-[100px] sm:bottom-24
-                        right-4 sm:right-6
+                        right-4
                         w-[calc(100vw-2rem)] sm:w-[400px]
                         max-w-[420px]
                         h-[580px] sm:h-[620px]
@@ -104,7 +104,7 @@ export default function ChatbotWidget() {
                 className={`
           fixed 
           bottom-[84px] sm:bottom-6 
-          right-4 sm:right-6
+          right-4
           h-14 sm:h-[60px]
           rounded-full
           text-white

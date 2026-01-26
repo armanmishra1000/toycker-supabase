@@ -250,11 +250,11 @@ What would you like to know?`,
 📋 Ordered → 📦 Ready to Ship → 🚚 Shipped → 🏠 Delivered`,
 
     free_shipping: `🎉 **Free Shipping**
-
-Get FREE shipping on orders above the minimum threshold!
-
+ 
+Get FREE shipping on orders above **₹500**!
+ 
 Check your cart for the current free shipping offer.
-
+ 
 **Tip:** Add a few more items to qualify for free shipping and save on delivery charges.`,
 
     // How to Order

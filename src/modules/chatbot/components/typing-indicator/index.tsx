@@ -19,18 +19,11 @@ export default function TypingIndicator() {
 
             {/* Typing bubble */}
             <div
-                className="
-          bg-blue-50
-          px-4 py-3
-          rounded-2xl rounded-tl-md
-          flex items-center gap-1.5
-        "
+                className="flex items-center py-1"
                 aria-label="Assistant is typing"
                 role="status"
             >
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-typing-dot" />
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-typing-dot" />
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-typing-dot" />
+                <span className="animate-text-shimmer text-sm font-medium">Typing...</span>
             </div>
         </div>
     )
