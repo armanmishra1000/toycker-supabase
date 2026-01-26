@@ -21,9 +21,9 @@ const WhatsAppButton = () => {
             rel="noopener noreferrer"
             aria-label="Chat with us on WhatsApp"
             className={clx(
-                "fixed right-6 z-[82] flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95",
+                "fixed right-4 z-[82] flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95",
                 "bg-[#25D366] text-white",
-                "bottom-[88px] sm:bottom-[104px] md:bottom-24", // Above chatbot button (56-64px + spacing)
+                "bottom-[148px] sm:bottom-[104px] md:bottom-24", // Above chatbot button (84px + 64px)
             )}
         >
             <svg
