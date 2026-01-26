@@ -1,6 +1,7 @@
 "use client"
 
 import { ReactNode } from "react"
+import { usePathname } from "next/navigation"
 
 import { CartSidebarProvider } from "@modules/layout/context/cart-sidebar-context"
 import { LayoutDataProvider } from "@modules/layout/context/layout-data-context"
@@ -12,6 +13,9 @@ import { WishlistProvider } from "@modules/products/context/wishlist"
 import { ChatbotProvider, ChatbotWidget } from "@modules/chatbot"
 
 const Providers = ({ children }: { children: ReactNode }) => {
+  const pathname = usePathname()
+  const isAdmin = pathname?.startsWith("/admin")
+
   // Auth and wishlist data now fetched client-side by respective providers
   // This allows root layout to be static instead of forcing dynamic rendering
   return (
@@ -24,7 +28,7 @@ const Providers = ({ children }: { children: ReactNode }) => {
               <WishlistProvider>
                 <ChatbotProvider>
                   {children}
-                  <ChatbotWidget />
+                  {!isAdmin && <ChatbotWidget />}
                 </ChatbotProvider>
               </WishlistProvider>
             </CartSidebarProvider>
