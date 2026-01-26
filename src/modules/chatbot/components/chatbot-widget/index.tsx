@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react'
 import { MessageCircle, X } from 'lucide-react'
 import { useChatbot } from '../../context/chatbot-context'
+import { useOptionalCartSidebar } from '@modules/layout/context/cart-sidebar-context'
 import ChatbotHeader from '../chatbot-header'
 import ChatbotMessages from '../chatbot-messages'
 import ChatbotInput from '../chatbot-input'
@@ -27,6 +28,8 @@ export default function ChatbotWidget() {
         handleLogin,
         cancelLogin,
     } = useChatbot()
+    const cartSidebar = useOptionalCartSidebar()
+    const isCartOpen = cartSidebar?.isOpen || false
     const [isMounted, setIsMounted] = useState(false)
 
     // Prevent hydration mismatch
@@ -34,7 +37,7 @@ export default function ChatbotWidget() {
         setIsMounted(true)
     }, [])
 
-    if (!isMounted) {
+    if (!isMounted || isCartOpen) {
         return null
     }
 
@@ -45,7 +48,7 @@ export default function ChatbotWidget() {
                 <div
                     className="
                         fixed 
-                        bottom-20 sm:bottom-24
+                        bottom-[100px] sm:bottom-24
                         right-4 sm:right-6
                         w-[calc(100vw-2rem)] sm:w-[400px]
                         max-w-[420px]
@@ -55,7 +58,7 @@ export default function ChatbotWidget() {
                         rounded-3xl
                         shadow-[0_20px_60px_rgba(0,0,0,0.12)]
                         flex flex-col
-                        z-[900]
+                        z-[140]
                         overflow-hidden
                         animate-chat-open
                     "
@@ -100,7 +103,7 @@ export default function ChatbotWidget() {
                 onClick={toggle}
                 className={`
           fixed 
-          bottom-4 sm:bottom-6 
+          bottom-[84px] sm:bottom-6 
           right-4 sm:right-6
           h-14 sm:h-[60px]
           rounded-full
@@ -110,7 +113,7 @@ export default function ChatbotWidget() {
           hover:scale-105
           active:scale-95
           focus:outline-none
-          z-[900]
+          z-[140]
           group
           bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600
           ${state.isOpen
