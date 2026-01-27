@@ -71,14 +71,14 @@ export function PermissionsProvider({ children, initialPermissions = [] }: Permi
         }
     }, [])
 
-    const contextValue: PermissionsContextType = {
+    const contextValue: PermissionsContextType = React.useMemo(() => ({
         permissions,
         isLoading,
         hasPermission: (permission: Permission) => hasPermission(permissions, permission),
         hasAnyPermission: (perms: Permission[]) => hasAnyPermission(permissions, perms),
         hasAllPermissions: (perms: Permission[]) => hasAllPermissions(permissions, perms),
         refresh: fetchPermissions,
-    }
+    }), [permissions, isLoading])
 
     return (
         <PermissionsContext.Provider value={contextValue}>

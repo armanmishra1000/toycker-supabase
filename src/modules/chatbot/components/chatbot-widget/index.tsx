@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import { MessageCircle, X } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { useChatbot } from '../../context/chatbot-context'
 import { useOptionalCartSidebar } from '@modules/layout/context/cart-sidebar-context'
 import ChatbotHeader from '../chatbot-header'
@@ -31,13 +32,15 @@ export default function ChatbotWidget() {
     const cartSidebar = useOptionalCartSidebar()
     const isCartOpen = cartSidebar?.isOpen || false
     const [isMounted, setIsMounted] = useState(false)
+    const pathname = usePathname()
+    const isAdmin = pathname?.startsWith("/admin")
 
     // Prevent hydration mismatch
     useEffect(() => {
         setIsMounted(true)
     }, [])
 
-    if (!isMounted || isCartOpen) {
+    if (!isMounted || isCartOpen || isAdmin) {
         return null
     }
 

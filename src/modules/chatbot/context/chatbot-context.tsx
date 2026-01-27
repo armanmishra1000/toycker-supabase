@@ -6,6 +6,7 @@
  */
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useState, useMemo } from 'react'
+import { usePathname } from 'next/navigation'
 import { ChatbotState, ChatbotActionType, ChatMessage, QuickReply } from '../types'
 import {
     MAIN_MENU_REPLIES,
@@ -122,6 +123,8 @@ const ChatbotContext = createContext<ChatbotContextType | null>(null)
 
 // Provider component
 export function ChatbotProvider({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname()
+    const isAdmin = pathname?.startsWith('/admin')
     const [state, dispatch] = useReducer(chatbotReducer, initialState)
     const [userInfo, setUserInfo] = useState<ChatbotUserInfo | null>(null)
     const [showLoginForm, setShowLoginForm] = useState(false)
@@ -129,16 +132,32 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
     const [isLoggingIn, setIsLoggingIn] = useState(false)
     const [pendingOrderLookup, setPendingOrderLookup] = useState<number | null>(null)
 
-    // Fetch user info on mount and when needed
-    const refreshUserInfo = useCallback(async () => {
-        try {
-            const info = await getChatbotUserInfo()
-            setUserInfo(info)
-        } catch (error) {
-            console.error('Error fetching user info:', error)
-            setUserInfo({ isLoggedIn: false })
+    const isMounted = React.useRef(true)
+
+    useEffect(() => {
+        isMounted.current = true
+        return () => {
+            isMounted.current = false
         }
     }, [])
+
+    // Fetch user info on mount and when needed
+    const refreshUserInfo = useCallback(async () => {
+        // Skip fetching if on admin route
+        if (isAdmin) return
+
+        try {
+            const info = await getChatbotUserInfo()
+            if (isMounted.current) {
+                setUserInfo(info)
+            }
+        } catch (error) {
+            console.error('Error fetching user info:', error)
+            if (isMounted.current) {
+                setUserInfo({ isLoggedIn: false })
+            }
+        }
+    }, [isAdmin])
 
     useEffect(() => {
         refreshUserInfo()
@@ -146,6 +165,8 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
 
     // Load messages from localStorage on mount
     useEffect(() => {
+        if (isAdmin) return
+
         try {
             const stored = localStorage.getItem(STORAGE_KEY)
             if (stored) {
@@ -159,10 +180,12 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         } catch {
             // Ignore parse errors
         }
-    }, [])
+    }, [isAdmin])
 
     // Save messages to localStorage when they change
     useEffect(() => {
+        if (isAdmin) return
+
         if (state.messages.length > 0) {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state.messages))
@@ -170,7 +193,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
                 // Ignore storage errors
             }
         }
-    }, [state.messages])
+    }, [state.messages, isAdmin])
 
     // Add bot message with typing effect
     const addBotMessage = useCallback((content: string, quickReplies?: QuickReply[]) => {
@@ -417,6 +440,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
                             `🎉 **Payment Discounts & Offers**\n\n**Club Member Discount:**\n• Get **${clubInfo.discountPercentage}% OFF** on all products!\n• Applies to both online payment & COD\n\n**How discounts are applied:**\n1️⃣ Club discount applied first (if member)\n2️⃣ Then any promo codes you enter\n3️⃣ Finally, reward points (if used)\n\n**Example:**\nOriginal price: ₹1,000\nClub discount (${clubInfo.discountPercentage}%): -₹${(1000 * clubInfo.discountPercentage / 100).toFixed(0)}\nYou pay: ₹${(1000 * (100 - clubInfo.discountPercentage) / 100).toFixed(0)}\n\n💡 **Tip:** Become a Club Member to save on every order!\nSpend ₹${clubInfo.minPurchaseAmount.toLocaleString()}+ to join.`,
                             [
                                 { id: 'join', label: '⭐ Join Club', value: 'club_info' },
+                                { id: 'rewards', label: '🎁 Rewards', value: 'rewards' },
                                 BACK_TO_MENU
                             ]
                         )

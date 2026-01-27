@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useTransition, useMemo } from "react"
+import React, { useState, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Dialog, Combobox, Transition } from "@headlessui/react"
 import {
@@ -88,14 +88,15 @@ export function AdminGlobalSearch() {
     }
 
     // Group results by type
-    const groupedResults = useMemo(() => {
+    // Group results by type
+    const groupedResults = (() => {
         const groups: Record<string, AdminSearchResult[]> = {}
         results.forEach(result => {
             if (!groups[result.type]) groups[result.type] = []
             groups[result.type].push(result)
         })
         return groups
-    }, [results])
+    })()
 
     return (
         <>
