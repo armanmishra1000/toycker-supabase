@@ -40,8 +40,13 @@ export default function VisualSearchInterface() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [hasInteracted, setHasInteracted] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
     const imgRef = useRef<HTMLImageElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0]
@@ -147,6 +152,8 @@ export default function VisualSearchInterface() {
             return () => clearTimeout(timer)
         }
     }, [completedCrop, hasInteracted])
+
+    if (!isMounted) return null
 
     if (!previewUrl) {
         return (
