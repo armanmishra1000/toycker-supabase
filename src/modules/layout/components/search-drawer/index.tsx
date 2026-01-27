@@ -21,6 +21,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants/region"
 import type { SearchProductSummary, SearchCategorySummary, SearchCollectionSummary } from "@lib/data/search"
 import { fixUrl } from "@lib/util/images"
+import { useImageSearchStore } from "@/lib/store/image-search-store"
 
 type SearchDrawerProps = {
   isOpen: boolean
@@ -41,7 +42,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const countryCode = DEFAULT_COUNTRY_CODE
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const { previewUrl, setImage, clear: clearImageStore } = useImageSearchStore()
 
   const buildLocalizedPath = (path: string) => {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`
@@ -71,20 +72,15 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      // Create preview
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-
-      searchByImage(file)
+      setImage(file)
+      router.push("/search/visual")
+      onClose()
     }
   }
 
   const handleClear = () => {
     clear()
-    setImagePreview(null)
+    clearImageStore()
     stopListening()
   }
 
@@ -124,7 +120,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
     <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 px-6 py-12 text-center">
       <p className="text-lg font-semibold text-slate-900">No matches yet</p>
       <p className="mt-2 text-sm text-slate-500">
-        {imagePreview
+        {previewUrl
           ? "We couldn't find products visually similar to your photo."
           : "Try refining your keywords or explore the smart suggestions above."}
       </p>
@@ -184,10 +180,10 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
               <div className="border-b border-slate-100 px-6 pb-2 pt-3 space-y-3">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className={`group flex items-center rounded-2xl border-2 transition-all duration-300 ${isListening ? 'border-red-500 bg-red-50/10 shadow-[0_0_20px_rgba(239,68,68,0.15)]' : 'border-gray-200 bg-white focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10'}`}>
-                    {imagePreview ? (
+                    {previewUrl ? (
                       <div className="relative ml-2 h-10 w-10 overflow-hidden rounded-xl border border-slate-200 shadow-sm shrink-0 group-focus-within:border-primary/30">
                         <Image
-                          src={imagePreview}
+                          src={previewUrl}
                           alt="Search preview"
                           fill
                           className="object-cover"
@@ -202,14 +198,14 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                       type="text"
                       value={isListening ? "Listening..." : query}
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder={imagePreview ? "Refine..." : "Search..."}
+                      placeholder={previewUrl ? "Refine..." : "Search..."}
                       readOnly={isListening}
                       className={`flex-1 min-w-0 border-0 bg-transparent py-3 sm:py-4 pl-3 text-base sm:text-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-0 ${isListening ? 'text-red-500 font-medium' : ''}`}
                       aria-label="Search catalog"
                     />
 
                     <div className="flex items-center gap-1 pr-2 shrink-0">
-                      {(query || imagePreview) && (
+                      {(query || previewUrl) && (
                         <button
                           type="button"
                           onClick={handleClear}
@@ -234,10 +230,10 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className={`rounded-full p-2 sm:p-2.5 transition-all duration-300 ${imagePreview ? 'bg-primary text-white shadow-lg transform rotate-6' : 'text-slate-400 hover:bg-slate-50 hover:text-primary'}`}
+                        className={`rounded-full p-2 sm:p-2.5 transition-all duration-300 ${previewUrl ? 'bg-primary text-white shadow-lg transform rotate-6' : 'text-slate-400 hover:bg-slate-50 hover:text-primary'}`}
                         title="Search by image"
                       >
-                        {imagePreview ? <PhotoIcon className="h-5 w-5" /> : <CameraIcon className="h-5 w-5" />}
+                        {previewUrl ? <PhotoIcon className="h-5 w-5" /> : <CameraIcon className="h-5 w-5" />}
                       </button>
 
                       <input
@@ -251,7 +247,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                   </div>
                 </form>
 
-                {(suggestions.length > 0 || fallbackSuggestions.length > 0) && !imagePreview && (
+                {(suggestions.length > 0 || fallbackSuggestions.length > 0) && !previewUrl && (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-500">
                     <div className="flex gap-2 pt-2 overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap">
                       {(suggestions.length ? suggestions : fallbackSuggestions).map((suggestion: string) => (
@@ -271,7 +267,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
               </div>
 
               <div className="flex-1 overflow-y-auto bg-slate-50/30 px-6 py-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-200">
-                {status === "idle" && !query && !imagePreview && (
+                {status === "idle" && !query && !previewUrl && (
                   <div className="flex h-full flex-col items-center justify-center space-y-6 text-center opacity-60">
                     <div className="relative">
                       <div className="absolute -inset-4 rounded-full bg-primary/5 blur-2xl" />
@@ -297,7 +293,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
                         </span>
                         <span className="text-sm font-medium text-slate-600">
-                          {imagePreview ? "Analyzing visual patterns..." : "Searching catalog..."}
+                          {previewUrl ? "Analyzing visual patterns..." : "Searching catalog..."}
                         </span>
                       </div>
                     </div>
@@ -338,7 +334,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                     {/* Products Grid */}
                     {results.products.length > 0 && (
                       <ResultSection
-                        title={imagePreview ? "Visual Matches" : "Products"}
+                        title={previewUrl ? "Visual Matches" : "Products"}
                         count={results.products.length}
                       >
                         <div className="flex flex-col gap-3">
@@ -390,7 +386,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                       </ResultSection>
                     )}
 
-                    {!imagePreview && results.categories.length > 0 && (
+                    {!previewUrl && results.categories.length > 0 && (
                       <ResultSection title="Categories" count={results.categories.length}>
                         <div className="flex flex-wrap gap-2">
                           {results.categories.map((category: SearchCategorySummary) => (
@@ -408,7 +404,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                       </ResultSection>
                     )}
 
-                    {!imagePreview && results.collections.length > 0 && (
+                    {!previewUrl && results.collections.length > 0 && (
                       <ResultSection title="Collections" count={results.collections.length}>
                         <div className="flex flex-wrap gap-2">
                           {results.collections.map((collection: SearchCollectionSummary) => (
@@ -431,7 +427,7 @@ const SearchDrawer = ({ isOpen, onClose }: SearchDrawerProps) => {
                 )}
               </div>
 
-              {!imagePreview && (
+              {!previewUrl && (
                 <div className="border-t border-slate-200 bg-white px-6 py-4">
                   <LocalizedClientLink
                     href={canViewAll ? `/store?q=${encodeURIComponent(query.trim())}` : "#"}

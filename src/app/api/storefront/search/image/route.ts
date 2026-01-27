@@ -142,8 +142,38 @@ export async function POST(request: Request) {
         const arrayBuffer = await imageFile.arrayBuffer()
         const inputBuffer = Buffer.from(arrayBuffer)
 
+        // Handle cropping if coordinates are provided
+        const x = formData.get("x") ? Math.round(Number(formData.get("x"))) : null
+        const y = formData.get("y") ? Math.round(Number(formData.get("y"))) : null
+        const width = formData.get("width") ? Math.round(Number(formData.get("width"))) : null
+        const height = formData.get("height") ? Math.round(Number(formData.get("height"))) : null
+
+        let processedBuffer = inputBuffer
+
+        if (x !== null && y !== null && width !== null && height !== null && width > 0 && height > 0) {
+            try {
+                const metadata = await sharp(inputBuffer).metadata()
+                const imgW = metadata.width || 0
+                const imgH = metadata.height || 0
+
+                // Clamp coordinates to image boundaries
+                const realX = Math.max(0, Math.min(x, imgW - 1))
+                const realY = Math.max(0, Math.min(y, imgH - 1))
+                const realW = Math.max(1, Math.min(width, imgW - realX))
+                const realH = Math.max(1, Math.min(height, imgH - realY))
+
+                console.log(`Cropping image: x=${realX}, y=${realY}, w=${realW}, h=${realH} (Original: ${imgW}x${imgH})`)
+
+                processedBuffer = await sharp(inputBuffer)
+                    .extract({ left: realX, top: realY, width: realW, height: realH })
+                    .toBuffer()
+            } catch (cropError) {
+                console.warn("Cropping failed, falling back to full image:", cropError)
+            }
+        }
+
         // Process image with fallback strategies
-        const cleanedBuffer = await processImage(inputBuffer)
+        const cleanedBuffer = await processImage(processedBuffer)
         console.log(`Final cleaned image: ${cleanedBuffer.length} bytes`)
 
         // Generate embedding from cleaned buffer
@@ -153,8 +183,9 @@ export async function POST(request: Request) {
         // Search database
         const supabase = await createClient()
         const { data, error } = await supabase.rpc("search_products_multimodal", {
+            search_query: null, // Explicitly pass null for text query
             search_embedding: embedding,
-            match_threshold: 0.65, // Slightly lower for different angles/lighting
+            match_threshold: 0.65,
             match_count: 12,
         })
 

@@ -6,6 +6,7 @@ interface Product {
     id: string
     name: string
     image_url: string | null
+    thumbnail: string | null
 }
 
 export async function GET(_request: Request) {
@@ -19,9 +20,9 @@ export async function POST(_request: Request) {
         // Get products without embeddings
         const { data: products, error: fetchError } = await supabase
             .from("products")
-            .select("id, image_url, name")
+            .select("id, image_url, thumbnail, name")
             .is("image_embedding", null)
-            .limit(5) // Small batch size to prevent timeout
+            .limit(10) // Increased batch size for admin trigger
 
         if (fetchError) {
             throw new Error(`Failed to fetch products: ${fetchError.message}`)
@@ -37,10 +38,12 @@ export async function POST(_request: Request) {
 
         const results: Array<{ id: string; status: string; error?: string }> = []
 
-        for (const product of products as Product[]) {
+        for (const product of products) {
             try {
-                if (!product.image_url) {
-                    console.log(`Skipping product ${product.id} - no image_url`)
+                const targetUrl = product.image_url || product.thumbnail
+
+                if (!targetUrl) {
+                    console.log(`Skipping product ${product.id} - no image source`)
                     results.push({ id: product.id, status: "skipped" })
                     continue
                 }
@@ -48,7 +51,7 @@ export async function POST(_request: Request) {
                 console.log(`Processing: ${product.name} (${product.id})`)
 
                 // Generate L2-normalized embedding
-                const embedding = await generateImageEmbedding(product.image_url)
+                const embedding = await generateImageEmbedding(targetUrl)
 
                 // Store in database
                 const { error: updateError } = await supabase
