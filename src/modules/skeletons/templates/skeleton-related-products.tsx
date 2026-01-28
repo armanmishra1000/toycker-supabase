@@ -13,13 +13,18 @@ const SkeletonRelatedProducts = () => {
         </p>
       </div>
 
-      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-        {repeat(4).map((index) => (
-          <li key={index}>
-            <SkeletonProductPreview />
-          </li>
-        ))}
-      </ul>
+      <div className="overflow-hidden md:overflow-visible">
+        <ul className="flex md:grid md:grid-cols-4 md:gap-x-6 md:gap-y-8 -ml-4 md:ml-0">
+          {repeat(4).map((index) => (
+            <li
+              key={index}
+              className="flex-[0_0_80%] small:flex-[0_0_45%] min-w-0 pl-4 md:pl-0 md:flex-none"
+            >
+              <SkeletonProductPreview />
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }

@@ -64,6 +64,7 @@ export default function ChatbotWidget() {
                         z-[140]
                         overflow-hidden
                         animate-chat-open
+                        chatbot-window
                     "
                     role="dialog"
                     aria-label="Chat with Toycker Assistant"
@@ -119,6 +120,7 @@ export default function ChatbotWidget() {
           z-[140]
           group
           bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600
+          chatbot-launcher
           ${state.isOpen
                         ? 'w-14 sm:w-[60px]'
                         : 'w-14 sm:w-auto sm:px-5'

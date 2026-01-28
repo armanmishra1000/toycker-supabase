@@ -2,6 +2,7 @@ import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { Product as SupabaseProduct } from "@/lib/supabase/types"
 import ProductPreview from "../product-preview"
+import RelatedProductsCarousel from "./related-products-carousel"
 
 type RelatedProductsProps = {
   product: SupabaseProduct
@@ -38,16 +39,10 @@ export default async function RelatedProducts({
         </p>
       </div>
 
-      <ul className="grid small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-        {products.map((p) => (
-          <li key={p.id}>
-            <ProductPreview
-              product={p}
-              clubDiscountPercentage={clubDiscountPercentage}
-            />
-          </li>
-        ))}
-      </ul>
+      <RelatedProductsCarousel
+        products={products}
+        clubDiscountPercentage={clubDiscountPercentage}
+      />
     </div>
   )
 }
