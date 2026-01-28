@@ -166,7 +166,7 @@ export default function PWAInstallPrompt() {
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-md bg-emerald-600 flex items-center justify-center overflow-hidden">
-                            <Image src="/favicon.jpg" width={24} height={24} alt="T" unoptimized />
+                            <Image src="/favicon.png" width={24} height={24} alt="T" unoptimized />
                         </div>
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Toycker Official</span>
                     </div>
