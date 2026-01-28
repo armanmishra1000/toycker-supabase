@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   keywords: ["toys", "action figures", "building blocks", "educational toys", "Toycker"],
   metadataBase: new URL(getBaseURL()),
   icons: {
-    icon: "/favicon.jpg",
+    icon: "/favicon.png",
   },
 }
 

@@ -19,7 +19,7 @@ export const metadata = {
   title: "Toycker Admin",
   description: "Store Management",
   icons: {
-    icon: "/favicon.jpg",
+    icon: "/favicon.png",
   },
 }
 

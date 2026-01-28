@@ -27,8 +27,8 @@ const Providers = ({ children }: { children: ReactNode }) => {
             <CartSidebarProvider>
               <WishlistProvider>
                 <ChatbotProvider>
+                  <ChatbotWidget />
                   {children}
-                  {!isAdmin && <ChatbotWidget />}
                 </ChatbotProvider>
               </WishlistProvider>
             </CartSidebarProvider>

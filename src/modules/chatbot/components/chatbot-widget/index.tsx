@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import { MessageCircle, X } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { useChatbot } from '../../context/chatbot-context'
 import { useOptionalCartSidebar } from '@modules/layout/context/cart-sidebar-context'
 import ChatbotHeader from '../chatbot-header'
@@ -31,13 +32,15 @@ export default function ChatbotWidget() {
     const cartSidebar = useOptionalCartSidebar()
     const isCartOpen = cartSidebar?.isOpen || false
     const [isMounted, setIsMounted] = useState(false)
+    const pathname = usePathname()
+    const isAdmin = pathname?.startsWith("/admin")
 
     // Prevent hydration mismatch
     useEffect(() => {
         setIsMounted(true)
     }, [])
 
-    if (!isMounted || isCartOpen) {
+    if (!isMounted || isCartOpen || isAdmin) {
         return null
     }
 
@@ -61,6 +64,7 @@ export default function ChatbotWidget() {
                         z-[140]
                         overflow-hidden
                         animate-chat-open
+                        chatbot-window
                     "
                     role="dialog"
                     aria-label="Chat with Toycker Assistant"
@@ -116,6 +120,7 @@ export default function ChatbotWidget() {
           z-[140]
           group
           bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600
+          chatbot-launcher
           ${state.isOpen
                         ? 'w-14 sm:w-[60px]'
                         : 'w-14 sm:w-auto sm:px-5'

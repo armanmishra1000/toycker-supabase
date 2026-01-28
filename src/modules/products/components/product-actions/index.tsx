@@ -7,6 +7,7 @@ import { buildDisplayPrice } from "@lib/util/display-price"
 import getShortDescription from "@modules/products/utils/get-short-description"
 import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
+import { cn } from "@lib/util/cn"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import QuantitySelector from "@modules/common/components/quantity-selector"
 import { useOptionalWishlist } from "@modules/products/context/wishlist"
@@ -17,6 +18,7 @@ import {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from "react"
@@ -101,6 +103,50 @@ export default function ProductActions({ product, disabled, showSupportActions =
   const { openCart } = useCartSidebar()
   const { optimisticAdd } = useCartStore()
   const giftWrapInputId = useId()
+  const mainActionsRef = useRef<HTMLDivElement>(null)
+  const [isActionsVisible, setIsActionsVisible] = useState(true)
+
+  useEffect(() => {
+    let ticking = false
+
+    const updatePosition = () => {
+      if (!mainActionsRef.current) {
+        ticking = false
+        return
+      }
+
+      const rect = mainActionsRef.current.getBoundingClientRect()
+      const isVisibleContent = rect.top < window.innerHeight && rect.bottom > 0
+
+      // Sticky bar should be SHOWN (isActionsVisible = false) 
+      // if the main buttons are NOT in the viewport (scrolled past OR not reached yet)
+      setIsActionsVisible(isVisibleContent)
+      ticking = false
+    }
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updatePosition)
+        ticking = true
+      }
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true })
+    onScroll() // Initial check
+
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  useEffect(() => {
+    if (!isActionsVisible) {
+      document.body.classList.add("has-sticky-buy")
+    } else {
+      document.body.classList.remove("has-sticky-buy")
+    }
+    return () => {
+      document.body.classList.remove("has-sticky-buy")
+    }
+  }, [isActionsVisible])
 
   const isSimple = isSimpleProduct(product)
 
@@ -660,7 +706,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3" ref={mainActionsRef}>
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
@@ -784,6 +830,41 @@ export default function ProductActions({ product, disabled, showSupportActions =
           </form>
         </Modal.Body>
       </Modal>
+
+      {/* Sticky Mobile "Buy Now" Bar */}
+      <div
+        className={cn(
+          "lg:hidden fixed bottom-16 left-0 right-0 z-[120] bg-white border-t border-gray-100 p-4 transition-all duration-300 ease-in-out shadow-[0_-12px_24px_-10px_rgba(0,0,0,0.15)]",
+          !isActionsVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
+        )}
+      >
+        <div className="mx-auto flex items-center justify-between gap-4">
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="text-sm font-bold text-slate-900 truncate">{product.title}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-bold text-[#E7353A]">
+                {normalizedPrice?.current.raw}
+              </span>
+              {normalizedPrice?.original && (
+                <span className="text-xs text-slate-400 line-through">
+                  {normalizedPrice.original.raw}
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleBuyNowClick}
+            disabled={disableBuyNowButton}
+            className={cn(
+              "h-12 px-8 rounded-full text-sm font-bold text-white transition-all",
+              !disableBuyNowButton ? "bg-[#E7353A] active:bg-[#d52c34]" : "bg-slate-300 cursor-not-allowed"
+            )}
+          >
+            {isBuying ? "..." : "Buy Now"}
+          </button>
+        </div>
+      </div>
     </section>
   )
 }

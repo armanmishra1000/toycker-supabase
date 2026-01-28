@@ -90,6 +90,29 @@ body {
   .checkout-section {
     @apply bg-white rounded-lg border border-gray-100 p-6 mb-4;
   }
+
+  /* Move floating buttons up when sticky buy bar is visible on mobile */
+  @media (max-width: 1023px) {
+    body.has-sticky-buy .chatbot-launcher {
+      bottom: 164px !important;
+    }
+
+    body.has-sticky-buy .chatbot-window {
+      bottom: 180px !important;
+    }
+
+    body.has-sticky-buy .whatsapp-launcher {
+      bottom: 228px !important;
+    }
+
+    body.has-sticky-buy .footer-bottom-bar {
+      padding-bottom: 0px !important;
+    }
+
+    body.has-sticky-buy main {
+      padding-bottom: 145px !important;
+    }
+  }
 }
 
 @layer components {

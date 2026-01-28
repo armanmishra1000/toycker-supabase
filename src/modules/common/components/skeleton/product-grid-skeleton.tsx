@@ -10,7 +10,7 @@ type ProductGridSkeletonProps = {
     className?: string
 }
 
-const ProductCardSkeleton = () => {
+export const ProductCardSkeleton = () => {
     const block = "animate-pulse bg-slate-200"
 
     return (
