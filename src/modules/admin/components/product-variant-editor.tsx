@@ -190,7 +190,7 @@ export default function ProductVariantEditor({
         <AdminCard title={`Product Variants (${variants.length})`}>
             <div className="space-y-6">
                 {/* Variant Option Generator Section */}
-                <div className="p-4 bg-gray-50/50 border border-gray-100 rounded-xl space-y-4">
+                <div className="p-4 border border-gray-200 rounded-xl space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Sparkles className="h-4 w-4 text-purple-500" />
@@ -214,7 +214,7 @@ export default function ProductVariantEditor({
                                         placeholder="Option Title (e.g. Size)"
                                         value={opt.title}
                                         onChange={(e) => handleUpdateOption(idx, "title", e.target.value)}
-                                        className="w-full rounded-lg border-gray-200 px-3 py-2 text-sm focus:ring-black focus:border-black"
+                                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium focus:border-black focus:ring-0 transition-all bg-gray-50/30"
                                     />
                                 </div>
                                 <div className="flex-1 w-full relative group/val">
@@ -223,7 +223,7 @@ export default function ProductVariantEditor({
                                         placeholder="Values (comma separated: S, M, L)"
                                         value={opt.values.join(", ")}
                                         onChange={(e) => handleUpdateOption(idx, "values", e.target.value.split(",").map(v => v.trim()).filter(Boolean))}
-                                        className="w-full rounded-lg border-gray-200 px-3 py-2 pr-10 text-sm focus:ring-black focus:border-black"
+                                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium focus:border-black focus:ring-0 transition-all bg-gray-50/30"
                                     />
                                     {opt.title.toLowerCase().includes("color") && (
                                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -312,9 +312,22 @@ export default function ProductVariantEditor({
                     <button
                         type="button"
                         onClick={handleBulkPrice}
-                        className="text-[10px] font-bold text-gray-400 hover:text-black uppercase tracking-widest px-3 py-1.5 border border-gray-100 rounded-md hover:border-gray-200 transition-all"
+                        className="text-[10px] font-bold text-gray-400 hover:text-black uppercase tracking-widest px-3 py-1.5 border border-gray-200 rounded-md hover:border-gray-300 transition-all"
                     >
                         Set all prices
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const price = prompt("Enter MRP (Compare at Price) for all variants:")
+                            if (price === null) return
+                            const p = parseFloat(price)
+                            if (isNaN(p)) return
+                            setVariants(variants.map(v => ({ ...v, compare_at_price: p })))
+                        }}
+                        className="text-[10px] font-bold text-gray-400 hover:text-black uppercase tracking-widest px-3 py-1.5 border border-gray-200 rounded-md hover:border-gray-300 transition-all"
+                    >
+                        Set all MRP
                     </button>
                     <button
                         type="button"
@@ -325,27 +338,27 @@ export default function ProductVariantEditor({
                             if (isNaN(q)) return
                             setVariants(variants.map(v => ({ ...v, inventory_quantity: q })))
                         }}
-                        className="text-[10px] font-bold text-gray-400 hover:text-black uppercase tracking-widest px-3 py-1.5 border border-gray-100 rounded-md hover:border-gray-200 transition-all"
+                        className="text-[10px] font-bold text-gray-400 hover:text-black uppercase tracking-widest px-3 py-1.5 border border-gray-200 rounded-md hover:border-gray-300 transition-all"
                     >
                         Set all stock
                     </button>
                 </div>
 
                 {/* Variants Table */}
-                <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                <div className="overflow-x-auto border border-gray-200 rounded-xl">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-[#fcfcfd] text-gray-400 font-black text-[10px] border-b border-gray-100 uppercase tracking-widest">
+                        <thead className="bg-[#f7f8f9] text-gray-400 font-black text-[10px] border-b border-gray-200 uppercase tracking-widest">
                             <tr>
                                 <th className="px-4 py-4 w-[60px]">Media</th>
-                                <th className="px-4 py-4 min-w-[200px]">Title / Option</th>
-                                <th className="px-4 py-4 w-[160px]">SKU</th>
-                                <th className="px-4 py-4 w-[120px]">Price</th>
-                                <th className="px-4 py-4 w-[120px]">MRP</th>
-                                <th className="px-4 py-4 w-[100px]">Stock</th>
-                                <th className="px-4 py-4 w-[50px]"></th>
+                                <th className="px-4 py-4 min-w-[150px]">Title / Option</th>
+                                <th className="px-4 py-4 w-[120px]">SKU</th>
+                                <th className="px-4 py-4 w-[110px] text-right">Price</th>
+                                <th className="px-4 py-4 w-[110px] text-right">MRP</th>
+                                <th className="px-4 py-4 w-[80px] text-right">Stock</th>
+                                <th className="px-4 py-4 w-[40px]"></th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-200">
                             {variants.map((variant, index) => (
                                 <tr key={index} className="bg-white group hover:bg-gray-50/50 transition-colors">
                                     <td className="p-3">
@@ -374,23 +387,23 @@ export default function ProductVariantEditor({
                                         />
                                     </td>
                                     <td className="p-3">
-                                        <div className="flex items-center">
+                                        <div className="flex items-center justify-end">
                                             <span className="text-gray-400 mr-1 font-bold">₹</span>
                                             <input
                                                 type="number"
-                                                className="w-full bg-transparent border-none rounded-md text-sm font-black focus:ring-0"
+                                                className="w-16 bg-transparent border-none rounded-md text-sm font-black text-right focus:ring-0"
                                                 value={variant.price}
                                                 onChange={(e) => handleChange(index, "price", e.target.value === "" ? 0 : parseFloat(e.target.value))}
                                             />
                                         </div>
                                     </td>
                                     <td className="p-3">
-                                        <div className="flex items-center">
+                                        <div className="flex items-center justify-end">
                                             <span className="text-gray-400 mr-1 font-medium">₹</span>
                                             <input
                                                 type="number"
-                                                className="w-full bg-transparent border-none rounded-md text-sm font-medium text-gray-500 focus:ring-0"
-                                                placeholder="Optional"
+                                                className="w-16 bg-transparent border-none rounded-md text-sm font-medium text-gray-500 text-right focus:ring-0"
+                                                placeholder="0"
                                                 value={variant.compare_at_price || ""}
                                                 onChange={(e) => handleChange(index, "compare_at_price", e.target.value === "" ? null : parseFloat(e.target.value))}
                                             />
@@ -400,7 +413,7 @@ export default function ProductVariantEditor({
                                         <input
                                             type="number"
                                             className={cn(
-                                                "w-full bg-transparent border-none rounded-md text-sm font-bold focus:ring-0",
+                                                "w-full bg-transparent border-none rounded-md text-sm font-bold text-right focus:ring-0",
                                                 variant.inventory_quantity === 0 ? "text-red-500" : "text-gray-900"
                                             )}
                                             placeholder="0"

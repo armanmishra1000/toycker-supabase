@@ -67,7 +67,7 @@ export default async function AdminCustomers({
       </div>
 
       <div className="p-0 border-none shadow-sm bg-transparent">
-        <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
+        <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
           {/* Tabs - Integrated into Card */}
           <div className="flex px-4 border-b border-gray-200">
             {tabs.map((tab) => {
