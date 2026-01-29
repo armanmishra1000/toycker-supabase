@@ -74,7 +74,7 @@ const ImageGallery = ({ images, variant = "default" }: ImageGalleryProps) => {
     ? "relative flex-1 overflow-hidden rounded-xl"
     : "relative overflow-hidden"
   const mainImageClassName = variant === "default"
-    ? "relative aspect-[4/4.4] w-full overflow-hidden rounded-xl bg-white"
+    ? "relative aspect-[3/3.3] w-full overflow-hidden rounded-xl bg-white"
     : "relative aspect-[4/4.4] w-full overflow-hidden bg-white md:aspect-square"
 
   const handleZoom = () => {

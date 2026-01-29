@@ -14,6 +14,9 @@ export interface Product {
   stock_count: number;
   manage_inventory: boolean;
   metadata: Record<string, unknown> | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_metadata: Record<string, unknown> | null;
   category_id: string | null;
   collection_id: string | null;
   created_at: string;

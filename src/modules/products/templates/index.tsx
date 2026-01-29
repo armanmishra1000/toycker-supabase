@@ -41,8 +41,67 @@ const ProductTemplate = async ({
   const customer = await retrieveCustomer()
   const reviews = await getProductReviews(product.id)
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://toycker.com"
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "image": images.map(i => i.url),
+    "description": product.seo_description || product.description || product.short_description || product.name,
+    "sku": product.variants?.[0]?.sku || product.id,
+    "brand": {
+      "@type": "Brand",
+      "name": "Toycker"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `${baseUrl}/products/${product.handle}`,
+      "priceCurrency": "INR",
+      "price": product.price,
+      "availability": product.stock_count > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "Toycker"
+      }
+    }
+  }
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": baseUrl
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Store",
+        "item": `${baseUrl}/store`
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": product.name,
+        "item": `${baseUrl}/products/${product.handle}`
+      }
+    ]
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <div
         className="content-container py-6 lg:py-10"
         data-testid="product-container"

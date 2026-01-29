@@ -624,6 +624,14 @@ export async function createProduct(formData: FormData) {
     short_description: formData.get("short_description") as string,
     video_url: formData.get("video_url") as string,
     images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : [],
+    seo_title: formData.get("seo_title") as string || null,
+    seo_description: formData.get("seo_description") as string || null,
+    seo_metadata: {
+      keywords: formData.get("seo_keywords") as string || null,
+      og_title: formData.get("og_title") as string || null,
+      og_description: formData.get("og_description") as string || null,
+      no_index: formData.get("no_index") === "true",
+    }
   }
 
   const { data: newProduct, error } = await supabase
@@ -709,7 +717,7 @@ export async function updateProduct(formData: FormData) {
   const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null
 
   // Get current product to preserve existing metadata, price, stock and images
-  const { data: currentProduct } = await supabase.from("products").select("metadata, price, stock_count, images, image_url").eq("id", id).single()
+  const { data: currentProduct } = await supabase.from("products").select("handle, metadata, seo_metadata, price, stock_count, images, image_url").eq("id", id).single()
 
   const productPrice = formData.get("price") ? parseFloat(formData.get("price") as string) : currentProduct?.price || 0
   const stockCountString = formData.get("stock_count") as string | null
@@ -740,6 +748,15 @@ export async function updateProduct(formData: FormData) {
     short_description: formData.get("short_description") as string,
     video_url: formData.get("video_url") as string,
     images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : (currentProduct?.images || []),
+    seo_title: formData.get("seo_title") as string || null,
+    seo_description: formData.get("seo_description") as string || null,
+    seo_metadata: {
+      ...(currentProduct?.seo_metadata || {}),
+      keywords: formData.get("seo_keywords") as string || null,
+      og_title: formData.get("og_title") as string || null,
+      og_description: formData.get("og_description") as string || null,
+      no_index: formData.get("no_index") === "true",
+    }
   }
 
   // If image changed, clear the embedding so it gets regenerated
@@ -812,6 +829,7 @@ export async function updateProduct(formData: FormData) {
 
   revalidatePath("/admin/products")
   revalidatePath(`/admin/products/${id}`)
+  revalidatePath(`/products/${updates.handle || currentProduct?.handle}`)
   redirect(`/admin/products/${id}`)
 }
 
@@ -1202,7 +1220,7 @@ export async function getAdminCollections(params: GetAdminCollectionsParams = {}
   }
 
   if (search && search.trim()) {
-    query = query.or(`title.ilike.% ${search}%, handle.ilike.% ${search}% `)
+    query = query.or(`title.ilike.%${search}%,handle.ilike.%${search}%`)
   }
 
   const { data, error } = await query
@@ -1487,7 +1505,7 @@ export async function getAdminOrders(params: GetAdminOrdersParams = {}): Promise
 
   if (search && search.trim()) {
     // Search by customer_email
-    countQuery = countQuery.ilike("customer_email", `% ${search}% `)
+    countQuery = countQuery.ilike("customer_email", `%${search}%`)
   }
 
   const { count } = await countQuery
@@ -1507,7 +1525,7 @@ export async function getAdminOrders(params: GetAdminOrdersParams = {}): Promise
 
   if (search && search.trim()) {
     // Search by customer_email
-    query = query.ilike("customer_email", `% ${search}% `)
+    query = query.ilike("customer_email", `%${search}%`)
   }
 
   const { data, error } = await query

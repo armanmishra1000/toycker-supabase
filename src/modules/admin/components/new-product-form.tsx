@@ -536,6 +536,90 @@ export default function NewProductForm({ collections, categories }: NewProductFo
           </AdminCard>
         )
         }
+
+        <AdminCard title="Search Engine Optimization (SEO)">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Meta Title</label>
+                  <input
+                    name="seo_title"
+                    type="text"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all"
+                    placeholder="SEO title (leave empty for product name)"
+                  />
+                  <p className="mt-1.5 text-[10px] text-gray-400 font-medium italic">Recommended: 50-60 characters.</p>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Meta Description</label>
+                  <textarea
+                    name="seo_description"
+                    rows={4}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all"
+                    placeholder="Brief SEO summary..."
+                  />
+                  <p className="mt-1.5 text-[10px] text-gray-400 font-medium italic">Recommended: 150-160 characters.</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Focus Keywords</label>
+                  <input
+                    name="seo_keywords"
+                    type="text"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all"
+                    placeholder="toy, racing car, fun, gift"
+                  />
+                  <p className="mt-1.5 text-[10px] text-gray-400 font-medium italic">Separate keywords with commas.</p>
+                </div>
+
+                <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest">Search Visibility</label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="no_index"
+                      name="no_index"
+                      value="true"
+                      className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black"
+                    />
+                    <label htmlFor="no_index" className="text-xs font-bold text-gray-600">
+                      Hide this product from search engines (noindex)
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-gray-100">
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">OpenGraph (Social Media Share)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">OG Title</label>
+                  <input
+                    name="og_title"
+                    type="text"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all"
+                    placeholder="Title for social media sharing"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">OG Description</label>
+                  <input
+                    name="og_description"
+                    type="text"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all"
+                    placeholder="Description for social media sharing"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </AdminCard>
       </div >
 
       <div className="space-y-6">
