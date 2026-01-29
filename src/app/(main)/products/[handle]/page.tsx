@@ -34,12 +34,30 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
+  const seoTitle = product.seo_title || `${product.name} | Toycker Store`
+  const seoDescription = product.seo_description || product.name || ""
+  const keywords = (product.seo_metadata?.keywords as string) || ""
+  const ogTitle = (product.seo_metadata?.og_title as string) || seoTitle
+  const ogDescription = (product.seo_metadata?.og_description as string) || seoDescription
+  const noIndex = product.seo_metadata?.no_index === true
+
   return {
-    title: `${product.name} | Toycker Store`,
-    description: `${product.name}`,
+    title: seoTitle,
+    description: seoDescription,
+    keywords: keywords,
+    robots: {
+      index: !noIndex,
+      follow: !noIndex,
+    },
     openGraph: {
-      title: `${product.name} | Toycker Store`,
-      description: `${product.name}`,
+      title: ogTitle,
+      description: ogDescription,
+      images: product.image_url ? [product.image_url] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: ogDescription,
       images: product.image_url ? [product.image_url] : [],
     },
   }
