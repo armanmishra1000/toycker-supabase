@@ -65,7 +65,7 @@ export default async function CollectionTemplate({
       <FilterDrawer filterOptions={{ availability: availabilityOptions }}>
         <div className="mx-auto p-4 max-w-[1440px] pb-10">
           <Breadcrumbs
-            className="mb-6"
+            className="mb-6 hidden small:block"
             items={[
               { label: "Store", href: "/store" },
               { label: "Collections", href: "/collections" },

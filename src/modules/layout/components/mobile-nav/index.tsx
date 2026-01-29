@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Home, User, LayoutGrid, Star, ShoppingBag } from "lucide-react"
@@ -14,6 +15,13 @@ function clx(...inputs: ClassValue[]) {
 const MobileNav = () => {
     const pathname = usePathname()
     const { cart } = useCartStore()
+
+    useEffect(() => {
+        document.body.classList.add("has-mobile-nav")
+        return () => {
+            document.body.classList.remove("has-mobile-nav")
+        }
+    }, [])
 
     // Calculate total quantity of items in cart
     const cartCount = cart?.items?.reduce((acc, item) => acc + item.quantity, 0) || 0
@@ -48,7 +56,7 @@ const MobileNav = () => {
     ]
 
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-gray-100 pb-safe shadow-[0_-8px_20px_-12px_rgba(0,0,0,0.15)] h-16">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-[40] bg-white border-t border-gray-100 pb-safe shadow-[0_-8px_20px_-12px_rgba(0,0,0,0.15)] h-16">
             <div className="flex justify-around items-center h-full max-w-md mx-auto">
                 {navItems.map((item) => {
                     const Icon = item.icon

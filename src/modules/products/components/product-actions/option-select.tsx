@@ -62,6 +62,8 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
             (optionValue as any)?.metadata?.hex ||
             (normalized ? COLOR_SWATCH_MAP[normalized] : undefined)
 
+          const isActive = normalized === (current?.toLowerCase().trim() ?? "")
+
           return (
             <button
               onClick={() => updateOption(option.id, value)}
@@ -69,11 +71,11 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
               className={cn(
                 "transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
                 isSwatch
-                  ? `relative flex h-12 w-12 items-center justify-center rounded-full border ${value === current
+                  ? `relative flex h-12 w-12 items-center justify-center rounded-full border ${isActive
                     ? "border-[#E7353A] ring-2 ring-[#FDD5DB]"
                     : "border-transparent"
                   }`
-                  : `border-gray-200 bg-gray-50 border text-sm font-medium rounded-full px-5 py-2 ${value === current ? "border-[#E7353A] text-gray-900" : "text-gray-500"
+                  : `border-gray-200 bg-gray-50 border text-sm font-medium rounded-full px-5 py-2 ${isActive ? "border-[#E7353A] text-gray-900" : "text-gray-500"
                   }`
               )}
               disabled={disabled}

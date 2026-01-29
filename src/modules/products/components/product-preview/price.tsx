@@ -7,32 +7,29 @@ export default function PreviewPrice({ price }: { price: any | null }) {
   }
 
   return (
-    <div className="flex flex-col leading-tight w-full">
-      <div className="flex items-center w-full gap-2">
-        <div className="flex items-center gap-2">
+    <div className="flex flex-col leading-tight w-full gap-1">
+      <div className="flex flex-wrap items-center w-full gap-x-2 gap-y-0.5">
+        <Text
+          className={cn("text-lg font-bold text-slate-900", {
+            "text-[#E7353A]": price.is_discounted,
+          })}
+          data-testid="price"
+        >
+          {price.calculated_price}
+        </Text>
+        {price.original_price && price.is_discounted && (
           <Text
-            className={cn("text-lg font-bold text-slate-900", {
-              "text-[#E7353A]": price.is_discounted,
-            })}
-            data-testid="price"
+            className="text-xs text-gray-400 font-normal line-through whitespace-nowrap"
+            data-testid="original-price"
           >
-            {price.calculated_price}
+            {price.original_price}
           </Text>
-          {price.original_price && price.is_discounted && (
-            <Text
-              className="text-gray-400 font-normal line-through whitespace-nowrap"
-              data-testid="original-price"
-            >
-              {price.original_price}
-            </Text>
-          )}
-        </div>
+        )}
         {price.is_discounted && (
           <Text className="text-sm font-bold text-emerald-600 uppercase tracking-tight">
             [{price.percentage_diff}% OFF]
           </Text>
         )}
-
       </div>
       {price.club_price && (
         <Text

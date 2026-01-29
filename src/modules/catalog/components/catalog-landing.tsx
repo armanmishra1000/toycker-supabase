@@ -14,7 +14,7 @@ type CatalogLandingProps = {
 const CatalogLanding = ({ title, subtitle, breadcrumbs, items }: CatalogLandingProps) => {
   return (
     <div className="mx-auto pt-4 x-4 pb-8 max-w-[1440px] space-y-6">
-      <Breadcrumbs items={breadcrumbs} className="text-xs" />
+      <Breadcrumbs items={breadcrumbs} className="text-xs hidden small:block" />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{title}</h1>

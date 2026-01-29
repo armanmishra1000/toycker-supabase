@@ -31,6 +31,7 @@ type CartStoreContextValue = {
   setFromServer: (_cart: Cart | null) => void
   clearCart: () => void
   optimisticAdd: (_input: OptimisticAddInput) => Promise<void>
+  optimisticAddMultiple: (_inputs: OptimisticAddInput[]) => Promise<void>
   optimisticRemove: (_lineId: string) => Promise<void>
   optimisticUpdateQuantity: (_lineId: string, _quantity: number) => Promise<void>
   reloadFromServer: () => Promise<void>
@@ -204,9 +205,12 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      removeQueueRef.current = removeQueueRef.current
+      const promise = removeQueueRef.current
         .catch(() => undefined)
         .then(() => runServerRemove())
+
+      removeQueueRef.current = promise
+      return promise
     },
     [cart, setFromServer, showToast],
   )
@@ -283,8 +287,95 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      addQueueRef.current = addQueueRef.current.then(() => runServerAdd())
-      // Removed await to make transition instantaneous
+      const promise = addQueueRef.current.then(() => runServerAdd())
+      addQueueRef.current = promise
+      return promise
+    },
+    [buildEmptyCart, cart, layoutCart?.currency_code, setFromServer, showToast],
+  )
+
+  const optimisticAddMultiple = useCallback(
+    async (inputs: OptimisticAddInput[]) => {
+      if (inputs.length === 0) return
+      setLastError(null)
+
+      const previousCart = cart
+      const baseCart: Cart =
+        cart ??
+        buildEmptyCart(
+          layoutCart?.currency_code ?? "inr",
+        )
+
+      const areMetadataEqual = (
+        left?: Record<string, unknown>,
+        right?: Record<string, unknown>,
+      ) => isEqual(left ?? {}, right ?? {})
+
+      let nextItems: CartItem[] = [...(baseCart.items ?? [])]
+
+      for (const input of inputs) {
+        const { product, variant, quantity, metadata } = input
+        const existing = nextItems.find(
+          (item) => item.variant_id === (variant?.id || null) && areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
+        )
+
+        if (existing) {
+          nextItems = nextItems.map((item) =>
+            item.id === existing.id
+              ? {
+                ...item,
+                quantity: item.quantity + quantity,
+                total: (item.total ?? 0) + (item.unit_price ?? 0) * quantity,
+                updated_at: new Date().toISOString(),
+              }
+              : item
+          )
+        } else {
+          const optimistic = buildOptimisticLineItem(
+            product,
+            variant,
+            quantity,
+            baseCart,
+            metadata as Record<string, any>,
+          )
+          nextItems.push(optimistic)
+        }
+      }
+
+      const optimisticCart = mergeLineItems(baseCart, nextItems)
+      setCart(optimisticCart)
+
+      const runServerAddMultiple = async () => {
+        setIsSyncing(true)
+        try {
+          const { addMultipleToCart } = await import("@lib/data/cart")
+          const serverCart = await addMultipleToCart(
+            inputs.map(input => ({
+              productId: input.product.id,
+              quantity: input.quantity,
+              variantId: input.variant?.id,
+              metadata: input.metadata as Record<string, unknown>,
+            }))
+          )
+
+          if (serverCart) {
+            setFromServer(serverCart)
+            return
+          }
+        } catch (error) {
+          const errorMessage = (error as Error)?.message ?? "Failed to add items to cart"
+          setLastError(errorMessage)
+          showToast?.(errorMessage, "error")
+          setCart(previousCart)
+          throw error
+        } finally {
+          setIsSyncing(false)
+        }
+      }
+
+      const promise = addQueueRef.current.then(() => runServerAddMultiple())
+      addQueueRef.current = promise
+      return promise
     },
     [buildEmptyCart, cart, layoutCart?.currency_code, setFromServer, showToast],
   )
@@ -427,9 +518,12 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      updateQueueRef.current = updateQueueRef.current
+      const promise = updateQueueRef.current
         .catch(() => undefined)
         .then(() => runServerUpdate())
+
+      updateQueueRef.current = promise
+      return promise
     },
     [cart, setFromServer, showToast]
   )
@@ -440,6 +534,7 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       setFromServer,
       clearCart,
       optimisticAdd,
+      optimisticAddMultiple,
       optimisticRemove,
       optimisticUpdateQuantity,
       reloadFromServer,

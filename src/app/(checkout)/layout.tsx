@@ -10,9 +10,9 @@ export default function CheckoutLayout({
   return (
     <>
       <Nav />
-      <div className="relative min-h-[calc(100vh-400px)]">
+      <main className="relative min-h-[calc(100vh-400px)]">
         {children}
-      </div>
+      </main>
       <Footer />
     </>
   )

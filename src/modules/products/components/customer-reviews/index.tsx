@@ -147,7 +147,7 @@ const CustomerReviews = ({
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="rounded-xl border border-slate-200 bg-white px-6 py-8 text-center">
+      <section className="rounded-2xl border border-gray-200 bg-white px-6 py-8 text-center">
         <h3 className="text-2xl font-semibold text-slate-900">Customer Reviews</h3>
         <div className="mt-3 flex items-center justify-center gap-1">
           {Array.from({ length: 5 }).map((_, index) => (

@@ -272,6 +272,60 @@ export async function addToCart({
   return retrieveCartRaw(cartId)
 }
 
+export async function addMultipleToCart(items: {
+  productId: string
+  quantity: number
+  variantId?: string
+  metadata?: Record<string, unknown>
+}[]) {
+  const cartId = (await getCartId()) || (await getOrSetCart()).id
+  const supabase = await createClient()
+
+  for (const item of items) {
+    let targetVariantId = item.variantId === item.productId ? undefined : item.variantId
+    if (!targetVariantId) {
+      const { data: variants } = await supabase
+        .from("product_variants")
+        .select("id")
+        .eq("product_id", item.productId)
+        .limit(1)
+
+      if (variants && variants.length > 0) {
+        targetVariantId = variants[0].id
+      }
+    }
+
+    const { data: existingItems } = await supabase
+      .from("cart_items")
+      .select("*")
+      .eq("cart_id", cartId)
+      .eq("product_id", item.productId)
+      .eq("variant_id", targetVariantId || null)
+
+    const existingItem = existingItems?.[0]
+
+    if (existingItem) {
+      await supabase
+        .from("cart_items")
+        .update({ quantity: (existingItem.quantity || 0) + item.quantity })
+        .eq("id", existingItem.id)
+    } else {
+      await supabase
+        .from("cart_items")
+        .insert({
+          cart_id: cartId,
+          product_id: item.productId,
+          variant_id: targetVariantId || null,
+          quantity: item.quantity,
+          metadata: item.metadata ? JSON.parse(JSON.stringify(item.metadata)) : null
+        })
+    }
+  }
+
+  revalidateTag("cart", "max")
+  return retrieveCartRaw(cartId)
+}
+
 export async function updateLineItem({
   lineId,
   quantity,

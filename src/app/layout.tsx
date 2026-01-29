@@ -33,7 +33,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       <body suppressHydrationWarning className="font-sans">
         <NextTopLoader color="#059669" showSpinner={false} height={3} />
         <Providers>
-          <main className="relative">{props.children}</main>
+          {props.children}
           <PWAClientWrapper />
         </Providers>
         <SpeedInsights />

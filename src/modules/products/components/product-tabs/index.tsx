@@ -21,7 +21,7 @@ const ProductTabs = ({ product }: ProductTabsProps) => {
   ]
 
   return (
-    <div className="w-full rounded-xl border border-slate-200 bg-white mb-5">
+    <div className="border border-gray-200 rounded-2xl overflow-hidden transition-all duration-300">
       <Accordion type="multiple">
         {tabs.map((tab, i) => (
           <Accordion.Item

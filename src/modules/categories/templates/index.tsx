@@ -88,7 +88,7 @@ export default async function CategoryTemplate({
     >
       <FilterDrawer filterOptions={{ availability: availabilityOptions }}>
         <div className="mx-auto p-4 max-w-[1440px] pb-10" data-testid="category-container">
-          <Breadcrumbs items={breadcrumbItems} className="mb-6" />
+          <Breadcrumbs items={breadcrumbItems} className="mb-6 hidden small:block" />
           <h1 className="mb-4 text-3xl font-semibold" data-testid="category-page-title">{category.name}</h1>
           {category.description && (
             <div className="mb-8 text-base-regular">

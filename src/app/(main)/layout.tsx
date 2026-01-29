@@ -12,7 +12,7 @@ export default function MainLayout({
   return (
     <>
       <Nav />
-      <main className="relative pb-16 md:pb-0">
+      <main className="relative">
         {children}
       </main>
       <Footer />

@@ -12,10 +12,11 @@ import ProductVariantEditor from "./product-variant-editor"
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 import { PackageIcon, LayersIcon } from "lucide-react"
 import MediaGallery from "./media-manager"
+import MultipleProductSelector from "./multiple-product-selector"
 import { ProtectedAction } from "@/lib/permissions/components/protected-action"
 import { PERMISSIONS } from "@/lib/permissions"
 import { cn } from "@/lib/util/cn"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { getYoutubeId, getYoutubeEmbedUrl } from "@/lib/util/youtube"
 import { Tag, Globe, Layers, Edit2 } from "lucide-react"
 
@@ -26,6 +27,7 @@ type EditProductFormProps = {
   collections: Collection[]
   selectedCategoryIds: string[]
   selectedCollectionIds: string[]
+  selectedRelatedProductIds: string[]
 }
 
 export default function EditProductForm({
@@ -34,8 +36,10 @@ export default function EditProductForm({
   categories,
   collections,
   selectedCategoryIds,
-  selectedCollectionIds
+  selectedCollectionIds,
+  selectedRelatedProductIds
 }: EditProductFormProps) {
+  const [relatedIds, setRelatedIds] = useState<string[]>(selectedRelatedProductIds)
   const [productType, setProductType] = useState<"single" | "variant">(
     variants.length > 0 ? "variant" : "single"
   )
@@ -44,6 +48,13 @@ export default function EditProductForm({
   const embedUrl = getYoutubeEmbedUrl(videoId)
   const [handle, setHandle] = useState(product.handle)
   const [isEditingHandle, setIsEditingHandle] = useState(false)
+
+  const initialRelatedProducts = useMemo(() => product.related_combinations?.map(rc => ({
+    id: rc.related_product.id,
+    title: rc.related_product.name,
+    handle: rc.related_product.handle,
+    thumbnail: rc.related_product.image_url
+  })) || [], [product.related_combinations])
 
   return (
     <form action={updateProduct}>
@@ -133,12 +144,12 @@ export default function EditProductForm({
                 <input name="name" type="text" defaultValue={product.name} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
-                <RichTextEditor name="description" defaultValue={product.description || ""} placeholder="Tell the product's story..." />
-              </div>
-              <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Short Description</label>
                 <textarea name="short_description" rows={3} defaultValue={product.short_description || ""} className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all" placeholder="Brief summary (displayed on product page)..." />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
+                <RichTextEditor name="description" defaultValue={product.description || ""} placeholder="Tell the product's story..." />
               </div>
             </div>
           </AdminCard>
@@ -303,6 +314,19 @@ export default function EditProductForm({
                   collections={collections}
                   selectedIds={selectedCollectionIds}
                   name="collection_ids"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-0">
+                  <Layers className="w-4 h-4 text-black" />
+                  <label className="block text-xs font-black text-black uppercase tracking-widest">Frequently Bought Together</label>
+                </div>
+                <MultipleProductSelector
+                  selectedIds={relatedIds}
+                  initialProducts={initialRelatedProducts}
+                  onChange={setRelatedIds}
+                  name="related_product_ids"
                 />
               </div>
             </div>

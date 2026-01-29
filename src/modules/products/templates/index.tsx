@@ -14,6 +14,7 @@ import CustomerReviews from "@modules/products/components/customer-reviews"
 import OrderInformation from "@modules/products/components/order-information"
 import RecentlyViewedTracker from "@modules/products/components/recently-viewed-tracker"
 import { getProductReviews } from "@/lib/actions/reviews"
+import FrequentlyBoughtTogether from "@modules/products/components/frequently-bought-together"
 
 import { retrieveCustomer } from "@lib/data/customer"
 import { getYoutubeId, getYoutubeEmbedUrl } from "@/lib/util/youtube"
@@ -46,7 +47,7 @@ const ProductTemplate = async ({
         className="content-container py-6 lg:py-10"
         data-testid="product-container"
       >
-        <Breadcrumbs className="mb-6" items={[{ label: "Store", href: "/store" }, { label: product.name }]} />
+        <Breadcrumbs className="hidden small:block mb-6" items={[{ label: "Store", href: "/store" }, { label: product.name }]} />
         <div className="flex flex-col gap-10 xl:flex-row xl:items-start">
           <div className="w-full xl:w-3/5 xl:sticky xl:top-[120px] self-start">
             <ImageGallery images={images} />
@@ -62,7 +63,7 @@ const ProductTemplate = async ({
               }
             >
               <ProductActionsWrapper
-                id={product.id}
+                product={product}
                 region={region}
                 clubDiscountPercentage={clubDiscountPercentage}
               />
@@ -95,6 +96,10 @@ const ProductTemplate = async ({
 
         {/* Lazy load product details sections */}
         <div className="mt-8 space-y-5">
+          <FrequentlyBoughtTogether
+            product={product}
+            clubDiscountPercentage={clubDiscountPercentage}
+          />
           <LazyLoadSection minHeight="300px">
             <ProductTabs product={product} />
           </LazyLoadSection>
@@ -102,13 +107,14 @@ const ProductTemplate = async ({
           <LazyLoadSection minHeight="400px">
             <CustomerReviews productId={product.id} reviews={reviews} customer={customer} />
           </LazyLoadSection>
+
         </div>
       </div >
 
       {/* Lazy load related products */}
       <LazyLoadSection minHeight="500px">
         <div
-          className="content-container my-16"
+          className="content-container mb-10"
           data-testid="related-products-container"
         >
           <Suspense fallback={<SkeletonRelatedProducts />}>

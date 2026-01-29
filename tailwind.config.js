@@ -9,6 +9,9 @@ module.exports = {
     "./src/modules/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    container: {
+      padding: "1rem",
+    },
     extend: {
       transitionProperty: {
         width: "width margin",

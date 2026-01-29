@@ -25,6 +25,12 @@ export interface Product {
   collection?: Collection | null;
   collections?: Collection[];
   categories?: Category[];
+  related_combinations?: {
+    id: string;
+    product_id: string;
+    related_product_id: string;
+    related_product: Product;
+  }[];
 }
 
 export interface ProductVariant {
