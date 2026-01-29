@@ -1,4 +1,4 @@
-import { getAdminCollections, getProductVariants, getProductCollections, getAdminCategories, getProductCategories } from "@/lib/data/admin"
+import { getAdminCollections, getProductVariants, getProductCollections, getAdminCategories, getProductCategories, getProductCombinations } from "@/lib/data/admin"
 import Link from "next/link"
 import { retrieveProduct } from "@lib/data/products"
 import { notFound } from "next/navigation"
@@ -7,13 +7,14 @@ import EditProductForm from "@modules/admin/components/edit-product-form"
 
 export default async function EditProduct({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [product, collectionsData, categoriesData, variants, productCollections, productCategoriesIds] = await Promise.all([
+  const [product, collectionsData, categoriesData, variants, productCollections, productCategoriesIds, relatedProductIds] = await Promise.all([
     retrieveProduct(id),
     getAdminCollections({ limit: -1 }),
     getAdminCategories({ limit: -1 }),
     getProductVariants(id),
     getProductCollections(id),
-    getProductCategories(id)
+    getProductCategories(id),
+    getProductCombinations(id)
   ])
 
   const collections = collectionsData.collections
@@ -51,6 +52,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
         collections={collections}
         selectedCategoryIds={selectedCategoryIds}
         selectedCollectionIds={selectedCollectionIds}
+        selectedRelatedProductIds={relatedProductIds}
       />
     </div>
   )

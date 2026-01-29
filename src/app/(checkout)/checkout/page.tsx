@@ -55,7 +55,7 @@ export default async function Checkout() {
             { label: "Cart", href: "/cart" },
             { label: "Checkout" },
           ]}
-          className="mb-6 sm:mb-8"
+          className="mb-6 sm:mb-8 hidden small:block"
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_420px] gap-4 sm:gap-6">

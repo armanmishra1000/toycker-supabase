@@ -2,11 +2,12 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-html,
-body {
+html {
   max-width: 100%;
   overflow-x: hidden;
-  height: 100%;
+}
+
+body {
   position: relative;
 }
 
@@ -106,18 +107,30 @@ body {
     }
 
     body.has-sticky-buy .footer-bottom-bar {
-      padding-bottom: 0px !important;
+      padding-bottom: 80px !important;
     }
+  }
 
-    body.has-sticky-buy main {
-      padding-bottom: 145px !important;
-    }
+  main {
+    @apply flex-1 flex flex-col md:pb-0 pb-6;
+  }
+
+  .footer-bottom-bar {
+    @apply md:pb-0 pb-0 !important;
+  }
+
+  body.has-mobile-nav .footer-bottom-bar {
+    @apply md:pb-0 pb-16 !important;
+  }
+
+  body.has-sticky-buy .footer-bottom-bar {
+    @apply md:pb-0 pb-[144px] !important;
   }
 }
 
 @layer components {
   .content-container {
-    @apply max-w-[1440px] w-full mx-auto px-6;
+    @apply max-w-[1440px] w-full mx-auto px-4;
   }
 
   .animate-slide-down {

@@ -68,16 +68,15 @@ const ProductQuickViewModal = ({
           setHydratedProduct(nextProduct ?? product)
         }
       } catch (error) {
-        if ((error as any).name === "AbortError" || controller.signal.aborted) {
-          return
+        if (!controller.signal.aborted) {
+          setHydratedProduct(product)
         }
-        setHydratedProduct(product)
       }
     }
 
     loadProduct()
     return () => {
-      controller.abort()
+      controller.abort("component_unmounted_or_product_changed")
     }
   }, [isOpen, product])
 

@@ -158,9 +158,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </header>
 
           {/* Page Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
+          <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
             {children}
-          </div>
+          </main>
         </div>
       </div>
     </PermissionsProvider>

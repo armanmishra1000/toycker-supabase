@@ -51,7 +51,7 @@ export const getProductPrice = ({
 
     let clubPriceNum: number | undefined = undefined
     if (clubDiscountPercentage > 0) {
-      clubPriceNum = Math.floor(price * (1 - clubDiscountPercentage / 100))
+      clubPriceNum = Math.round(price * (1 - clubDiscountPercentage / 100))
     }
 
     return {

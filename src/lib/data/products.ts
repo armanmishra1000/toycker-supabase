@@ -10,7 +10,15 @@ import { normalizeProductImage } from "@lib/util/images"
 const PRODUCT_SELECT = `
   *, 
   variants:product_variants(*), 
-  options:product_options(*, values:product_option_values(*))
+  options:product_options(*, values:product_option_values(*)),
+  related_combinations:product_combinations!product_id(
+    *,
+    related_product:products!related_product_id(
+      *,
+      variants:product_variants(*), 
+      options:product_options(*, values:product_option_values(*))
+    )
+  )
 `
 
 export const listProducts = cache(async function listProducts(options: {

@@ -728,10 +728,15 @@ export async function updateProduct(formData: FormData) {
     collection_id: primaryCollectionId && primaryCollectionId.trim() !== "" ? primaryCollectionId : null, // Update primary collection
     category_id: primaryCategoryId, // Update category
     status: formData.get("status") as string,
-    metadata: {
-      ...(currentProduct?.metadata || {}),
-      compare_at_price: formData.get("compare_at_price") ? parseFloat(formData.get("compare_at_price") as string) : (currentProduct?.metadata?.compare_at_price || null),
-    },
+    metadata: (() => {
+      const meta = {
+        ...(currentProduct?.metadata || {}),
+        compare_at_price: formData.get("compare_at_price") ? parseFloat(formData.get("compare_at_price") as string) : (currentProduct?.metadata?.compare_at_price || null),
+      }
+      // Remove short_description from metadata to ensure the main column is the source of truth
+      delete meta.short_description
+      return meta
+    })(),
     short_description: formData.get("short_description") as string,
     video_url: formData.get("video_url") as string,
     images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : (currentProduct?.images || []),
@@ -791,6 +796,18 @@ export async function updateProduct(formData: FormData) {
     regenerateImageEmbedding(id, newImageUrl).catch(err => {
       console.error(`Failed to regenerate embedding for product ${id}:`, err)
     })
+  }
+
+  // Handle product combinations (Frequently Bought Together)
+  const relatedProductIds = formData.getAll("related_product_ids") as string[]
+  if (relatedProductIds.length > 0) {
+    await updateProductCombinations(id, relatedProductIds)
+  } else {
+    // If no related products provided, check if we should clear them
+    // Only clear if the field was present in the form (implies a manual clear)
+    if (formData.has("related_product_ids_present")) {
+      await updateProductCombinations(id, [])
+    }
   }
 
   revalidatePath("/admin/products")
@@ -1216,6 +1233,58 @@ export async function getProductCategories(productId: string) {
 
   if (error) return []
   return data.map(item => item.category_id)
+}
+
+export async function getProductCombinations(productId: string): Promise<string[]> {
+  await ensureAdmin()
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("product_combinations")
+    .select("related_product_id")
+    .eq("product_id", productId)
+
+  if (error) {
+    console.error("Error fetching product combinations:", error)
+    return []
+  }
+
+  return data.map(item => item.related_product_id)
+}
+
+export async function updateProductCombinations(productId: string, relatedProductIds: string[]) {
+  await ensureAdmin()
+  const supabase = await createClient()
+
+  // 1. Delete existing combinations
+  const { error: deleteError } = await supabase
+    .from("product_combinations")
+    .delete()
+    .eq("product_id", productId)
+
+  if (deleteError) {
+    console.error("Error deleting product combinations:", deleteError)
+    throw deleteError
+  }
+
+  // 2. Insert new combinations
+  if (relatedProductIds.length > 0) {
+    const combinationsToInsert = relatedProductIds.map(relatedId => ({
+      product_id: productId,
+      related_product_id: relatedId
+    }))
+
+    const { error: insertError } = await supabase
+      .from("product_combinations")
+      .insert(combinationsToInsert)
+
+    if (insertError) {
+      console.error("Error inserting product combinations:", insertError)
+      throw insertError
+    }
+  }
+
+  revalidatePath(`/admin/products/${productId}`)
+  revalidatePath("/products") // Revalidate storefront products
 }
 
 export async function createCollection(formData: FormData) {

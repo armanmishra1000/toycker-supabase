@@ -210,10 +210,6 @@ export default function NewProductForm({ collections, categories }: NewProductFo
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
-              <RichTextEditor name="description" placeholder="Tell the product's story..." />
-            </div>
-            <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Short Description</label>
               <textarea
                 name="short_description"
@@ -221,6 +217,10 @@ export default function NewProductForm({ collections, categories }: NewProductFo
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all"
                 placeholder="Brief summary (displayed on product page)..."
               />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
+              <RichTextEditor name="description" placeholder="Tell the product's story..." />
             </div>
           </div>
         </AdminCard>

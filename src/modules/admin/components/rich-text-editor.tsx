@@ -3,7 +3,7 @@
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import { cn } from "@lib/util/cn"
-import { useEffect } from "react"
+import React, { useEffect } from "react"
 
 type RichTextEditorProps = {
   name: string
@@ -172,6 +172,8 @@ export default function RichTextEditor({
   placeholder = "Write something...",
   className,
 }: RichTextEditorProps) {
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
   const editor = useEditor({
     extensions: [StarterKit.configure({
       // Disable marks on empty selection to avoid hydration issues
@@ -189,26 +191,27 @@ export default function RichTextEditor({
     onUpdate: ({ editor }) => {
       // Update hidden input when content changes
       const html = editor.isEmpty ? "" : editor.getHTML()
-      const hiddenInput = document.querySelector(`input[name="${name}"]`) as HTMLInputElement
-      if (hiddenInput) {
-        hiddenInput.value = html
+      if (inputRef.current) {
+        inputRef.current.value = html
       }
     },
   })
 
   // Sync initial value to hidden input on mount
   useEffect(() => {
-    if (editor && defaultValue) {
-      const hiddenInput = document.querySelector(`input[name="${name}"]`) as HTMLInputElement
-      if (hiddenInput) {
-        hiddenInput.value = editor.getHTML()
-      }
+    if (editor && defaultValue && inputRef.current) {
+      inputRef.current.value = editor.getHTML()
     }
-  }, [editor, defaultValue, name])
+  }, [editor, defaultValue])
 
   return (
     <div className={cn("rounded-lg border border-gray-300 overflow-hidden", className)}>
-      <input type="hidden" name={name} defaultValue={defaultValue} />
+      <input
+        type="hidden"
+        name={name}
+        defaultValue={defaultValue}
+        ref={inputRef}
+      />
       <MenuBar editor={editor} />
       <EditorContent editor={editor} placeholder={placeholder} />
       <style jsx global>{`

@@ -64,7 +64,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
   const searchParams = useSearchParams()
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(searchParams.get("v_id"))
   const [quantity, setQuantity] = useState(1)
   const [giftWrap, setGiftWrap] = useState(false)
   const [giftWrapSettings, setGiftWrapSettings] = useState<{ fee: number, enabled: boolean }>({ fee: 50, enabled: true })
@@ -103,50 +103,13 @@ export default function ProductActions({ product, disabled, showSupportActions =
   const { openCart } = useCartSidebar()
   const { optimisticAdd } = useCartStore()
   const giftWrapInputId = useId()
-  const mainActionsRef = useRef<HTMLDivElement>(null)
-  const [isActionsVisible, setIsActionsVisible] = useState(true)
 
   useEffect(() => {
-    let ticking = false
-
-    const updatePosition = () => {
-      if (!mainActionsRef.current) {
-        ticking = false
-        return
-      }
-
-      const rect = mainActionsRef.current.getBoundingClientRect()
-      const isVisibleContent = rect.top < window.innerHeight && rect.bottom > 0
-
-      // Sticky bar should be SHOWN (isActionsVisible = false) 
-      // if the main buttons are NOT in the viewport (scrolled past OR not reached yet)
-      setIsActionsVisible(isVisibleContent)
-      ticking = false
-    }
-
-    const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(updatePosition)
-        ticking = true
-      }
-    }
-
-    window.addEventListener("scroll", onScroll, { passive: true })
-    onScroll() // Initial check
-
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
-  useEffect(() => {
-    if (!isActionsVisible) {
-      document.body.classList.add("has-sticky-buy")
-    } else {
-      document.body.classList.remove("has-sticky-buy")
-    }
+    document.body.classList.add("has-sticky-buy")
     return () => {
       document.body.classList.remove("has-sticky-buy")
     }
-  }, [isActionsVisible])
+  }, [])
 
   const isSimple = isSimpleProduct(product)
 
@@ -195,15 +158,25 @@ export default function ProductActions({ product, disabled, showSupportActions =
       return
     }
 
-    const preferred = variants.find((variant: any) => isVariantAvailable(variant)) ?? variants[0]
+    // 1. Try to find variant from URL (selectedVariantId initialized from searchParams)
+    // 2. Otherwise try to find first in-stock variant
+    // 3. Fallback to first variant
+    const preferred =
+      variants.find((v) => v.id === selectedVariantId) ??
+      variants.find((v: any) => isVariantAvailable(v)) ??
+      variants[0]
+
     const variantOptions = optionsAsKeymap(preferred.options)
 
-    // Only set if nothing is perfectly selected yet
-    if (!selectedVariant) {
+    // Only set if the options are actually different to avoid infinite loops
+    if (!isEqual(options, variantOptions)) {
       setOptions(variantOptions ?? {})
+    }
+
+    if (selectedVariantId !== preferred.id) {
       setSelectedVariantId(preferred.id)
     }
-  }, [isVariantAvailable, product.variants, selectedVariant, isSimple, hasValidOptions])
+  }, [isVariantAvailable, product.variants, isSimple, selectedVariantId, options])
 
   // Sync options when selectedVariantId changes manually (e.g. from Beetle color swatches)
   useEffect(() => {
@@ -536,15 +509,13 @@ export default function ProductActions({ product, disabled, showSupportActions =
     <section className="flex flex-col gap-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <h1 className="text-[32px] font-semibold leading-tight text-slate-900">
+          <h1 className="md:text-[32px] text-2xl font-semibold leading-tight text-slate-900">
             {product.title}
           </h1>
           {(() => {
-            // Deprecated location - keeping empty to effectively remove from top if needed, 
-            // or better yet, just remove this block if I am sure. 
-            // The user wants it above "Inclusive of all taxes".
-            // I will remove this block and place it down below.
-            return null
+            const blurb = getShortDescription(product, { fallbackToDescription: false })
+            if (!blurb) return null
+            return <p className="text-sm text-slate-500">{blurb}</p>
           })()}
         </div>
 
@@ -552,16 +523,16 @@ export default function ProductActions({ product, disabled, showSupportActions =
           <div className="flex flex-wrap items-baseline gap-3">
             {normalizedPrice ? (
               <>
-                <span className="text-3xl font-bold text-[#E7353A]">
+                <span className="md:text-3xl text-xl font-bold text-[#E7353A]">
                   {normalizedPrice.current.raw}
                 </span>
                 {normalizedPrice.original && (
-                  <span className="text-lg text-slate-400 line-through">
+                  <span className="md:text-lg text-base text-slate-400 line-through">
                     {normalizedPrice.original.raw}
                   </span>
                 )}
                 {normalizedPrice.percentageText && (
-                  <span className="text-sm font-semibold text-[#E7353A]">
+                  <span className="md:text-sm text-xs font-semibold text-[#E7353A]">
                     {normalizedPrice.percentageText}
                   </span>
                 )}
@@ -577,12 +548,6 @@ export default function ProductActions({ product, disabled, showSupportActions =
             </div>
           )}
         </div>
-        {(() => {
-          const blurb = getShortDescription(product, { fallbackToDescription: false })
-          if (!blurb) return null
-          return <p className="text-sm text-slate-500 mb-1">{blurb}</p>
-        })()}
-        <p className="text-sm text-slate-500">Inclusive of all taxes</p>
       </div>
 
       {!isSimple && hasValidOptions && (product.variants?.length ?? 0) > 1 && (
@@ -631,7 +596,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
                     onClick={() => setSelectedVariantId(variant.id)}
                     disabled={!!disabled || isAdding || isBuying}
                     className={`relative flex h-12 w-12 items-center justify-center rounded-full border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
-                      ${isSelected ? "border-[#E7353A] ring-2 ring-[#FDD5DB]" : "border-gray-200 hover:border-gray-400"}`}
+                    ${isSelected ? "border-[#E7353A] ring-2 ring-[#FDD5DB]" : "border-gray-200 hover:border-gray-400"}`}
                     title={variant.title}
                   >
                     <span
@@ -657,8 +622,10 @@ export default function ProductActions({ product, disabled, showSupportActions =
           <span className="text-sm font-medium text-slate-700">Add-ons</span>
           <label
             htmlFor={giftWrapInputId}
-            className={`flex w-full cursor-pointer items-center justify-between rounded-2xl border bg-white px-4 py-3 text-sm shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition ${giftWrap ? "border-[#FF6B6B] shadow-[0_4px_12px_rgba(255,107,107,0.15)]" : "border-slate-200"
-              }`}
+            className={cn(
+              "flex w-full cursor-pointer items-center justify-between rounded-2xl border bg-white px-4 py-3 text-sm shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition",
+              giftWrap ? "border-[#FF6B6B] shadow-[0_4px_12px_rgba(255,107,107,0.15)]" : "border-slate-200"
+            )}
           >
             <input
               id={giftWrapInputId}
@@ -669,11 +636,13 @@ export default function ProductActions({ product, disabled, showSupportActions =
             />
             <span className="flex items-center gap-3">
               <span
-                className={`flex h-5 w-5 items-center justify-center rounded border text-white transition ${giftWrap ? "border-[#FF6B6B] bg-[#FF6B6B]" : "border-slate-300 bg-white"
-                  }`}
+                className={cn(
+                  "flex h-5 w-5 items-center justify-center rounded border text-white transition",
+                  giftWrap ? "border-[#FF6B6B] bg-[#FF6B6B]" : "border-slate-300 bg-white"
+                )}
                 aria-hidden
               >
-                <Check className={`h-3 w-3 ${giftWrap ? "opacity-100" : "opacity-0"}`} />
+                <Check className={cn("h-3 w-3", giftWrap ? "opacity-100" : "opacity-0")} />
               </span>
               <Gift className="h-5 w-5 text-[#FF6B6B]" aria-hidden />
               <span className="text-base font-medium text-slate-800">
@@ -706,7 +675,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
         </div>
       </div>
 
-      <div className="space-y-3" ref={mainActionsRef}>
+      <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
@@ -745,26 +714,28 @@ export default function ProductActions({ product, disabled, showSupportActions =
         </button>
       </div>
 
-      {showSupportActions && (
-        <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-gray-900">
-          <button
-            type="button"
-            onClick={() => setIsQuestionOpen(true)}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900"
-          >
-            <MessageCircleQuestion className="h-4 w-4" />
-            Ask a question
-          </button>
-          <button
-            type="button"
-            onClick={handleShare}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900"
-          >
-            <Share2 className="h-4 w-4" />
-            {shareCopied ? "Link copied" : "Share"}
-          </button>
-        </div>
-      )}
+      {
+        showSupportActions && (
+          <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-gray-900">
+            <button
+              type="button"
+              onClick={() => setIsQuestionOpen(true)}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900"
+            >
+              <MessageCircleQuestion className="h-4 w-4" />
+              Ask a question
+            </button>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900"
+            >
+              <Share2 className="h-4 w-4" />
+              {shareCopied ? "Link copied" : "Share"}
+            </button>
+          </div>
+        )
+      }
 
       <Modal
         isOpen={isQuestionOpen}
@@ -833,10 +804,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
       {/* Sticky Mobile "Buy Now" Bar */}
       <div
-        className={cn(
-          "lg:hidden fixed bottom-16 left-0 right-0 z-[120] bg-white border-t border-gray-100 p-4 transition-all duration-300 ease-in-out shadow-[0_-12px_24px_-10px_rgba(0,0,0,0.15)]",
-          !isActionsVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
-        )}
+        className="lg:hidden fixed bottom-16 left-0 right-0 z-[50] bg-white border-t border-gray-100 p-4 shadow-[0_-12px_24px_-10px_rgba(0,0,0,0.15)]"
       >
         <div className="mx-auto flex items-center justify-between gap-4">
           <div className="flex flex-col min-w-0 flex-1">
@@ -865,7 +833,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
           </button>
         </div>
       </div>
-    </section>
+    </section >
   )
 }
 

@@ -22,7 +22,7 @@ const WishlistPageTemplate = ({
   return (
     <div className="content-container py-6 lg:py-10" data-testid="wishlist-page">
       <Breadcrumbs
-        className="mb-6"
+        className="mb-6 hidden small:block"
         items={[
           { label: "Store", href: "/store" },
           { label: "Wishlist" },
