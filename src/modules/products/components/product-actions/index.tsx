@@ -5,7 +5,6 @@ import { createBuyNowCart } from "@lib/data/cart"
 import { getProductPrice } from "@lib/util/get-product-price"
 import { buildDisplayPrice } from "@lib/util/display-price"
 import getShortDescription from "@modules/products/utils/get-short-description"
-import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
 import { cn } from "@lib/util/cn"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
@@ -18,7 +17,6 @@ import {
   useEffect,
   useId,
   useMemo,
-  useRef,
   useState,
   useTransition,
 } from "react"
@@ -37,6 +35,7 @@ import { Product } from "@/lib/supabase/types"
 import { isSimpleProduct } from "@lib/util/product"
 import { COLOR_SWATCH_MAP } from "@/lib/constants/colors"
 import { sendProductQuestion } from "@lib/actions/contact-actions"
+import ShareModal from "./share-modal"
 
 
 type ProductActionsProps = {
@@ -99,7 +98,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
     email: "",
     message: "",
   })
-  const [shareCopied, setShareCopied] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isAdding, startAddToCart] = useTransition()
   const [isBuying, startBuyNow] = useTransition()
   const countryCode = DEFAULT_COUNTRY_CODE
@@ -463,29 +462,8 @@ export default function ProductActions({ product, disabled, showSupportActions =
     })
   }
 
-  const handleShare = async () => {
-    if (typeof window === "undefined") {
-      return
-    }
-    const url = window.location.href
-    const shareNavigator = navigator as Navigator & {
-      share?: (_data: ShareData) => Promise<void>
-    }
-    if (shareNavigator.share) {
-      await shareNavigator.share({
-        title: product.title,
-        url,
-      })
-      return
-    }
-
-    try {
-      await navigator.clipboard.writeText(url)
-      setShareCopied(true)
-      setTimeout(() => setShareCopied(false), 2000)
-    } catch (error) {
-      console.error("Unable to copy share link", error)
-    }
+  const handleShare = () => {
+    setIsShareModalOpen(true)
   }
 
   const priceMeta = useMemo(() => {
@@ -749,7 +727,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
               className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900"
             >
               <Share2 className="h-4 w-4" />
-              {shareCopied ? "Link copied" : "Share"}
+              Share
             </button>
           </div>
         )
@@ -819,7 +797,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
             )}
             {questionStatus === "success" && (
               <p className="text-sm font-semibold text-primary" aria-live="polite">
-                Thanks for your question! We'll get back to you shortly.
+                Thanks for your question! We&apos;ll get back to you shortly.
               </p>
             )}
             <Modal.Footer>
@@ -851,6 +829,12 @@ export default function ProductActions({ product, disabled, showSupportActions =
           </form>
         </Modal.Body>
       </Modal>
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        close={() => setIsShareModalOpen(false)}
+        productTitle={product.title}
+      />
 
       {/* Sticky Mobile "Buy Now" Bar */}
       <div
