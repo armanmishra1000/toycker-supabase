@@ -40,7 +40,7 @@ const getCategoryByHandleInternal = async (categoryHandle: string[]): Promise<Ca
   // Fetch the current category and its parent information
   const { data, error } = await supabase
     .from("categories")
-    .select("*, parent_category:categories!categories_parent_category_id_fkey(*)")
+    .select("*, parent_category:categories(*)")
     .eq("handle", handle)
     .maybeSingle()
 
