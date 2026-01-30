@@ -15,12 +15,14 @@ export default async function CategoryTemplate({
   category,
   sortBy,
   page,
+  viewMode,
   countryCode,
   clubDiscountPercentage,
 }: {
   category: Category
   sortBy?: SortOptions
   page?: string
+  viewMode?: ViewMode
   countryCode: string
   clubDiscountPercentage?: number
 }) {
@@ -28,7 +30,7 @@ export default async function CategoryTemplate({
 
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "featured"
-  const defaultViewMode: ViewMode = "grid-4"
+  const resolvedViewMode = viewMode || "grid-4"
 
   const [productListing] = await Promise.all([
     listPaginatedProducts({
@@ -79,7 +81,7 @@ export default async function CategoryTemplate({
       initialFilters={{
         sortBy: sort,
         page: pageNumber,
-        viewMode: defaultViewMode,
+        viewMode: resolvedViewMode,
       }}
       initialProducts={initialProducts}
       initialCount={initialCount}
@@ -87,7 +89,7 @@ export default async function CategoryTemplate({
       fixedCategoryId={category.id}
     >
       <FilterDrawer filterOptions={{ availability: availabilityOptions }}>
-        <div className="mx-auto p-4 max-w-[1440px] pb-10" data-testid="category-container">
+        <div className="mx-auto p-4 max-w-[1440px] pb-10 w-full" data-testid="category-container">
           <Breadcrumbs items={breadcrumbItems} className="mb-6 hidden small:block" />
           <h1 className="mb-4 text-3xl font-semibold" data-testid="category-page-title">{category.name}</h1>
           {category.description && (
@@ -97,7 +99,7 @@ export default async function CategoryTemplate({
           )}
           {category.category_children && (
             <div className="text-base-large">
-              <ul className="grid grid-cols-1 gap-2">
+              <ul className="flex flex-wrap gap-2">
                 {category.category_children?.map((c) => (
                   <li key={c.id}>
                     <InteractiveLink href={`/categories/${c.handle}`}>
@@ -113,7 +115,7 @@ export default async function CategoryTemplate({
             products={initialProducts}
             totalCount={initialCount}
             page={pageNumber}
-            viewMode={defaultViewMode}
+            viewMode={resolvedViewMode}
             sortBy={sort}
             pageSize={STORE_PRODUCT_PAGE_SIZE}
             isCustomerLoggedIn={isCustomerLoggedIn}

@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData, AdminRole, StaffMember, RewardTransactionWithOrder } from "@/lib/supabase/types"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { requirePermission } from "@/lib/permissions/server"
 import { PERMISSIONS } from "@/lib/permissions"
@@ -361,6 +361,7 @@ export async function createCategory(formData: FormData) {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
     description: formData.get("description") as string,
+    image_url: formData.get("image_url") as string | null,
   }
 
   const { data: newCategory, error } = await supabase
@@ -387,7 +388,9 @@ export async function createCategory(formData: FormData) {
     }
   }
 
-  revalidatePath("/admin/categories")
+  revalidatePath("/admin/categories", "page")
+  revalidatePath("/categories", "page")
+  revalidateTag("categories", "max")
   redirect("/admin/categories")
 }
 
@@ -402,6 +405,7 @@ export async function updateCategory(formData: FormData) {
     name: formData.get("name") as string,
     handle: formData.get("handle") as string,
     description: formData.get("description") as string,
+    image_url: formData.get("image_url") as string | null,
   }
 
   const { error } = await supabase.from("categories").update(updates).eq("id", id)
@@ -427,8 +431,10 @@ export async function updateCategory(formData: FormData) {
     }
   }
 
-  revalidatePath("/admin/categories")
-  revalidatePath(`/admin/categories/${id}`)
+  revalidatePath("/admin/categories", "page")
+  revalidatePath(`/admin/categories/${id}`, "page")
+  revalidatePath("/categories", "page")
+  revalidateTag("categories", "max")
   redirect("/admin/categories")
 }
 
@@ -1313,6 +1319,7 @@ export async function createCollection(formData: FormData) {
   const collection = {
     title: formData.get("title") as string,
     handle: formData.get("handle") as string,
+    image_url: formData.get("image_url") as string | null,
   }
 
   // Insert collection and get ID
@@ -1342,7 +1349,9 @@ export async function createCollection(formData: FormData) {
     }
   }
 
-  revalidatePath("/admin/collections")
+  revalidatePath("/admin/collections", "page")
+  revalidatePath("/collections", "page")
+  revalidateTag("collections", "max")
   redirect("/admin/collections")
 }
 
@@ -1355,6 +1364,7 @@ export async function updateCollection(formData: FormData) {
   const updates = {
     title: formData.get("title") as string,
     handle: formData.get("handle") as string,
+    image_url: formData.get("image_url") as string | null,
   }
 
   const { error } = await supabase
@@ -1386,8 +1396,10 @@ export async function updateCollection(formData: FormData) {
     }
   }
 
-  revalidatePath("/admin/collections")
-  revalidatePath(`/admin/collections/${id}`)
+  revalidatePath("/admin/collections", "page")
+  revalidatePath(`/admin/collections/${id}`, "page")
+  revalidatePath("/collections", "page")
+  revalidateTag("collections", "max")
   redirect("/admin/collections")
 }
 
@@ -1396,7 +1408,9 @@ export async function deleteCollection(id: string) {
   await requirePermission(PERMISSIONS.COLLECTIONS_DELETE)
   const supabase = await createClient()
   await supabase.from("collections").delete().eq("id", id)
-  revalidatePath("/admin/collections")
+  revalidatePath("/admin/collections", "page")
+  revalidatePath("/collections", "page")
+  revalidateTag("collections", "max")
 }
 
 export async function getCollectionProducts(collectionId: string): Promise<string[]> {

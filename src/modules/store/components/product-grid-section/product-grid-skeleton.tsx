@@ -1,5 +1,5 @@
 import { ViewMode } from "@modules/store/components/refinement-list/types"
-import { getGridClassName } from "./utils"
+import { getGridClassName, getGridItemClassName } from "./utils"
 
 type ProductGridSkeletonProps = {
   viewMode?: ViewMode
@@ -9,6 +9,7 @@ type ProductGridSkeletonProps = {
 const ProductGridSkeleton = ({ viewMode = "grid-4", count = 12 }: ProductGridSkeletonProps) => {
   const items = Array.from({ length: count }, (_, index) => index)
   const gridClassName = getGridClassName(viewMode)
+  const itemClassName = getGridItemClassName(viewMode)
   const block = "animate-pulse bg-slate-200"
 
   if (viewMode === "list") {
@@ -62,7 +63,7 @@ const ProductGridSkeleton = ({ viewMode = "grid-4", count = 12 }: ProductGridSke
   return (
     <ul className={gridClassName} data-testid="products-list-skeleton" aria-label="Loading products">
       {items.map((item) => (
-        <li key={`grid-skeleton-${item}`}>
+        <li key={`grid-skeleton-${item}`} className={itemClassName}>
           <div className="group relative flex flex-col h-full">
             {/* Image container - matches exact styling from product card */}
             <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-100">

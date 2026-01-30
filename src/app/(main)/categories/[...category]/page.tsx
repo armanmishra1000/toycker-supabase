@@ -11,19 +11,20 @@ type Props = {
   searchParams: Promise<{
     sortBy?: SortOptions
     page?: string
+    view?: string
   }>
 }
 
 export const revalidate = 60
 
 export async function generateStaticParams() {
-  const product_categories = await listCategories()
+  const { categories } = await listCategories()
 
-  if (!product_categories) {
+  if (!categories) {
     return []
   }
 
-  const categoryHandles = product_categories.map(
+  const categoryHandles = categories.map(
     (category: any) => category.handle
   )
 
@@ -60,7 +61,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function CategoryPage(props: Props) {
   const searchParams = await props.searchParams
   const params = await props.params
-  const { sortBy, page } = searchParams
+  const { sortBy, page, view } = searchParams
 
   const productCategory = await getCategoryByHandle(params.category)
 
@@ -75,6 +76,7 @@ export default async function CategoryPage(props: Props) {
       category={productCategory}
       sortBy={sortBy}
       page={page}
+      viewMode={view as any}
       countryCode="in"
       clubDiscountPercentage={clubSettings?.discount_percentage}
     />

@@ -21,6 +21,7 @@ export interface ShopMenuSection {
   id: string
   title: string
   items: ShopMenuLink[]
+  extraLinks?: ShopMenuLink[]
   accent?: "muted" | "highlight"
 }
 
@@ -152,6 +153,10 @@ export const shopMenuSections: ShopMenuSection[] = [
     id: "price",
     title: "Shop by Price",
     items: priceTierLinks,
+    extraLinks: [
+      { id: "all-categories", label: "Categories", href: "/categories" },
+      { id: "all-collections", label: "Collections", href: "/collections" },
+    ],
   },
 ]
 

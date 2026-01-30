@@ -18,7 +18,8 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { cn } from "@/lib/util/cn"
 import { useState, useMemo } from "react"
 import { getYoutubeId, getYoutubeEmbedUrl } from "@/lib/util/youtube"
-import { Tag, Globe, Layers, Edit2 } from "lucide-react"
+import { Tag, Globe, Layers, Edit2, Link2, Link2Off } from "lucide-react"
+import { slugify } from "@/lib/util/slug"
 
 type EditProductFormProps = {
   product: Product
@@ -46,8 +47,26 @@ export default function EditProductForm({
   const [videoUrl, setVideoUrl] = useState(product.video_url || "")
   const videoId = getYoutubeId(videoUrl)
   const embedUrl = getYoutubeEmbedUrl(videoId)
+  const [name, setName] = useState(product.name)
   const [handle, setHandle] = useState(product.handle)
   const [isEditingHandle, setIsEditingHandle] = useState(false)
+  const [isHandleManuallyEdited, setIsHandleManuallyEdited] = useState(false)
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value
+    setName(newName)
+    if (!isHandleManuallyEdited) {
+      setHandle(slugify(newName))
+    }
+  }
+
+  const toggleSync = () => {
+    const nextState = !isHandleManuallyEdited
+    setIsHandleManuallyEdited(nextState)
+    if (!nextState) {
+      setHandle(slugify(name))
+    }
+  }
 
   const initialRelatedProducts = useMemo(() => product.related_combinations?.map(rc => ({
     id: rc.related_product.id,
@@ -140,8 +159,34 @@ export default function EditProductForm({
           <AdminCard title="Product Details">
             <div className="space-y-5">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Product Title</label>
-                <input name="name" type="text" defaultValue={product.name} required className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all" />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Product Title</label>
+                  <button
+                    type="button"
+                    onClick={toggleSync}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold transition-all",
+                      !isHandleManuallyEdited
+                        ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                        : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                    )}
+                    title={!isHandleManuallyEdited ? "Handle is synced with title" : "Handle sync is disabled"}
+                  >
+                    {!isHandleManuallyEdited ? (
+                      <><Link2 className="h-3 w-3" /> Auto-sync On</>
+                    ) : (
+                      <><Link2Off className="h-3 w-3" /> Auto-sync Off</>
+                    )}
+                  </button>
+                </div>
+                <input
+                  name="name"
+                  type="text"
+                  value={name}
+                  onChange={handleNameChange}
+                  required
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium focus:border-black focus:ring-0 transition-all"
+                />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Short Description</label>

@@ -37,25 +37,17 @@ const ResultsToolbar = ({ totalCount, viewMode, sortBy }: ResultsToolbarProps) =
   const effectiveViewMode = storefrontFilters ? storefrontFilters.filters.viewMode : viewMode
   const effectiveSortBy = storefrontFilters ? storefrontFilters.filters.sortBy : sortBy
 
-  const pushParams = (nextParams: URLSearchParams) => {
-    const query = nextParams.toString()
-    router.push(query ? `${pathname}?${query}` : pathname)
-  }
-
-  const setParam = (name: string, value: string) => {
-    const params = new URLSearchParams(searchParams)
-    params.set(name, value)
-    if (name !== "page") {
-      params.delete("page")
-    }
-    pushParams(params)
-  }
-
   const handleViewChange = (nextMode: ViewMode) => {
     if (storefrontFilters) {
       storefrontFilters.setViewMode(nextMode)
+      return
     }
-    setParam("view", nextMode)
+
+    const params = new URLSearchParams(searchParams)
+    params.set("view", nextMode)
+    params.delete("page")
+    const query = params.toString()
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
   }
 
   const handleSortChange = (nextSort: SortOptions) => {
@@ -63,7 +55,12 @@ const ResultsToolbar = ({ totalCount, viewMode, sortBy }: ResultsToolbarProps) =
       storefrontFilters.setSort(nextSort)
       return
     }
-    setParam("sortBy", nextSort)
+
+    const params = new URLSearchParams(searchParams)
+    params.set("sortBy", nextSort)
+    params.delete("page")
+    const query = params.toString()
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
   }
 
   const countText = (() => {

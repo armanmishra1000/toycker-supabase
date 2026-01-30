@@ -12,6 +12,7 @@ import {
 } from "react"
 
 import type { ReactNode } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Product } from "@/lib/supabase/types"
 
@@ -130,6 +131,10 @@ export const StorefrontFiltersProvider = ({
   const [error, setError] = useState<string | undefined>()
   const [isPending, startTransition] = useTransition()
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   useEffect(() => () => abortControllerRef.current?.abort(), [])
 
@@ -257,13 +262,63 @@ export const StorefrontFiltersProvider = ({
     [triggerFetch]
   )
 
+  const syncUrl = useCallback(
+    (next: FilterState) => {
+      const params = new URLSearchParams(searchParams.toString())
+
+      // Map state to URL parameters
+      if (next.page > 1) params.set("page", next.page.toString())
+      else params.delete("page")
+
+      if (next.sortBy !== "featured") params.set("sortBy", next.sortBy)
+      else params.delete("sortBy")
+
+      if (next.viewMode !== "grid-4") params.set("view", next.viewMode)
+      else params.delete("view")
+
+      if (next.searchQuery) params.set("q", next.searchQuery)
+      else params.delete("q")
+
+      if (next.availability) params.set("availability", next.availability)
+      else params.delete("availability")
+
+      if (next.age) params.set("age", next.age)
+      else params.delete("age")
+
+      if (next.collectionId) {
+        params.set("collection", Array.isArray(next.collectionId) ? next.collectionId[0] : next.collectionId)
+      } else {
+        params.delete("collection")
+      }
+
+      if (next.priceRange?.min !== undefined) params.set("price_min", next.priceRange.min.toString())
+      else params.delete("price_min")
+
+      if (next.priceRange?.max !== undefined) params.set("price_max", next.priceRange.max.toString())
+      else params.delete("price_max")
+
+      const newQuery = params.toString()
+      const currentQuery = searchParams.toString()
+
+      if (newQuery !== currentQuery) {
+        // Use scroll: false to prevent jumping to top
+        // Wrap in startTransition to prevent loading.tsx skeleton flash
+        startTransition(() => {
+          router.push(newQuery ? `${pathname}?${newQuery}` : pathname, { scroll: false })
+        })
+      }
+    },
+    [router, pathname, searchParams, startTransition]
+  )
+
   const baseUpdate = useCallback(
     (
       partial: Partial<FilterState>,
       {
         resetPage = true,
         shouldFetch = true,
-      }: { resetPage?: boolean; shouldFetch?: boolean } = {}
+        shouldUpdateUrl = true,
+      }: { resetPage?: boolean; shouldFetch?: boolean; shouldUpdateUrl?: boolean } = {}
     ) => {
       const current = filtersRef.current
       const next = {
@@ -277,8 +332,11 @@ export const StorefrontFiltersProvider = ({
       }
 
       commitFilters(next, { shouldFetch })
+      if (shouldUpdateUrl) {
+        syncUrl(next)
+      }
     },
-    [commitFilters]
+    [commitFilters, syncUrl]
   )
 
   const setAvailability = useCallback((value?: AvailabilityFilter) => baseUpdate({ availability: value }), [baseUpdate])
