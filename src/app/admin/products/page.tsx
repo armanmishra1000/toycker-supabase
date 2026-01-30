@@ -76,7 +76,7 @@ export default async function AdminProducts({
       </div>
 
       <div className="p-0 border-none shadow-none bg-transparent">
-        <div className="bg-white rounded-xl border border-admin-border overflow-hidden shadow-sm">
+        <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
           {/* Tabs */}
           <div className="border-b border-gray-200 px-4">
             <div className="flex space-x-6">

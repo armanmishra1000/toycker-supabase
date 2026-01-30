@@ -1,6 +1,6 @@
 "use client"
 
-import { ChangeEvent, FormEvent, useState } from "react"
+import { ChangeEvent, FormEvent, useState, useTransition } from "react"
 
 import {
   contactInfo,
@@ -12,9 +12,11 @@ import {
   Clock3,
   Facebook,
   Instagram,
+  Loader2,
   Mail,
   Youtube,
 } from "lucide-react"
+import { sendContactEmail } from "@lib/actions/contact-actions"
 
 const buildMapEmbedUrl = (query: string) =>
   `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`
@@ -51,7 +53,9 @@ const ContactPage = (_props: ContactPageProps) => {
     phone: "",
     message: "",
   })
-  const [status, setStatus] = useState<"idle" | "success">("idle")
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -65,12 +69,23 @@ const ContactPage = (_props: ContactPageProps) => {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setStatus("success")
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      message: "",
+    setErrorMessage(null)
+
+    startTransition(async () => {
+      const result = await sendContactEmail(formData)
+
+      if (result.success) {
+        setStatus("success")
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          message: "",
+        })
+      } else {
+        setStatus("error")
+        setErrorMessage(result.error || "Failed to send message.")
+      }
     })
   }
 
@@ -328,18 +343,31 @@ const ContactPage = (_props: ContactPageProps) => {
               </div>
 
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <p
-                  className={`text-sm font-semibold ${status === "success" ? "text-primary" : "text-transparent"
-                    }`}
-                  aria-live="polite"
-                >
-                  Thanks for reaching out! We’ll get back to you shortly.
-                </p>
+                <div className="flex-1">
+                  {status === "success" && (
+                    <p className="text-sm font-semibold text-primary" aria-live="polite">
+                      Thanks for reaching out! We’ll get back to you shortly.
+                    </p>
+                  )}
+                  {status === "error" && (
+                    <p className="text-sm font-semibold text-red-600" aria-live="polite">
+                      {errorMessage}
+                    </p>
+                  )}
+                </div>
                 <button
                   type="submit"
-                  className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-black"
+                  disabled={isPending}
+                  className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-black disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Send Message
+                  {isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Message"
+                  )}
                 </button>
               </div>
             </form>
