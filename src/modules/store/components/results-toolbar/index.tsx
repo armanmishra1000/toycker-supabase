@@ -39,7 +39,7 @@ const ResultsToolbar = ({ totalCount, viewMode, sortBy }: ResultsToolbarProps) =
 
   const pushParams = (nextParams: URLSearchParams) => {
     const query = nextParams.toString()
-    router.push(query ? `${pathname}?${query}` : pathname)
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
   }
 
   const setParam = (name: string, value: string) => {

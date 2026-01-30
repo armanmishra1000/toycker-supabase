@@ -12,18 +12,20 @@ export default async function CollectionTemplate({
   sortBy,
   collection,
   page,
+  viewMode,
   countryCode,
   clubDiscountPercentage,
 }: {
   sortBy?: SortOptions
   collection: Collection
   page?: string
+  viewMode?: ViewMode
   countryCode: string
   clubDiscountPercentage?: number
 }) {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "featured"
-  const defaultViewMode: ViewMode = "grid-4"
+  const resolvedViewMode = viewMode || "grid-4"
 
   const [productListing] = await Promise.all([
     listPaginatedProducts({
@@ -55,7 +57,7 @@ export default async function CollectionTemplate({
       initialFilters={{
         sortBy: sort,
         page: pageNumber,
-        viewMode: defaultViewMode,
+        viewMode: resolvedViewMode,
       }}
       initialProducts={initialProducts}
       initialCount={initialCount}
@@ -78,7 +80,7 @@ export default async function CollectionTemplate({
             products={initialProducts}
             totalCount={initialCount}
             page={pageNumber}
-            viewMode={defaultViewMode}
+            viewMode={resolvedViewMode}
             sortBy={sort}
             pageSize={STORE_PRODUCT_PAGE_SIZE}
             isCustomerLoggedIn={isCustomerLoggedIn}

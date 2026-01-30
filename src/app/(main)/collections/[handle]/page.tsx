@@ -11,6 +11,7 @@ type Props = {
   searchParams: Promise<{
     page?: string
     sortBy?: SortOptions
+    view?: string
   }>
 }
 
@@ -46,7 +47,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function CollectionPage(props: Props) {
   const searchParams = await props.searchParams
   const params = await props.params
-  const { sortBy, page } = searchParams
+  const { sortBy, page, view } = searchParams
 
   const collection = await getCollectionByHandle(params.handle)
 
@@ -61,6 +62,7 @@ export default async function CollectionPage(props: Props) {
       collection={collection}
       page={page}
       sortBy={sortBy}
+      viewMode={view as any}
       countryCode="in"
       clubDiscountPercentage={clubSettings?.discount_percentage}
     />
