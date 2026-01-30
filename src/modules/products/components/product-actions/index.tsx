@@ -36,6 +36,7 @@ import { useCartStore } from "@modules/cart/context/cart-store-context"
 import { Product } from "@/lib/supabase/types"
 import { isSimpleProduct } from "@lib/util/product"
 import { COLOR_SWATCH_MAP } from "@/lib/constants/colors"
+import { sendProductQuestion } from "@lib/actions/contact-actions"
 
 
 type ProductActionsProps = {
@@ -87,9 +88,11 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
   const wishlist = useOptionalWishlist()
   const [isQuestionOpen, setIsQuestionOpen] = useState(false)
-  const [questionStatus, setQuestionStatus] = useState<"idle" | "success">(
+  const [questionStatus, setQuestionStatus] = useState<"idle" | "success" | "error">(
     "idle"
   )
+  const [questionError, setQuestionError] = useState<string | null>(null)
+  const [isQuestionPending, startSubmitQuestion] = useTransition()
   const [questionForm, setQuestionForm] = useState({
     name: "",
     phone: "",
@@ -437,12 +440,27 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
   const handleQuestionSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setQuestionStatus("success")
-    setTimeout(() => {
-      setIsQuestionOpen(false)
-      setQuestionStatus("idle")
-      setQuestionForm({ name: "", phone: "", email: "", message: "" })
-    }, 1500)
+    setQuestionError(null)
+
+    startSubmitQuestion(async () => {
+      const result = await sendProductQuestion({
+        ...questionForm,
+        productName: product.title,
+        productUrl: window.location.href,
+      })
+
+      if (result.success) {
+        setQuestionStatus("success")
+        setTimeout(() => {
+          setIsQuestionOpen(false)
+          setQuestionStatus("idle")
+          setQuestionForm({ name: "", phone: "", email: "", message: "" })
+        }, 2000)
+      } else {
+        setQuestionStatus("error")
+        setQuestionError(result.error || "Failed to send question.")
+      }
+    })
   }
 
   const handleShare = async () => {
@@ -752,6 +770,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
               <InputField
                 label="Your name"
                 value={questionForm.name}
+                placeholder="Enter your full name"
                 onChange={(value) =>
                   setQuestionForm((prev) => ({ ...prev, name: value }))
                 }
@@ -760,6 +779,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
               <InputField
                 label="Your phone number"
                 value={questionForm.phone}
+                placeholder="Optional"
                 onChange={(value) =>
                   setQuestionForm((prev) => ({ ...prev, phone: value }))
                 }
@@ -769,13 +789,14 @@ export default function ProductActions({ product, disabled, showSupportActions =
               label="Your email"
               type="email"
               value={questionForm.email}
+              placeholder="you@example.com"
               onChange={(value) =>
                 setQuestionForm((prev) => ({ ...prev, email: value }))
               }
               required
             />
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">
+              <label className="text-sm font-semibold text-ui-fg-base">
                 Your message
               </label>
               <textarea
@@ -787,16 +808,45 @@ export default function ProductActions({ product, disabled, showSupportActions =
                     message: event.target.value,
                   }))
                 }
-                className="min-h-[120px] w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:border-gray-900 focus:outline-none"
+                placeholder="Tell us how we can help"
+                className="min-h-[120px] w-full rounded-2xl border border-ui-border-base bg-white px-4 py-3 text-ui-fg-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
+            {questionStatus === "error" && (
+              <p className="text-sm font-semibold text-red-600" aria-live="polite">
+                {questionError}
+              </p>
+            )}
+            {questionStatus === "success" && (
+              <p className="text-sm font-semibold text-primary" aria-live="polite">
+                Thanks for your question! We'll get back to you shortly.
+              </p>
+            )}
             <Modal.Footer>
-              <Button type="button" variant="secondary" onClick={() => setIsQuestionOpen(false)}>
+              <button
+                type="button"
+                onClick={() => setIsQuestionOpen(false)}
+                disabled={isQuestionPending}
+                className="rounded-full px-6 py-2 text-sm font-semibold uppercase tracking-wider text-ui-fg-subtle transition hover:bg-gray-100 disabled:opacity-50"
+              >
                 Back
-              </Button>
-              <Button type="submit">
-                {questionStatus === "success" ? "Message sent" : "Send your message"}
-              </Button>
+              </button>
+              <button
+                type="submit"
+                disabled={isQuestionPending}
+                className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-black disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {isQuestionPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : questionStatus === "success" ? (
+                  "Message sent"
+                ) : (
+                  "Send Message"
+                )}
+              </button>
             </Modal.Footer>
           </form>
         </Modal.Body>
@@ -843,22 +893,25 @@ const InputField = ({
   value,
   onChange,
   required,
+  placeholder,
 }: {
   label: string
   type?: string
   value: string
   onChange: (_value: string) => void
   required?: boolean
+  placeholder?: string
 }) => {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-900">{label}</label>
+      <label className="text-sm font-semibold text-ui-fg-base">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required={required}
-        className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm focus:border-gray-900 focus:outline-none"
+        placeholder={placeholder}
+        className="w-full rounded-2xl border border-ui-border-base bg-white px-4 py-3 text-ui-fg-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
     </div>
   )
