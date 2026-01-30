@@ -89,7 +89,7 @@ export default async function CategoryTemplate({
       fixedCategoryId={category.id}
     >
       <FilterDrawer filterOptions={{ availability: availabilityOptions }}>
-        <div className="mx-auto p-4 max-w-[1440px] pb-10" data-testid="category-container">
+        <div className="mx-auto p-4 max-w-[1440px] pb-10 w-full" data-testid="category-container">
           <Breadcrumbs items={breadcrumbItems} className="mb-6 hidden small:block" />
           <h1 className="mb-4 text-3xl font-semibold" data-testid="category-page-title">{category.name}</h1>
           {category.description && (
@@ -99,7 +99,7 @@ export default async function CategoryTemplate({
           )}
           {category.category_children && (
             <div className="text-base-large">
-              <ul className="grid grid-cols-1 gap-2">
+              <ul className="flex flex-wrap gap-2">
                 {category.category_children?.map((c) => (
                   <li key={c.id}>
                     <InteractiveLink href={`/categories/${c.handle}`}>

@@ -66,6 +66,22 @@ const ShopMegaMenu = ({
                 </li>
               ))}
             </ul>
+
+            {section.extraLinks && section.extraLinks.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-dashed border-gray-200 space-y-2">
+                {section.extraLinks.map((link) => (
+                  <LocalizedClientLink
+                    key={link.id}
+                    href={link.href}
+                    prefetch={true}
+                    className="flex items-center justify-between group/link px-3 py-2 rounded-lg bg-white border border-gray-200 hover:border-primary hover:bg-primary/5 transition-all text-sm font-bold text-slate-900"
+                  >
+                    <span>{link.label}</span>
+                    <span className="text-primary opacity-0 group-hover/link:opacity-100 transition-opacity">→</span>
+                  </LocalizedClientLink>
+                ))}
+              </div>
+            )}
           </div>
         ))}
 

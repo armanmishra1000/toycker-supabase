@@ -139,7 +139,7 @@ const StoreTemplate = async ({
           ages: ageOptions,
         }}
       >
-        <div className="mx-auto p-4 max-w-[1440px] pb-10" data-testid="category-container" id="store-catalog">
+        <div className="mx-auto p-4 max-w-[1440px] pb-10 w-full" data-testid="category-container" id="store-catalog">
           <Breadcrumbs
             items={[
               {

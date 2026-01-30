@@ -6,7 +6,7 @@ import AdminCard from "./admin-card"
 import { SubmitButton } from "./submit-button"
 import RichTextEditor from "./rich-text-editor"
 import CollectionCheckboxList from "./collection-checkbox-list"
-import { TrashIcon, PlusIcon, Layers, Package, Tag, Globe, Edit2, Sparkles, ChevronDown } from "lucide-react"
+import { TrashIcon, PlusIcon, Layers, Package, Tag, Globe, Edit2, Sparkles, ChevronDown, Link2, Link2Off } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@lib/util/cn"
 import { getYoutubeId, getYoutubeEmbedUrl } from "@/lib/util/youtube"
@@ -14,6 +14,7 @@ import { PhotoIcon } from "@heroicons/react/24/outline"
 import { COLOR_SWATCH_MAP, STANDARD_COLORS } from "@/lib/constants/colors"
 import CategoryCheckboxList from "./category-checkbox-list"
 import MediaGallery from "./media-manager"
+import { slugify } from "@/lib/util/slug"
 
 type NewProductFormProps = {
   collections: any[]
@@ -36,14 +37,6 @@ export default function NewProductForm({ collections, categories }: NewProductFo
   ])
   const [openPickerIndex, setOpenPickerIndex] = useState<number | null>(null)
 
-  const slugify = (text: string) => {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-  }
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value
@@ -56,6 +49,14 @@ export default function NewProductForm({ collections, categories }: NewProductFo
   const handleHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setHandle(e.target.value)
     setIsHandleManuallyEdited(true)
+  }
+
+  const toggleSync = () => {
+    const nextState = !isHandleManuallyEdited
+    setIsHandleManuallyEdited(nextState)
+    if (!nextState) {
+      setHandle(slugify(name))
+    }
   }
 
   const handleAddVariant = () => {
@@ -137,7 +138,26 @@ export default function NewProductForm({ collections, categories }: NewProductFo
         <AdminCard title="General Information">
           <div className="space-y-4">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Product Title</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Product Title</label>
+                <button
+                  type="button"
+                  onClick={toggleSync}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold transition-all",
+                    !isHandleManuallyEdited
+                      ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                      : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                  )}
+                  title={!isHandleManuallyEdited ? "Handle is synced with title" : "Handle sync is disabled"}
+                >
+                  {!isHandleManuallyEdited ? (
+                    <><Link2 className="h-3 w-3" /> Auto-sync On</>
+                  ) : (
+                    <><Link2Off className="h-3 w-3" /> Auto-sync Off</>
+                  )}
+                </button>
+              </div>
               <div className="space-y-2">
                 <input
                   name="name"

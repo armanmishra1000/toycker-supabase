@@ -65,7 +65,7 @@ export default async function CollectionTemplate({
       fixedCollectionId={collection.id}
     >
       <FilterDrawer filterOptions={{ availability: availabilityOptions }}>
-        <div className="mx-auto p-4 max-w-[1440px] pb-10">
+        <div className="mx-auto p-4 max-w-[1440px] pb-10 w-full">
           <Breadcrumbs
             className="mb-6 hidden small:block"
             items={[

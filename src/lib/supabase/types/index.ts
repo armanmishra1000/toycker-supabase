@@ -107,6 +107,7 @@ export interface Category {
   description: string | null;
   parent_category_id: string | null;
   created_at: string;
+  image_url: string | null;
   category_children?: Category[];
   parent_category?: Category;
 }
@@ -117,6 +118,7 @@ export interface Collection {
   title: string;
   handle: string;
   created_at: string;
+  image_url: string | null;
   products?: Product[];
 }
 

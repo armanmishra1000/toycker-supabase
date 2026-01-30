@@ -12,7 +12,7 @@ import {
 import { useOptionalStorefrontFilters } from "@modules/store/context/storefront-filters"
 import { Product } from "@/lib/supabase/types"
 import ProductGridSkeleton from "@modules/store/components/product-grid-section/product-grid-skeleton"
-import { getGridClassName } from "@modules/store/components/product-grid-section/utils"
+import { getGridClassName, getGridItemClassName } from "@modules/store/components/product-grid-section/utils"
 
 type ProductGridSectionProps = {
   title: string
@@ -71,6 +71,7 @@ const ProductGridSection = ({
   const totalPages = Math.max(1, Math.ceil(effectiveCount / derived.pageSize))
   const hasProducts = derived.products.length > 0
   const gridClassName = getGridClassName(derived.viewMode)
+  const itemClassName = getGridItemClassName(derived.viewMode)
 
   const isLoading = derived.isLoading && context !== null
   const isTransitioning = derived.isPending && context !== null
@@ -105,7 +106,7 @@ const ProductGridSection = ({
           ) : (
             <ul className={gridClassName} data-testid="products-list">
               {derived.products.map((product) => (
-                <li key={product.id}>
+                <li key={product.id} className={itemClassName}>
                   <ProductPreview
                     product={product}
                     viewMode={derived.viewMode}

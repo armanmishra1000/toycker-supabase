@@ -2,9 +2,11 @@
 
 import { cn } from "@lib/util/cn"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useTransition } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { useOptionalStorefrontFilters } from "@modules/store/context/storefront-filters"
+import { useCatalogLoading } from "@modules/common/context/catalog-loading-context"
 
 export function Pagination({
   page,
@@ -19,6 +21,8 @@ export function Pagination({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const storefrontFilters = useOptionalStorefrontFilters()
+  const catalogLoading = useCatalogLoading()
+  const [isPending, startTransition] = useTransition()
 
   const currentPage = storefrontFilters ? storefrontFilters.filters.page : page
   const pagesCount = storefrontFilters ? storefrontFilters.totalPages : totalPages
@@ -35,7 +39,18 @@ export function Pagination({
     }
     const params = new URLSearchParams(searchParams)
     params.set("page", newPage.toString())
-    router.push(`${pathname}?${params.toString()}`)
+
+    if (catalogLoading) {
+      catalogLoading.setIsFetching(true)
+      catalogLoading.startTransition(() => {
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+      })
+      return
+    }
+
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    })
   }
 
   // Function to render a page button

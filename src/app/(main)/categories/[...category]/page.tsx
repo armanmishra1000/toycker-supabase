@@ -18,13 +18,13 @@ type Props = {
 export const revalidate = 60
 
 export async function generateStaticParams() {
-  const product_categories = await listCategories()
+  const { categories } = await listCategories()
 
-  if (!product_categories) {
+  if (!categories) {
     return []
   }
 
-  const categoryHandles = product_categories.map(
+  const categoryHandles = categories.map(
     (category: any) => category.handle
   )
 

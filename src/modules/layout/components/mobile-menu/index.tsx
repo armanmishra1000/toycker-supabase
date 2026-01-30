@@ -99,26 +99,52 @@ const MobileMenu = ({
           <nav className="overflow-y-auto h-[calc(100vh-274px)]">
             <ul className="flex flex-col">
               {navLinks.filter(link => link.id !== 'club').map((link) => (
-                <li key={link.id} className="border-b border-gray-100">
-                  {link.hasDropdown ? (
-                    <button
-                      onClick={navigateToShop}
-                      className="w-full flex items-center justify-between py-4 px-6 text-base font-medium text-gray-900 hover:bg-gray-50 transition-colors"
-                      aria-label={`Open ${link.label} menu`}
-                    >
-                      <span>{link.label}</span>
-                      <span className="text-gray-400 text-2xl">›</span>
-                    </button>
-                  ) : (
-                    <LocalizedClientLink
-                      href={link.href}
-                      onClick={closeAll}
-                      className="block py-4 px-6 text-base font-medium text-gray-900 hover:bg-gray-50 transition-colors"
-                    >
-                      {link.label}
-                    </LocalizedClientLink>
+                <div key={link.id}>
+                  <li className="border-b border-gray-100">
+                    {link.hasDropdown ? (
+                      <button
+                        onClick={navigateToShop}
+                        className="w-full flex items-center justify-between py-4 px-6 text-base font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                        aria-label={`Open ${link.label} menu`}
+                      >
+                        <span>{link.label}</span>
+                        <span className="text-gray-400 text-2xl">›</span>
+                      </button>
+                    ) : (
+                      <LocalizedClientLink
+                        href={link.href}
+                        onClick={closeAll}
+                        className="block py-4 px-6 text-base font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                      >
+                        {link.label}
+                      </LocalizedClientLink>
+                    )}
+                  </li>
+
+                  {/* Move Categories & Collections directly after Shop */}
+                  {link.id === 'shop' && (
+                    <>
+                      <li className="border-b border-gray-100">
+                        <LocalizedClientLink
+                          href="/categories"
+                          onClick={closeAll}
+                          className="block py-4 px-6 text-base font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                        >
+                          Categories
+                        </LocalizedClientLink>
+                      </li>
+                      <li className="border-b border-gray-100">
+                        <LocalizedClientLink
+                          href="/collections"
+                          onClick={closeAll}
+                          className="block py-4 px-6 text-base font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                        >
+                          Collections
+                        </LocalizedClientLink>
+                      </li>
+                    </>
                   )}
-                </li>
+                </div>
               ))}
 
               {/* Wishlist */}
@@ -262,6 +288,25 @@ const MobileMenu = ({
                       </LocalizedClientLink>
                     </li>
                   ))}
+
+                  {currentView.section.extraLinks && currentView.section.extraLinks.length > 0 && (
+                    <>
+                      <li className="mt-4 px-6 py-2 bg-gray-50 text-[10px] uppercase font-bold text-gray-400 tracking-widest border-y border-gray-100">
+                        Quick Links
+                      </li>
+                      {currentView.section.extraLinks.map((link) => (
+                        <li key={link.id} className="border-b border-gray-100">
+                          <LocalizedClientLink
+                            href={link.href}
+                            onClick={closeAll}
+                            className="block py-4 px-6 text-base font-bold text-primary hover:bg-gray-50 transition-colors"
+                          >
+                            {link.label}
+                          </LocalizedClientLink>
+                        </li>
+                      ))}
+                    </>
+                  )}
                 </ul>
               </nav>
             </>

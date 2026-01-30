@@ -1,7 +1,8 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { getCollectionByHandle, listCollections, Collection } from "@lib/data/collections"
+import { getCollectionByHandle, listCollections } from "@lib/data/collections"
+import { Collection } from "@/lib/supabase/types"
 import CollectionTemplate from "@modules/collections/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/types"
 import { getClubSettings } from "@lib/data/club"

@@ -8,7 +8,7 @@ import { getFileUrl } from "@/lib/r2"
 import { useToast } from "@modules/common/context/toast-context"
 
 type Props = {
-    folder: "banners" | "exclusive-videos"
+    folder: "banners" | "exclusive-videos" | "categories" | "collections"
     value?: string
     onChange: (_url: string) => void
     acceptedFormats: string[]
@@ -132,7 +132,7 @@ export default function ImageUploader({
         onChange("")
     }
 
-    const isImage = folder === "banners"
+    const isImage = folder === "banners" || folder === "categories" || folder === "collections"
     const isVideo = folder === "exclusive-videos"
 
     return (
