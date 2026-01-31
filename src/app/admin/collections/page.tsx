@@ -1,5 +1,6 @@
 import { getAdminCollections, deleteCollection } from "@/lib/data/admin"
 import Link from "next/link"
+import Image from "next/image"
 import { PencilIcon, RectangleStackIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline"
 import AdminPageHeader from "@modules/admin/components/admin-page-header"
 import { AdminPagination } from "@modules/admin/components/admin-pagination"
@@ -70,8 +71,21 @@ export default async function AdminCollections({
                 <tr key={collection.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 border border-gray-200 group-hover:bg-white transition-all">
-                        <RectangleStackIcon className="h-5 w-5" />
+                      <div className="h-10 w-10 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center group-hover:border-gray-300 transition-all">
+                        {collection.image_url ? (
+                          <Image
+                            src={collection.image_url}
+                            alt={collection.title}
+                            width={40}
+                            height={40}
+                            className="object-cover w-full h-full"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
+                            <RectangleStackIcon className="h-5 w-5 text-blue-400" />
+                          </div>
+                        )}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-semibold text-gray-900">{collection.title}</div>
