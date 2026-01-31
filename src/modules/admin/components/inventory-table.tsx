@@ -19,6 +19,7 @@ import { useState, Fragment } from "react"
 import { useToast } from "@modules/common/context/toast-context"
 import { cn } from "@lib/util/cn"
 import { LOW_STOCK_THRESHOLD } from "@/lib/constants/inventory"
+import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper"
 
 type InventoryTableProps = {
   initialProducts: Product[]
@@ -50,7 +51,7 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
   }
 
   return (
-    <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
+    <AdminTableWrapper className="bg-white rounded-xl border border-admin-border shadow-sm">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-[#f7f8f9]">
           <tr>
@@ -242,6 +243,6 @@ export default function InventoryTable({ initialProducts }: InventoryTableProps)
           })}
         </tbody>
       </table>
-    </div>
+    </AdminTableWrapper>
   )
 }

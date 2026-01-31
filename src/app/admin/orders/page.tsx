@@ -9,6 +9,7 @@ import { ShoppingBagIcon } from "@heroicons/react/24/outline"
 import { formatIST } from "@/lib/util/date"
 import { ClickableTableRow } from "@modules/admin/components/clickable-table-row"
 import RealtimeOrdersListener from "@modules/admin/components/realtime-orders-listener"
+import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper"
 
 // Helper to format payment status for display
 function normalizePaymentMethod(method?: string | null, hasPayuTxn?: string | null) {
@@ -118,7 +119,7 @@ export default async function AdminOrders({
       </div>
 
       <div className="p-0 border-none shadow-none bg-transparent">
-        <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
+        <AdminTableWrapper className="bg-white rounded-xl border border-admin-border shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-[#f7f8f9]">
               <tr>
@@ -195,7 +196,7 @@ export default async function AdminOrders({
               )}
             </tbody>
           </table>
-        </div>
+        </AdminTableWrapper>
 
         {/* Pagination */}
         <AdminPagination currentPage={currentPage} totalPages={totalPages} />

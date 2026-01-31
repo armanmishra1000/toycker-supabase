@@ -14,6 +14,7 @@ import { ProtectedAction } from "@/lib/permissions/components/protected-action"
 import { PERMISSIONS } from "@/lib/permissions"
 import { ClickableTableRow } from "@modules/admin/components/clickable-table-row"
 import { CreateProductButton } from "./create-product-button"
+import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper"
 
 export default async function AdminProducts({
   searchParams
@@ -76,7 +77,7 @@ export default async function AdminProducts({
       </div>
 
       <div className="p-0 border-none shadow-none bg-transparent">
-        <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
+        <AdminTableWrapper className="bg-white rounded-xl border border-admin-border shadow-sm">
           {/* Tabs */}
           <div className="border-b border-gray-200 px-4">
             <div className="flex space-x-6">
@@ -200,7 +201,7 @@ export default async function AdminProducts({
               )}
             </tbody>
           </table>
-        </div>
+        </AdminTableWrapper>
 
         {/* Pagination */}
         <AdminPagination currentPage={currentPage} totalPages={totalPages} />

@@ -10,6 +10,7 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { UsersIcon, EyeIcon } from "@heroicons/react/24/outline"
 import { formatIST } from "@/lib/util/date"
 import { cn } from "@lib/util/cn"
+import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper"
 
 export default async function AdminCustomers({
   searchParams
@@ -67,7 +68,7 @@ export default async function AdminCustomers({
       </div>
 
       <div className="p-0 border-none shadow-sm bg-transparent">
-        <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
+        <AdminTableWrapper className="bg-white rounded-xl border border-admin-border shadow-sm">
           {/* Tabs - Integrated into Card */}
           <div className="flex px-4 border-b border-gray-200">
             {tabs.map((tab) => {
@@ -163,7 +164,7 @@ export default async function AdminCustomers({
               )}
             </tbody>
           </table>
-        </div>
+        </AdminTableWrapper>
 
         {/* Pagination */}
         <AdminPagination currentPage={currentPage} totalPages={totalPages} />
