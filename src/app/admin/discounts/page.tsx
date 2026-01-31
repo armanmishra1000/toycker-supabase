@@ -9,6 +9,7 @@ import { ClickableTableRow } from "@modules/admin/components/clickable-table-row
 import DeletePromotionButton from "@modules/admin/components/delete-promotion-button"
 import { ProtectedAction } from "@/lib/permissions/components/protected-action"
 import { PERMISSIONS } from "@/lib/permissions"
+import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper"
 
 export default async function AdminDiscounts() {
     const promotions = await getAdminPromotions()
@@ -29,7 +30,7 @@ export default async function AdminDiscounts() {
             />
 
             <AdminCard className="p-0 border-none shadow-none bg-transparent">
-                <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
+                <AdminTableWrapper className="bg-white rounded-xl border border-admin-border shadow-sm">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-[#f7f8f9]">
                             <tr>
@@ -116,7 +117,7 @@ export default async function AdminDiscounts() {
                             )}
                         </tbody>
                     </table>
-                </div>
+                </AdminTableWrapper>
             </AdminCard>
         </div>
     )

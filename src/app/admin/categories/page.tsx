@@ -8,6 +8,7 @@ import { CreateCategoryButton } from "./create-category-button"
 import { DeleteCategoryButton } from "./delete-category-button"
 import { ProtectedAction } from "@/lib/permissions/components/protected-action"
 import { PERMISSIONS } from "@/lib/permissions"
+import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper"
 
 export default async function AdminCategories({
   searchParams
@@ -56,7 +57,7 @@ export default async function AdminCategories({
       </div>
 
       <div className="p-0 border-none shadow-none bg-transparent">
-        <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
+        <AdminTableWrapper className="bg-white rounded-xl border border-admin-border shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-[#f7f8f9]">
               <tr>
@@ -132,7 +133,7 @@ export default async function AdminCategories({
               )}
             </tbody>
           </table>
-        </div>
+        </AdminTableWrapper>
 
         {/* Pagination */}
         <AdminPagination currentPage={currentPage} totalPages={totalPages} />

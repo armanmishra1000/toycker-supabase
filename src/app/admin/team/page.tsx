@@ -8,6 +8,7 @@ import { UserPlusIcon, Cog6ToothIcon, TrashIcon, UserGroupIcon } from "@heroicon
 import { ProtectedAction } from "@/lib/permissions/components/protected-action"
 import { PERMISSIONS } from "@/lib/permissions"
 import { formatIST } from "@/lib/util/date"
+import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper"
 
 export default async function AdminTeam({
     searchParams
@@ -77,7 +78,7 @@ export default async function AdminTeam({
             </div>
 
             <div className="p-0 border-none shadow-none bg-transparent">
-                <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
+                <AdminTableWrapper className="bg-white rounded-xl border border-admin-border shadow-sm">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-[#f7f8f9]">
                             <tr>
@@ -161,7 +162,7 @@ export default async function AdminTeam({
                             )}
                         </tbody>
                     </table>
-                </div>
+                </AdminTableWrapper>
 
                 {/* Pagination */}
                 <AdminPagination currentPage={currentPage} totalPages={totalPages} />

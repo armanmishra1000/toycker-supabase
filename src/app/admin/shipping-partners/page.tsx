@@ -7,6 +7,7 @@ import AdminBadge from "@modules/admin/components/admin-badge"
 import { formatIST } from "@/lib/util/date"
 import { ProtectedAction } from "@/lib/permissions/components/protected-action"
 import { PERMISSIONS } from "@/lib/permissions"
+import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper"
 
 export default async function AdminShippingPartners() {
     const partners = await getShippingPartners()
@@ -27,7 +28,7 @@ export default async function AdminShippingPartners() {
             />
 
             <AdminCard className="p-0 border-none shadow-none bg-transparent">
-                <div className="bg-white rounded-xl border border-admin-border overflow-x-auto shadow-sm">
+                <AdminTableWrapper className="bg-white rounded-xl border border-admin-border shadow-sm">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-[#f7f8f9]">
                             <tr>
@@ -79,7 +80,7 @@ export default async function AdminShippingPartners() {
                             )}
                         </tbody>
                     </table>
-                </div>
+                </AdminTableWrapper>
             </AdminCard>
         </div>
     )

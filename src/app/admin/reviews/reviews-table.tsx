@@ -8,6 +8,7 @@ import { ProtectedAction } from "@/lib/permissions/components/protected-action"
 import { PERMISSIONS } from "@/lib/permissions"
 import clsx from "clsx"
 import { formatIST } from "@/lib/util/date"
+import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper"
 
 
 export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }) {
@@ -69,7 +70,7 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
+            <AdminTableWrapper>
                 <table className="w-full text-left text-sm text-gray-600">
                     <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                         <tr>
@@ -172,7 +173,7 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                         )}
                     </tbody>
                 </table>
-            </div>
+            </AdminTableWrapper>
 
             {/* Detail Modal */}
             {selectedReview && (
