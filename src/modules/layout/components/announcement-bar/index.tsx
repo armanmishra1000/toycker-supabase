@@ -1,93 +1,56 @@
 "use client"
 
-import {
-  TruckIcon,
-  MapPinIcon,
-  QuestionMarkCircleIcon
-} from "@heroicons/react/24/outline"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useCallback } from "react"
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline"
+import useEmblaCarousel from "embla-carousel-react"
+import Autoplay from "embla-carousel-autoplay"
 
-interface AnnouncementItem {
+interface AnnouncementMessage {
   id: string
   text: string
-  icon: React.ForwardRefExoticComponent<React.SVGProps<SVGSVGElement> & { title?: string }>
-  href?: string
-  ariaLabel: string
 }
 
 const AnnouncementBar = () => {
-  // Left section items - Delivery only
-  const leftItems: AnnouncementItem[] = [
+  // All promotional messages shown to everyone
+  const messages: AnnouncementMessage[] = [
     {
       id: "delivery",
-      text: "Get free home delivery (Order More than ₹500)",
-      icon: TruckIcon,
-      ariaLabel: "Free home delivery offer"
-    }
-  ]
-
-  // Right section items - Location, Help
-  const rightItems: AnnouncementItem[] = [
-    {
-      id: "location",
-      text: "Surat, Gujarat",
-      icon: MapPinIcon,
-      href: "https://maps.app.goo.gl/vJjW43BJnUTFwrTj8",
-      ariaLabel: "Current location"
+      text: "FREE Home Delivery on Orders Above ₹500"
     },
     {
-      id: "help",
-      text: "Help",
-      icon: QuestionMarkCircleIcon,
-      href: "/contact",
-      ariaLabel: "Get help"
+      id: "discount",
+      text: "Get instant 5% discount on online payment"
+    },
+    {
+      id: "club-discount",
+      text: "Club Members Get 5% OFF on all products"
+    },
+    {
+      id: "club-rewards",
+      text: "Club Members Earn 5% Reward Points"
     }
   ]
 
-  const renderItem = (item: AnnouncementItem) => {
-    const Icon = item.icon
-    const content = (
-      <div
-        className="flex items-center gap-2"
-        aria-label={item.ariaLabel}
-      >
-        <Icon className="w-5 h-5 flex-shrink-0" />
-        <span className="whitespace-nowrap text-base font-medium">
-          {item.text}
-        </span>
-      </div>
-    )
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      loop: true,
+      align: "center"
+    },
+    [
+      Autoplay({
+        delay: 5000,
+        stopOnInteraction: false
+      })
+    ]
+  )
 
-    if (item.href) {
-      const isExternal = item.href.startsWith("http")
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev()
+  }, [emblaApi])
 
-      if (isExternal) {
-        return (
-          <a
-            key={item.id}
-            href={item.href}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex"
-          >
-            {content}
-          </a>
-        )
-      }
-
-      return (
-        <LocalizedClientLink key={item.id} href={item.href}>
-          {content}
-        </LocalizedClientLink>
-      )
-    }
-
-    return (
-      <div key={item.id}>
-        {content}
-      </div>
-    )
-  }
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext()
+  }, [emblaApi])
 
   return (
     <div
@@ -97,16 +60,42 @@ const AnnouncementBar = () => {
       className="hidden lg:block bg-foreground text-white py-3"
     >
       <div className="mx-auto px-4 max-w-[1440px]">
-        <div className="flex flex-row justify-between items-center gap-6">
-          {/* Left section - Delivery and Contact */}
-          <div className="flex items-center gap-4">
-            {leftItems.map((item) => renderItem(item))}
+        <div className="flex items-center justify-center">
+          {/* Previous Arrow - positioned closer to content */}
+          <button
+            onClick={scrollPrev}
+            aria-label="Previous announcement"
+            className="flex items-center justify-center hover:opacity-80 transition-opacity mr-3"
+          >
+            <ChevronLeftIcon className="w-5 h-5" />
+          </button>
+
+          {/* Carousel Container */}
+          <div className="overflow-hidden max-w-xl" ref={emblaRef}>
+            <div className="flex">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className="flex-[0_0_100%] min-w-0"
+                >
+                  <div className="text-center">
+                    <span className="text-base font-medium">
+                      {message.text}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Right section - Location, Login, Help */}
-          <div className="flex items-center gap-4">
-            {rightItems.map((item) => renderItem(item))}
-          </div>
+          {/* Next Arrow - positioned closer to content */}
+          <button
+            onClick={scrollNext}
+            aria-label="Next announcement"
+            className="flex items-center justify-center hover:opacity-80 transition-opacity ml-3"
+          >
+            <ChevronRightIcon className="w-5 h-5" />
+          </button>
         </div>
       </div>
     </div>
