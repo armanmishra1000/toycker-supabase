@@ -27,37 +27,42 @@ export const listProducts = cache(async function listProducts(options: {
     limit?: number
     collection_id?: string[]
     category_id?: string[]
+    exclude_id?: string
   }
 } = {}): Promise<{ response: { products: Product[]; count: number } }> {
   const supabase = await createClient()
 
-  let query = supabase
-    .from("products")
-    .select(PRODUCT_SELECT, { count: "exact" })
+  let selectString = PRODUCT_SELECT
+  const joins: string[] = []
 
   if (options.queryParams?.collection_id?.length) {
-    const collectionIds = options.queryParams.collection_id
-    query = supabase
-      .from("products")
-      .select(`
-        ${PRODUCT_SELECT},
-        product_collections!inner(collection_id)
-      `, { count: "exact" })
-      .in("product_collections.collection_id", collectionIds)
+    joins.push(`product_collections!inner(collection_id)`)
+  }
+  if (options.queryParams?.category_id?.length) {
+    joins.push(`product_categories!inner(category_id)`)
+  }
+
+  if (joins.length > 0) {
+    selectString = `${PRODUCT_SELECT}, ${joins.join(', ')}`
+  }
+
+  let query = supabase
+    .from("products")
+    .select(selectString, { count: "exact" })
+
+  if (options.queryParams?.collection_id?.length) {
+    query = query.in("product_collections.collection_id", options.queryParams.collection_id)
   }
 
   if (options.queryParams?.category_id?.length) {
-    const categoryIds = options.queryParams.category_id
-    query = supabase
-      .from("products")
-      .select(`
-        ${PRODUCT_SELECT},
-        product_categories!inner(category_id)
-      `, { count: "exact" })
-      .in("product_categories.category_id", categoryIds)
+    query = query.in("product_categories.category_id", options.queryParams.category_id)
   }
 
-  // Apply limit AFTER collection filter
+  if (options.queryParams?.exclude_id) {
+    query = query.neq("id", options.queryParams.exclude_id)
+  }
+
+  // Apply limit AFTER exclusions and filters
   if (options.queryParams?.limit) {
     query = query.limit(options.queryParams.limit)
   }
@@ -69,7 +74,7 @@ export const listProducts = cache(async function listProducts(options: {
     return { response: { products: [], count: 0 } }
   }
 
-  const products = (data || []).map((p) => normalizeProductImage(p as Product))
+  const products = (data || []).map((p) => normalizeProductImage(p as unknown as Product))
   return { response: { products, count: count || 0 } }
 })
 
