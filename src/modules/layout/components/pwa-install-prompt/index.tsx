@@ -2,7 +2,7 @@
 
 import Modal from "@modules/common/components/modal";
 import { Button } from "@modules/common/components/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { Smartphone, Download, Apple, X } from "lucide-react";
 
@@ -17,7 +17,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 export default function PWAInstallPrompt() {
     const [showModal, setShowModal] = useState(false);
-    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+    const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
     const [isIOS, setIsIOS] = useState(false);
 
     useEffect(() => {
@@ -33,19 +33,36 @@ export default function PWAInstallPrompt() {
         const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !((window as any).MSStream);
         setIsIOS(ios);
 
-        // Show immediately
-        setShowModal(true);
-
-        if (!ios) {
-            // For Chromium/Android, still listen for the prompt
-            const handler = (e: Event) => {
-                e.preventDefault();
-                setDeferredPrompt(e as BeforeInstallPromptEvent);
-            };
-
-            window.addEventListener("beforeinstallprompt", handler);
-            return () => window.removeEventListener("beforeinstallprompt", handler);
+        // For iOS, show immediately as there's no beforeinstallprompt event
+        if (ios) {
+            setShowModal(true);
+            return;
         }
+
+        // For Chromium/Android, wait for the beforeinstallprompt event
+        const handler = (e: Event) => {
+            e.preventDefault();
+            const promptEvent = e as BeforeInstallPromptEvent;
+            deferredPromptRef.current = promptEvent;
+
+            // Only show modal AFTER we have the deferred prompt
+            setShowModal(true);
+        };
+
+        window.addEventListener("beforeinstallprompt", handler);
+
+        // Fallback: If no prompt event fires within 3 seconds,
+        // show modal anyway (might be already installable or browser doesn't support it)
+        const timeout = setTimeout(() => {
+            if (!deferredPromptRef.current) {
+                setShowModal(true);
+            }
+        }, 3000);
+
+        return () => {
+            window.removeEventListener("beforeinstallprompt", handler);
+            clearTimeout(timeout);
+        };
     }, []);
 
     const handleDismiss = () => {
@@ -54,16 +71,32 @@ export default function PWAInstallPrompt() {
     };
 
     const handleInstall = async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
+        if (!deferredPromptRef.current) {
+            // If no deferred prompt, show instructions or close
+            console.warn("PWA install prompt not available");
+            // On Android/Chrome, if the prompt isn't available,
+            // the app might already be installed or browser doesn't support it
+            setShowModal(false);
+            return;
+        }
+
+        try {
+            await deferredPromptRef.current.prompt();
+            const { outcome } = await deferredPromptRef.current.userChoice;
+
             if (outcome === "accepted") {
                 console.log("User accepted the PWA install prompt");
                 localStorage.setItem("pwa_prompt_dismissed", "true");
+            } else {
+                console.log("User dismissed the PWA install prompt");
             }
-            setDeferredPrompt(null);
+
+            deferredPromptRef.current = null;
+            setShowModal(false);
+        } catch (error) {
+            console.error("Error showing install prompt:", error);
+            setShowModal(false);
         }
-        setShowModal(false);
     };
 
     if (!showModal) return null;
