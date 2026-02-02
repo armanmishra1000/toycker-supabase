@@ -4,6 +4,7 @@ import {
   ArrowLeftOnRectangleIcon,
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline"
+import Image from "next/image"
 import { signout } from "@lib/data/customer"
 import { ensureAdmin, getAdminUser } from "@/lib/data/admin"
 import { getUserPermissions } from "@/lib/permissions/server"
@@ -72,12 +73,27 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {/* Logo Section */}
           <div className="h-16 flex items-center px-6 border-b border-gray-200 shrink-0">
             <Link href="/admin" className="flex items-center gap-3 group">
-              <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-sm transition-all">
-                T
+              <div className="h-9 w-9 rounded-lg flex items-center justify-center overflow-hidden transition-all bg-primary p-1">
+                <Image
+                  src="/icon-512x512.png"
+                  alt="Toycker Logo"
+                  width={30}
+                  height={30}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="font-semibold text-base text-gray-900 leading-tight">Toycker</span>
-                <span className="text-[11px] text-gray-500 font-medium tracking-wide">ADMIN</span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-wider w-fit mt-1 ${(adminUser?.role || "").toLowerCase().includes("owner")
+                    ? "bg-purple-50 text-purple-600 border-purple-100"
+                    : (adminUser?.role || "").toLowerCase().includes("admin")
+                      ? "bg-blue-50 text-blue-600 border-blue-100"
+                      : (adminUser?.role || "").toLowerCase().includes("staff")
+                        ? "bg-gray-50 text-gray-500 border-gray-100"
+                        : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                  }`}>
+                  {adminUser?.role || "Admin"}
+                </span>
               </div>
             </Link>
           </div>
@@ -126,10 +142,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
                 {/* Mobile Logo */}
                 <Link href="/admin" className="lg:hidden flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xs">
-                    T
+                  <div className="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden">
+                    <Image
+                      src="/icon-512x512.png"
+                      alt="Toycker Logo"
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <span className="font-semibold text-sm text-gray-900">Toycker</span>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-sm text-gray-900 leading-tight">Toycker</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-wider w-fit mt-0.5 scale-90 origin-left ${(adminUser?.role || "").toLowerCase().includes("owner")
+                        ? "bg-purple-50 text-purple-600 border-purple-100"
+                        : (adminUser?.role || "").toLowerCase().includes("admin")
+                          ? "bg-blue-50 text-blue-600 border-blue-100"
+                          : (adminUser?.role || "").toLowerCase().includes("staff")
+                            ? "bg-gray-50 text-gray-500 border-gray-100"
+                            : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                      }`}>
+                      {adminUser?.role || "Admin"}
+                    </span>
+                  </div>
                 </Link>
 
                 {/* Search - Hidden on smallest screens */}
@@ -148,9 +182,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                   <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold shadow-sm">
                     {initials}
                   </div>
-                  <div className="hidden xl:flex flex-col items-start">
-                    <span className="text-sm font-medium text-gray-700">{displayName}</span>
-                    <span className="text-[11px] text-gray-400">{email}</span>
+                  <div className="hidden xl:flex flex-col items-start gap-0.5">
+                    <span className="text-sm font-semibold text-gray-900 leading-none">{displayName}</span>
+                    <span className="text-[10px] font-medium text-gray-400">{email}</span>
                   </div>
                 </button>
               </div>
