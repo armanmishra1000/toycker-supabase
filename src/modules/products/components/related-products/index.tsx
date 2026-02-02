@@ -21,8 +21,27 @@ export default async function RelatedProducts({
     return null
   }
 
-  const { response: { products: allProducts } } = await listProducts()
-  const products = allProducts.filter(p => p.id !== product.id).slice(0, 4)
+  const { response: { products: relatedProducts } } = await listProducts({
+    queryParams: {
+      category_id: product.category_id ? [product.category_id] : undefined,
+      collection_id: product.collection_id ? [product.collection_id] : undefined,
+      limit: 5,
+      exclude_id: product.id,
+    }
+  })
+
+  let products = relatedProducts.slice(0, 4)
+
+  // Fallback to recent products if no category/collection-specific related products are found
+  if (products.length === 0) {
+    const { response: { products: fallbackProducts } } = await listProducts({
+      queryParams: {
+        limit: 5,
+        exclude_id: product.id,
+      }
+    })
+    products = fallbackProducts.slice(0, 4)
+  }
 
   if (!products.length) {
     return null
