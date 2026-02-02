@@ -6,14 +6,24 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { ensureAdmin } from "./admin"
 
-export async function getAdminPromotions(): Promise<Promotion[]> {
+export async function getAdminPromotions(mode: "active" | "history" = "active"): Promise<Promotion[]> {
     await ensureAdmin()
     const supabase = await createClient()
-    const { data, error } = await supabase
+    const now = new Date().toISOString()
+
+    let query = supabase
         .from("promotions")
         .select("*")
-        .eq("is_deleted", false)
-        .order("created_at", { ascending: false })
+
+    if (mode === "active") {
+        query = query
+            .eq("is_deleted", false)
+            .or(`ends_at.is.null,ends_at.gt.${now}`)
+    } else {
+        query = query.or(`is_deleted.eq.true,ends_at.lte.${now}`)
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false })
 
     if (error) throw error
     return data || []

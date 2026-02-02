@@ -2,7 +2,7 @@
 import { getAdminCustomer } from "@/lib/data/admin"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ChevronLeftIcon, ShoppingBagIcon, StarIcon, BanknotesIcon, MapIcon, CreditCardIcon } from "@heroicons/react/24/outline"
+import { ChevronLeftIcon, ShoppingBagIcon, StarIcon, BanknotesIcon, MapIcon, CreditCardIcon, UserIcon } from "@heroicons/react/24/outline"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
@@ -31,6 +31,11 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
   const isMember = customer.is_club_member
   const membershipVariant = isMember ? "success" : "neutral"
 
+  // Calculate display name with fallbacks
+  const displayName = [customer.first_name, customer.last_name].filter(Boolean).join(" ")
+    || (customer.addresses?.[0] ? [customer.addresses[0].first_name, customer.addresses[0].last_name].filter(Boolean).join(" ") : null)
+    || "N/A"
+
   return (
     <div className="space-y-6 pb-20">
       {/* Navigation */}
@@ -45,7 +50,7 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900">{customer.first_name} {customer.last_name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{displayName}</h1>
             {/* @ts-ignore */}
             <AdminBadge variant={customer.role === 'admin' ? 'info' : membershipVariant}>
               {/* @ts-ignore */}
@@ -143,6 +148,15 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
         <div className="space-y-6">
           <AdminCard title="Contact Information">
             <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <UserIcon className="w-4 h-4 text-gray-500" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</p>
+                  <p className="text-sm font-semibold text-gray-900">{displayName}</p>
+                </div>
+              </div>
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                   <span className="text-gray-500 text-xs font-bold">@</span>
