@@ -1,3 +1,5 @@
+"use client";
+
 import { ReactNode } from "react"
 import Image from "next/image"
 import {
@@ -7,8 +9,9 @@ import {
   PhoneIcon,
   PrinterIcon,
 } from "@heroicons/react/24/outline"
-import { Facebook, Instagram, Linkedin, LucideIcon, Music2, Twitter, Youtube } from "lucide-react"
+import { Facebook, Instagram, Linkedin, LucideIcon, Music2, Twitter, Youtube, Download } from "lucide-react"
 import { Text } from "@modules/common/components/text"
+import { usePWA } from "@modules/layout/components/pwa-install-prompt/PWAContext"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import {
@@ -134,6 +137,21 @@ const DecorativeGround = ({ year: _year }: { year: number }) => (
     </div>
   </div>
 )
+const InstallAppButton = () => {
+  const { isInstallable, isStandalone, showInstallPrompt } = usePWA()
+
+  if (!isInstallable || isStandalone) return null
+
+  return (
+    <button
+      onClick={() => showInstallPrompt()}
+      className="flex items-center gap-2 rounded-xl bg-[#059669] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[#047857] active:scale-95 shadow-md"
+    >
+      <Download className="h-5 w-5" />
+      <span>Install App</span>
+    </button>
+  )
+}
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -229,23 +247,28 @@ export default function Footer() {
                 <ArrowUpRightIcon className="h-5 w-5" />
               </button>
             </form>
-            <div className="mt-6 flex flex-wrap gap-3">
-              {footerSocialLinks.map((link) => {
-                const Icon = socialIconMap[link.id]
+            <div className="mt-6 flex flex-wrap gap-4 items-center">
+              <div className="flex flex-wrap gap-3">
+                {footerSocialLinks.map((link) => {
+                  const Icon = socialIconMap[link.id]
 
-                return (
-                  <a
-                    key={link.id}
-                    href={link.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={link.label}
-                    className="flex h-12 w-12 items-center justify-center rounded-full border border-[#dfe9f0] bg-transparent text-grey-60 transition hover:border-primary hover:text-primary"
-                  >
-                    {Icon ? <Icon className="h-5 w-5" /> : link.label.charAt(0)}
-                  </a>
-                )
-              })}
+                  return (
+                    <a
+                      key={link.id}
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={link.label}
+                      className="flex h-12 w-12 items-center justify-center rounded-full border border-[#dfe9f0] bg-transparent text-grey-60 transition hover:border-primary hover:text-primary"
+                    >
+                      {Icon ? <Icon className="h-5 w-5" /> : link.label.charAt(0)}
+                    </a>
+                  )
+                })}
+              </div>
+
+              {/* Install App Button */}
+              <InstallAppButton />
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Button } from "@modules/common/components/button";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Smartphone, Download, Apple, X } from "lucide-react";
+import { usePWA } from "./PWAContext";
 
 interface BeforeInstallPromptEvent extends Event {
     readonly platforms: string[];
@@ -16,37 +17,20 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function PWAInstallPrompt() {
+    const { isInstallable, isStandalone, isIOS, showInstallPrompt } = usePWA();
     const [showModal, setShowModal] = useState(false);
-    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-    const [isIOS, setIsIOS] = useState(false);
 
     useEffect(() => {
         // Check if already dismissed
         const isDismissed = localStorage.getItem("pwa_prompt_dismissed");
         if (isDismissed) return;
 
-        // Check if already installed
-        const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-        if (isStandalone) return;
-
-        // Detect iOS
-        const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !((window as any).MSStream);
-        setIsIOS(ios);
-
-        // Show immediately
-        setShowModal(true);
-
-        if (!ios) {
-            // For Chromium/Android, still listen for the prompt
-            const handler = (e: Event) => {
-                e.preventDefault();
-                setDeferredPrompt(e as BeforeInstallPromptEvent);
-            };
-
-            window.addEventListener("beforeinstallprompt", handler);
-            return () => window.removeEventListener("beforeinstallprompt", handler);
+        if (isInstallable && !isStandalone) {
+            // Show modal after a short delay for better UX
+            const timer = setTimeout(() => setShowModal(true), 3000);
+            return () => clearTimeout(timer);
         }
-    }, []);
+    }, [isInstallable, isStandalone]);
 
     const handleDismiss = () => {
         localStorage.setItem("pwa_prompt_dismissed", "true");
@@ -54,15 +38,7 @@ export default function PWAInstallPrompt() {
     };
 
     const handleInstall = async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === "accepted") {
-                console.log("User accepted the PWA install prompt");
-                localStorage.setItem("pwa_prompt_dismissed", "true");
-            }
-            setDeferredPrompt(null);
-        }
+        await showInstallPrompt();
         setShowModal(false);
     };
 

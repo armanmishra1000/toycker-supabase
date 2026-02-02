@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { PWAProvider } from "@modules/layout/components/pwa-install-prompt/PWAContext";
 
 const PWARegistration = dynamic(() => import("@/components/pwa-registration"), {
     ssr: false,

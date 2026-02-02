@@ -1,4 +1,4 @@
-"use client"
+  "use client"
 
 import { ReactNode } from "react"
 import { usePathname } from "next/navigation"
@@ -11,6 +11,7 @@ import ToastDisplay from "@modules/common/components/toast-display"
 import { ShippingPriceProvider } from "@modules/common/context/shipping-price-context"
 import { WishlistProvider } from "@modules/products/context/wishlist"
 import { ChatbotProvider, ChatbotWidget } from "@modules/chatbot"
+import { PWAProvider } from "@modules/layout/components/pwa-install-prompt/PWAContext"
 
 const Providers = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname()
@@ -27,8 +28,10 @@ const Providers = ({ children }: { children: ReactNode }) => {
             <CartSidebarProvider>
               <WishlistProvider>
                 <ChatbotProvider>
-                  <ChatbotWidget />
-                  {children}
+                  <PWAProvider>
+                    <ChatbotWidget />
+                    {children}
+                  </PWAProvider>
                 </ChatbotProvider>
               </WishlistProvider>
             </CartSidebarProvider>
