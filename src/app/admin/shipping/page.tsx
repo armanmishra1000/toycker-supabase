@@ -21,10 +21,13 @@ export default async function AdminShipping() {
         subtitle="Manage shipping rates and delivery zones."
         actions={
           <ProtectedAction permission={PERMISSIONS.SHIPPING_CREATE} hideWhenDisabled>
-            <Link href="/admin/shipping/new" className="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-medium text-xs text-white hover:bg-black transition-colors shadow-sm">
+            <button
+              disabled
+              className="inline-flex items-center px-4 py-2 bg-gray-400 border border-transparent rounded-lg font-medium text-xs text-white cursor-not-allowed shadow-sm"
+            >
               <PlusIcon className="h-4 w-4 mr-2" />
               Add option
-            </Link>
+            </button>
           </ProtectedAction>
         }
       />

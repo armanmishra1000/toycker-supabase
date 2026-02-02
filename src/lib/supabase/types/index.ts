@@ -188,6 +188,7 @@ export interface Promotion {
   value: number
   min_order_amount: number
   is_active: boolean
+  is_deleted: boolean
   starts_at: string | null
   ends_at: string | null
   max_uses: number | null
