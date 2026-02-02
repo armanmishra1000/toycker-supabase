@@ -39,14 +39,26 @@ export async function getAdminUser() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, email")
+    .select("first_name, last_name, email, role, admin_role_id, admin_role:admin_roles(name)")
     .eq("id", user.id)
     .single()
+
+  let roleName = "Admin"
+  if (profile?.admin_role) {
+    if (Array.isArray(profile.admin_role)) {
+      roleName = profile.admin_role[0]?.name || roleName
+    } else {
+      roleName = (profile.admin_role as any).name || roleName
+    }
+  } else if (profile?.role === "admin") {
+    roleName = "System Admin"
+  }
 
   return {
     email: profile?.email || user.email || "",
     firstName: profile?.first_name || "",
     lastName: profile?.last_name || "",
+    role: roleName,
   }
 }
 
