@@ -3,12 +3,13 @@
 import { useState } from "react"
 import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
-import { Star, Image as ImageIcon, Video, Mic, Trash2 } from "lucide-react"
+import { Star, Image as ImageIcon, Video, Mic, Trash2, Play, Pause, Square } from "lucide-react"
 import { getPresignedUploadUrl } from "@/lib/actions/storage"
 import { submitReview, type ReviewData, type ReviewWithMedia } from "@/lib/actions/reviews"
 import Image from "next/image"
 import { CustomerProfile } from "@/lib/supabase/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useVoiceRecorder } from "@/hooks/useVoiceRecorder"
 
 const CustomerReviews = ({
   productId,
@@ -31,6 +32,9 @@ const CustomerReviews = ({
   })
   const [files, setFiles] = useState<File[]>([])
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle")
+
+  // Voice recording hook
+  const voiceRecorder = useVoiceRecorder()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -84,8 +88,20 @@ const CustomerReviews = ({
     try {
       const uploadedMedia: ReviewData["media"] = []
 
-      // 1. Upload files to R2
-      for (const file of files) {
+      // 1. Upload files (including voice recording) to R2
+      const allFiles = [...files]
+
+      // Add voice recording if exists
+      if (voiceRecorder.audioBlob) {
+        const voiceFile = new File(
+          [voiceRecorder.audioBlob],
+          `voice-review-${Date.now()}.${voiceRecorder.audioBlob.type.includes('mp4') ? 'mp4' : 'webm'}`,
+          { type: voiceRecorder.audioBlob.type }
+        )
+        allFiles.push(voiceFile)
+      }
+
+      for (const file of allFiles) {
         const fileType = file.type.startsWith("image/")
           ? "image"
           : file.type.startsWith("video/")
@@ -135,6 +151,7 @@ const CustomerReviews = ({
         setFormState({ review: "", title: "", displayName: "", anonymous: false })
         setRating(0)
         setFiles([])
+        voiceRecorder.resetRecording()
       }, 2000)
     } catch (error: any) {
       // Provide user-friendly error if possible
@@ -265,6 +282,142 @@ const CustomerReviews = ({
                     </div>
                   </div>
 
+                  {/* Voice Recording Section */}
+                  <div className="space-y-3">
+                    <span className="text-sm font-semibold text-gray-700">Record Voice Review (Optional)</span>
+
+                    {/* Error Message */}
+                    {voiceRecorder.status === 'error' && voiceRecorder.errorMessage && (
+                      <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3" role="alert" aria-live="assertive">
+                        <p className="text-sm text-red-700">{voiceRecorder.errorMessage}</p>
+                      </div>
+                    )}
+
+                    {/* Idle State - Show Start Recording Button */}
+                    {(voiceRecorder.status === 'idle' || voiceRecorder.status === 'error') && !voiceRecorder.audioBlob && (
+                      <button
+                        type="button"
+                        onClick={voiceRecorder.startRecording}
+                        className="flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/50 px-4 py-3 text-gray-600 transition-all duration-200 hover:border-primary hover:bg-primary/10 hover:text-primary active:scale-95"
+                        aria-label="Start voice recording"
+                      >
+                        <Mic className="h-5 w-5" />
+                        <span className="text-sm font-medium">Start Recording</span>
+                      </button>
+                    )}
+
+                    {/* Requesting Permission State */}
+                    {voiceRecorder.status === 'requesting_permission' && (
+                      <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3" aria-live="polite">
+                        <p className="text-sm text-blue-700">Requesting microphone permission...</p>
+                      </div>
+                    )}
+
+                    {/* Recording State */}
+                    {(voiceRecorder.status === 'recording' || voiceRecorder.status === 'paused') && (
+                      <div className="rounded-xl border-2 border-red-300 bg-red-50/50 px-4 py-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {voiceRecorder.status === 'recording' && (
+                              <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
+                            )}
+                            <span className="text-sm font-semibold text-gray-900">
+                              {voiceRecorder.status === 'recording' ? 'Recording...' : 'Paused'}
+                            </span>
+                          </div>
+                          <span className="text-sm font-mono text-gray-700" aria-live="polite">
+                            {Math.floor(voiceRecorder.duration / 60).toString().padStart(2, '0')}:
+                            {(voiceRecorder.duration % 60).toString().padStart(2, '0')} / 05:00
+                          </span>
+                        </div>
+
+                        {/* Simple Waveform Visualization */}
+                        {voiceRecorder.status === 'recording' && (
+                          <div className="flex items-center justify-center gap-1 h-12" aria-hidden="true">
+                            {[...Array(20)].map((_, i) => (
+                              <div
+                                key={i}
+                                className="w-1 bg-red-400 rounded-full animate-pulse"
+                                style={{
+                                  height: `${20 + Math.random() * 60}%`,
+                                  animationDelay: `${i * 50}ms`,
+                                  animationDuration: `${800 + Math.random() * 400}ms`
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          {voiceRecorder.status === 'recording' ? (
+                            <button
+                              type="button"
+                              onClick={voiceRecorder.pauseRecording}
+                              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-yellow-600 active:scale-95"
+                              aria-label="Pause recording"
+                            >
+                              <Pause className="h-4 w-4" />
+                              Pause
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={voiceRecorder.resumeRecording}
+                              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-600 active:scale-95"
+                              aria-label="Resume recording"
+                            >
+                              <Play className="h-4 w-4" />
+                              Resume
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={voiceRecorder.stopRecording}
+                            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 active:scale-95"
+                            aria-label="Stop recording"
+                          >
+                            <Square className="h-4 w-4" />
+                            Stop
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Stopped State - Show Preview */}
+                    {voiceRecorder.status === 'stopped' && voiceRecorder.audioUrl && (
+                      <div className="rounded-xl border-2 border-green-300 bg-green-50/50 px-4 py-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                            <Mic className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900">Voice Review Recorded</p>
+                            <p className="text-xs text-gray-600">
+                              Duration: {Math.floor(voiceRecorder.duration / 60)}:
+                              {(voiceRecorder.duration % 60).toString().padStart(2, '0')}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={voiceRecorder.resetRecording}
+                            className="rounded-full p-2 text-red-500 transition hover:bg-red-100 active:scale-95"
+                            aria-label="Delete voice recording"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {/* Audio Playback */}
+                        <audio
+                          controls
+                          src={voiceRecorder.audioUrl}
+                          className="w-full"
+                          aria-label="Voice review playback"
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <InputControl
                     label="Display Name"
                     value={formState.displayName}
@@ -352,9 +505,21 @@ const CustomerReviews = ({
                   }
                   if (media.file_type === 'audio') {
                     return (
-                      <audio key={media.id} controls className="h-12 w-64 mt-2">
-                        <source src={publicUrl} />
-                      </audio>
+                      <div key={media.id} className="h-32 w-80 flex-shrink-0 rounded-lg overflow-hidden border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50">
+                        <div className="h-full flex flex-col justify-center p-4 space-y-2">
+                          <div className="flex items-center gap-2 text-indigo-700">
+                            <Mic className="h-5 w-5" />
+                            <span className="text-sm font-semibold">Voice Review</span>
+                          </div>
+                          <audio controls className="w-full" style={{ height: '32px' }}>
+                            <source src={publicUrl} />
+                            Your browser does not support the audio element.
+                          </audio>
+                          <p className="text-xs text-gray-500 text-center">
+                            🎧 Listen to customer's voice
+                          </p>
+                        </div>
+                      </div>
                     )
                   }
                   return (
