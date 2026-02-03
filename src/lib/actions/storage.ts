@@ -17,7 +17,16 @@ export async function getPresignedUploadUrl({
     try {
         // Validate file type based on folder
         const allowedTypes: Record<string, string[]> = {
-            reviews: ["image/jpeg", "image/png", "image/webp", "video/mp4"],
+            reviews: [
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+                "video/mp4",
+                "audio/webm",
+                "audio/mp4",
+                "audio/mpeg",
+                "audio/webm;codecs=opus"
+            ],
             banners: ["image/jpeg", "image/png", "image/webp"],
             "exclusive-videos": ["video/mp4", "video/webm"],
             products: ["image/jpeg", "image/png", "image/webp"],
@@ -30,8 +39,9 @@ export async function getPresignedUploadUrl({
         }
 
         const fileId = uuidv4()
-        // Extract extension from mime type
-        const extension = fileType.split("/")[1] || "bin"
+        // Extract extension from mime type (handle parameters like codecs)
+        const pureMimeType = fileType.split(";")[0]
+        const extension = pureMimeType.split("/")[1] || "bin"
         const key = `${folder}/${fileId}.${extension}`
 
         const command = new PutObjectCommand({
