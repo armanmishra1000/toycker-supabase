@@ -251,18 +251,10 @@ export async function getAllReviewsForAdmin(params: { page?: number; limit?: num
     // We use 'in' filter.
     const { data: products } = await supabase
         .from("products")
-        .select("id, title, name") // medusa products usually have 'title', supabase maybe 'name'?
-        // Checking previously viewed file skeleton-product-preview.tsx might show product shape,
-        // or just assume 'title' or 'name'.
-        // 'ProductTemplate' uses 'product.name'. So it is 'name' or mapped to name.
-        // The supabase type says 'Product'.
-        // Let's try select 'id, title, name' and see what we get or use 'name' if standard.
-        // Toycker repo seems to use Medusa structure synced to Supabase. Medusa uses 'title'.
-        // But 'ProductTemplate' used 'product.name'.
-        // I'll select 'id, title, name' to be safe and check which one is present.
+        .select("id, name")
         .in("id", productIds)
 
-    const productMap = new Map(products?.map((p: any) => [p.id, p.name || p.title || "Unknown Product"]) || [])
+    const productMap = new Map(products?.map((p: any) => [p.id, p.name || "Unknown Product"]) || [])
 
     const reviewsWithProductNames = reviews.map((r) => ({
         ...r,
@@ -319,4 +311,36 @@ export async function getUserReviews() {
         product_name: productMap.get(review.product_id)?.name || "Unknown Product",
         product_thumbnail: productMap.get(review.product_id)?.thumbnail || null,
     })) || []
+}
+
+export async function getReviewStatsForAdmin() {
+    const supabase = await createClient()
+
+    // 1. Total and Pending
+    const { count: total } = await supabase.from("reviews").select("*", { count: "exact", head: true })
+    const { count: pending } = await supabase.from("reviews").select("*", { count: "exact", head: true }).eq("approval_status", "pending")
+
+    // 2. Average Rating
+    const { data: ratings } = await supabase.from("reviews").select("rating")
+    const avgRating = ratings?.length
+        ? ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length
+        : 0
+
+    // 3. Voice Reviews Count
+    // We count unique review_ids in review_media that have file_type 'audio'
+    // Since Supabase doesn't easily support distinct counts in select count, 
+    // we can fetch the IDs or do a clever query. For small numbers, simple is fine.
+    const { data: voiceMedia } = await supabase
+        .from("review_media")
+        .select("review_id")
+        .eq("file_type", "audio")
+
+    const voiceCount = new Set(voiceMedia?.map(m => m.review_id)).size
+
+    return {
+        total: total || 0,
+        pending: pending || 0,
+        voice: voiceCount,
+        avgRating: Number(avgRating.toFixed(1))
+    }
 }

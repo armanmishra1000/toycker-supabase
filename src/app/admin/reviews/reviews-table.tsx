@@ -120,7 +120,7 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                                                         </span>
                                                     )}
                                                     {review.review_media.some((m: any) => m.file_type === 'audio') && (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium">
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase tracking-wider border border-indigo-100 shadow-sm">
                                                             <Mic className="h-3 w-3" />
                                                             Voice
                                                         </span>
@@ -131,14 +131,35 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
-                                            <span className="text-gray-900">{review.is_anonymous ? "Anonymous" : review.display_name}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-gray-900 font-medium">
+                                                    {review.display_name || "Anonymous"}
+                                                </span>
+                                                {review.is_anonymous && (
+                                                    <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider border border-gray-200">
+                                                        Anon
+                                                    </span>
+                                                )}
+                                            </div>
                                             <span className="text-xs text-gray-400">{formatIST(review.created_at)}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex items-center text-amber-500">
-                                            <span className="font-semibold mr-1 text-gray-900">{review.rating}</span>
-                                            <Star className="h-4 w-4 fill-current" />
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-1.5 text-amber-500">
+                                                <span className="font-bold text-gray-900">{review.rating.toFixed(1)}</span>
+                                                <div className="flex">
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <Star
+                                                            key={i}
+                                                            className={clsx(
+                                                                "h-3.5 w-3.5",
+                                                                i < review.rating ? "fill-current" : "text-gray-200"
+                                                            )}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -218,8 +239,14 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h4 className="font-medium text-gray-900 text-lg">{selectedReview.product_name}</h4>
-                                    <p className="text-sm text-gray-500">
-                                        By {selectedReview.is_anonymous ? "Anonymous" : selectedReview.display_name} • {formatIST(selectedReview.created_at)}
+                                    <p className="text-sm text-gray-500 flex items-center gap-2">
+                                        By {selectedReview.display_name || "Anonymous"}
+                                        {selectedReview.is_anonymous && (
+                                            <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider border border-gray-200">
+                                                Anon
+                                            </span>
+                                        )}
+                                        • {formatIST(selectedReview.created_at)}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-full text-amber-700 font-bold">
