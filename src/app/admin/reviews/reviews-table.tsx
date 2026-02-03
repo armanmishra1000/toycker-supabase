@@ -12,12 +12,13 @@ import { AdminTableWrapper } from "@modules/admin/components/admin-table-wrapper
 
 
 export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }) {
-    const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all")
+    const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected" | "voice">("all")
     const [selectedReview, setSelectedReview] = useState<ReviewWithMedia | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
 
     const filteredReviews = reviews.filter((r) => {
         if (activeTab === "all") return true
+        if (activeTab === "voice") return r.review_media?.some((m: any) => m.file_type === 'audio')
         return r.approval_status === activeTab
     })
 
@@ -50,23 +51,32 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
         <div className="bg-white rounded-lg shadow border border-gray-200">
             {/* Tabs */}
             <div className="border-b border-gray-200 px-6 flex gap-6">
-                {["all", "pending", "approved", "rejected"].map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab as any)}
-                        className={clsx(
-                            "py-4 text-sm font-medium border-b-2 transition-colors capitalize",
-                            activeTab === tab
-                                ? "border-indigo-600 text-indigo-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        )}
-                    >
-                        {tab}
-                        <span className="ml-2 py-0.5 px-2 rounded-full bg-gray-100 text-xs text-gray-600">
-                            {reviews.filter(r => tab === 'all' ? true : r.approval_status === tab).length}
-                        </span>
-                    </button>
-                ))}
+                {["all", "pending", "approved", "rejected", "voice"].map((tab) => {
+                    const count = tab === 'all'
+                        ? reviews.length
+                        : tab === 'voice'
+                            ? reviews.filter(r => r.review_media?.some((m: any) => m.file_type === 'audio')).length
+                            : reviews.filter(r => r.approval_status === tab).length
+
+                    return (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab as any)}
+                            className={clsx(
+                                "py-4 text-sm font-medium border-b-2 transition-colors capitalize flex items-center gap-2",
+                                activeTab === tab
+                                    ? "border-indigo-600 text-indigo-600"
+                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            )}
+                        >
+                            {tab === 'voice' && <Mic className="h-4 w-4" />}
+                            {tab}
+                            <span className="py-0.5 px-2 rounded-full bg-gray-100 text-xs text-gray-600">
+                                {count}
+                            </span>
+                        </button>
+                    )
+                })}
             </div>
 
             {/* Table */}
@@ -96,10 +106,25 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                                             <span className="font-medium text-gray-900 line-clamp-1 max-w-xs">{review.product_name}</span>
                                             <span className="text-gray-500 text-xs line-clamp-1">{review.title}</span>
                                             {review.review_media?.length > 0 && (
-                                                <div className="flex gap-1 mt-1">
-                                                    {review.review_media.some((m: any) => m.file_type === 'image') && <ImageIcon className="h-3 w-3 text-gray-400" />}
-                                                    {review.review_media.some((m: any) => m.file_type === 'video') && <Video className="h-3 w-3 text-gray-400" />}
-                                                    {review.review_media.some((m: any) => m.file_type === 'audio') && <Mic className="h-3 w-3 text-gray-400" />}
+                                                <div className="flex gap-2 mt-1.5">
+                                                    {review.review_media.some((m: any) => m.file_type === 'image') && (
+                                                        <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                                                            <ImageIcon className="h-3 w-3" />
+                                                            {review.review_media.filter((m: any) => m.file_type === 'image').length}
+                                                        </span>
+                                                    )}
+                                                    {review.review_media.some((m: any) => m.file_type === 'video') && (
+                                                        <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                                                            <Video className="h-3 w-3" />
+                                                            {review.review_media.filter((m: any) => m.file_type === 'video').length}
+                                                        </span>
+                                                    )}
+                                                    {review.review_media.some((m: any) => m.file_type === 'audio') && (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium">
+                                                            <Mic className="h-3 w-3" />
+                                                            Voice
+                                                        </span>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -226,10 +251,18 @@ export default function ReviewsTable({ reviews }: { reviews: ReviewWithMedia[] }
                                                         </video>
                                                     )}
                                                     {media.file_type === 'audio' && (
-                                                        <div className="p-4 flex items-center justify-center">
-                                                            <audio controls className="w-full">
+                                                        <div className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 space-y-3">
+                                                            <div className="flex items-center gap-2 text-indigo-700">
+                                                                <Mic className="h-5 w-5" />
+                                                                <span className="font-semibold text-sm">Voice Review</span>
+                                                            </div>
+                                                            <audio controls className="w-full" style={{ height: '40px' }}>
                                                                 <source src={publicUrl} />
+                                                                Your browser does not support the audio element.
                                                             </audio>
+                                                            <p className="text-xs text-gray-500 text-center">
+                                                                Listen to the customer's voice review
+                                                            </p>
                                                         </div>
                                                     )}
                                                 </div>
