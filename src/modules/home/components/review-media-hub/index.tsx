@@ -1,10 +1,11 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react"
+import { useCallback, useEffect, useRef, useState, useMemo, type KeyboardEvent, type MouseEvent } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, Pause, Play, Star, X } from "lucide-react"
 import useEmblaCarousel from "embla-carousel-react"
 import { cn } from "@lib/util/cn"
+import { getImageUrl } from "@/lib/util/get-image-url"
 
 type ReviewType = "text" | "video"
 
@@ -13,8 +14,8 @@ type BaseReview = {
   type: ReviewType
   quote?: string
   summary?: string
-  videoSrc?: string
-  posterSrc?: string
+  videoSrc?: string | null
+  posterSrc?: string | null
   author: string
   avatar: string
   tag?: string
@@ -22,7 +23,7 @@ type BaseReview = {
   priceOriginal?: string
   cardBg?: string
   cardBorder?: string
-  productImage?: string
+  productImage?: string | null
 }
 
 type Review = BaseReview
@@ -32,128 +33,10 @@ type AudioReview = {
   title: string
   author: string
   durationLabel: string
-  coverImage: string
-  audioSrc: string
+  coverImage: string | null
+  audioSrc: string | null
 }
 
-const REVIEWS: Review[] = [
-  {
-    id: "text-anika",
-    type: "text",
-    quote:
-      "I bought the art & craft kit for my niece and she absolutely loved it. Good variety of items inside and very creative",
-    author: "Neha Verma",
-    avatar: "/assets/images/H9b572778112d43ce886ad0cc030523e4N.jpg",
-    cardBg: "bg-[#fffdf4]",
-    cardBorder: "border-[#fde9c8]",
-    tag: "Frictions Airplanes",
-    priceCurrent: "₹99.00",
-    priceOriginal: "₹125.00",
-    productImage: "/assets/images/frictions-airplanes.jpg",
-  },
-  {
-    id: "video-exclusive-1",
-    type: "video",
-    quote: "Toycker helped us shoot the Dodge Mini Metal Car in one sunrise session without renting extra gear.",
-    videoSrc: "/assets/videos/exclusive-1.mp4",
-    author: "Pia Patil",
-    avatar: "/assets/images/Hee58b635f526431faa4076d3a0750afeD.jpg",
-    tag: "Dodge Mini Metal Car",
-    priceCurrent: "₹160.00",
-    priceOriginal: "₹250.00",
-  },
-  {
-    id: "text-rob",
-    type: "text",
-    quote:
-      "Very happy with the quality of toys. They are safe, colorful, and exactly as shown on the website. Will definitely order again.",
-    author: " Neha Verma",
-    avatar: "/assets/images/Hdba07b027a41.jpg",
-    cardBg: "bg-[#f0fbff]",
-    cardBorder: "border-[#cdeefd]",
-    tag: "Plastic Golf Set with Golf Sticks, Platform Cup & 2 Balls Kids Boys",
-    priceCurrent: "₹518.00",
-    priceOriginal: "₹575.00",
-    productImage: "/assets/images/51acyqZLHsL._UF1000_1000_QL80.jpg",
-  },
-  {
-    id: "video-exclusive-2",
-    type: "video",
-    quote: "We stitched together a full product walkthrough for the Dodge Mini Metal Car over lunch break.",
-    videoSrc: "/assets/videos/exclusive-2.mp4",
-    author: "Ria Goswami",
-    avatar: "/assets/images/Hdba07b027a41.jpg",
-    tag: "Dodge Mini Metal Car",
-    priceCurrent: "₹160.00",
-    priceOriginal: "₹250.00",
-  },
-  {
-    id: "text-dan",
-    type: "text",
-    quote:
-      "The building blocks set is amazing! My son spends hours creating different shapes and houses. Very good quality and safe for kids.",
-    author: "Priya Sharma",
-    avatar: "/assets/images/H9b572778112d43ce886ad0cc030523e4N.jpg",
-    cardBg: "bg-[#f4f5ff]",
-    cardBorder: "border-[#d9dbff]",
-    tag: "Machine Gun Super Combat - Light and Sound",
-    priceCurrent: "₹549.00",
-    priceOriginal: "₹649.00",
-    productImage: "/assets/images/61K1TDQYuCL._SL1280.jpg",
-  },
-  {
-    id: "video-exclusive-3",
-    type: "video",
-    quote: "The exclusive series lets us alternate macro shots and motion blur without touching the editing suite.",
-    videoSrc: "/assets/videos/exclusive-3.mp4",
-    author: "Meera Venkatesh",
-    avatar: "/assets/images/Hee58b635f526431faa4076d3a0750afeD.jpg",
-    tag: "Dodge Mini Metal Car",
-    priceCurrent: "₹160.00",
-    priceOriginal: "₹250.00",
-  },
-  {
-    id: "text-neha",
-    type: "text",
-    quote:
-      "Bulk orders arrive compartmentalized so volunteers can set up mini labs in minutes. Parents constantly send us thank-you notes after every Toycker pop-up.",
-    author: "Neha Kulkarni",
-    avatar: "/assets/images/Hee58b635f526431faa4076d3a0750afeD.jpg",
-    cardBg: "bg-[#fef2fb]",
-    cardBorder: "border-[#fbd3ee]",
-    tag: "Dodge Mini Metal Car",
-    priceCurrent: "₹160.00",
-    priceOriginal: "₹250.00",
-    productImage: "/assets/images/frictions-airplanes.jpg",
-  },
-]
-
-const AUDIO_REVIEWS: AudioReview[] = [
-  {
-    id: "audio-1",
-    title: "Playroom onboarding in 3 minutes",
-    author: "Vandana Kapoor",
-    durationLabel: "03:12",
-    coverImage: "/assets/images/51acyqZLHsL._UF1000_1000_QL80.jpg",
-    audioSrc: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-  },
-  {
-    id: "audio-2",
-    title: "Dodge Mini showcase walkthrough",
-    author: "Rishi Malhotra",
-    durationLabel: "02:27",
-    coverImage: "/assets/images/61K1TDQYuCL._SL1280.jpg",
-    audioSrc: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-  },
-  {
-    id: "audio-3",
-    title: "Weekend workshop recap",
-    author: "Garima Patel",
-    durationLabel: "04:05",
-    coverImage: "/assets/images/frictions-airplanes.jpg",
-    audioSrc: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
-  },
-]
 
 const formatTime = (timeInSeconds?: number) => {
   if (!Number.isFinite(timeInSeconds) || timeInSeconds === undefined) {
@@ -208,14 +91,14 @@ const ReviewCard = ({ review }: { review: Review }) => {
           ref={videoRef}
           controls={isPlaying}
           playsInline
-          poster={review.posterSrc}
+          poster={review.posterSrc ?? undefined}
           className="absolute inset-0 h-full w-full object-cover transition duration-500 ease-out group-hover:scale-105"
           aria-label={`Video review from ${review.author}`}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}
         >
-          <source src={review.videoSrc} type="video/mp4" />
+          <source src={review.videoSrc ?? undefined} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         <div
@@ -314,8 +197,54 @@ const ReviewCard = ({ review }: { review: Review }) => {
   )
 }
 
-const ReviewMediaHub = () => {
+const ReviewMediaHub = ({ reviews = [] }: { reviews: any[] }) => {
   const [isMounted, setIsMounted] = useState(false)
+
+  // Map dynamic reviews to the internal types
+  const displayReviews: Review[] = useMemo(() => {
+    return reviews.map(hr => {
+      const r = hr.review
+      const videoMedia = r.review_media?.find((m: any) => m.file_type === 'video')
+      const imageMedia = r.review_media?.find((m: any) => m.file_type === 'image')
+
+      const product = r.product
+      const price = product?.price ? `₹${product.price.toFixed(2)}` : undefined
+
+      return {
+        id: r.id,
+        type: videoMedia ? 'video' : 'text',
+        quote: r.content,
+        author: r.is_anonymous ? "Verified Buyer" : (r.display_name || "Verified Buyer"),
+        avatar: "", // Not used in current ReviewCard design as it uses productImage
+        videoSrc: videoMedia ? getImageUrl(videoMedia.file_path) : undefined,
+        posterSrc: imageMedia ? getImageUrl(imageMedia.file_path) : undefined,
+        tag: product?.name,
+        priceCurrent: price,
+        productImage: product?.image_url ? getImageUrl(product.image_url) : undefined,
+        cardBg: r.rating >= 4 ? "bg-[#fffdf4]" : "bg-[#f0fbff]",
+        cardBorder: r.rating >= 4 ? "border-[#fde9c8]" : "border-[#cdeefd]"
+      }
+    })
+  }, [reviews])
+
+  const audioReviews: AudioReview[] = useMemo(() => {
+    const allAudio: AudioReview[] = []
+    reviews.forEach(hr => {
+      const r = hr.review
+      const audioMedia = r.review_media?.find((m: any) => m.file_type === 'audio')
+      if (audioMedia) {
+        allAudio.push({
+          id: `audio-${r.id}`,
+          title: r.title || "Voice Review",
+          author: r.is_anonymous ? "Verified Buyer" : (r.display_name || "Verified Buyer"),
+          durationLabel: "Voice",
+          coverImage: (r.product?.image_url ? getImageUrl(r.product.image_url) : "/assets/images/placeholder.jpg") as string | null,
+          audioSrc: getImageUrl(audioMedia.file_path) as string | null
+        })
+      }
+    })
+    return allAudio
+  }, [reviews])
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
@@ -349,6 +278,11 @@ const ReviewMediaHub = () => {
     emblaApi.on("select", () => onSelect(emblaApi))
     emblaApi.on("reInit", () => onSelect(emblaApi))
   }, [emblaApi, onSelect])
+
+  // If no reviews, don't render the section
+  if (isMounted && displayReviews.length === 0) {
+    return null
+  }
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev()
@@ -519,7 +453,7 @@ const ReviewMediaHub = () => {
             <div className="relative">
               <div className="overflow-hidden" ref={emblaRef}>
                 <div className="flex -ml-8">
-                  {REVIEWS.map((review) => (
+                  {displayReviews.map((review) => (
                     <div
                       key={review.id}
                       className="flex-[0_0_100%] pl-8 min-w-0 sm:flex-[0_0_83.333%] md:flex-[0_0_50%] xl:flex-[0_0_33.333%]"
@@ -530,30 +464,32 @@ const ReviewMediaHub = () => {
                 </div>
               </div>
 
-              <div className="absolute -bottom-20 left-0 right-0 flex justify-between px-4 pb-4 z-10 sm:left-auto sm:flex-none sm:justify-normal sm:gap-4 sm:pr-4">
-                <button
-                  type="button"
-                  onClick={scrollPrev}
-                  aria-label="Previous reviews"
-                  className={cn(
-                    "inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition",
-                    !canScrollPrev && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={scrollNext}
-                  aria-label="Next reviews"
-                  className={cn(
-                    "inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition",
-                    !canScrollNext && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
+              {displayReviews.length > 1 && (
+                <div className="absolute -bottom-20 left-0 right-0 flex justify-between px-4 pb-4 z-10 sm:left-auto sm:flex-none sm:justify-normal sm:gap-4 sm:pr-4">
+                  <button
+                    type="button"
+                    onClick={scrollPrev}
+                    aria-label="Previous reviews"
+                    className={cn(
+                      "inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition",
+                      !canScrollPrev && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={scrollNext}
+                    aria-label="Next reviews"
+                    className={cn(
+                      "inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white transition",
+                      !canScrollNext && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -595,13 +531,13 @@ const ReviewMediaHub = () => {
                     Hear Toycker stories on demand
                   </h3>
                   <p className="mt-2 text-sm text-[#6b7280]">
-                    Stream quick clips from parents and creators describing their Dodge Mini Metal Car builds.
+                    Stream quick clips from parents and creators describing their Toycker experiences.
                   </p>
                 </div>
               </div>
 
               <div className="mt-6 grid gap-4 md:grid-cols-2">
-                {AUDIO_REVIEWS.map((audio) => {
+                {audioReviews.map((audio) => {
                   const progress = audioProgress[audio.id] ?? 0
                   const safeProgress = Math.min(Math.max(progress, 0), 1)
                   const currentTime = audioCurrentTime[audio.id] ?? 0
@@ -616,7 +552,7 @@ const ReviewMediaHub = () => {
                     >
                       <div className="flex items-center gap-4">
                         <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-[#ffd7a0] bg-white">
-                          <Image src={audio.coverImage} alt={audio.title} fill sizes="80px" className="object-cover" />
+                          <Image src={audio.coverImage || "/assets/images/placeholder.jpg"} alt={audio.title} fill sizes="80px" className="object-cover" />
                         </div>
                         <div className="flex-1">
                           <p className="text-lg font-semibold text-[#1f2937]">{audio.title}</p>
@@ -681,7 +617,7 @@ const ReviewMediaHub = () => {
                         ref={(node) => {
                           audioRefs.current[audio.id] = node
                         }}
-                        src={audio.audioSrc}
+                        src={audio.audioSrc ?? undefined}
                         preload="metadata"
                         onLoadedMetadata={() => handleAudioLoaded(audio.id)}
                         onTimeUpdate={() => handleAudioTimeUpdate(audio.id)}

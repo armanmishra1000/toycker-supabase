@@ -64,15 +64,15 @@ export default function ExclusiveCollectionsManager({ initialCollections }: Prop
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h3 className="text-lg font-bold text-gray-900">Featured Collections</h3>
-                    <div className="flex items-center gap-2">
-                        <p className="text-sm text-gray-500">
-                            {collections.length} of {MAX_COLLECTIONS} collections active
+                    <h3 className="text-lg font-black text-slate-800 tracking-tight">Exclusive Collections</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-sm text-slate-500 font-medium">
+                            {collections.length} of {MAX_COLLECTIONS} collections featured
                         </p>
                         {isLimitReached && (
-                            <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                            <span className="text-[10px] bg-amber-100 text-amber-700 font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
                                 Limit Reached
                             </span>
                         )}
@@ -82,13 +82,13 @@ export default function ExclusiveCollectionsManager({ initialCollections }: Prop
                     <button
                         onClick={handleAddCollection}
                         disabled={isLimitReached}
-                        className={`inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-bold rounded-xl transition-all duration-300 ${isLimitReached
-                            ? "bg-gray-400 cursor-not-allowed opacity-70"
-                            : "bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200"
+                        className={`inline-flex items-center gap-2 px-6 py-3 text-white text-sm font-bold rounded-xl transition-all duration-300 ${isLimitReached
+                            ? "bg-slate-300 cursor-not-allowed opacity-70"
+                            : "bg-indigo-600 hover:bg-slate-900 hover:shadow-xl hover:shadow-indigo-100"
                             }`}
                     >
                         <PlusIcon className="h-4 w-4 stroke-[3]" />
-                        {isLimitReached ? "Limit Reached" : "Add Collection"}
+                        {isLimitReached ? "Limit Reached" : "Feature New Collection"}
                     </button>
                 </ProtectedAction>
             </div>

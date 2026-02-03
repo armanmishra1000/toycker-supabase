@@ -35,6 +35,12 @@ export type ReviewWithMedia = {
     }[]
     product_name?: string
     product_thumbnail?: string | null
+    product?: {
+        id: string
+        name: string
+        price: number
+        image_url: string | null
+    } | null
 }
 
 export async function submitReview(data: ReviewData) {

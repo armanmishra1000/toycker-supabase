@@ -23,8 +23,11 @@ export const metadata: Metadata = {
 
 import HeroServer from "@modules/home/components/hero/server"
 import ExclusiveCollectionsServer from "@modules/home/components/exclusive-collections/server"
+import { listHomeReviewsStorefront } from "@/lib/actions/home-reviews"
 
 export default async function Home() {
+  const homeReviews = await listHomeReviewsStorefront()
+
   return (
     <>
       {/* Above-the-fold content - streams in immediately */}
@@ -40,7 +43,7 @@ export default async function Home() {
       </Suspense>
 
       {/* <LazyLoadSection minHeight="400px"> */}
-        <ShopByAge />
+      <ShopByAge />
       {/* </LazyLoadSection> */}
 
       <Suspense fallback={<div className="h-[500px] animate-pulse bg-ui-bg-subtle" />}>
@@ -53,9 +56,11 @@ export default async function Home() {
         <BestSelling />
       </Suspense>
 
-      <LazyLoadSection minHeight="500px">
-        <ReviewMediaHub />
-      </LazyLoadSection>
+      {homeReviews.length > 0 && (
+        <LazyLoadSection minHeight="500px">
+          <ReviewMediaHub reviews={homeReviews} />
+        </LazyLoadSection>
+      )}
 
       <LazyLoadSection minHeight="400px">
         <WhyChooseUs />

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
-import { Star, Image as ImageIcon, Video, Mic, Trash2, Play, Pause, Square, ShieldCheck, User } from "lucide-react"
+import { Star, Image as ImageIcon, Video, Mic, Trash2, Play, Pause, Square, ShieldCheck, User, X } from "lucide-react"
 import { getPresignedUploadUrl } from "@/lib/actions/storage"
 import { submitReview, type ReviewData, type ReviewWithMedia } from "@/lib/actions/reviews"
 import Image from "next/image"
@@ -163,8 +163,10 @@ const CustomerReviews = ({
     }
   }
 
+
   return (
     <div className="flex flex-col gap-8">
+
       <section className="rounded-2xl border border-gray-200 bg-white px-6 py-8 text-center">
         <h3 className="text-2xl font-semibold text-slate-900">Customer Reviews</h3>
         <div className="mt-3 flex items-center justify-center gap-1">
@@ -476,14 +478,20 @@ const CustomerReviews = ({
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "h-11 w-11 rounded-full flex items-center justify-center text-white shadow-sm border-2 border-white",
-                  "bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500"
+                  review.is_anonymous
+                    ? "bg-slate-200 text-slate-400"
+                    : "bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500"
                 )}>
-                  <span className="font-bold text-lg">{review.display_name?.[0]?.toUpperCase() || "A"}</span>
+                  {review.is_anonymous ? (
+                    <User className="w-6 h-6" />
+                  ) : (
+                    <span className="font-bold text-lg">{review.display_name?.[0]?.toUpperCase() || "A"}</span>
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-bold text-gray-900">
-                      {review.display_name || "Anonymous"}
+                      {review.is_anonymous ? "Verified Buyer" : (review.display_name || "Verified Buyer")}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
