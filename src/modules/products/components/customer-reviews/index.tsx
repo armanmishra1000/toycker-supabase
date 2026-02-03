@@ -476,16 +476,14 @@ const CustomerReviews = ({
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "h-11 w-11 rounded-full flex items-center justify-center text-white shadow-sm border-2 border-white",
-                  review.is_anonymous
-                    ? "bg-gradient-to-br from-slate-400 to-slate-500"
-                    : "bg-gradient-to-br from-amber-400 to-orange-500"
+                  "bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500"
                 )}>
-                  {review.is_anonymous ? <User className="h-5 w-5" /> : <span className="font-bold text-lg">{review.display_name?.[0] || "U"}</span>}
+                  <span className="font-bold text-lg">{review.display_name?.[0]?.toUpperCase() || "A"}</span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-bold text-gray-900">
-                      {review.is_anonymous ? "Verified Buyer" : review.display_name}
+                      {review.display_name || "Anonymous"}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
