@@ -3,12 +3,13 @@
 import { useState } from "react"
 import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
-import { Star, Image as ImageIcon, Video, Mic, Trash2, Play, Pause, Square } from "lucide-react"
+import { Star, Image as ImageIcon, Video, Mic, Trash2, Play, Pause, Square, ShieldCheck, User } from "lucide-react"
 import { getPresignedUploadUrl } from "@/lib/actions/storage"
 import { submitReview, type ReviewData, type ReviewWithMedia } from "@/lib/actions/reviews"
 import Image from "next/image"
 import { CustomerProfile } from "@/lib/supabase/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { cn } from "@lib/util/cn"
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder"
 
 const CustomerReviews = ({
@@ -470,25 +471,41 @@ const CustomerReviews = ({
       {/* Reviews List */}
       <div className="space-y-6">
         {reviews.map((review) => (
-          <div key={review.id} className="border-b border-gray-100 pb-6 last:border-0">
+          <div key={review.id} className="group border-b border-gray-100 pb-8 last:border-0 pt-2 transition-all hover:bg-gray-50/50 -mx-4 px-4 rounded-2xl">
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
-                  {review.is_anonymous ? "A" : (review.display_name?.[0] || "U")}
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "h-11 w-11 rounded-full flex items-center justify-center text-white shadow-sm border-2 border-white",
+                  review.is_anonymous
+                    ? "bg-gradient-to-br from-slate-400 to-slate-500"
+                    : "bg-gradient-to-br from-amber-400 to-orange-500"
+                )}>
+                  {review.is_anonymous ? <User className="h-5 w-5" /> : <span className="font-bold text-lg">{review.display_name?.[0] || "U"}</span>}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{review.is_anonymous ? "Anonymous" : review.display_name}</p>
-                  <div className="flex items-center">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className={`h-3 w-3 ${i < review.rating ? "text-[#00B37E] fill-[#00B37E]" : "text-gray-300"}`} />
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-gray-900">
+                      {review.is_anonymous ? "Verified Buyer" : review.display_name}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <div className="flex items-center">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`h-3 w-3 ${i < review.rating ? "text-amber-400 fill-amber-400" : "text-gray-200"}`} />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-medium translate-y-[0.5px]">
+                      {new Date(review.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
                   </div>
                 </div>
               </div>
-              <span className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString()}</span>
             </div>
-            <h4 className="mt-3 font-medium text-gray-900">{review.title}</h4>
-            <p className="mt-1 text-sm text-gray-600 leading-relaxed">{review.content}</p>
+
+            <div className="mt-4">
+              <h4 className="font-bold text-gray-900 leading-tight">{review.title}</h4>
+              <p className="mt-2 text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{review.content}</p>
+            </div>
 
             {/* Media Grid */}
             {review.review_media && review.review_media.length > 0 && (
@@ -505,19 +522,39 @@ const CustomerReviews = ({
                   }
                   if (media.file_type === 'audio') {
                     return (
-                      <div key={media.id} className="h-32 w-80 flex-shrink-0 rounded-lg overflow-hidden border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50">
-                        <div className="h-full flex flex-col justify-center p-4 space-y-2">
-                          <div className="flex items-center gap-2 text-indigo-700">
-                            <Mic className="h-5 w-5" />
-                            <span className="text-sm font-semibold">Voice Review</span>
+                      <div key={media.id} className="group/voice h-28 w-72 flex-shrink-0 rounded-2xl overflow-hidden border border-indigo-100 bg-white shadow-sm transition-all hover:shadow-md hover:border-indigo-200">
+                        <div className="h-full flex flex-col p-3 relative overflow-hidden">
+                          {/* Decorative Waveform SVG */}
+                          <div className="absolute right-0 top-0 h-full w-24 opacity-[0.03] pointer-events-none">
+                            <svg viewBox="0 0 100 100" className="h-full w-full" preserveAspectRatio="none">
+                              {[...Array(10)].map((_, i) => (
+                                <rect
+                                  key={i}
+                                  x={i * 10}
+                                  y={50 - (Math.random() * 40)}
+                                  width="4"
+                                  height={20 + (Math.random() * 60)}
+                                  fill="currentColor"
+                                  className="text-indigo-600"
+                                />
+                              ))}
+                            </svg>
                           </div>
-                          <audio controls className="w-full" style={{ height: '32px' }}>
+
+                          <div className="flex items-center gap-2 text-indigo-700 mb-2">
+                            <div className="p-1.5 rounded-lg bg-indigo-50">
+                              <Mic className="h-3.5 w-3.5" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Voice Review</span>
+                          </div>
+
+                          <audio controls className="w-full h-8 custom-audio-player" style={{ height: '32px' }}>
                             <source src={publicUrl} />
-                            Your browser does not support the audio element.
                           </audio>
-                          <p className="text-xs text-gray-500 text-center">
-                            🎧 Listen to customer's voice
-                          </p>
+
+                          <div className="mt-auto flex justify-center">
+                            <span className="text-[9px] text-indigo-300 font-medium">Click to hear the customer's voice</span>
+                          </div>
                         </div>
                       </div>
                     )
