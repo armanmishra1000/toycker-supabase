@@ -37,7 +37,7 @@ export function Analytics() {
             {hasContentsquare && (
                 <Script
                     src={`https://t.contentsquare.net/uxa/${contentsquareId}.js`}
-                    strategy="lazyOnload"
+                    strategy="afterInteractive"
                 />
             )}
         </>
