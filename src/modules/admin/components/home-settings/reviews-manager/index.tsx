@@ -33,10 +33,11 @@ type Props = {
 
 interface SortableReviewItemProps {
     hr: HomeReview
+    index: number
     onRemove: (id: string) => void
 }
 
-function SortableReviewItem({ hr, onRemove }: SortableReviewItemProps) {
+function SortableReviewItem({ hr, index, onRemove }: SortableReviewItemProps) {
     const {
         attributes,
         listeners,
@@ -53,6 +54,10 @@ function SortableReviewItem({ hr, onRemove }: SortableReviewItemProps) {
         opacity: isDragging ? 0.3 : 1,
     }
 
+    const hasVideo = hr.review?.review_media?.some(m => m.file_type === 'video')
+    const hasAudio = hr.review?.review_media?.some(m => m.file_type === 'audio')
+    const isImageText = !hasVideo && !hasAudio
+
     return (
         <div
             ref={setNodeRef}
@@ -68,6 +73,12 @@ function SortableReviewItem({ hr, onRemove }: SortableReviewItemProps) {
                 className="text-slate-200 group-hover:text-slate-300 transition-colors cursor-grab active:cursor-grabbing"
             >
                 <GripVertical className="h-6 w-6" />
+            </div>
+
+            {/* Slot Number */}
+            <div className="flex flex-col items-center justify-center h-12 w-12 rounded-lg bg-slate-50 border border-slate-100 shrink-0">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Slot</span>
+                <span className="text-xl font-black text-slate-900 leading-none">{index + 1}</span>
             </div>
 
             {/* Review Preview */}
@@ -88,10 +99,22 @@ function SortableReviewItem({ hr, onRemove }: SortableReviewItemProps) {
                         <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.1em] bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 truncate max-w-[150px]">
                             {hr.review?.product_name || hr.review?.product?.name || "Product Info"}
                         </span>
-                        {hr.review?.review_media?.some(m => m.file_type === 'audio') && (
-                            <div className="flex items-center gap-1.5 text-indigo-500 shrink-0">
+                        {hasAudio && (
+                            <div className="flex items-center gap-1.5 text-indigo-500 shrink-0 bg-indigo-50/50 px-2 py-1 rounded-md">
                                 <Mic className="h-3 w-3" />
-                                <span className="text-[10px] font-black uppercase tracking-wider">Voice</span>
+                                <span className="text-[10px] font-black uppercase tracking-wider">Audio Review</span>
+                            </div>
+                        )}
+                        {hasVideo && (
+                            <div className="flex items-center gap-1.5 text-amber-500 shrink-0 bg-amber-50/50 px-2 py-1 rounded-md">
+                                <Video className="h-3 w-3" />
+                                <span className="text-[10px] font-black uppercase tracking-wider">Video Review</span>
+                            </div>
+                        )}
+                        {isImageText && (
+                            <div className="flex items-center gap-1.5 text-slate-500 shrink-0 bg-slate-50/50 px-2 py-1 rounded-md">
+                                <ImageIcon className="h-3 w-3" />
+                                <span className="text-[10px] font-black uppercase tracking-wider">Image/Text</span>
                             </div>
                         )}
                     </div>
@@ -115,6 +138,7 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
     const [homeReviews, setHomeReviews] = useState<HomeReview[]>(initialHomeReviews)
     const [searchQuery, setSearchQuery] = useState("")
     const [isAdding, setIsAdding] = useState(false)
+    const [activeTab, setActiveTab] = useState<"suggested" | "audio" | "video" | "image_text">("suggested")
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -135,38 +159,58 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
         const count = homeReviews.length
         if (count === 2) return "video" // Slot 3
         if (count === 3) return "audio" // Slot 4
-        if (count === 4) return "image_or_text" // Slot 5
+        if (count >= 4) {
+            // S5 (idx 4): Image/Text
+            // S6 (idx 5): Video
+            // S7 (idx 6): Image/Text
+            // ... alternating properly
+            return (count % 2 === 0) ? "image_or_text" : "video"
+        }
         return null
     }, [homeReviews.length])
 
-    // Filter out reviews already in homeReviews and apply media requirements
+    // Filter out reviews already in homeReviews and apply media requirements or tab filters
     const availableReviews = useMemo(() => {
-        if (!searchQuery.trim()) return []
-
         const featuredIds = new Set(homeReviews.map(hr => hr.review_id))
-        return allApprovedReviews
-            .filter(r => !featuredIds.has(r.id))
-            .filter(r => {
-                if (mediaRequirement === "video") {
-                    return r.review_media?.some(m => m.file_type === "video")
-                }
-                if (mediaRequirement === "audio") {
-                    return r.review_media?.some(m => m.file_type === "audio")
-                }
-                if (mediaRequirement === "image_or_text") {
+        let filtered = allApprovedReviews.filter(r => !featuredIds.has(r.id))
+
+        // Apply Tab / Media Requirement Filter
+        if (activeTab === "suggested") {
+            if (mediaRequirement) {
+                filtered = filtered.filter(r => {
                     const hasVideo = r.review_media?.some(m => m.file_type === "video")
                     const hasAudio = r.review_media?.some(m => m.file_type === "audio")
-                    return !hasVideo && !hasAudio
-                }
-                return true
+                    if (mediaRequirement === "video") return hasVideo
+                    if (mediaRequirement === "audio") return hasAudio
+                    if (mediaRequirement === "image_or_text") return !hasVideo && !hasAudio
+                    return true
+                })
+            }
+        } else if (activeTab === "audio") {
+            filtered = filtered.filter(r => r.review_media?.some(m => m.file_type === "audio"))
+        } else if (activeTab === "video") {
+            filtered = filtered.filter(r => r.review_media?.some(m => m.file_type === "video"))
+        } else if (activeTab === "image_text") {
+            filtered = filtered.filter(r => {
+                const hasVideo = r.review_media?.some(m => m.file_type === "video")
+                const hasAudio = r.review_media?.some(m => m.file_type === "audio")
+                return !hasVideo && !hasAudio
             })
-            .filter(r =>
-                r.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                r.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                r.product_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                r.product?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        }
+
+        // Apply Search
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase()
+            filtered = filtered.filter(r =>
+                (r.display_name || "").toLowerCase().includes(q) ||
+                (r.content || "").toLowerCase().includes(q) ||
+                (r.product_name || "").toLowerCase().includes(q) ||
+                (r.product?.name || "").toLowerCase().includes(q)
             )
-    }, [allApprovedReviews, homeReviews, searchQuery, mediaRequirement])
+        }
+
+        return filtered.slice(0, 40) // Show top 40 results
+    }, [allApprovedReviews, homeReviews, searchQuery, mediaRequirement, activeTab])
 
     const handleAdd = async (review: ReviewWithMedia) => {
         if (isLimitReached) {
@@ -184,6 +228,8 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
             showToast("Review added to home page", "success")
             setHomeReviews(prev => [...prev, { ...result.review!, review }])
             setSearchQuery("")
+            // Switch to suggested tab for next slot
+            setActiveTab("suggested")
         }
     }
 
@@ -260,18 +306,13 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
                                 <h4 className="text-sm font-black text-slate-900 uppercase tracking-[0.15em]">Select Approved Reviews</h4>
                                 <div className="mt-2 space-y-1">
                                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight italic">
-                                        You can showcase up to {MAX_REVIEWS} reviews on the homepage.
+                                        Following alternating pattern: Image/Text ↔ Video
                                     </p>
-                                    <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                        <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded border border-amber-100/50">3rd: Video Only</span>
-                                        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100/50">4th: Audio Only</span>
-                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100/50">5th: Image/Text Only</span>
-                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {mediaRequirement && (
+                        {mediaRequirement && activeTab === "suggested" && (
                             <div className={cn(
                                 "flex items-center gap-2 px-4 py-2 rounded-2xl border animate-in fade-in slide-in-from-right-4 duration-500",
                                 mediaRequirement === "video" && "bg-amber-50 border-amber-100 text-amber-700",
@@ -286,86 +327,132 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
                         )}
                     </div>
 
-                    <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl p-6 lg:p-8">
-                        <div className="relative mb-6">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                            <input
-                                type="text"
-                                placeholder={mediaRequirement
-                                    ? `Showing only ${mediaRequirement.replace(/_/g, " ")} reviews...`
-                                    : "Search by name, content, or product..."
-                                }
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium focus:border-black focus:ring-0 transition-all bg-gray-50/30 pl-12"
-                            />
+                    <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl overflow-hidden">
+                        {/* Tabs */}
+                        <div className="flex border-b border-gray-100 bg-slate-50/50">
+                            <button
+                                onClick={() => setActiveTab("suggested")}
+                                className={cn(
+                                    "flex-1 px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === "suggested" ? "bg-white text-indigo-600 border-b-2 border-indigo-600" : "text-slate-400 hover:text-slate-600"
+                                )}
+                            >
+                                Recommended
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("image_text")}
+                                className={cn(
+                                    "flex-1 px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === "image_text" ? "bg-white text-slate-900 border-b-2 border-slate-900" : "text-slate-400 hover:text-slate-600"
+                                )}
+                            >
+                                Image/Text
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("video")}
+                                className={cn(
+                                    "flex-1 px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === "video" ? "bg-white text-amber-600 border-b-2 border-amber-600" : "text-slate-400 hover:text-slate-600"
+                                )}
+                            >
+                                Video
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("audio")}
+                                className={cn(
+                                    "flex-1 px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === "audio" ? "bg-white text-rose-600 border-b-2 border-rose-600" : "text-slate-400 hover:text-slate-600"
+                                )}
+                            >
+                                Voice Only
+                            </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-                            {availableReviews.map(review => (
-                                <div key={review.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-start gap-4 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50/50 transition-all duration-300 group">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs">
-                                                {review.display_name?.[0]?.toUpperCase() || "A"}
+                        <div className="p-6 lg:p-8">
+                            <div className="relative mb-6">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder={activeTab === "suggested" && mediaRequirement
+                                        ? `Showing only ${mediaRequirement.replace(/_/g, " ")} reviews...`
+                                        : "Search by name, content, or product..."
+                                    }
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium focus:border-black focus:ring-0 transition-all bg-gray-50/30 pl-12"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                                {availableReviews.map(review => {
+                                    const hasVideo = review.review_media?.some(m => m.file_type === 'video')
+                                    const hasAudio = review.review_media?.some(m => m.file_type === 'audio')
+                                    const isImageText = !hasVideo && !hasAudio
+
+                                    return (
+                                        <div key={review.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-start gap-4 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50/50 transition-all duration-300 group">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs">
+                                                        {review.display_name?.[0]?.toUpperCase() || "A"}
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-900 truncate">{review.display_name}</span>
+                                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 rounded-lg">
+                                                        <Star className="h-3 w-3 fill-current" />
+                                                        <span className="text-[10px] font-black">{review.rating.toFixed(1)}</span>
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm text-slate-500 line-clamp-2 italic leading-relaxed">"{review.content}"</p>
+                                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                    <span className="text-[10px] text-indigo-600 font-black uppercase tracking-wider bg-indigo-50 px-2 py-1 rounded-md max-w-[120px] truncate">
+                                                        {review.product_name || review.product?.name || "Product Info"}
+                                                    </span>
+                                                    {hasVideo && (
+                                                        <div className="flex items-center gap-1 text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
+                                                            <Video className="h-3 w-3" />
+                                                            <span className="text-[9px] font-black">VIDEO</span>
+                                                        </div>
+                                                    )}
+                                                    {hasAudio && (
+                                                        <div className="flex items-center gap-1 text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">
+                                                            <Mic className="h-3 w-3" />
+                                                            <span className="text-[9px] font-black">VOICE</span>
+                                                        </div>
+                                                    )}
+                                                    {isImageText && (
+                                                        <div className="flex items-center gap-1 text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                                            <ImageIcon className="h-3 w-3" />
+                                                            <span className="text-[9px] font-black">IMAGE/TEXT</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <span className="text-sm font-bold text-slate-900 truncate">{review.display_name}</span>
-                                            <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 rounded-lg">
-                                                <Star className="h-3 w-3 fill-current" />
-                                                <span className="text-[10px] font-black">{review.rating.toFixed(1)}</span>
-                                            </div>
+                                            <button
+                                                onClick={() => handleAdd(review)}
+                                                disabled={isAdding}
+                                                className="mt-1 p-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all disabled:opacity-50"
+                                            >
+                                                <Plus className="h-4 w-4 stroke-[3]" />
+                                            </button>
                                         </div>
-                                        <p className="text-sm text-slate-500 line-clamp-2 italic leading-relaxed">"{review.content}"</p>
-                                        <div className="mt-3 flex items-center gap-3">
-                                            <span className="text-[10px] text-indigo-600 font-black uppercase tracking-wider bg-indigo-50 px-2 py-1 rounded-md max-w-[120px] truncate">
-                                                {review.product_name || review.product?.name || "Product Info"}
-                                            </span>
-                                            {review.review_media?.find(m => m.file_type === 'video') && (
-                                                <div className="flex items-center gap-1 text-slate-400">
-                                                    <Video className="h-3 w-3" />
-                                                    <span className="text-[10px] font-bold">VIDEO</span>
-                                                </div>
-                                            )}
-                                            {review.review_media?.find(m => m.file_type === 'audio') && (
-                                                <div className="flex items-center gap-1 text-slate-400">
-                                                    <Mic className="h-3 w-3" />
-                                                    <span className="text-[10px] font-bold">VOICE</span>
-                                                </div>
-                                            )}
-                                            {review.review_media?.find(m => m.file_type === 'image') && (
-                                                <div className="flex items-center gap-1 text-slate-400">
-                                                    <ImageIcon className="h-3 w-3" />
-                                                    <span className="text-[10px] font-bold">IMAGE</span>
-                                                </div>
-                                            )}
+                                    )
+                                })}
+                                {availableReviews.length === 0 && (
+                                    <div className="col-span-2 text-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-100">
+                                        <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 mx-auto mb-4 flex items-center justify-center">
+                                            <Info className="w-6 h-6 text-slate-300" />
                                         </div>
-                                    </div>
-                                    <button
-                                        onClick={() => handleAdd(review)}
-                                        disabled={isAdding}
-                                        className="mt-1 p-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all disabled:opacity-50"
-                                    >
-                                        <Plus className="h-4 w-4 stroke-[3]" />
-                                    </button>
-                                </div>
-                            ))}
-                            {availableReviews.length === 0 && (
-                                <div className="col-span-2 text-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-100">
-                                    <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 mx-auto mb-4 flex items-center justify-center">
-                                        <Info className="w-6 h-6 text-slate-300" />
-                                    </div>
-                                    <p className="text-sm text-slate-400 font-medium px-6">
-                                        {!searchQuery.trim()
-                                            ? "Search for reviews by name, content, or product to start adding them."
-                                            : availableReviews.length === 0
+                                        <p className="text-sm text-slate-400 font-medium px-6">
+                                            {searchQuery.trim()
                                                 ? "No matching reviews found for your current search."
-                                                : mediaRequirement
-                                                    ? `No more ${mediaRequirement.replace(/_/g, " ")} reviews available for selection.`
-                                                    : "No more approved reviews available."
-                                        }
-                                    </p>
-                                </div>
-                            )}
+                                                : activeTab === "suggested" && mediaRequirement
+                                                    ? `No more ${mediaRequirement.replace(/_/g, " ")} reviews available for Slot ${homeReviews.length + 1}.`
+                                                    : "No more approved reviews available in this category."
+                                            }
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -388,10 +475,11 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
                             items={homeReviews.map(hr => hr.id)}
                             strategy={verticalListSortingStrategy}
                         >
-                            {homeReviews.map((hr) => (
+                            {homeReviews.map((hr, idx) => (
                                 <SortableReviewItem
                                     key={hr.id}
                                     hr={hr}
+                                    index={idx}
                                     onRemove={handleRemove}
                                 />
                             ))}
