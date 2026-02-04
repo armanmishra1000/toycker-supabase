@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, Fragment } from "react"
 import { Button } from "@modules/common/components/button"
 import Modal from "@modules/common/components/modal"
+import { Dialog, Transition } from "@headlessui/react"
 import { Star, Image as ImageIcon, Video, Mic, Trash2, Play, Pause, Square, ShieldCheck, User, X } from "lucide-react"
 import { getPresignedUploadUrl } from "@/lib/actions/storage"
 import { submitReview, type ReviewData, type ReviewWithMedia } from "@/lib/actions/reviews"
@@ -641,23 +642,51 @@ const CustomerReviews = ({
         </div>
       )}
 
-      {/* Video Play Modal */}
-      <Modal isOpen={!!activeVideo} close={() => setActiveVideo(null)} size="large">
-        <div className="relative aspect-[9/16] h-[80vh] max-h-[700px] mx-auto bg-black rounded-[2rem] overflow-hidden shadow-2xl border-[4px] border-slate-900 group">
-          <video
-            src={activeVideo?.url}
-            controls
-            autoPlay
-            className="w-full h-full object-contain"
-          />
-          <button
-            onClick={() => setActiveVideo(null)}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/20 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white transition-all hover:bg-white hover:text-black hover:scale-110 active:scale-90 z-20"
+      {/* Video Play Modal - Immersive Refinement */}
+      <Transition show={!!activeVideo} as={Fragment}>
+        <Dialog as="div" className="relative z-[200]" onClose={() => setActiveVideo(null)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
           >
-            <X className="w-6 h-6 font-black" />
-          </button>
-        </div>
-      </Modal>
+            <div className="fixed inset-0 bg-white/90 backdrop-blur-3xl" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="relative">
+                  <video
+                    src={activeVideo?.url}
+                    controls
+                    autoPlay
+                    className="max-h-[85vh] w-auto max-w-full rounded-2xl"
+                  />
+                  <button
+                    onClick={() => setActiveVideo(null)}
+                    className="absolute -top-12 right-0 md:-right-12 text-gray-900/80 transition-all hover:text-gray-900 hover:scale-110 active:scale-95 z-20"
+                  >
+                    <X className="w-8 h-8" />
+                  </button>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   )
 }
