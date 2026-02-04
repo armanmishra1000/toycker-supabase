@@ -94,12 +94,10 @@ body {
 
   /* Move floating buttons up when sticky buy bar is visible on mobile */
   @media (max-width: 1023px) {
-    body.has-sticky-buy .chatbot-launcher {
-      bottom: 164px !important;
-    }
 
-    body.has-sticky-buy .chatbot-window {
-      bottom: 180px !important;
+    body.has-sticky-buy .chatbot-launcher,
+    body.has-sticky-buy .contact-hub-wrapper {
+      bottom: 155px !important;
     }
 
     body.has-sticky-buy .whatsapp-launcher {

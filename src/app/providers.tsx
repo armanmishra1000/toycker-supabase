@@ -1,4 +1,4 @@
-  "use client"
+"use client"
 
 import { ReactNode } from "react"
 import { usePathname } from "next/navigation"
@@ -29,7 +29,7 @@ const Providers = ({ children }: { children: ReactNode }) => {
               <WishlistProvider>
                 <ChatbotProvider>
                   <PWAProvider>
-                    <ChatbotWidget />
+                    <ChatbotWidget hideLauncher={true} />
                     {children}
                   </PWAProvider>
                 </ChatbotProvider>

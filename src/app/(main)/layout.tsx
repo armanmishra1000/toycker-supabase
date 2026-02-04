@@ -2,7 +2,7 @@ import React from "react"
 import Nav from "@modules/layout/templates/nav"
 import Footer from "@modules/layout/templates/footer"
 import MobileNav from "@modules/layout/components/mobile-nav"
-import WhatsAppButton from "@modules/layout/components/whatsapp-button"
+import ContactHub from "@modules/layout/components/contact-hub"
 
 export default function MainLayout({
   children,
@@ -17,7 +17,7 @@ export default function MainLayout({
       </main>
       <Footer />
       <MobileNav />
-      <WhatsAppButton />
+      <ContactHub />
     </>
   )
 }
