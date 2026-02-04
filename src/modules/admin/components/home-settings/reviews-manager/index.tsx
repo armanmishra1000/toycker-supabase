@@ -151,23 +151,39 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
         })
     )
 
-    const MAX_REVIEWS = 12
-    const isLimitReached = homeReviews.length >= MAX_REVIEWS
+    const MAX_IMAGE_TEXT = 5
+    const MAX_VIDEO = 3
+    const MAX_AUDIO = 4
+    const MAX_TOTAL = 12
 
-    // Media requirement based on count (index-based)
+    const counts = useMemo(() => {
+        let video = 0, audio = 0, imageText = 0
+        homeReviews.forEach(hr => {
+            const hasVideo = hr.review?.review_media?.some(m => m.file_type === 'video')
+            const hasAudio = hr.review?.review_media?.some(m => m.file_type === 'audio')
+            if (hasAudio) audio++
+            else if (hasVideo) video++
+            else imageText++
+        })
+        return { video, audio, imageText, total: homeReviews.length }
+    }, [homeReviews])
+
+    const isLimitReached = counts.total >= MAX_TOTAL
+
+    // Media requirement based on visual count
     const mediaRequirement = useMemo(() => {
-        const count = homeReviews.length
-        if (count === 2) return "video" // Slot 3
-        if (count === 3) return "audio" // Slot 4
-        if (count >= 4) {
-            // S5 (idx 4): Image/Text
-            // S6 (idx 5): Video
-            // S7 (idx 6): Image/Text
-            // ... alternating properly
-            return (count % 2 === 0) ? "image_or_text" : "video"
+        const visualCount = counts.video + counts.imageText
+        if (visualCount >= 8) {
+            return counts.audio < MAX_AUDIO ? "audio" : null
+        }
+
+        // Target: V1, V2, Video(3), I/T(4), Video(5), I/T(6), Video(7), I/T(8)
+        if (visualCount === 2) return "video"
+        if (visualCount >= 3) {
+            return (visualCount % 2 === 0) ? "video" : "image_or_text"
         }
         return null
-    }, [homeReviews.length])
+    }, [counts])
 
     // Filter out reviews already in homeReviews and apply media requirements or tab filters
     const availableReviews = useMemo(() => {
@@ -213,8 +229,24 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
     }, [allApprovedReviews, homeReviews, searchQuery, mediaRequirement, activeTab])
 
     const handleAdd = async (review: ReviewWithMedia) => {
-        if (isLimitReached) {
-            showToast(`Maximum of ${MAX_REVIEWS} reviews allowed.`, "error")
+        const hasVideo = review.review_media?.some(m => m.file_type === "video")
+        const hasAudio = review.review_media?.some(m => m.file_type === "audio")
+        const isImageText = !hasVideo && !hasAudio
+
+        if (hasAudio && counts.audio >= MAX_AUDIO) {
+            showToast(`Maximum of ${MAX_AUDIO} Voice reviews allowed.`, "error")
+            return
+        }
+        if (hasVideo && counts.video >= MAX_VIDEO) {
+            showToast(`Maximum of ${MAX_VIDEO} Video reviews allowed.`, "error")
+            return
+        }
+        if (isImageText && counts.imageText >= MAX_IMAGE_TEXT) {
+            showToast(`Maximum of ${MAX_IMAGE_TEXT} Image/Text reviews allowed.`, "error")
+            return
+        }
+        if (counts.total >= MAX_TOTAL) {
+            showToast(`Maximum of ${MAX_TOTAL} total reviews allowed.`, "error")
             return
         }
 
@@ -225,11 +257,32 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
         if (result.error) {
             showToast(result.error, "error")
         } else {
-            showToast("Review added to home page", "success")
-            setHomeReviews(prev => [...prev, { ...result.review!, review }])
+            showToast("Review added", "success")
+
+            // Strictly order: Visual Reviews first, then Audio Reviews
+            const newHomeReview = { ...result.review!, review }
+            const currentVisual = homeReviews.filter(hr => !hr.review?.review_media?.some(m => m.file_type === 'audio'))
+            const currentAudio = homeReviews.filter(hr => hr.review?.review_media?.some(m => m.file_type === 'audio'))
+
+            let updatedList: HomeReview[]
+            if (hasAudio) {
+                updatedList = [...currentVisual, ...currentAudio, newHomeReview]
+            } else {
+                updatedList = [...currentVisual, newHomeReview, ...currentAudio]
+            }
+
+            // Correct sort orders
+            const finalOrder = updatedList.map((hr, i) => ({ ...hr, sort_order: i }))
+            setHomeReviews(finalOrder)
+
+            // Persist the order immediately if it changed (e.g. we inserted a visual review before existing audio)
+            if (!hasAudio && currentAudio.length > 0) {
+                await reorderHomeReviews(finalOrder.map(hr => hr.id))
+            }
+
             setSearchQuery("")
-            // Switch to suggested tab for next slot
             setActiveTab("suggested")
+            router.refresh()
         }
     }
 
@@ -251,7 +304,13 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
             const oldIndex = homeReviews.findIndex((hr) => hr.id === active.id)
             const newIndex = homeReviews.findIndex((hr) => hr.id === over?.id)
 
-            const newOrder = arrayMove(homeReviews, oldIndex, newIndex).map((hr, i) => ({
+            let newOrder = arrayMove(homeReviews, oldIndex, newIndex)
+
+            // Enforce logic: Group Visual together, then Voice together
+            const visual = newOrder.filter(hr => !hr.review?.review_media?.some(m => m.file_type === 'audio'))
+            const audio = newOrder.filter(hr => hr.review?.review_media?.some(m => m.file_type === 'audio'))
+
+            newOrder = [...visual, ...audio].map((hr, i) => ({
                 ...hr,
                 sort_order: i
             }))
@@ -265,7 +324,6 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
 
             if (result.error) {
                 showToast("Failed to save order", "error")
-                // In a real app we'd revert state here
             } else {
                 showToast("Order updated", "success")
                 router.refresh()
@@ -283,15 +341,35 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
                         These reviews are prominently displayed on your store's homepage.
                     </p>
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
+                        <span className={cn(
+                            "text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider border",
+                            counts.imageText >= MAX_IMAGE_TEXT ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-white text-slate-700 border-slate-200"
+                        )}>
+                            Images: {counts.imageText} / {MAX_IMAGE_TEXT}
+                        </span>
+                        <span className={cn(
+                            "text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider border",
+                            counts.video >= MAX_VIDEO ? "bg-amber-100 text-amber-600 border-amber-200" : "bg-amber-50 text-amber-700 border-amber-100"
+                        )}>
+                            Video: {counts.video} / {MAX_VIDEO}
+                        </span>
+                        <span className={cn(
+                            "text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider border",
+                            counts.audio >= MAX_AUDIO ? "bg-rose-100 text-rose-600 border-rose-200" : "bg-rose-50 text-rose-700 border-rose-100"
+                        )}>
+                            Voice: {counts.audio} / {MAX_AUDIO}
+                        </span>
+                    </div>
                     <span className={cn(
-                        "text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest",
-                        isLimitReached ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"
+                        "text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest mt-1",
+                        isLimitReached ? "bg-slate-900 text-white" : "bg-indigo-600 text-white"
                     )}>
-                        {homeReviews.length} / {MAX_REVIEWS} SET
+                        {counts.total} / {MAX_TOTAL} TOTAL
                     </span>
                     {isLimitReached && (
-                        <p className="text-[10px] text-amber-600 font-bold mt-2 uppercase tracking-tight">Maximum capacity reached</p>
+                        <p className="text-[10px] text-amber-600 font-bold uppercase tracking-tight">Maximum capacity reached</p>
                     )}
                 </div>
             </div>
@@ -306,7 +384,7 @@ export default function ReviewsManager({ initialHomeReviews, allApprovedReviews 
                                 <h4 className="text-sm font-black text-slate-900 uppercase tracking-[0.15em]">Select Approved Reviews</h4>
                                 <div className="mt-2 space-y-1">
                                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight italic">
-                                        Following alternating pattern: Image/Text ↔ Video
+                                        Ordering: Visual reviews (Images/Video) first, Voice stories always at end.
                                     </p>
                                 </div>
                             </div>
