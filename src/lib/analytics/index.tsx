@@ -1,4 +1,5 @@
 import { GoogleTagManager } from "@next/third-parties/google"
+import Script from "next/script"
 
 /**
  * Analytics component that loads Google Tag Manager and Contentsquare.
@@ -33,11 +34,11 @@ export function Analytics() {
             {hasGTM && <GoogleTagManager gtmId={gtmId} />}
 
             {/* Contentsquare - for heatmaps and session recordings */}
-            {/* Using native script tag so it appears in initial HTML for verification crawlers */}
+            {/* Using beforeInteractive ensures script is in initial server-rendered HTML */}
             {hasContentsquare && (
-                <script
+                <Script
                     src={`https://t.contentsquare.net/uxa/${contentsquareId}.js`}
-                    async
+                    strategy="beforeInteractive"
                 />
             )}
         </>
