@@ -7,7 +7,7 @@ import useEmblaCarousel from "embla-carousel-react"
 import { cn } from "@lib/util/cn"
 import { getImageUrl } from "@/lib/util/get-image-url"
 
-type ReviewType = "text" | "video"
+type ReviewType = "text" | "video" | "image"
 
 type BaseReview = {
   id: string
@@ -84,30 +84,38 @@ const ReviewCard = ({ review }: { review: Review }) => {
     setIsPlaying(false)
   }
 
-  if (review.type === "video" && review.videoSrc) {
+  if ((review.type === "video" && review.videoSrc) || (review.type === "image" && review.posterSrc)) {
     return (
       <article className="group relative flex h-[480px] flex-col overflow-hidden rounded-3xl bg-black text-white">
-        <video
-          ref={videoRef}
-          controls={isPlaying}
-          playsInline
-          poster={review.posterSrc ?? undefined}
-          className="absolute inset-0 h-full w-full object-cover transition duration-500 ease-out group-hover:scale-105"
-          aria-label={`Video review from ${review.author}`}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onEnded={() => setIsPlaying(false)}
-        >
-          <source src={review.videoSrc ?? undefined} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        {review.type === "video" ? (
+          <video
+            ref={videoRef}
+            controls={isPlaying}
+            playsInline
+            poster={review.posterSrc ?? undefined}
+            className="absolute inset-0 h-full w-full object-cover transition duration-500 ease-out group-hover:scale-105"
+            aria-label={`Video review from ${review.author}`}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => setIsPlaying(false)}
+          >
+            <source src={review.videoSrc ?? undefined} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        ) : (
+          <Image
+            src={review.posterSrc!}
+            alt={`Review from ${review.author}`}
+            fill
+            className="absolute inset-0 h-full w-full object-cover transition duration-500 ease-out group-hover:scale-105"
+          />
+        )}
         <div
-          className={`pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-black/70 transition-opacity duration-300 ${isPlaying ? "opacity-0" : "group-hover:opacity-0"}`}
+          className={`pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/80 transition-opacity duration-300 ${isPlaying ? "opacity-0" : ""}`}
         />
 
         <div
-          className={`relative z-10 flex h-full flex-col justify-between p-6 transition-opacity duration-500 ${isPlaying ? "opacity-0" : "group-hover:opacity-0"
-            }`}
+          className={`relative z-10 flex h-full flex-col justify-between p-6 transition-opacity duration-500 ${isPlaying ? "opacity-0" : ""}`}
         >
           <div className="flex items-center justify-between text-sm font-semibold tracking-wide">
             {review.tag && (
@@ -134,7 +142,7 @@ const ReviewCard = ({ review }: { review: Review }) => {
           </div>
         </div>
 
-        {!isPlaying ? (
+        {review.type === "video" && !isPlaying && (
           <button
             type="button"
             aria-label={`Play ${review.author}'s story`}
@@ -146,7 +154,8 @@ const ReviewCard = ({ review }: { review: Review }) => {
             </span>
             Play story
           </button>
-        ) : (
+        )}
+        {review.type === "video" && isPlaying && (
           <button
             type="button"
             aria-label={`Pause ${review.author}'s story`}
@@ -202,29 +211,38 @@ const ReviewMediaHub = ({ reviews = [] }: { reviews: any[] }) => {
 
   // Map dynamic reviews to the internal types
   const displayReviews: Review[] = useMemo(() => {
-    return reviews.map(hr => {
-      const r = hr.review
-      const videoMedia = r.review_media?.find((m: any) => m.file_type === 'video')
-      const imageMedia = r.review_media?.find((m: any) => m.file_type === 'image')
+    return reviews
+      .filter(hr => {
+        const audioMedia = hr.review.review_media?.some((m: any) => m.file_type === 'audio')
+        return !audioMedia // Exclude audio reviews from carousel
+      })
+      .map(hr => {
+        const r = hr.review
+        const videoMedia = r.review_media?.find((m: any) => m.file_type === 'video')
+        const imageMedia = r.review_media?.find((m: any) => m.file_type === 'image')
 
-      const product = r.product
-      const price = product?.price ? `₹${product.price.toFixed(2)}` : undefined
+        const product = r.product
+        const price = product?.price ? `₹${product.price.toFixed(2)}` : undefined
 
-      return {
-        id: r.id,
-        type: videoMedia ? 'video' : 'text',
-        quote: r.content,
-        author: r.is_anonymous ? "Verified Buyer" : (r.display_name || "Verified Buyer"),
-        avatar: "", // Not used in current ReviewCard design as it uses productImage
-        videoSrc: videoMedia ? getImageUrl(videoMedia.file_path) : undefined,
-        posterSrc: imageMedia ? getImageUrl(imageMedia.file_path) : undefined,
-        tag: product?.name,
-        priceCurrent: price,
-        productImage: product?.image_url ? getImageUrl(product.image_url) : undefined,
-        cardBg: r.rating >= 4 ? "bg-[#fffdf4]" : "bg-[#f0fbff]",
-        cardBorder: r.rating >= 4 ? "border-[#fde9c8]" : "border-[#cdeefd]"
-      }
-    })
+        let type: ReviewType = 'text'
+        if (videoMedia) type = 'video'
+        else if (imageMedia) type = 'image'
+
+        return {
+          id: r.id,
+          type,
+          quote: r.content,
+          author: r.is_anonymous ? "Verified Buyer" : (r.display_name || "Verified Buyer"),
+          avatar: "",
+          videoSrc: videoMedia ? getImageUrl(videoMedia.file_path) : undefined,
+          posterSrc: imageMedia ? getImageUrl(imageMedia.file_path) : undefined,
+          tag: product?.name,
+          priceCurrent: price,
+          productImage: product?.image_url ? getImageUrl(product.image_url) : undefined,
+          cardBg: r.rating >= 4 ? "bg-[#fffdf4]" : "bg-[#f0fbff]",
+          cardBorder: r.rating >= 4 ? "border-[#fde9c8]" : "border-[#cdeefd]"
+        }
+      })
   }, [reviews])
 
   const audioReviews: AudioReview[] = useMemo(() => {
