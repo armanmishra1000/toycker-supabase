@@ -2,6 +2,7 @@ import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
+import { Analytics as GTMAnalytics } from "@lib/analytics"
 import NextTopLoader from "nextjs-toploader"
 import Providers from "./providers"
 import { grandstander, inter } from "@lib/fonts"
@@ -27,6 +28,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" data-mode="light" suppressHydrationWarning className={`${grandstander.variable} ${inter.variable}`}>
       <head>
+        <GTMAnalytics />
         <link rel="preconnect" href="https://cdn.toycker.in" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://toycker-supabase.r2.dev" crossOrigin="anonymous" />
       </head>
