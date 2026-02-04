@@ -84,32 +84,23 @@ const ReviewCard = ({ review }: { review: Review }) => {
     setIsPlaying(false)
   }
 
-  if ((review.type === "video" && review.videoSrc) || (review.type === "image" && review.posterSrc)) {
+  if (review.type === "video" && review.videoSrc) {
     return (
       <article className="group relative flex h-[480px] flex-col overflow-hidden rounded-3xl bg-black text-white">
-        {review.type === "video" ? (
-          <video
-            ref={videoRef}
-            controls={isPlaying}
-            playsInline
-            poster={review.posterSrc ?? undefined}
-            className="absolute inset-0 h-full w-full object-cover transition duration-500 ease-out group-hover:scale-105"
-            aria-label={`Video review from ${review.author}`}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onEnded={() => setIsPlaying(false)}
-          >
-            <source src={review.videoSrc ?? undefined} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        ) : (
-          <Image
-            src={review.posterSrc!}
-            alt={`Review from ${review.author}`}
-            fill
-            className="absolute inset-0 h-full w-full object-cover transition duration-500 ease-out group-hover:scale-105"
-          />
-        )}
+        <video
+          ref={videoRef}
+          controls={isPlaying}
+          playsInline
+          poster={review.posterSrc ?? undefined}
+          className="absolute inset-0 h-full w-full object-cover transition duration-500 ease-out group-hover:scale-105"
+          aria-label={`Video review from ${review.author}`}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+        >
+          <source src={review.videoSrc ?? undefined} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
         <div
           className={`pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/80 transition-opacity duration-300 ${isPlaying ? "opacity-0" : ""}`}
         />
@@ -178,28 +169,40 @@ const ReviewCard = ({ review }: { review: Review }) => {
   const productName = review.tag ?? "Featured product"
 
   return (
-    <article className={`flex h-[480px] flex-col rounded-3xl border ${cardBorder} ${cardBg} p-6`}>
-      <div className="flex items-center gap-4">
-        <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-white">
+    <article className={`flex h-[480px] flex-col rounded-3xl border ${cardBorder} ${cardBg} p-6 overflow-hidden`}>
+      {/* Header */}
+      <div className="flex items-center gap-4 shrink-0">
+        <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-white border border-black/5">
           <Image src={productImage} alt={productName} fill sizes="80px" className="object-cover" />
         </div>
         <div className="space-y-1">
-          {productName && <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#9ca3af]">{productName}</p>}
+          {productName && <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#9ca3af]">{productName}</p>}
           {review.priceCurrent && (
-            <p className="text-2xl font-semibold text-[#111827]">{review.priceCurrent}</p>
+            <p className="text-2xl font-black text-[#111827] leading-none">{review.priceCurrent}</p>
           )}
           {review.priceOriginal && (
-            <p className="text-sm text-[#9ca3af] line-through">{review.priceOriginal}</p>
+            <p className="text-sm text-[#9ca3af] font-medium line-through">{review.priceOriginal}</p>
           )}
         </div>
       </div>
 
-      {review.quote && (
-        <blockquote className="mt-6 text-lg leading-relaxed text-[#111827]">“{review.quote}”</blockquote>
-      )}
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto mt-6 custom-scrollbar pr-2 space-y-4">
+        {review.quote && (
+          <blockquote className="text-lg font-medium leading-relaxed text-[#111827]">“{review.quote}”</blockquote>
+        )}
 
-      <div className={`mt-6 border-t ${cardBorder} pt-4`}>
-        <p className="font-semibold italic text-[#111827]">{review.author}</p>
+        {/* Review Image Box - Displayed separately below the text if available */}
+        {review.type === "image" && review.posterSrc && (
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/50 shadow-sm ring-4 ring-white/10">
+            <Image src={review.posterSrc} alt="Review attachment" fill className="object-cover" />
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className={`mt-6 border-t ${cardBorder} pt-4 shrink-0`}>
+        <p className="font-bold italic text-[#111827]">{review.author}</p>
         {renderStars("text-[#fbbf24]", "mt-2")}
       </div>
     </article>
