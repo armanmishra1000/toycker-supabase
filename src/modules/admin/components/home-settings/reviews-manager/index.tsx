@@ -31,11 +31,6 @@ type Props = {
     allApprovedReviews: ReviewWithMedia[]
 }
 
-type Props = {
-    initialHomeReviews: HomeReview[]
-    allApprovedReviews: ReviewWithMedia[]
-}
-
 interface SortableReviewItemProps {
     hr: HomeReview
     index: number
