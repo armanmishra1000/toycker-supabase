@@ -35,6 +35,12 @@ export type ReviewWithMedia = {
     }[]
     product_name?: string
     product_thumbnail?: string | null
+    product?: {
+        id: string
+        name: string
+        price: number
+        image_url: string | null
+    } | null
 }
 
 export async function submitReview(data: ReviewData) {
@@ -254,7 +260,7 @@ export async function getAllReviewsForAdmin(params: { page?: number; limit?: num
         .select("id, name")
         .in("id", productIds)
 
-    const productMap = new Map(products?.map((p: any) => [p.id, p.name || "Unknown Product"]) || [])
+    const productMap = new Map(products?.map((p: { id: string, name: string }) => [p.id, p.name || "Unknown Product"]) || [])
 
     const reviewsWithProductNames = reviews.map((r) => ({
         ...r,

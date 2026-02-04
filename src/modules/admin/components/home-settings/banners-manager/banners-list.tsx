@@ -85,7 +85,7 @@ function SortableBannerItem({ banner, onEdit, onDelete, onToggle, deletingId, to
         <div
             ref={setNodeRef}
             style={style}
-            className={`group relative bg-white rounded-2xl border transition-all duration-300 ${isDragging ? "shadow-2xl ring-2 ring-emerald-500/50" : "hover:shadow-xl hover:shadow-gray-200/50"
+            className={`group relative bg-white rounded-xl border transition-all duration-300 ${isDragging ? "shadow-2xl ring-2 ring-indigo-500/50" : "hover:shadow-2xl hover:shadow-slate-200/50"
                 } ${banner.is_active ? "border-gray-200" : "border-gray-200 bg-gray-50/50 opacity-80"
                 }`}
         >
@@ -136,11 +136,11 @@ function SortableBannerItem({ banner, onEdit, onDelete, onToggle, deletingId, to
                                 </p>
                             )}
                         </div>
-                        <div className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-colors ${banner.is_active
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            : "bg-gray-100 text-gray-500 border-gray-200"
+                        <div className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.1em] border transition-colors shadow-sm ${banner.is_active
+                            ? "bg-indigo-50 text-indigo-600 border-indigo-100"
+                            : "bg-slate-100 text-slate-500 border-slate-200"
                             }`}>
-                            {banner.is_active ? "Active" : "Inactive"}
+                            {banner.is_active ? "Live" : "Draft"}
                         </div>
                     </div>
 
@@ -168,9 +168,9 @@ function SortableBannerItem({ banner, onEdit, onDelete, onToggle, deletingId, to
                             <button
                                 onClick={() => onToggle(banner)}
                                 disabled={togglingId === banner.id}
-                                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all ${banner.is_active
-                                    ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                    : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200/50"
+                                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm ${banner.is_active
+                                    ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                    : "bg-indigo-600 text-white hover:bg-slate-900"
                                     } disabled:opacity-50`}
                             >
                                 {togglingId === banner.id ? (
@@ -192,9 +192,9 @@ function SortableBannerItem({ banner, onEdit, onDelete, onToggle, deletingId, to
                         <ProtectedAction permission={PERMISSIONS.HOME_SETTINGS_UPDATE} hideWhenDisabled>
                             <button
                                 onClick={() => onEdit(banner)}
-                                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold bg-white text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all"
+                                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-black uppercase tracking-wider bg-white text-slate-900 border border-slate-200 rounded-xl hover:bg-slate-50 hover:shadow-md transition-all"
                             >
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className="h-3.5 w-3.5" />
                                 <span>Edit</span>
                             </button>
                         </ProtectedAction>
@@ -203,13 +203,13 @@ function SortableBannerItem({ banner, onEdit, onDelete, onToggle, deletingId, to
                             <button
                                 onClick={() => onDelete(banner.id, banner.title)}
                                 disabled={deletingId === banner.id}
-                                className="flex-none inline-flex items-center justify-center w-10 h-10 text-red-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
+                                className="flex-none inline-flex items-center justify-center w-11 h-11 text-slate-300 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-all border border-transparent hover:border-rose-100"
                                 title="Delete Banner"
                             >
                                 {deletingId === banner.id ? (
-                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                                 ) : (
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-5 w-5" />
                                 )}
                             </button>
                         </ProtectedAction>
@@ -305,13 +305,13 @@ export default function BannersList({ banners, onEdit, onDelete, onToggle, onReo
 
     if (banners.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 px-4 bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-200">
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center mb-4">
-                    <PictureInPicture className="w-8 h-8 text-gray-300" />
+            <div className="flex flex-col items-center justify-center py-24 px-4 bg-slate-50/30 rounded-xl border-4 border-dashed border-gray-200">
+                <div className="w-20 h-20 bg-white rounded-[24px] shadow-sm border border-slate-100 flex items-center justify-center mb-6">
+                    <PictureInPicture className="w-10 h-10 text-slate-200" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">No Banners Yet</h3>
-                <p className="text-sm text-gray-500 max-w-xs text-center mt-1">
-                    Your homepage currently has no promotional banners. Add one to capture customer attention!
+                <h3 className="text-xl font-black text-slate-400">No Banners Yet</h3>
+                <p className="text-sm text-slate-400 max-w-xs text-center mt-2 font-medium">
+                    Your homepage currently has no promotional banners. Create one to highlight your best deals!
                 </p>
             </div>
         )

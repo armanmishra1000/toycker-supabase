@@ -15,7 +15,7 @@ import ChatbotMessages from '../chatbot-messages'
 import ChatbotInput from '../chatbot-input'
 import ChatbotLoginForm from '../chatbot-login-form'
 
-export default function ChatbotWidget() {
+export default function ChatbotWidget({ hideLauncher = false }: { hideLauncher?: boolean }) {
     const {
         state,
         toggle,
@@ -51,19 +51,19 @@ export default function ChatbotWidget() {
                 <div
                     className="
                         fixed 
-                        bottom-[100px] sm:bottom-24
-                        right-4
-                        w-[calc(100vw-2rem)] sm:w-[400px]
-                        max-w-[420px]
-                        h-[580px] sm:h-[620px]
-                        max-h-[calc(100vh-120px)]
+                        inset-0 sm:inset-auto
+                        sm:bottom-24 sm:right-4
+                        w-full sm:w-[400px]
+                        sm:max-w-[420px]
+                        h-full sm:h-[620px]
+                        sm:max-h-[calc(100vh-120px)]
                         bg-white 
-                        rounded-3xl
-                        shadow-[0_20px_60px_rgba(0,0,0,0.12)]
                         flex flex-col
                         z-[140]
                         overflow-hidden
                         animate-chat-open
+                        sm:rounded-3xl
+                        sm:shadow-[0_20px_60px_rgba(0,0,0,0.12)]
                         chatbot-window
                     "
                     role="dialog"
@@ -103,9 +103,10 @@ export default function ChatbotWidget() {
             )}
 
             {/* Launcher Button - Modern pill style with gradient */}
-            <button
-                onClick={toggle}
-                className={`
+            {!hideLauncher && (
+                <button
+                    onClick={toggle}
+                    className={`
           fixed 
           bottom-[84px] sm:bottom-6 
           right-4
@@ -122,22 +123,23 @@ export default function ChatbotWidget() {
           bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600
           chatbot-launcher
           ${state.isOpen
-                        ? 'w-14 sm:w-[60px]'
-                        : 'w-14 sm:w-auto sm:px-5'
-                    }
+                            ? 'w-14 sm:w-[60px]'
+                            : 'w-14 sm:w-auto sm:px-5'
+                        }
         `}
-                aria-label={state.isOpen ? 'Close chat' : 'Chat with us'}
-                aria-expanded={state.isOpen}
-            >
-                {state.isOpen ? (
-                    <X className="w-6 h-6" strokeWidth={2.5} />
-                ) : (
-                    <>
-                        <MessageCircle className="w-6 h-6 sm:mr-2" strokeWidth={2} />
-                        <span className="hidden sm:inline font-medium text-[15px]">Chat with us</span>
-                    </>
-                )}
-            </button>
+                    aria-label={state.isOpen ? 'Close chat' : 'Chat with us'}
+                    aria-expanded={state.isOpen}
+                >
+                    {state.isOpen ? (
+                        <X className="w-6 h-6" strokeWidth={2.5} />
+                    ) : (
+                        <>
+                            <MessageCircle className="w-6 h-6 sm:mr-2" strokeWidth={2} />
+                            <span className="hidden sm:inline font-medium text-[15px]">Chat with us</span>
+                        </>
+                    )}
+                </button>
+            )}
         </>
     )
 }

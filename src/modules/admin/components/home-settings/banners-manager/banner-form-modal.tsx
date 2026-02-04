@@ -109,16 +109,16 @@ export default function BannerFormModal({ isOpen, onClose, onSuccess, banner, de
                 <div className="relative w-full max-w-2xl bg-white rounded-[28px] shadow-2xl shadow-gray-900/20 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
 
                     {/* Decorative Header Background */}
-                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-emerald-50 via-teal-50/50 to-transparent pointer-events-none" />
+                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-indigo-50 via-slate-50/50 to-transparent pointer-events-none" />
 
                     {/* Header */}
-                    <div className="relative flex items-center justify-between px-8 py-6 border-b border-gray-100">
+                    <div className="relative flex items-center justify-between px-8 py-6 border-b border-slate-100">
                         <div>
-                            <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                            <div className="flex items-center gap-2 text-indigo-600 mb-1">
                                 <Layout className="w-4 h-4" />
-                                <span className="text-[10px] font-bold tracking-widest uppercase">Visual Asset</span>
+                                <span className="text-[10px] font-black tracking-[0.2em] uppercase">Visual Asset</span>
                             </div>
-                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
                                 {banner ? "Refine Banner" : "Create New Banner"}
                             </h2>
                         </div>
@@ -136,8 +136,8 @@ export default function BannerFormModal({ isOpen, onClose, onSuccess, banner, de
                         {/* Section 1: Identity */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label htmlFor="title" className="inline-flex items-center gap-2 text-sm font-bold text-gray-700 ml-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                <label htmlFor="title" className="inline-flex items-center gap-2 text-sm font-black text-slate-700 ml-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                                     Internal Name
                                 </label>
                                 <input
@@ -145,15 +145,15 @@ export default function BannerFormModal({ isOpen, onClose, onSuccess, banner, de
                                     type="text"
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-50 border-none rounded-2xl ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 transition-all text-gray-900 placeholder:text-gray-400"
+                                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl ring-1 ring-slate-100 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-900 font-bold placeholder:text-slate-400"
                                     placeholder="e.g., Winter Adventure Sale"
                                     required
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <label htmlFor="alt_text" className="inline-flex items-center gap-2 text-sm font-bold text-gray-700 ml-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                <label htmlFor="alt_text" className="inline-flex items-center gap-2 text-sm font-black text-slate-700 ml-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                                     SEO Description
                                 </label>
                                 <input
@@ -161,7 +161,7 @@ export default function BannerFormModal({ isOpen, onClose, onSuccess, banner, de
                                     type="text"
                                     value={formData.alt_text}
                                     onChange={(e) => setFormData({ ...formData, alt_text: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-50 border-none rounded-2xl ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 placeholder:text-gray-400"
+                                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl ring-1 ring-slate-100 focus:ring-2 focus:ring-slate-100 transition-all text-slate-900 font-bold placeholder:text-slate-400"
                                     placeholder="Describe for screen readers"
                                 />
                             </div>
@@ -169,8 +169,8 @@ export default function BannerFormModal({ isOpen, onClose, onSuccess, banner, de
 
                         {/* Section 2: Media */}
                         <div className="space-y-3">
-                            <label className="inline-flex items-center gap-2 text-sm font-bold text-gray-700 ml-1">
-                                <ImageIcon className="w-4 h-4 text-emerald-500" />
+                            <label className="inline-flex items-center gap-2 text-sm font-black text-slate-700 ml-1">
+                                <ImageIcon className="w-4 h-4 text-indigo-500" />
                                 Banner Graphic
                             </label>
                             <div className="rounded-3xl overflow-hidden ring-1 ring-gray-200 bg-gray-50/50 p-2">
@@ -191,8 +191,8 @@ export default function BannerFormModal({ isOpen, onClose, onSuccess, banner, de
 
                         {/* Section 3: Interaction */}
                         <div className="space-y-3">
-                            <label htmlFor="link_url" className="inline-flex items-center gap-2 text-sm font-bold text-gray-700 ml-1">
-                                <LinkIcon className="w-4 h-4 text-emerald-500" />
+                            <label htmlFor="link_url" className="inline-flex items-center gap-2 text-sm font-black text-slate-700 ml-1">
+                                <LinkIcon className="w-4 h-4 text-indigo-500" />
                                 Destination URL
                             </label>
                             <div className="relative group">
@@ -201,49 +201,49 @@ export default function BannerFormModal({ isOpen, onClose, onSuccess, banner, de
                                     type="text"
                                     value={formData.link_url || ""}
                                     onChange={(e) => setFormData(prev => ({ ...prev, link_url: e.target.value }))}
-                                    className="w-full px-4 py-3 pl-11 bg-gray-50 border-none rounded-2xl ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 transition-all text-sm font-medium"
+                                    className="w-full px-4 py-3 pl-11 bg-slate-50 border-none rounded-2xl ring-1 ring-slate-100 focus:ring-2 focus:ring-indigo-100 transition-all text-sm font-black"
                                     placeholder="Paste URL or select product"
                                 />
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
                                     <CheckCircle2 className="w-4 h-4" />
                                 </div>
                             </div>
-                            <div className="flex items-start gap-2 p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
-                                <AlertCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                                <p className="text-[11px] leading-relaxed text-emerald-800 font-medium">
+                            <div className="flex items-start gap-2 p-3 bg-indigo-50/30 rounded-xl border border-indigo-100/50">
+                                <AlertCircle className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                                <p className="text-[11px] leading-relaxed text-indigo-800 font-medium tracking-tight">
                                     Pro-tip: By default, this points to your uploaded image. Replace it with a product page link to drive sales.
                                 </p>
                             </div>
                         </div>
 
                         {/* Section 4: Visibility */}
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                             <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${formData.is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-200 text-gray-400'}`}>
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${formData.is_active ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-400'}`}>
                                     {formData.is_active ? <CheckCircle2 className="w-6 h-6" /> : <X className="w-6 h-6" />}
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-gray-900 leading-none">Status: {formData.is_active ? 'Active' : 'Draft'}</p>
-                                    <p className="text-[11px] text-gray-500 mt-1">Control visibility on the storefront</p>
+                                    <p className="text-sm font-black text-slate-900 leading-none tracking-tight">Status: {formData.is_active ? 'Live' : 'Draft'}</p>
+                                    <p className="text-[11px] text-slate-500 mt-1 font-medium">Control visibility on the storefront</p>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
-                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.is_active ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.is_active ? 'bg-indigo-600' : 'bg-slate-300'}`}
                             >
                                 <span
-                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.is_active ? 'translate-x-5' : 'translate-x-0'}`}
+                                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.is_active ? 'translate-x-5' : 'translate-x-0'}`}
                                 />
                             </button>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 mt-8">
+                        <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100 mt-8">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-6 py-3 text-sm font-bold text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 rounded-2xl transition-all duration-300"
+                                className="px-6 py-3 text-sm font-black text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-2xl transition-all duration-300"
                                 disabled={isSubmitting}
                             >
                                 Discard
@@ -251,7 +251,7 @@ export default function BannerFormModal({ isOpen, onClose, onSuccess, banner, de
                             <button
                                 type="submit"
                                 disabled={isSubmitting || !formData.title || !formData.image_url}
-                                className="group relative px-8 py-3 bg-gray-900 hover:bg-emerald-600 text-white text-sm font-bold rounded-2xl shadow-lg shadow-gray-900/10 hover:shadow-emerald-500/20 transition-all duration-500 disabled:opacity-50 disabled:bg-gray-300 disabled:shadow-none overflow-hidden"
+                                className="group relative px-10 py-3.5 bg-slate-900 hover:bg-indigo-600 text-white text-sm font-black rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-indigo-500/20 transition-all duration-500 disabled:opacity-50 disabled:bg-slate-300 disabled:shadow-none overflow-hidden"
                             >
                                 <span className="relative z-10 flex items-center gap-2">
                                     {isSubmitting ? (
@@ -261,7 +261,7 @@ export default function BannerFormModal({ isOpen, onClose, onSuccess, banner, de
                                         </>
                                     ) : (
                                         <>
-                                            {banner ? 'Save Changes' : 'Initialize Banner'}
+                                            {banner ? 'Save Changes' : 'Publish Banner'}
                                             <Layout className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                         </>
                                     )}
