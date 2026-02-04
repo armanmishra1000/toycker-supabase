@@ -260,7 +260,7 @@ export async function getAllReviewsForAdmin(params: { page?: number; limit?: num
         .select("id, name")
         .in("id", productIds)
 
-    const productMap = new Map(products?.map((p: any) => [p.id, p.name || "Unknown Product"]) || [])
+    const productMap = new Map(products?.map((p: { id: string, name: string }) => [p.id, p.name || "Unknown Product"]) || [])
 
     const reviewsWithProductNames = reviews.map((r) => ({
         ...r,

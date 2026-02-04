@@ -164,7 +164,12 @@ const ProductTemplate = async ({
           </LazyLoadSection>
 
           <LazyLoadSection minHeight="400px">
-            <CustomerReviews productId={product.id} reviews={reviews} customer={customer} />
+            <CustomerReviews
+              productId={product.id}
+              reviews={reviews}
+              customer={customer}
+              productThumbnail={product.thumbnail || product.image_url}
+            />
           </LazyLoadSection>
 
         </div>
