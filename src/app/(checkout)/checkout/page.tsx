@@ -6,7 +6,7 @@ import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
 import Breadcrumbs from "@modules/common/components/breadcrumbs"
 import { Metadata } from "next"
-import { notFound, redirect } from "next/navigation"
+import { redirect } from "next/navigation"
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -14,7 +14,12 @@ export const metadata: Metadata = {
 
 import { CheckoutProvider } from "@modules/checkout/context/checkout-context"
 
-export default async function Checkout() {
+interface CheckoutProps {
+  searchParams: Promise<{ cartId?: string; step?: string }>
+}
+
+export default async function Checkout({ searchParams }: CheckoutProps) {
+  const params = await searchParams
   const customer = await retrieveCustomer()
 
   // Require login for checkout
@@ -24,8 +29,19 @@ export default async function Checkout() {
 
   let cart = await retrieveCart()
 
+  // Fallback: if cookie was lost during redirect (Next.js issue #61611), use URL param
+  if (!cart && params.cartId) {
+    cart = await retrieveCart(params.cartId)
+    if (cart) {
+      // Re-set the cookie so subsequent requests work
+      const { setCartId } = await import("@lib/data/cookies")
+      await setCartId(params.cartId)
+    }
+  }
+
+  // No cart found - redirect to cart page instead of showing 404
   if (!cart) {
-    return notFound()
+    redirect("/cart")
   }
 
   // Auto-select standard shipping if none selected

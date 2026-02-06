@@ -931,7 +931,8 @@ export async function createBuyNowCart({
 
   await setCartId(newCartId)
   revalidateTag("cart", "max")
-  redirect("/checkout?step=address")
+  // Pass cartId in URL as fallback in case cookie is lost during redirect (Next.js issue #61611)
+  redirect(`/checkout?step=address&cartId=${newCartId}`)
 }
 
 export async function listCartOptions(): Promise<{ shipping_options: ShippingOption[] }> {
