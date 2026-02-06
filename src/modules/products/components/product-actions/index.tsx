@@ -377,13 +377,14 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
     startAddToCart(async () => {
       try {
-        openCart()
+        // First, perform the optimistic update BEFORE opening the cart
+        // This ensures the cart sidebar shows the item immediately when it opens
         if (selectedVariant?.id || (product.variants && product.variants.length === 0)) {
           if (selectedVariant?.id) {
-            addVariantToCart()
+            await addVariantToCart()
           } else {
             // Simple product without variants
-            optimisticAdd({
+            await optimisticAdd({
               product,
               variant: undefined,
               quantity,
@@ -392,7 +393,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
             })
 
             if (giftWrap) {
-              optimisticAdd({
+              await optimisticAdd({
                 product,
                 variant: undefined,
                 quantity: 1,
@@ -407,6 +408,10 @@ export default function ProductActions({ product, disabled, showSupportActions =
             onActionComplete?.()
           }
         }
+
+        // Now open the cart sidebar - the optimistic item will be visible
+        openCart()
+
         const endTime = performance.now()
         console.log(`[Add to Cart] Completed in ${(endTime - startTime).toFixed(2)}ms`)
       } catch (error) {

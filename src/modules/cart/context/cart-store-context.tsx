@@ -287,7 +287,10 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      const promise = addQueueRef.current.then(() => runServerAdd())
+      const promise = addQueueRef.current
+        .catch(() => undefined)
+        .then(() => runServerAdd())
+
       addQueueRef.current = promise
       return promise
     },
@@ -373,7 +376,10 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      const promise = addQueueRef.current.then(() => runServerAddMultiple())
+      const promise = addQueueRef.current
+        .catch(() => undefined)
+        .then(() => runServerAddMultiple())
+
       addQueueRef.current = promise
       return promise
     },

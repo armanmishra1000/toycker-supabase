@@ -161,35 +161,61 @@ export async function getOrSetCart(): Promise<Cart> {
   const existingCart = await retrieveCart()
   if (existingCart) return existingCart
 
-  const supabase = await createClient()
-  const user = await getAuthUser()
+  try {
+    const supabase = await createClient()
+    const user = await getAuthUser()
 
-  const newCartId = randomUUID()
+    const newCartId = randomUUID()
 
-  const { data: newCart, error } = await supabase
-    .from("carts")
-    .insert({
-      id: newCartId,
-      user_id: user?.id || null,  // Supports Guests (NULL)
-      currency_code: "inr",
-      email: user?.email || null
-    })
-    .select()
-    .single()
+    const { data: newCart, error } = await supabase
+      .from("carts")
+      .insert({
+        id: newCartId,
+        user_id: user?.id || null,  // Supports Guests (NULL)
+        currency_code: "inr",
+        email: user?.email || null
+      })
+      .select()
+      .single()
 
-  if (error || !newCart) {
-    throw new Error("Could not create cart")
+    if (error || !newCart) {
+      console.error("[getOrSetCart] Failed to create cart:", error)
+      throw new Error(`Could not create cart: ${error?.message || "Unknown error"}`)
+    }
+
+    // Set the cart cookie
+    await setCartId(newCart.id)
+    revalidateTag("cart", "max")
+
+    // Try to retrieve the full cart, but if it fails, return basic cart info
+    const freshCart = await retrieveCart(newCart.id)
+    if (freshCart) {
+      return freshCart
+    }
+
+    // Fallback: if retrieveCart fails, return a minimal cart object
+    // This prevents cascading failures when retrieveCart has issues
+    const basicCart: Cart = {
+      id: newCart.id,
+      user_id: newCart.user_id,
+      currency_code: newCart.currency_code || "inr",
+      email: newCart.email || null,
+      items: [],
+      subtotal: 0,
+      item_subtotal: 0,
+      total: 0,
+      shipping_total: 0,
+      tax_total: 0,
+      discount_total: 0,
+      created_at: newCart.created_at || new Date().toISOString(),
+      updated_at: newCart.updated_at || new Date().toISOString(),
+    }
+
+    return basicCart
+  } catch (error) {
+    console.error("[getOrSetCart] Error:", error)
+    throw error
   }
-
-  await setCartId(newCart.id)
-  revalidateTag("cart", "max")
-
-  const freshCart = await retrieveCart(newCart.id)
-  if (!freshCart) {
-    throw new Error("Could not retrieve newly created cart")
-  }
-
-  return freshCart
 }
 
 export async function addToCart({
@@ -203,73 +229,129 @@ export async function addToCart({
   variantId?: string
   metadata?: Record<string, unknown>
 }) {
-  const cartId = (await getCartId()) || (await getOrSetCart()).id
-  const supabase = await createClient()
-
-  let targetVariantId = variantId === productId ? undefined : variantId
-  if (!targetVariantId) {
-    const { data: variants } = await supabase
-      .from("product_variants")
-      .select("id")
-      .eq("product_id", productId)
-      .limit(1)
-
-    if (variants && variants.length > 0) {
-      targetVariantId = variants[0].id
+  try {
+    // Get or create cart with better error handling
+    let cartId: string
+    try {
+      cartId = (await getCartId()) || (await getOrSetCart()).id
+    } catch (cartError) {
+      console.error("[addToCart] Failed to get or create cart:", cartError)
+      throw new Error(`Failed to get or create cart: ${cartError instanceof Error ? cartError.message : "Unknown error"}`)
     }
+
+    const supabase = await createClient()
+
+    let targetVariantId = variantId === productId ? undefined : variantId
+    if (!targetVariantId) {
+      try {
+        const { data: variants, error: variantError } = await supabase
+          .from("product_variants")
+          .select("id")
+          .eq("product_id", productId)
+          .limit(1)
+
+        if (variantError) {
+          console.error("[addToCart] Error fetching variants:", variantError)
+        }
+
+        if (variants && variants.length > 0) {
+          targetVariantId = variants[0].id
+        }
+      } catch (variantFetchError) {
+        console.error("[addToCart] Failed to fetch variants:", variantFetchError)
+        // Continue without variant if fetch fails
+      }
+    }
+
+    // Find if item already exists in cart with EXACT SAME metadata.
+    let existingItems: unknown[] | null = null
+    try {
+      const query = supabase
+        .from("cart_items")
+        .select("*")
+        .eq("cart_id", cartId)
+        .eq("product_id", productId)
+
+      if (targetVariantId) {
+        query.eq("variant_id", targetVariantId)
+      } else {
+        query.is("variant_id", null)
+      }
+
+      if (metadata) {
+        query.contains("metadata", metadata)
+      } else {
+        query.is("metadata", null)
+      }
+
+      const { data: foundItems, error: queryError } = await query
+
+      if (queryError) {
+        console.error("[addToCart] Error querying existing items:", queryError)
+      } else {
+        existingItems = foundItems
+      }
+    } catch (queryError) {
+      console.error("[addToCart] Failed to query existing items:", queryError)
+    }
+
+    // Filter for exact metadata match to be safe
+    type CartItemRow = { metadata?: Record<string, unknown>; quantity?: number; id: string }
+    const existingItem = existingItems?.find((item: unknown): item is CartItemRow => {
+      if (!item || typeof item !== 'object') return false
+      const cartItem = item as CartItemRow
+      const itemMeta = cartItem.metadata || {}
+      const searchMeta = metadata || {}
+      const itemKeys = Object.keys(itemMeta)
+      const searchKeys = Object.keys(searchMeta)
+      if (itemKeys.length !== searchKeys.length) return false
+      return searchKeys.every(key => itemMeta[key] === searchMeta[key])
+    })
+
+    if (existingItem) {
+      try {
+        const currentQuantity = typeof existingItem.quantity === 'number' ? existingItem.quantity : 0
+        const { error: updateError } = await supabase
+          .from("cart_items")
+          .update({ quantity: (currentQuantity || 0) + quantity })
+          .eq("id", existingItem.id)
+
+        if (updateError) {
+          console.error("[addToCart] Error updating existing item:", updateError)
+          throw new Error(`Failed to update cart item: ${updateError.message}`)
+        }
+      } catch (updateError) {
+        console.error("[addToCart] Failed to update item quantity:", updateError)
+        throw updateError
+      }
+    } else {
+      try {
+        const { error: insertError } = await supabase
+          .from("cart_items")
+          .insert({
+            cart_id: cartId,
+            product_id: productId,
+            variant_id: targetVariantId,
+            quantity,
+            metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null
+          })
+
+        if (insertError) {
+          console.error("[addToCart] Error inserting new item:", insertError)
+          throw new Error(`Failed to add item to cart: ${insertError.message}`)
+        }
+      } catch (insertError) {
+        console.error("[addToCart] Failed to insert new item:", insertError)
+        throw insertError
+      }
+    }
+
+    revalidateTag("cart", "max")
+    return retrieveCartRaw(cartId)
+  } catch (error) {
+    console.error("[addToCart] Fatal error:", error)
+    throw error
   }
-
-  // Find if item already exists in cart with EXACT SAME metadata.
-  const query = supabase
-    .from("cart_items")
-    .select("*")
-    .eq("cart_id", cartId)
-    .eq("product_id", productId)
-
-  if (targetVariantId) {
-    query.eq("variant_id", targetVariantId)
-  } else {
-    query.is("variant_id", null)
-  }
-
-  if (metadata) {
-    query.contains("metadata", metadata)
-  } else {
-    query.is("metadata", null)
-  }
-
-  const { data: existingItems } = await query
-
-  // Filter for exact metadata match to be safe
-  const existingItem = existingItems?.find(item => {
-    const itemMeta = item.metadata || {}
-    const searchMeta = metadata || {}
-    const itemKeys = Object.keys(itemMeta)
-    const searchKeys = Object.keys(searchMeta)
-    if (itemKeys.length !== searchKeys.length) return false
-    return searchKeys.every(key => itemMeta[key] === searchMeta[key])
-  })
-
-  if (existingItem) {
-    const currentQuantity = typeof existingItem.quantity === 'number' ? existingItem.quantity : 0
-    await supabase
-      .from("cart_items")
-      .update({ quantity: currentQuantity + quantity })
-      .eq("id", existingItem.id)
-  } else {
-    await supabase
-      .from("cart_items")
-      .insert({
-        cart_id: cartId,
-        product_id: productId,
-        variant_id: targetVariantId,
-        quantity,
-        metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null
-      })
-  }
-
-  revalidateTag("cart", "max")
-  return retrieveCartRaw(cartId)
 }
 
 export async function addMultipleToCart(items: {
