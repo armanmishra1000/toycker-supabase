@@ -429,8 +429,9 @@ export default function ProductActions({ product, disabled, showSupportActions =
           countryCode,
           metadata: buildLineItemMetadata(),
         })
+        // Note: createBuyNowCart will redirect server-side via next/navigation redirect()
+        // This line is only reached if redirect didn't happen (error or unexpected flow)
         onActionComplete?.()
-        router.push(`/checkout?step=address`)
       } catch (error) {
         console.error("Failed to start checkout", error)
       }

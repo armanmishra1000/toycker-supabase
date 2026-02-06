@@ -849,7 +849,7 @@ export async function createBuyNowCart({
 
   await setCartId(newCartId)
   revalidateTag("cart", "max")
-  return newCartId
+  redirect("/checkout?step=address")
 }
 
 export async function listCartOptions(): Promise<{ shipping_options: ShippingOption[] }> {
