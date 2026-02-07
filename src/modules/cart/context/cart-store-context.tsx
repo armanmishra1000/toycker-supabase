@@ -235,7 +235,10 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       ) => isEqual(left ?? {}, right ?? {})
 
       const existing = baseCart.items?.find(
-        (item) => item.variant_id === (variant?.id || null) && areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
+        (item) =>
+          item.product_id === product.id &&
+          item.variant_id === (variant?.id || null) &&
+          areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
       )
       let nextItems: CartItem[]
 
@@ -319,7 +322,10 @@ export const CartStoreProvider = ({ children }: { children: ReactNode }) => {
       for (const input of inputs) {
         const { product, variant, quantity, metadata } = input
         const existing = nextItems.find(
-          (item) => item.variant_id === (variant?.id || null) && areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
+          (item) =>
+            item.product_id === product.id &&
+            item.variant_id === (variant?.id || null) &&
+            areMetadataEqual(item.metadata, metadata as Record<string, unknown>),
         )
 
         if (existing) {

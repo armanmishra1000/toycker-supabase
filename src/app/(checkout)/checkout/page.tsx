@@ -33,9 +33,17 @@ export default async function Checkout({ searchParams }: CheckoutProps) {
   if (!cart && params.cartId) {
     cart = await retrieveCart(params.cartId)
     if (cart) {
-      // Re-set the cookie so subsequent requests work
-      const { setCartId } = await import("@lib/data/cookies")
-      await setCartId(params.cartId)
+      const nextParams = new URLSearchParams()
+      if (params.step) {
+        nextParams.set("step", params.step)
+      }
+      nextParams.set("cartId", params.cartId)
+      const nextPath = `/checkout?${nextParams.toString()}`
+      redirect(
+        `/api/cart/restore?cartId=${encodeURIComponent(
+          params.cartId
+        )}&next=${encodeURIComponent(nextPath)}`
+      )
     }
   }
 

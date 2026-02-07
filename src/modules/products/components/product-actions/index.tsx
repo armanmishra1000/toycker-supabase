@@ -314,6 +314,15 @@ export default function ProductActions({ product, disabled, showSupportActions =
     }
   }, [product.id, wishlist])
 
+  const isNextRedirectError = (error: unknown): error is { digest: string } => {
+    if (!error || typeof error !== "object") {
+      return false
+    }
+
+    const maybeDigest = (error as { digest?: unknown }).digest
+    return typeof maybeDigest === "string" && maybeDigest.startsWith("NEXT_REDIRECT")
+  }
+
   const buildLineItemMetadata = useCallback(() => {
     if (!giftWrap) {
       return undefined
@@ -332,7 +341,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
     }
 
     // 1. Add the product itself
-    optimisticAdd({
+    await optimisticAdd({
       product,
       variant: selectedVariant,
       quantity,
@@ -342,7 +351,7 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
     // 2. If gift wrap is selected, add it as a separate line item
     if (giftWrap) {
-      optimisticAdd({
+      await optimisticAdd({
         product,
         variant: undefined, // Gift wrap line doesn't need the specific variant
         quantity: 1, // Usually 1 wrap per set, or we can pin to quantity
@@ -367,8 +376,48 @@ export default function ProductActions({ product, disabled, showSupportActions =
     onActionComplete,
   ])
 
+  const addSimpleProductToCart = useCallback(async () => {
+    await optimisticAdd({
+      product,
+      variant: undefined,
+      quantity,
+      countryCode,
+      metadata: giftWrap ? { gift_wrap: true } : undefined,
+    })
+
+    if (giftWrap) {
+      await optimisticAdd({
+        product,
+        variant: undefined,
+        quantity: 1,
+        countryCode,
+        metadata: {
+          gift_wrap_line: true,
+          gift_wrap_fee: giftWrapSettings.fee,
+          parent_line_id: `parent-${product.id}-${Date.now()}`
+        },
+      })
+    }
+    onActionComplete?.()
+  }, [
+    countryCode,
+    giftWrap,
+    giftWrapSettings.fee,
+    onActionComplete,
+    optimisticAdd,
+    product,
+    quantity,
+  ])
+
   const handleAddToCartClick = () => {
-    if (isAdding || (!selectedVariant?.id && product.variants && product.variants.length > 0)) {
+    const hasNoVariants = !product.variants || product.variants.length === 0
+    const canAdd =
+      inStock &&
+      !disabled &&
+      (isValidVariant || hasNoVariants) &&
+      (!!selectedVariant?.id || hasNoVariants)
+
+    if (isAdding || !canAdd) {
       return
     }
 
@@ -377,40 +426,14 @@ export default function ProductActions({ product, disabled, showSupportActions =
 
     startAddToCart(async () => {
       try {
-        // First, perform the optimistic update BEFORE opening the cart
-        // This ensures the cart sidebar shows the item immediately when it opens
-        if (selectedVariant?.id || (product.variants && product.variants.length === 0)) {
-          if (selectedVariant?.id) {
-            await addVariantToCart()
-          } else {
-            // Simple product without variants
-            await optimisticAdd({
-              product,
-              variant: undefined,
-              quantity,
-              countryCode,
-              metadata: giftWrap ? { gift_wrap: true } : undefined,
-            })
-
-            if (giftWrap) {
-              await optimisticAdd({
-                product,
-                variant: undefined,
-                quantity: 1,
-                countryCode,
-                metadata: {
-                  gift_wrap_line: true,
-                  gift_wrap_fee: giftWrapSettings.fee,
-                  parent_line_id: `parent-${product.id}-${Date.now()}`
-                },
-              })
-            }
-            onActionComplete?.()
-          }
+        if (!selectedVariant?.id && !hasNoVariants) {
+          return
         }
 
-        // Now open the cart sidebar - the optimistic item will be visible
+        // Open sidebar immediately after optimistic mutation starts.
+        const addPromise = selectedVariant?.id ? addVariantToCart() : addSimpleProductToCart()
         openCart()
+        await addPromise
 
         const endTime = performance.now()
         console.log(`[Add to Cart] Completed in ${(endTime - startTime).toFixed(2)}ms`)
@@ -421,7 +444,14 @@ export default function ProductActions({ product, disabled, showSupportActions =
   }
 
   const handleBuyNowClick = () => {
-    if (isBuying || (!selectedVariant?.id && product.variants && product.variants.length > 0)) {
+    const hasNoVariants = !product.variants || product.variants.length === 0
+    const canBuy =
+      inStock &&
+      !disabled &&
+      (isValidVariant || hasNoVariants) &&
+      (!!selectedVariant?.id || hasNoVariants)
+
+    if (isBuying || !canBuy) {
       return
     }
 
@@ -438,6 +468,9 @@ export default function ProductActions({ product, disabled, showSupportActions =
         // This line is only reached if redirect didn't happen (error or unexpected flow)
         onActionComplete?.()
       } catch (error) {
+        if (isNextRedirectError(error)) {
+          throw error
+        }
         console.error("Failed to start checkout", error)
       }
     })
