@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getAuthUser } from "./auth"
 import { redirect } from "next/navigation"
+import { removeCartId } from "./cookies"
 import { CustomerProfile, Address } from "@/lib/supabase/types"
 import { getBaseURL } from "@/lib/util/env"
 import { ActionResult } from "@/lib/types/action-result"
@@ -142,6 +143,8 @@ export async function login(_currentState: unknown, formData: FormData): Promise
 export async function signout() {
   const supabase = await createClient()
   await supabase.auth.signOut()
+
+  await removeCartId()
 
   revalidateTag("customers", "max")
   revalidateTag("cart", "max")

@@ -104,6 +104,12 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     return null
   }
 
+  // Security: reject cart if it belongs to a different user
+  if (cartData.user_id && user && cartData.user_id !== user.id) {
+    await removeCartId()
+    return null
+  }
+
   // Check if user is a club member and get discount percentage
   let isClubMember = false
   let clubDiscountPercentage = 0

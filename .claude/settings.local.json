@@ -14,7 +14,10 @@
       "WebFetch(domain:docs.commercetools.com)",
       "Bash(npx tsc:*)",
       "Bash(npx next lint:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(ls:*)",
+      "Bash(head:*)",
+      "WebFetch(domain:cheatsheetseries.owasp.org)"
     ]
   }
 }
