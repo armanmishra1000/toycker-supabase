@@ -839,67 +839,54 @@ export async function handlePostOrderLogic(order: any, cart: any, rewards_discou
   // Handle rewards and club functionality for logged-in users
   if (order.user_id) {
     const { checkAndActivateMembership, getClubSettings } = await import("@lib/data/club")
-    const { creditRewards, deductRewards } = await import("@lib/data/rewards")
+    const { deductRewards } = await import("@lib/data/rewards")
     const settings = await getClubSettings()
 
-    // 1. Deduct reward points used
+    // 1. Deduct reward points used (now works — rewards.ts uses admin client)
     if (rewards_discount > 0) {
       await deductRewards(order.user_id, order.id, rewards_discount)
     }
 
-    // 2. Check for club membership activation (if threshold reached)
+    // 2. Check for club membership activation (now works — club.ts uses admin client)
     const activated = await checkAndActivateMembership(order.user_id, order.total)
     if (activated) {
       revalidateTag("customers", "max")
     }
 
-    // 3. Credit new rewards for club members
-    const user = await getAuthUser()
-    const isClubMember = user?.user_metadata?.is_club_member === true || activated
-
-    if (isClubMember && settings.rewards_percentage > 0) {
-      const pointsEarned = await creditRewards(
-        order.user_id,
-        order.id,
-        order.subtotal, // Points based on subtotal, not including shipping
-        settings.rewards_percentage
-      )
-
-      // Update order metadata with rewards info
-      await supabase.from("orders").update({
-        metadata: {
-          ...(order.metadata || {}),
-          newly_activated_club_member: activated,
-          club_discount_percentage: settings.discount_percentage,
-          rewards_earned: pointsEarned,
-          rewards_used: rewards_discount
-        }
-      }).eq("id", order.id)
-    } else if (activated) {
+    // 3. Update order metadata (rewards will be credited at delivery by admin)
+    if (activated) {
       await supabase.from("orders").update({
         metadata: {
           ...(order.metadata || {}),
           newly_activated_club_member: true,
-          club_discount_percentage: settings.discount_percentage
+          club_discount_percentage: settings.discount_percentage,
+          rewards_used: rewards_discount
+        }
+      }).eq("id", order.id)
+    } else if (rewards_discount > 0) {
+      await supabase.from("orders").update({
+        metadata: {
+          ...(order.metadata || {}),
+          rewards_used: rewards_discount
         }
       }).eq("id", order.id)
     }
 
-    // 4. Persist Lifetime Club Savings
+    // 4. Persist Lifetime Club Savings (fixed: use admin API instead of getAuthUser)
     if (cart.club_savings && cart.club_savings > 0) {
-      const currentSavings = Number(user?.user_metadata?.total_club_savings || 0)
-      const newSavings = currentSavings + cart.club_savings
+      const adminSupabase = await createAdminClient()
+      const { data: { user } } = await adminSupabase.auth.admin.getUserById(order.user_id)
+      if (user) {
+        const currentSavings = Number(user.user_metadata?.total_club_savings || 0)
+        const newSavings = currentSavings + cart.club_savings
 
-      await supabase.auth.updateUser({
-        data: {
+        await adminSupabase.auth.admin.updateUserById(order.user_id, {
+          user_metadata: { ...user.user_metadata, total_club_savings: newSavings }
+        })
+        await adminSupabase.from("profiles").update({
           total_club_savings: newSavings
-        }
-      })
-
-      // Sync to profiles table for admin accessibility
-      await supabase.from("profiles").update({
-        total_club_savings: newSavings
-      }).eq("id", order.user_id)
+        }).eq("id", order.user_id)
+      }
     }
   }
 

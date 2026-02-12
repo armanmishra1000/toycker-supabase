@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { RewardWallet, RewardTransactionWithOrder } from "@/lib/supabase/types"
 import { revalidateTag } from "next/cache"
 import { cache } from "react"
@@ -103,7 +104,7 @@ export async function getRewardTransactions(): Promise<RewardTransactionWithOrde
  * Used internally when crediting rewards.
  */
 async function getOrCreateWallet(userId: string): Promise<RewardWallet | null> {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Try to get existing wallet
     const { data: existingWallet } = await supabase
@@ -149,7 +150,7 @@ export async function creditRewards(
     const wallet = await getOrCreateWallet(userId)
     if (!wallet) return 0
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Update wallet balance
     const { error: updateError } = await supabase
@@ -205,7 +206,7 @@ export async function deductRewards(
     const wallet = await getOrCreateWallet(userId)
     if (!wallet || wallet.balance < points) return false
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Update wallet balance
     const { error: updateError } = await supabase

@@ -2185,18 +2185,71 @@ export async function acceptOrder(orderId: string) {
   revalidatePath("/admin/orders")
 }
 
+/**
+ * Credit reward points to a club member when their order is delivered.
+ * Uses admin client to bypass RLS. Idempotent via metadata flag.
+ */
+async function creditRewardsOnDelivery(order: {
+  id: string
+  user_id: string | null
+  subtotal: number | null
+  total: number | null
+  metadata: Record<string, unknown> | null
+}) {
+  if (!order.user_id) return  // Skip guest orders
+
+  const metadata = (order.metadata || {}) as Record<string, unknown>
+  if (metadata.rewards_credited === true) {
+    console.log(`[REWARDS] Order ${order.id} already credited, skipping.`)
+    return
+  }
+
+  // Check club membership via profiles (no auth cookies needed)
+  const adminSupabase = await createAdminClient()
+  const { data: profile } = await adminSupabase
+    .from("profiles")
+    .select("is_club_member")
+    .eq("id", order.user_id)
+    .maybeSingle()
+
+  if (!profile?.is_club_member) return
+
+  const { getClubSettings } = await import("@lib/data/club")
+  const settings = await getClubSettings()
+  if (!settings.is_active || settings.rewards_percentage <= 0) return
+
+  const orderSubtotal = Number(order.subtotal || order.total || 0)
+  const pointsEarned = Math.floor((orderSubtotal * settings.rewards_percentage) / 100)
+  if (pointsEarned <= 0) return
+
+  // Use creditRewards from rewards.ts (now uses admin client internally)
+  const { creditRewards } = await import("@lib/data/rewards")
+  const credited = await creditRewards(order.user_id, order.id, orderSubtotal, settings.rewards_percentage)
+
+  // Set idempotency flag in order metadata
+  await adminSupabase.from("orders").update({
+    metadata: { ...metadata, rewards_earned: credited, rewards_credited: true }
+  }).eq("id", order.id)
+
+  if (credited > 0) {
+    console.log(`[REWARDS] Credited ${credited} points to user ${order.user_id} for order ${order.id}`)
+  }
+}
+
 export async function markOrderAsDelivered(orderId: string) {
   await ensureAdmin()
   const supabase = await createClient()
   const actorDisplay = await getAdminActorDisplay()
 
-  const { data: existing } = await supabase
+  const { data: order } = await supabase
     .from("orders")
-    .select("payment_method, payment_status")
+    .select("id, user_id, subtotal, total, payment_method, payment_status, metadata")
     .eq("id", orderId)
     .maybeSingle()
 
-  const normalizedMethod = (existing?.payment_method || "").toLowerCase()
+  if (!order) throw new Error("Order not found")
+
+  const normalizedMethod = (order.payment_method || "").toLowerCase()
   const isCod = normalizedMethod.includes("cod") || normalizedMethod.includes("cash") || normalizedMethod.includes("pp_system_default") || normalizedMethod === "manual"
 
   const { error } = await supabase
@@ -2204,12 +2257,15 @@ export async function markOrderAsDelivered(orderId: string) {
     .update({
       status: "delivered",
       fulfillment_status: "delivered",
-      payment_status: isCod ? "captured" : existing?.payment_status,
+      payment_status: isCod ? "captured" : order.payment_status,
       updated_at: new Date().toISOString()
     })
     .eq("id", orderId)
 
   if (error) throw error
+
+  // Credit reward points to club members (idempotent)
+  await creditRewardsOnDelivery(order)
 
   await logOrderEvent(
     orderId,
@@ -2225,6 +2281,7 @@ export async function markOrderAsDelivered(orderId: string) {
 
   revalidatePath(`/admin/orders/${orderId}`)
   revalidatePath("/admin/orders")
+  revalidateTag("rewards", "max")
 }
 
 export async function cancelOrder(orderId: string) {

@@ -17,7 +17,15 @@
       "Bash(npx eslint:*)",
       "Bash(ls:*)",
       "Bash(head:*)",
-      "WebFetch(domain:cheatsheetseries.owasp.org)"
+      "WebFetch(domain:cheatsheetseries.owasp.org)",
+      "WebFetch(domain:www.voucherify.io)",
+      "WebFetch(domain:www.zigpoll.com)",
+      "WebFetch(domain:help.joy.so)",
+      "WebFetch(domain:experienceleague.adobe.com)",
+      "WebFetch(domain:optculture.com)",
+      "WebFetch(domain:blog.propellocloud.com)",
+      "WebFetch(domain:help.loyaltylion.com)",
+      "Bash(grep:*)"
     ]
   }
 }
