@@ -61,3 +61,6 @@ dump.rdb
 
 # Local cache
 .cache/
+
+
+.claude/

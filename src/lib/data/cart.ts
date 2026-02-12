@@ -2,6 +2,7 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { Cart, ShippingOption, PaymentCollection, Promotion } from "@/lib/supabase/types"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
@@ -20,6 +21,44 @@ import {
   CartShippingMethod
 } from "@/lib/util/cart-calculations"
 
+type CartWriteContext = {
+  supabase:
+  | Awaited<ReturnType<typeof createClient>>
+  | Awaited<ReturnType<typeof createAdminClient>>
+  userId: string | null
+  email: string | null
+}
+
+const getCartClientForUser = async (userId: string | null) => {
+  if (userId) {
+    return createClient()
+  }
+  return createAdminClient()
+}
+
+const getCartClient = async () => {
+  const authUser = await getAuthUser()
+  if (authUser) return createClient()
+  return createAdminClient()
+}
+
+const resolveCartWriteContext = async (): Promise<CartWriteContext> => {
+  const authUser = await getAuthUser()
+  if (authUser) {
+    return {
+      supabase: await createClient(),
+      userId: authUser.id,
+      email: authUser.email ?? null,
+    }
+  }
+
+  return {
+    supabase: await createAdminClient(),
+    userId: null,
+    email: null,
+  }
+}
+
 export async function retrieveCart(cartId?: string): Promise<Cart | null> {
   return cachedRetrieveCart(cartId)
 }
@@ -32,7 +71,8 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   const id = cartId || (await getCartId())
   if (!id) return null
 
-  const supabase = await createClient()
+  const user = await getAuthUser()
+  const supabase = await getCartClientForUser(user?.id ?? null)
   const { data: cartData, error } = await supabase
     .from("carts")
     .select(`
@@ -69,7 +109,6 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   let clubDiscountPercentage = 0
   let availableRewards = 0
 
-  const user = await getAuthUser()
   if (user) {
     isClubMember = user.user_metadata?.is_club_member === true
     if (isClubMember) {
@@ -157,13 +196,13 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
 
 
 
-export async function getOrSetCart(): Promise<Cart> {
+export async function getOrSetCart(context?: CartWriteContext): Promise<Cart> {
   const existingCart = await retrieveCart()
   if (existingCart) return existingCart
 
   try {
-    const supabase = await createClient()
-    const user = await getAuthUser()
+    const writeContext = context ?? (await resolveCartWriteContext())
+    const supabase = writeContext.supabase
 
     const newCartId = randomUUID()
 
@@ -171,9 +210,9 @@ export async function getOrSetCart(): Promise<Cart> {
       .from("carts")
       .insert({
         id: newCartId,
-        user_id: user?.id || null,  // Supports Guests (NULL)
+        user_id: writeContext.userId,
         currency_code: "inr",
-        email: user?.email || null
+        email: writeContext.email
       })
       .select()
       .single()
@@ -230,16 +269,18 @@ export async function addToCart({
   metadata?: Record<string, unknown>
 }) {
   try {
+    const writeContext = await resolveCartWriteContext()
+
     // Get or create cart with better error handling
     let cartId: string
     try {
-      cartId = (await getCartId()) || (await getOrSetCart()).id
+      cartId = (await getCartId()) || (await getOrSetCart(writeContext)).id
     } catch (cartError) {
       console.error("[addToCart] Failed to get or create cart:", cartError)
       throw new Error(`Failed to get or create cart: ${cartError instanceof Error ? cartError.message : "Unknown error"}`)
     }
 
-    const supabase = await createClient()
+    const supabase = writeContext.supabase
 
     let targetVariantId = variantId === productId ? undefined : variantId
     if (!targetVariantId) {
@@ -360,8 +401,9 @@ export async function addMultipleToCart(items: {
   variantId?: string
   metadata?: Record<string, unknown>
 }[]) {
-  const cartId = (await getCartId()) || (await getOrSetCart()).id
-  const supabase = await createClient()
+  const writeContext = await resolveCartWriteContext()
+  const cartId = (await getCartId()) || (await getOrSetCart(writeContext)).id
+  const supabase = writeContext.supabase
 
   for (const item of items) {
     let targetVariantId = item.variantId === item.productId ? undefined : item.variantId
@@ -415,7 +457,8 @@ export async function updateLineItem({
   lineId: string
   quantity: number
 }) {
-  const supabase = await createClient()
+  const writeContext = await resolveCartWriteContext()
+  const supabase = writeContext.supabase
   await supabase
     .from("cart_items")
     .update({ quantity })
@@ -427,7 +470,8 @@ export async function updateLineItem({
 
 
 export async function deleteLineItem(lineId: string) {
-  const supabase = await createClient()
+  const writeContext = await resolveCartWriteContext()
+  const supabase = writeContext.supabase
   await supabase
     .from("cart_items")
     .delete()
@@ -444,7 +488,7 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
   const cart = await retrieveCart()
   if (!cart) return { message: "No cart found", success: false }
 
-  const supabase = await createClient()
+  const supabase = await getCartClient()
 
   const shippingPhone = formData.get("shipping_address.phone") as string
   if (!shippingPhone || shippingPhone.trim() === "") {
@@ -572,7 +616,7 @@ export async function setShippingMethod({
   shippingMethodId: string,
   skipRevalidate?: boolean
 }) {
-  const supabase = await createClient()
+  const supabase = await getCartClient()
 
   const { shipping_options } = await listCartOptions()
   const option = shipping_options.find(o => o.id === shippingMethodId)
@@ -607,7 +651,7 @@ export async function setPaymentProvider(providerId: string) {
   const cartId = await getCartId()
   if (!cartId) return
 
-  const supabase = await createClient()
+  const supabase = await getCartClient()
 
   const paymentCollection = {
     payment_sessions: [{
@@ -634,7 +678,7 @@ export async function setPaymentProvider(providerId: string) {
 }
 
 export async function initiatePaymentSession(cartInput: { id: string }, data: { provider_id: string, data?: Record<string, unknown> }) {
-  const supabase = await createClient()
+  const supabase = await getCartClient()
   const cart = await retrieveCart(cartInput.id)
   if (!cart) throw new Error("Cart not found")
 
@@ -716,7 +760,7 @@ export async function placeOrder() {
   const cart = await retrieveCart()
   if (!cart) throw new Error("No cart found")
 
-  const supabase = await createClient()
+  const supabase = await getCartClient()
 
   // Calculate proper totals from cart
   const item_subtotal = cart.item_subtotal ?? cart.subtotal ?? 0
@@ -784,7 +828,7 @@ export async function placeOrder() {
  * rewards calculation, and event logging.
  */
 export async function handlePostOrderLogic(order: any, cart: any, rewards_discount: number) {
-  const supabase = await createClient()
+  const supabase = await getCartClient()
 
   // Handle rewards and club functionality for logged-in users
   if (order.user_id) {
@@ -882,16 +926,16 @@ export async function createBuyNowCart({
   countryCode: string
   metadata?: Record<string, unknown>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const writeContext = await resolveCartWriteContext()
+  const supabase = writeContext.supabase
 
   const newCartId = randomUUID()
 
   const { error } = await supabase.from("carts").insert({
     id: newCartId,
-    user_id: user?.id || null,
+    user_id: writeContext.userId,
     currency_code: "inr",
-    email: user?.email || null
+    email: writeContext.email
   })
 
   if (error) throw new Error(error.message)
@@ -936,7 +980,7 @@ export async function createBuyNowCart({
 }
 
 export async function listCartOptions(): Promise<{ shipping_options: ShippingOption[] }> {
-  const supabase = await createClient()
+  const supabase = await getCartClient()
   const { data, error } = await supabase
     .from("shipping_options")
     .select("*")
@@ -967,7 +1011,7 @@ export async function applyPromotions(codes: string[]) {
   const cartId = await getCartId()
   if (!cartId) throw new Error("No cart found")
 
-  const supabase = await createClient()
+  const supabase = await getCartClient()
 
   if (codes.length === 0) {
     const { error } = await supabase.from("carts").update({ promo_code: null, discount_total: 0 }).eq("id", cartId)
@@ -1037,7 +1081,7 @@ export async function updateCartRewards(points: number) {
   const cartId = await getCartId()
   if (!cartId) throw new Error("No cart found")
 
-  const supabase = await createClient()
+  const supabase = await getCartClient()
 
   const { data: cart } = await supabase
     .from("carts")

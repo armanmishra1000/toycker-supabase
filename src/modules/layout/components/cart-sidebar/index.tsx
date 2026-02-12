@@ -117,7 +117,7 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">
                 {hasItems ? (
                   <div className="space-y-5">
                     {cart!.items!
@@ -192,7 +192,7 @@ const CartSidebar = ({ isOpen, onClose }: CartSidebarProps) => {
                           >
                             {renderThumbnail()}
 
-                            <div className="flex flex-1 flex-col justify-between">
+                            <div className="flex flex-1 flex-col justify-between min-w-0">
                               <div className="flex items-start justify-between gap-3">
                                 <div className="flex flex-col gap-0.5 min-w-0">
                                   {renderTitle()}

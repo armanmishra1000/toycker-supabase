@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "mcp__web-search-prime__webSearchPrime"
+      "mcp__web-search-prime__webSearchPrime",
+      "WebSearch",
+      "WebFetch(domain:commercefordevs.org)",
+      "WebFetch(domain:docs.medusajs.com)",
+      "WebFetch(domain:adrianmurage.com)",
+      "WebFetch(domain:hashnode.com)",
+      "WebFetch(domain:supabase.com)",
+      "WebFetch(domain:shopify.dev)",
+      "WebFetch(domain:www.wiliam.com.au)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.commercetools.com)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next lint:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }
