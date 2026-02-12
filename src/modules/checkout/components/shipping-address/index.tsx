@@ -1,6 +1,7 @@
 import Checkbox from "@modules/common/components/checkbox"
 import Input from "@modules/common/components/input"
 import React, { useEffect, useMemo, useState } from "react"
+import { useDebounce } from "@lib/hooks/use-debounce"
 import AddressSelect from "../address-select"
 import CountrySelect from "../country-select"
 import { useCheckout } from "../../context/checkout-context"
@@ -31,7 +32,38 @@ const ShippingAddress = ({
     email: cart?.email || "",
   })
 
-  const [saveAddress, setSaveAddress] = useState(false)
+  const [saveAddress, setSaveAddress] = useState(true)
+
+  const [pincodeLoading, setPincodeLoading] = useState(false)
+  const debouncedPincode = useDebounce(
+    formData["shipping_address.postal_code"],
+    500
+  )
+
+  useEffect(() => {
+    if (!/^[1-9][0-9]{5}$/.test(debouncedPincode)) return
+
+    let cancelled = false
+    setPincodeLoading(true)
+
+    fetch(`/api/pincode/${debouncedPincode}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { city: string; state: string } | null) => {
+        if (cancelled || !data) return
+        setFormData((prev) => ({
+          ...prev,
+          "shipping_address.city": data.city,
+          "shipping_address.province": data.state,
+        }))
+      })
+      .finally(() => {
+        if (!cancelled) setPincodeLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedPincode])
 
   const countriesInRegion = useMemo(
     () => cart?.region?.countries?.map((c: any) => c.iso_2),
@@ -198,6 +230,7 @@ const ShippingAddress = ({
           value={formData["shipping_address.city"] || ""}
           onChange={handleChange}
           required
+          disabled={pincodeLoading}
           data-testid="shipping-city-input"
         />
         <CountrySelect
@@ -215,6 +248,7 @@ const ShippingAddress = ({
           autoComplete="address-level1"
           value={formData["shipping_address.province"] || ""}
           onChange={handleChange}
+          disabled={pincodeLoading}
           data-testid="shipping-province-input"
         />
       </div>

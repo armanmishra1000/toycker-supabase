@@ -25,7 +25,8 @@
       "WebFetch(domain:optculture.com)",
       "WebFetch(domain:blog.propellocloud.com)",
       "WebFetch(domain:help.loyaltylion.com)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "WebFetch(domain:api.postalpincode.in)"
     ]
   }
 }
