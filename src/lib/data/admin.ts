@@ -1695,15 +1695,16 @@ export async function getAdminCustomer(id: string) {
   // Fetch initial transactions
   const initialTransactions = wallet ? await getPaginatedCustomerRewardTransactions(id, 1, 5) : { data: [], total: 0 }
 
-  // Total spent calculation - using sum aggregate instead of fetching all orders
-  const { data: totalSpentData } = await supabase
+  // Total spent calculation
+  const { data: orderTotals } = await supabase
     .from("orders")
-    .select("total_amount.sum()")
+    .select("total_amount")
     .eq("user_id", id)
-    .single()
+    .not("status", "in", '("cancelled","failed")')
 
-  // @ts-ignore - sum() return type handling
-  const totalSpent = totalSpentData?.sum || 0
+  const totalSpent = (orderTotals || []).reduce(
+    (sum, row) => sum + Number(row.total_amount || 0), 0
+  )
 
   return {
     ...profile,
@@ -2212,7 +2213,13 @@ async function creditRewardsOnDelivery(order: {
     .eq("id", order.user_id)
     .maybeSingle()
 
-  if (!profile?.is_club_member) return
+  if (!profile?.is_club_member) {
+    // Try to activate membership if order qualifies (safety net for orders placed before fix)
+    const { checkAndActivateMembership } = await import("@lib/data/club")
+    const orderTotal = Number(order.total || 0)
+    const activated = await checkAndActivateMembership(order.user_id, orderTotal)
+    if (!activated) return  // Not eligible, skip rewards
+  }
 
   const { getClubSettings } = await import("@lib/data/club")
   const settings = await getClubSettings()
