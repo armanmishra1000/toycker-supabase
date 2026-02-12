@@ -40,7 +40,10 @@ const resolveProductImageSource = (entry: ExclusiveCollectionEntry) => {
   )
 }
 
-const resolveDisplayPrice = (entry: ExclusiveCollectionEntry, clubDiscountPercentage?: number): { displayPrice: DisplayPrice | null, clubPrice: string | null } => {
+const resolveDisplayPrice = (
+  entry: ExclusiveCollectionEntry,
+  clubDiscountPercentage?: number
+): { displayPrice: DisplayPrice | null; clubPrice: string | null } => {
   if (!entry.product) {
     return { displayPrice: null, clubPrice: null }
   }
@@ -48,7 +51,7 @@ const resolveDisplayPrice = (entry: ExclusiveCollectionEntry, clubDiscountPercen
   try {
     const { cheapestPrice, variantPrice } = getProductPrice({
       product: entry.product,
-      clubDiscountPercentage
+      clubDiscountPercentage,
     })
 
     // Choose the price object that has the club price if available
@@ -56,7 +59,7 @@ const resolveDisplayPrice = (entry: ExclusiveCollectionEntry, clubDiscountPercen
 
     return {
       displayPrice: buildDisplayPrice(cheapestPrice),
-      clubPrice: priceObj?.club_price ?? null
+      clubPrice: priceObj?.club_price ?? null,
     }
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
@@ -66,7 +69,13 @@ const resolveDisplayPrice = (entry: ExclusiveCollectionEntry, clubDiscountPercen
   }
 }
 
-const PriceStack = ({ price, clubPrice }: { price: DisplayPrice | null, clubPrice: string | null }) => {
+const PriceStack = ({
+  price,
+  clubPrice,
+}: {
+  price: DisplayPrice | null
+  clubPrice: string | null
+}) => {
   if (!price) {
     return null
   }
@@ -120,7 +129,10 @@ const ExclusiveCard = ({
   const productImage = resolveProductImageSource(item)
   const title = item.product?.name ?? "Exclusive collectible"
   const productHandle = item.product?.handle ?? item.product_id
-  const { displayPrice, clubPrice } = resolveDisplayPrice(item, clubDiscountPercentage)
+  const { displayPrice, clubPrice } = resolveDisplayPrice(
+    item,
+    clubDiscountPercentage
+  )
   const hasVideo = Boolean(item.video_url && item.video_url.trim().length > 0)
 
   // Show skeleton until both data and media are ready
@@ -203,7 +215,10 @@ const ExclusiveCard = ({
   )
 }
 
-const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollectionsProps) => {
+const ExclusiveCollections = ({
+  items,
+  clubDiscountPercentage,
+}: ExclusiveCollectionsProps) => {
   const [isMounted, setIsMounted] = useState(false)
 
   const showcaseItems = useMemo(() => items ?? [], [items])
@@ -266,12 +281,12 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#b26f45]">
               Exclusive collections
             </p>
-            <h2 className="mt-2 text-3xl font-bold text-[#4b2b1c] md:text-4xl">
+            <h2 className="mt-2 text-2xl font-bold text-[#4b2b1c] md:text-4xl">
               Limited-edition playtime drops
             </h2>
             <p className="mt-2 max-w-2xl text-base text-[#725747]">
-              Catch our toymakers showcasing each collectible live, note the magic code, and
-              claim your next adventure set before the sparkly stock disappears.
+              Explore our limited-edition toy drops, crafted for unforgettable
+              playtime moments and available only while exclusive stocks last.
             </p>
           </div>
         </header>
@@ -311,7 +326,10 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
               )}
               aria-label="Previous video"
             >
-              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
+              <ChevronLeft
+                className="h-4 w-4 md:h-5 md:w-5"
+                aria-hidden="true"
+              />
             </button>
 
             <button
@@ -323,7 +341,10 @@ const ExclusiveCollections = ({ items, clubDiscountPercentage }: ExclusiveCollec
               )}
               aria-label="Next video"
             >
-              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" aria-hidden="true" />
+              <ChevronRight
+                className="h-4 w-4 md:h-5 md:w-5"
+                aria-hidden="true"
+              />
             </button>
           </div>
         )}
