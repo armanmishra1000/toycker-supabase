@@ -6,6 +6,11 @@ export const metadata: Metadata = {
     description: "Reset your Toycker account password.",
 }
 
-export default function ResetPasswordPage() {
-    return <ResetPasswordTemplate />
+export default async function ResetPasswordPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ mode?: string }>
+}) {
+    const { mode } = await searchParams
+    return <ResetPasswordTemplate isRecovery={mode === "recovery"} />
 }

@@ -7,7 +7,7 @@ import { resetPassword } from "@lib/data/customer"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
 
-const ResetPassword = () => {
+const ResetPassword = ({ isRecovery = false }: { isRecovery?: boolean }) => {
     const { showToast } = useToast()
     const [state, formAction, isPending] = useActionState(resetPassword, { success: true, data: undefined } as any)
 
@@ -31,15 +31,17 @@ const ResetPassword = () => {
         <div className="w-full" data-testid="reset-password-form">
             <form className="w-full flex flex-col" action={formAction}>
                 <div className="flex flex-col w-full gap-y-3">
-                    <Input
-                        label="Old Password"
-                        name="old_password"
-                        type="password"
-                        autoComplete="current-password"
-                        required
-                        disabled={isPending}
-                        data-testid="old-password-input"
-                    />
+                    {!isRecovery && (
+                        <Input
+                            label="Old Password"
+                            name="old_password"
+                            type="password"
+                            autoComplete="current-password"
+                            required
+                            disabled={isPending}
+                            data-testid="old-password-input"
+                        />
+                    )}
                     <Input
                         label="New Password"
                         name="password"
