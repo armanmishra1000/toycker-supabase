@@ -79,10 +79,17 @@ export async function completeCheckout(
             .eq("id", result.order_id)
             .single()
 
-        // Step 3: Handle post-order logic (MOVED TO PAYMENT CALLBACK)
-        // We no longer trigger rewards/club updates here to avoid ghost orders.
-        // These will be handled in the secure payment callback (e.g. PayU/Stripe) 
-        // after the hash or signature is verified.
+        // Step 3: For non-gateway payments (COD, manual), run post-order logic now.
+        // Gateway payments (PayU) handle this in their callback after payment verification.
+        const isGatewayPayment = validatedData.paymentMethod.includes("payu")
+
+        if (!isGatewayPayment && orderData) {
+            const { handlePostOrderLogic, retrieveCart } = await import("@lib/data/cart")
+            const cart = await retrieveCart(validatedData.cartId)
+            if (cart) {
+                await handlePostOrderLogic(orderData, cart, validatedData.rewardsToApply)
+            }
+        }
 
         // Cart clearing is handled by ClearCartOnMount on the confirmation page
         // to avoid "Not Found" race conditions during payment gateway handoffs.

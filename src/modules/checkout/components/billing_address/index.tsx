@@ -1,6 +1,7 @@
 import { Cart } from "@/lib/supabase/types"
 import Input from "@modules/common/components/input"
 import React, { useState, useEffect } from "react"
+import { useDebounce } from "@lib/hooks/use-debounce"
 import CountrySelect from "../country-select"
 import { useCheckout } from "../../context/checkout-context"
 
@@ -29,6 +30,37 @@ const BillingAddress = ({ cart }: { cart: Cart | null }) => {
       [e.target.name]: e.target.value,
     })
   }
+
+  const [pincodeLoading, setPincodeLoading] = useState(false)
+  const debouncedPincode = useDebounce(
+    formData["billing_address.postal_code"],
+    500
+  )
+
+  useEffect(() => {
+    if (!/^[1-9][0-9]{5}$/.test(debouncedPincode)) return
+
+    let cancelled = false
+    setPincodeLoading(true)
+
+    fetch(`/api/pincode/${debouncedPincode}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { city: string; state: string } | null) => {
+        if (cancelled || !data) return
+        setFormData((prev) => ({
+          ...prev,
+          "billing_address.city": data.city,
+          "billing_address.province": data.state,
+        }))
+      })
+      .finally(() => {
+        if (!cancelled) setPincodeLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedPincode])
 
   // Update checkout context whenever form data changes
   useEffect(() => {
@@ -99,6 +131,7 @@ const BillingAddress = ({ cart }: { cart: Cart | null }) => {
           autoComplete="address-level2"
           value={formData["billing_address.city"] || ""}
           onChange={handleChange}
+          disabled={pincodeLoading}
         />
         <CountrySelect
           name="billing_address.country_code"
@@ -115,6 +148,7 @@ const BillingAddress = ({ cart }: { cart: Cart | null }) => {
           autoComplete="address-level1"
           value={formData["billing_address.province"] || ""}
           onChange={handleChange}
+          disabled={pincodeLoading}
           data-testid="billing-province-input"
         />
         <Input

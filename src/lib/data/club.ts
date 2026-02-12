@@ -2,6 +2,7 @@
 
 import { cache } from 'react'
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { ClubSettings } from "@/lib/supabase/types"
 import { revalidateTag, unstable_cache } from "next/cache"
 
@@ -62,51 +63,38 @@ export async function updateClubSettings(settings: Partial<ClubSettings>) {
 
 export async function checkAndActivateMembership(userId: string, orderTotal: number) {
     const settings = await getClubSettings()
-
     if (!settings.is_active) return false
+    if (orderTotal < settings.min_purchase_amount) return false
 
-    // Check if eligible
-    if (orderTotal >= settings.min_purchase_amount) {
-        // Use regular client for current user operations
-        const supabase = await createClient()
+    const adminSupabase = await createAdminClient()
 
-        // Get current user (works with regular anon key)
-        const { data: { user }, error } = await supabase.auth.getUser()
+    // Use admin API — works without user cookies (e.g. PayU server-to-server callback)
+    const { data: { user }, error } = await adminSupabase.auth.admin.getUserById(userId)
+    if (error || !user) return false
 
-        if (error || !user || user.id !== userId) {
-            // User not logged in or mismatch - skip silently
-            return false
+    if (user.user_metadata?.is_club_member) return false  // Already a member
+
+    // Activate membership via admin API
+    const { error: updateError } = await adminSupabase.auth.admin.updateUserById(userId, {
+        user_metadata: {
+            ...user.user_metadata,
+            is_club_member: true,
+            club_member_since: new Date().toISOString(),
+            total_club_savings: 0
         }
+    })
 
-        const isMember = user?.user_metadata?.is_club_member
-
-        if (!isMember) {
-            // Update current user's metadata (works with regular client)
-            const { error: updateError } = await supabase.auth.updateUser({
-                data: {
-                    is_club_member: true,
-                    club_member_since: new Date().toISOString(),
-                    total_club_savings: 0
-                }
-            })
-
-            if (updateError) {
-                console.error("Failed to activate membership:", updateError)
-                return false
-            }
-
-            // Sync to profiles table for admin accessibility
-            await supabase.from("profiles").update({
-                is_club_member: true,
-                club_member_since: new Date().toISOString(),
-                total_club_savings: 0
-            }).eq("id", userId)
-
-            // Note: revalidateTag must be called by the caller (e.g., placeOrder)
-            // since it cannot be called during render
-            return true // Activated
-        }
+    if (updateError) {
+        console.error("Failed to activate membership:", updateError)
+        return false
     }
 
-    return false // Not activated (already member or not eligible)
+    // Sync to profiles table for admin visibility
+    await adminSupabase.from("profiles").update({
+        is_club_member: true,
+        club_member_since: new Date().toISOString(),
+        total_club_savings: 0
+    }).eq("id", userId)
+
+    return true
 }
