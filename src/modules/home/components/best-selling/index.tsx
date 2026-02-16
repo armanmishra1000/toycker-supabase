@@ -40,21 +40,22 @@ const BestSelling = async ({ collectionId }: BestSellingProps) => {
       <div className="mx-auto max-w-screen-2xl px-4 pt-16 pb-10 md:pt-20 md:pb-10">
         <div className="flex flex-col gap-4 text-center">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">Curated</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">
+              Curated
+            </p>
             <h2
               id="best-selling-heading"
-              className="mt-2 text-3xl font-bold text-[#1b2240] md:text-4xl"
+              className="mt-2 text-2xl font-bold text-[#1b2240] md:text-4xl"
             >
               Best Selling Picks
-            </h2>
+            </h2> 
             <p className="mx-auto mt-3 max-w-2xl text-base text-[#6b5b53] md:text-lg">
-              Spotlight on the sets parents keep returning to—reliable builds, imaginative stories,
-              and quality that keeps kids exploring.
+              Top-rated toys loved by parents and kids alike
             </p>
           </div>
         </div>
 
-        <ul className="mt-10 grid gap-6 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 lg:[&>li:nth-last-child(-n+2)]:hidden xl:[&>li:nth-last-child(-n+2)]:block">
+        <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 lg:[&>li:nth-last-child(-n+2)]:hidden xl:[&>li:nth-last-child(-n+2)]:block">
           {products.map((product) => (
             <li key={product.id}>
               <ProductPreview

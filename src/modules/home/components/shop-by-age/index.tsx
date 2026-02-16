@@ -74,7 +74,13 @@ const AGE_GROUPS: AgeGroup[] = [
 
 type AgeStarProps = AgeGroup
 
-const AgeStar = ({ id, title, subtitle, baseColorClass, hoverColorClass }: AgeStarProps) => {
+const AgeStar = ({
+  id,
+  title,
+  subtitle,
+  baseColorClass,
+  hoverColorClass,
+}: AgeStarProps) => {
   return (
     <Link
       href={`/collections/${id}`}
@@ -166,13 +172,16 @@ const ShopByAge = () => {
   return (
     <section className="w-full bg-ui-bg-base">
       <div className="mx-auto max-w-screen-2xl px-4 py-16">
-        <header className="mb-10 text-center">
+        <header className="mb-10 text-center max-w-3xl space-y-3 mx-auto">
           <p className="text-sm font-semibold uppercase tracking-widest text-ui-fg-muted">
             Find the perfect toy
           </p>
-          <h2 className="mt-2 text-3xl font-bold text-ui-fg-base md:text-4xl">
+          <h2 className="text-2xl font-bold text-ui-fg-base md:text-4xl">
             Shop by Age
           </h2>
+          <p className="text-base md:text-lg">
+            Toys curated for every stage of childhood.
+          </p>
         </header>
 
         <div className="relative">

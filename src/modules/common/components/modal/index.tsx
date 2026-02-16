@@ -19,7 +19,7 @@ type ModalProps = {
   children: React.ReactNode
   closeOnOutsideClick?: boolean
   closeOnEscape?: boolean
-  'data-testid'?: string
+  "data-testid"?: string
 }
 
 const Modal = ({
@@ -36,7 +36,7 @@ const Modal = ({
   children,
   closeOnOutsideClick = true,
   closeOnEscape = true,
-  'data-testid': dataTestId
+  "data-testid": dataTestId,
 }: ModalProps) => {
   const handleClose = () => {
     if (closeOnOutsideClick) {
@@ -57,7 +57,7 @@ const Modal = ({
   }
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[75]" onClose={handleClose}>
+      <Dialog as="div" className="relative z-[200]" onClose={handleClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -96,8 +96,13 @@ const Modal = ({
                   "flex flex-col justify-start w-full transform text-left align-middle transition-all h-fit",
                   {
                     "p-0": panelPadding === "none",
-                    "p-5": panelPadding !== "none" && size !== "large" && size !== "xlarge",
-                    "p-8": panelPadding !== "none" && (size === "large" || size === "xlarge"),
+                    "p-5":
+                      panelPadding !== "none" &&
+                      size !== "large" &&
+                      size !== "xlarge",
+                    "p-8":
+                      panelPadding !== "none" &&
+                      (size === "large" || size === "xlarge"),
                     "max-w-md": size === "small" && !fullScreen,
                     "max-w-xl": size === "medium" && !fullScreen,
                     "max-w-3xl": size === "large" && !fullScreen,
@@ -106,7 +111,8 @@ const Modal = ({
                     "max-h-[90vh]": size === "xlarge" && !fullScreen,
                     "w-full h-full max-w-none max-h-none p-0": fullScreen,
                     "bg-transparent shadow-none": search,
-                    "bg-white shadow-[0_24px_60px_-25px_rgba(15,23,42,0.55)] border border-gray-100/80": !search && !fullScreen,
+                    "bg-white shadow-[0_24px_60px_-25px_rgba(15,23,42,0.55)] border border-gray-100/80":
+                      !search && !fullScreen,
                     [roundedClassMap[resolvedRounded]]: !search && !fullScreen,
                     "bg-white": fullScreen,
                     "shadow-none border-0 rounded-none": fullScreen,
@@ -155,7 +161,9 @@ const Body: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 }
 
 const Footer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <div className="flex items-center justify-end gap-3 pt-4">{children}</div>
+  return (
+    <div className="flex items-center justify-end gap-3 pt-4">{children}</div>
+  )
 }
 
 Modal.Title = Title

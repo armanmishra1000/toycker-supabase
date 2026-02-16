@@ -41,55 +41,73 @@ const ProductTemplate = async ({
   const customer = await retrieveCustomer()
   const reviews = await getProductReviews(product.id)
 
+  // Compute review stats for the rating badge
+  const reviewCount = reviews.length
+  const averageRating =
+    reviewCount > 0
+      ? Math.round(
+          (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewCount) *
+            100
+        ) / 100
+      : 0
+  const reviewStats = { average: averageRating, count: reviewCount }
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://toycker.com"
 
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    "name": product.name,
-    "image": images.map(i => i.url),
-    "description": product.seo_description || product.description || product.short_description || product.name,
-    "sku": product.variants?.[0]?.sku || product.id,
-    "brand": {
+    name: product.name,
+    image: images.map((i) => i.url),
+    description:
+      product.seo_description ||
+      product.description ||
+      product.short_description ||
+      product.name,
+    sku: product.variants?.[0]?.sku || product.id,
+    brand: {
       "@type": "Brand",
-      "name": "Toycker"
+      name: "Toycker",
     },
-    "offers": {
+    offers: {
       "@type": "Offer",
-      "url": `${baseUrl}/products/${product.handle}`,
-      "priceCurrency": "INR",
-      "price": product.price,
-      "availability": product.stock_count > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      "seller": {
+      url: `${baseUrl}/products/${product.handle}`,
+      priceCurrency: "INR",
+      price: product.price,
+      availability:
+        product.stock_count > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+      seller: {
         "@type": "Organization",
-        "name": "Toycker"
-      }
-    }
+        name: "Toycker",
+      },
+    },
   }
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    "itemListElement": [
+    itemListElement: [
       {
         "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": baseUrl
+        position: 1,
+        name: "Home",
+        item: baseUrl,
       },
       {
         "@type": "ListItem",
-        "position": 2,
-        "name": "Store",
-        "item": `${baseUrl}/store`
+        position: 2,
+        name: "Store",
+        item: `${baseUrl}/store`,
       },
       {
         "@type": "ListItem",
-        "position": 3,
-        "name": product.name,
-        "item": `${baseUrl}/products/${product.handle}`
-      }
-    ]
+        position: 3,
+        name: product.name,
+        item: `${baseUrl}/products/${product.handle}`,
+      },
+    ],
   }
 
   return (
@@ -106,7 +124,10 @@ const ProductTemplate = async ({
         className="content-container py-6 lg:py-10"
         data-testid="product-container"
       >
-        <Breadcrumbs className="hidden small:block mb-6" items={[{ label: "Store", href: "/store" }, { label: product.name }]} />
+        <Breadcrumbs
+          className="hidden small:block mb-6"
+          items={[{ label: "Store", href: "/store" }, { label: product.name }]}
+        />
         <div className="flex flex-col gap-10 xl:flex-row xl:items-start">
           <div className="w-full xl:w-3/5 xl:sticky xl:top-[120px] self-start">
             <ImageGallery images={images} />
@@ -125,6 +146,7 @@ const ProductTemplate = async ({
                 product={product}
                 region={region}
                 clubDiscountPercentage={clubDiscountPercentage}
+                reviewStats={reviewStats}
               />
             </Suspense>
             <div className="mt-6">
@@ -151,7 +173,7 @@ const ProductTemplate = async ({
               })()}
             </div>
           </div>
-        </div >
+        </div>
 
         {/* Lazy load product details sections */}
         <div className="mt-8 space-y-5">
@@ -171,9 +193,8 @@ const ProductTemplate = async ({
               productThumbnail={product.thumbnail || product.image_url}
             />
           </LazyLoadSection>
-
         </div>
-      </div >
+      </div>
 
       {/* Lazy load related products */}
       <LazyLoadSection minHeight="500px">

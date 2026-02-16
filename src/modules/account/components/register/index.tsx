@@ -3,7 +3,10 @@
 import { useActionState, useEffect } from "react"
 import { useToast } from "@modules/common/context/toast-context"
 import Input from "@modules/common/components/input"
-import { LOGIN_VIEW, LoginView } from "@modules/account/templates/login-template"
+import {
+  LOGIN_VIEW,
+  LoginView,
+} from "@modules/account/templates/login-template"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signup } from "@lib/data/customer"
@@ -14,7 +17,10 @@ type Props = {
 
 const Register = ({ setCurrentView }: Props) => {
   const { showToast } = useToast()
-  const [state, formAction, isPending] = useActionState(signup, { success: true, data: undefined } as any)
+  const [state, formAction, isPending] = useActionState(signup, {
+    success: true,
+    data: undefined,
+  } as any)
 
   useEffect(() => {
     if (state?.success === true && state?.data) {
@@ -71,21 +77,14 @@ const Register = ({ setCurrentView }: Props) => {
             data-testid="password-input"
           />
         </div>
-        <div aria-live="polite" className="min-h-[24px] mt-3">
-        </div>
+        <div aria-live="polite" className="min-h-[24px] mt-3"></div>
         <span className="text-left text-ui-fg-subtle text-small-regular mt-4 leading-relaxed">
-          By creating an account, you agree to Toycker Store&apos;s {" "}
-          <LocalizedClientLink
-            href="/content/privacy-policy"
-            className="underline"
-          >
+          By creating an account, you agree to Toycker Store&apos;s{" "}
+          <LocalizedClientLink href="/policies/privacy" className="underline">
             Privacy Policy
           </LocalizedClientLink>{" "}
-          and {" "}
-          <LocalizedClientLink
-            href="/content/terms-of-use"
-            className="underline"
-          >
+          and{" "}
+          <LocalizedClientLink href="/policies/terms" className="underline">
             Terms of Use
           </LocalizedClientLink>
           .
