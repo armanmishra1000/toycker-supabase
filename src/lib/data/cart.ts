@@ -3,7 +3,12 @@
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { Cart, ShippingOption, PaymentCollection, Promotion } from "@/lib/supabase/types"
+import {
+  Cart,
+  ShippingOption,
+  PaymentCollection,
+  Promotion,
+} from "@/lib/supabase/types"
 import { revalidateTag, revalidatePath } from "next/cache"
 import { getCartId, setCartId, removeCartId } from "./cookies"
 export { removeCartId }
@@ -13,18 +18,16 @@ import { generatePayUHash, PayUHashParams } from "@/lib/payu"
 import { getBaseURL } from "@/lib/util/env"
 import { getAuthUser } from "./auth"
 
-
-
 import {
   mapCartItems,
   calculateCartTotals,
-  CartShippingMethod
+  CartShippingMethod,
 } from "@/lib/util/cart-calculations"
 
 type CartWriteContext = {
   supabase:
-  | Awaited<ReturnType<typeof createClient>>
-  | Awaited<ReturnType<typeof createAdminClient>>
+    | Awaited<ReturnType<typeof createClient>>
+    | Awaited<ReturnType<typeof createAdminClient>>
   userId: string | null
   email: string | null
 }
@@ -63,9 +66,11 @@ export async function retrieveCart(cartId?: string): Promise<Cart | null> {
   return cachedRetrieveCart(cartId)
 }
 
-const cachedRetrieveCart = cache(async (cartId?: string): Promise<Cart | null> => {
-  return retrieveCartRaw(cartId)
-})
+const cachedRetrieveCart = cache(
+  async (cartId?: string): Promise<Cart | null> => {
+    return retrieveCartRaw(cartId)
+  }
+)
 
 export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   const id = cartId || (await getCartId())
@@ -75,7 +80,8 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   const supabase = await getCartClientForUser(user?.id ?? null)
   const { data: cartData, error } = await supabase
     .from("carts")
-    .select(`
+    .select(
+      `
       id,
       email,
       user_id,
@@ -96,7 +102,8 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
         variant:product_variants(*)
       ),
       promotion:promotions(*)
-    `)
+    `
+    )
     .eq("id", id)
     .maybeSingle()
 
@@ -143,12 +150,17 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
   const globalSettings = await getGlobalSettings()
   const giftWrapFee = globalSettings?.gift_wrap_fee ?? 50
 
-  const items = mapCartItems(cartData.items as any || [], clubDiscountPercentage, giftWrapFee)
+  const items = mapCartItems(
+    (cartData.items as any) || [],
+    clubDiscountPercentage,
+    giftWrapFee
+  )
 
   // Get payment discount percentage if a method is selected
-  const selectedPaymentProviderId = cartData.payment_collection?.payment_sessions?.find(
-    (s: any) => s.status === "pending"
-  )?.provider_id
+  const selectedPaymentProviderId =
+    cartData.payment_collection?.payment_sessions?.find(
+      (s: any) => s.status === "pending"
+    )?.provider_id
 
   let paymentDiscountPercentage = 0
   if (selectedPaymentProviderId) {
@@ -167,19 +179,23 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     .select("*")
     .eq("is_active", true)
 
-  const shippingOptionsData = (shippingOptions || []).map(opt => ({
+  const shippingOptionsData = (shippingOptions || []).map((opt) => ({
     shipping_option_id: opt.id,
     name: opt.name,
     amount: opt.amount,
-    min_order_free_shipping: opt.min_order_free_shipping
+    min_order_free_shipping: opt.min_order_free_shipping,
   })) as CartShippingMethod[]
 
-  const standardOption = shippingOptionsData.find(so => so.name.toLowerCase().includes('standard'))
-  const defaultShippingOption = standardOption || shippingOptionsData.find(so => so.min_order_free_shipping !== null)
+  const standardOption = shippingOptionsData.find((so) =>
+    so.name.toLowerCase().includes("standard")
+  )
+  const defaultShippingOption =
+    standardOption ||
+    shippingOptionsData.find((so) => so.min_order_free_shipping !== null)
 
   const totals = calculateCartTotals({
     items,
-    promotion: (cartData.promotion as any) as Promotion,
+    promotion: cartData.promotion as any as Promotion,
     shippingMethods: cartData.shipping_methods as CartShippingMethod[],
     availableRewards,
     cartMetadata: (cartData.metadata || {}) as Record<string, unknown>,
@@ -189,22 +205,24 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     defaultShippingOption,
   })
 
-  const freeShippingThreshold = standardOption?.min_order_free_shipping
-    || shippingOptionsData.find(so => so.min_order_free_shipping !== null)?.min_order_free_shipping
-    || 500 // Fallback
+  const freeShippingThreshold =
+    standardOption?.min_order_free_shipping ||
+    shippingOptionsData.find((so) => so.min_order_free_shipping !== null)
+      ?.min_order_free_shipping ||
+    500 // Fallback
 
   const cart: Cart = {
     ...cartData,
     ...totals,
     items,
-    promotions: cartData.promotion ? [(cartData.promotion as any) as Promotion] : [],
-    free_shipping_threshold: freeShippingThreshold
+    promotions: cartData.promotion
+      ? [cartData.promotion as any as Promotion]
+      : [],
+    free_shipping_threshold: freeShippingThreshold,
   }
 
   return cart
 }
-
-
 
 export async function getOrSetCart(context?: CartWriteContext): Promise<Cart> {
   const existingCart = await retrieveCart()
@@ -222,14 +240,16 @@ export async function getOrSetCart(context?: CartWriteContext): Promise<Cart> {
         id: newCartId,
         user_id: writeContext.userId,
         currency_code: "inr",
-        email: writeContext.email
+        email: writeContext.email,
       })
       .select()
       .single()
 
     if (error || !newCart) {
       console.error("[getOrSetCart] Failed to create cart:", error)
-      throw new Error(`Could not create cart: ${error?.message || "Unknown error"}`)
+      throw new Error(
+        `Could not create cart: ${error?.message || "Unknown error"}`
+      )
     }
 
     // Set the cart cookie
@@ -288,7 +308,11 @@ export async function addToCart({
       cartId = cart.id
     } catch (cartError) {
       console.error("[addToCart] Failed to get or create cart:", cartError)
-      throw new Error(`Failed to get or create cart: ${cartError instanceof Error ? cartError.message : "Unknown error"}`)
+      throw new Error(
+        `Failed to get or create cart: ${
+          cartError instanceof Error ? cartError.message : "Unknown error"
+        }`
+      )
     }
 
     const supabase = writeContext.supabase
@@ -310,7 +334,10 @@ export async function addToCart({
           targetVariantId = variants[0].id
         }
       } catch (variantFetchError) {
-        console.error("[addToCart] Failed to fetch variants:", variantFetchError)
+        console.error(
+          "[addToCart] Failed to fetch variants:",
+          variantFetchError
+        )
         // Continue without variant if fetch fails
       }
     }
@@ -348,32 +375,45 @@ export async function addToCart({
     }
 
     // Filter for exact metadata match to be safe
-    type CartItemRow = { metadata?: Record<string, unknown>; quantity?: number; id: string }
-    const existingItem = existingItems?.find((item: unknown): item is CartItemRow => {
-      if (!item || typeof item !== 'object') return false
-      const cartItem = item as CartItemRow
-      const itemMeta = cartItem.metadata || {}
-      const searchMeta = metadata || {}
-      const itemKeys = Object.keys(itemMeta)
-      const searchKeys = Object.keys(searchMeta)
-      if (itemKeys.length !== searchKeys.length) return false
-      return searchKeys.every(key => itemMeta[key] === searchMeta[key])
-    })
+    type CartItemRow = {
+      metadata?: Record<string, unknown>
+      quantity?: number
+      id: string
+    }
+    const existingItem = existingItems?.find(
+      (item: unknown): item is CartItemRow => {
+        if (!item || typeof item !== "object") return false
+        const cartItem = item as CartItemRow
+        const itemMeta = cartItem.metadata || {}
+        const searchMeta = metadata || {}
+        const itemKeys = Object.keys(itemMeta)
+        const searchKeys = Object.keys(searchMeta)
+        if (itemKeys.length !== searchKeys.length) return false
+        return searchKeys.every((key) => itemMeta[key] === searchMeta[key])
+      }
+    )
 
     if (existingItem) {
       try {
-        const currentQuantity = typeof existingItem.quantity === 'number' ? existingItem.quantity : 0
+        const currentQuantity =
+          typeof existingItem.quantity === "number" ? existingItem.quantity : 0
         const { error: updateError } = await supabase
           .from("cart_items")
           .update({ quantity: (currentQuantity || 0) + quantity })
           .eq("id", existingItem.id)
 
         if (updateError) {
-          console.error("[addToCart] Error updating existing item:", updateError)
+          console.error(
+            "[addToCart] Error updating existing item:",
+            updateError
+          )
           throw new Error(`Failed to update cart item: ${updateError.message}`)
         }
       } catch (updateError) {
-        console.error("[addToCart] Failed to update item quantity:", updateError)
+        console.error(
+          "[addToCart] Failed to update item quantity:",
+          updateError
+        )
         throw updateError
       }
     } else {
@@ -385,7 +425,7 @@ export async function addToCart({
             product_id: productId,
             variant_id: targetVariantId,
             quantity,
-            metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null
+            metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
           })
 
         if (insertError) {
@@ -406,19 +446,22 @@ export async function addToCart({
   }
 }
 
-export async function addMultipleToCart(items: {
-  productId: string
-  quantity: number
-  variantId?: string
-  metadata?: Record<string, unknown>
-}[]) {
+export async function addMultipleToCart(
+  items: {
+    productId: string
+    quantity: number
+    variantId?: string
+    metadata?: Record<string, unknown>
+  }[]
+) {
   const writeContext = await resolveCartWriteContext()
   const cart = await getOrSetCart(writeContext)
   const cartId = cart.id
   const supabase = writeContext.supabase
 
   for (const item of items) {
-    let targetVariantId = item.variantId === item.productId ? undefined : item.variantId
+    let targetVariantId =
+      item.variantId === item.productId ? undefined : item.variantId
     if (!targetVariantId) {
       const { data: variants } = await supabase
         .from("product_variants")
@@ -446,15 +489,15 @@ export async function addMultipleToCart(items: {
         .update({ quantity: (existingItem.quantity || 0) + item.quantity })
         .eq("id", existingItem.id)
     } else {
-      await supabase
-        .from("cart_items")
-        .insert({
-          cart_id: cartId,
-          product_id: item.productId,
-          variant_id: targetVariantId || null,
-          quantity: item.quantity,
-          metadata: item.metadata ? JSON.parse(JSON.stringify(item.metadata)) : null
-        })
+      await supabase.from("cart_items").insert({
+        cart_id: cartId,
+        product_id: item.productId,
+        variant_id: targetVariantId || null,
+        quantity: item.quantity,
+        metadata: item.metadata
+          ? JSON.parse(JSON.stringify(item.metadata))
+          : null,
+      })
     }
   }
 
@@ -471,32 +514,26 @@ export async function updateLineItem({
 }) {
   const writeContext = await resolveCartWriteContext()
   const supabase = writeContext.supabase
-  await supabase
-    .from("cart_items")
-    .update({ quantity })
-    .eq("id", lineId)
+  await supabase.from("cart_items").update({ quantity }).eq("id", lineId)
 
   revalidateTag("cart", "max")
   return retrieveCartRaw()
 }
-
 
 export async function deleteLineItem(lineId: string) {
   const writeContext = await resolveCartWriteContext()
   const supabase = writeContext.supabase
-  await supabase
-    .from("cart_items")
-    .delete()
-    .eq("id", lineId)
+  await supabase.from("cart_items").delete().eq("id", lineId)
 
   revalidateTag("cart", "max")
   return retrieveCartRaw()
 }
 
-
-
 // Background auto-save (no redirect) - Fixes blank page issue
-export async function saveAddressesBackground(_currentState: unknown, formData: FormData) {
+export async function saveAddressesBackground(
+  _currentState: unknown,
+  formData: FormData
+) {
   const cart = await retrieveCart()
   if (!cart) return { message: "No cart found", success: false }
 
@@ -521,29 +558,46 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
       phone: formData.get("shipping_address.phone"),
     },
     billing_address: {
-      first_name: formData.get("billing_address.first_name") || formData.get("shipping_address.first_name"),
-      last_name: formData.get("billing_address.last_name") || formData.get("shipping_address.last_name"),
-      address_1: formData.get("billing_address.address_1") || formData.get("shipping_address.address_1"),
-      company: formData.get("billing_address.company") || formData.get("shipping_address.company"),
-      postal_code: formData.get("billing_address.postal_code") || formData.get("shipping_address.postal_code"),
-      city: formData.get("billing_address.city") || formData.get("shipping_address.city"),
-      country_code: formData.get("billing_address.country_code") || formData.get("shipping_address.country_code"),
-      province: formData.get("billing_address.province") || formData.get("shipping_address.province"),
-      phone: formData.get("billing_address.phone") || formData.get("shipping_address.phone"),
-    }
+      first_name:
+        formData.get("billing_address.first_name") ||
+        formData.get("shipping_address.first_name"),
+      last_name:
+        formData.get("billing_address.last_name") ||
+        formData.get("shipping_address.last_name"),
+      address_1:
+        formData.get("billing_address.address_1") ||
+        formData.get("shipping_address.address_1"),
+      company:
+        formData.get("billing_address.company") ||
+        formData.get("shipping_address.company"),
+      postal_code:
+        formData.get("billing_address.postal_code") ||
+        formData.get("shipping_address.postal_code"),
+      city:
+        formData.get("billing_address.city") ||
+        formData.get("shipping_address.city"),
+      country_code:
+        formData.get("billing_address.country_code") ||
+        formData.get("shipping_address.country_code"),
+      province:
+        formData.get("billing_address.province") ||
+        formData.get("shipping_address.province"),
+      phone:
+        formData.get("billing_address.phone") ||
+        formData.get("shipping_address.phone"),
+    },
   }
 
-  const { error } = await supabase
-    .from("carts")
-    .update(data)
-    .eq("id", cart.id)
+  const { error } = await supabase.from("carts").update(data).eq("id", cart.id)
 
   if (error) {
     return { message: error.message, success: false }
   }
 
   // Claim cart for user if not already linked
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (user && !cart.user_id) {
     await supabase.from("carts").update({ user_id: user.id }).eq("id", cart.id)
   }
@@ -588,11 +642,76 @@ export async function saveAddressesBackground(_currentState: unknown, formData: 
   return { message: "Saved", success: true }
 }
 
-export async function autoSelectStandardShipping(cartId: string, skipRevalidate = false) {
+export async function saveUserAddress(
+  address: {
+    first_name: string
+    last_name: string
+    address_1: string
+    address_2?: string | null
+    company?: string | null
+    postal_code: string
+    city: string
+    country_code: string
+    province?: string | null
+    phone?: string | null
+  },
+  userId: string
+) {
+  const supabase = await createAdminClient()
+
+  try {
+    // Check if this exact address already exists for the user to avoid duplicates
+    const { data: existingAddresses, error: fetchError } = await supabase
+      .from("addresses")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("address_1", address.address_1)
+      .eq("postal_code", address.postal_code)
+      .maybeSingle()
+
+    if (!fetchError && !existingAddresses) {
+      // Check if user already has any addresses
+      const { count } = await supabase
+        .from("addresses")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+
+      await supabase.from("addresses").insert({
+        user_id: userId,
+        first_name: address.first_name,
+        last_name: address.last_name,
+        address_1: address.address_1,
+        address_2: address.address_2,
+        company: address.company,
+        postal_code: address.postal_code,
+        city: address.city,
+        country_code: address.country_code,
+        province: address.province,
+        phone: address.phone,
+        is_default_shipping: count === 0,
+        is_default_billing: count === 0,
+      })
+
+      // Revalidate to ensure account pages and admin panel update
+      revalidateTag("customers", "max")
+    }
+  } catch (e) {
+    console.error("Failed to save address to profile:", e)
+  }
+}
+
+export async function autoSelectStandardShipping(
+  cartId: string,
+  skipRevalidate = false
+) {
   const { shipping_options } = await listCartOptions()
   // Auto-select first option if available (Standard Shipping)
   if (shipping_options.length > 0) {
-    return await setShippingMethod({ cartId, shippingMethodId: shipping_options[0].id, skipRevalidate })
+    return await setShippingMethod({
+      cartId,
+      shippingMethodId: shipping_options[0].id,
+      skipRevalidate,
+    })
   }
   return null
 }
@@ -603,10 +722,10 @@ export async function submitAddresses(formData: FormData) {
   const result = await saveAddressesBackground(null, formData)
 
   if (!result.success) {
-    // If save fails, we return the result. In a server action used in formAction, 
+    // If save fails, we return the result. In a server action used in formAction,
     // we can't easily return data to the client without useActionState.
-    // However, since we are redirecting on success, if we don't redirect, 
-    // it means failure. We might want to throw or handle error better, 
+    // However, since we are redirecting on success, if we don't redirect,
+    // it means failure. We might want to throw or handle error better,
     // but for now let's just match the signature.
     throw new Error(result.message)
   }
@@ -622,16 +741,16 @@ export async function submitAddresses(formData: FormData) {
 export async function setShippingMethod({
   cartId,
   shippingMethodId,
-  skipRevalidate = false
+  skipRevalidate = false,
 }: {
-  cartId: string,
-  shippingMethodId: string,
+  cartId: string
+  shippingMethodId: string
   skipRevalidate?: boolean
 }) {
   const supabase = await getCartClient()
 
   const { shipping_options } = await listCartOptions()
-  const option = shipping_options.find(o => o.id === shippingMethodId)
+  const option = shipping_options.find((o) => o.id === shippingMethodId)
 
   const methodData = {
     id: shippingMethodId, // Use option ID as method ID for internal tracking
@@ -639,14 +758,14 @@ export async function setShippingMethod({
     name: option?.name || "Standard Shipping",
     amount: option?.amount || 0,
     price_type: (option?.price_type || "flat") as "flat" | "calculated",
-    min_order_free_shipping: option?.min_order_free_shipping ?? null
+    min_order_free_shipping: option?.min_order_free_shipping ?? null,
   }
 
   const { error } = await supabase
     .from("carts")
     .update({
       shipping_methods: [methodData],
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", cartId)
 
@@ -666,17 +785,19 @@ export async function setPaymentProvider(providerId: string) {
   const supabase = await getCartClient()
 
   const paymentCollection = {
-    payment_sessions: [{
-      provider_id: providerId,
-      status: "pending",
-      data: {}
-    }]
+    payment_sessions: [
+      {
+        provider_id: providerId,
+        status: "pending",
+        data: {},
+      },
+    ],
   }
 
   const { error } = await supabase
     .from("carts")
     .update({
-      payment_collection: paymentCollection as any
+      payment_collection: paymentCollection as any,
     })
     .eq("id", cartId)
 
@@ -689,7 +810,10 @@ export async function setPaymentProvider(providerId: string) {
   revalidatePath("/checkout")
 }
 
-export async function initiatePaymentSession(cartInput: { id: string }, data: { provider_id: string, data?: Record<string, unknown> }) {
+export async function initiatePaymentSession(
+  cartInput: { id: string },
+  data: { provider_id: string; data?: Record<string, unknown> }
+) {
   const supabase = await getCartClient()
   const cart = await retrieveCart(cartInput.id)
   if (!cart) throw new Error("Cart not found")
@@ -703,16 +827,23 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
     const isTestMode = process.env.PAYU_ENVIRONMENT === "test"
 
     if (!key || !salt) {
-      throw new Error("PayU configuration missing: PAYU_MERCHANT_KEY or PAYU_MERCHANT_SALT not set.")
+      throw new Error(
+        "PayU configuration missing: PAYU_MERCHANT_KEY or PAYU_MERCHANT_SALT not set."
+      )
     }
 
     // 2. Format Data for PayU
     const txnid = `txn${Date.now()}`
     const amount = Number(cart.total || 0).toFixed(2) // Strictly 2 decimal places
     const productinfo = "Store_Order"
-    const firstname = (cart.shipping_address?.first_name || "Guest").trim().replace(/[^a-zA-Z0-9 ]/g, "")
+    const firstname = (cart.shipping_address?.first_name || "Guest")
+      .trim()
+      .replace(/[^a-zA-Z0-9 ]/g, "")
     const email = (cart.email || "guest@toycker.in").trim()
-    const phone = (cart.shipping_address?.phone || "9999999999").replace(/\D/g, "")
+    const phone = (cart.shipping_address?.phone || "9999999999").replace(
+      /\D/g,
+      ""
+    )
 
     const baseUrl = getBaseURL()
 
@@ -728,37 +859,41 @@ export async function initiatePaymentSession(cartInput: { id: string }, data: { 
       udf2: "",
       udf3: "",
       udf4: "",
-      udf5: ""
+      udf5: "",
     }
 
     const hash = generatePayUHash(hashParams, salt)
 
     // 4. Construct Payment Session Data
     sessionData = {
-      payment_url: isTestMode ? "https://test.payu.in/_payment" : "https://secure.payu.in/_payment",
+      payment_url: isTestMode
+        ? "https://test.payu.in/_payment"
+        : "https://secure.payu.in/_payment",
       params: {
         ...hashParams,
         hash,
         surl: `${baseUrl}/api/payu/callback`,
         furl: `${baseUrl}/api/payu/callback`,
-        phone
+        phone,
         // Note: service_provider: "payu_paisa" removed - deprecated since 2016
-      }
+      },
     }
   }
 
   const paymentCollection = {
-    payment_sessions: [{
-      provider_id: data.provider_id,
-      status: "pending",
-      data: sessionData
-    }]
+    payment_sessions: [
+      {
+        provider_id: data.provider_id,
+        status: "pending",
+        data: sessionData,
+      },
+    ],
   }
 
   const { error } = await supabase
     .from("carts")
     .update({
-      payment_collection: paymentCollection as PaymentCollection
+      payment_collection: paymentCollection as PaymentCollection,
     })
     .eq("id", cart.id)
 
@@ -781,7 +916,14 @@ export async function placeOrder() {
   const discount_total = cart.discount_total ?? 0
   const gift_card_total = cart.gift_card_total ?? 0
   const rewards_discount = cart.rewards_discount ?? 0
-  const total = cart.total ?? (item_subtotal + shipping_total + tax_total - discount_total - gift_card_total - rewards_discount)
+  const total =
+    cart.total ??
+    item_subtotal +
+      shipping_total +
+      tax_total -
+      discount_total -
+      gift_card_total -
+      rewards_discount
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -808,8 +950,8 @@ export async function placeOrder() {
       metadata: {
         cart_id: cart.id,
         rewards_used: rewards_discount,
-        promo_code: cart.promotions?.[0]?.code || null
-      }
+        promo_code: cart.promotions?.[0]?.code || null,
+      },
     })
     .select()
     .single()
@@ -836,15 +978,21 @@ export async function placeOrder() {
 }
 
 /**
- * Reusable helper to handle post-order logic like membership activation, 
+ * Reusable helper to handle post-order logic like membership activation,
  * rewards calculation, and event logging.
  */
-export async function handlePostOrderLogic(order: any, cart: any, rewards_discount: number) {
+export async function handlePostOrderLogic(
+  order: any,
+  cart: any,
+  rewards_discount: number
+) {
   const supabase = await getCartClient()
 
   // Handle rewards and club functionality for logged-in users
   if (order.user_id) {
-    const { checkAndActivateMembership, getClubSettings } = await import("@lib/data/club")
+    const { checkAndActivateMembership, getClubSettings } = await import(
+      "@lib/data/club"
+    )
     const { deductRewards } = await import("@lib/data/rewards")
     const settings = await getClubSettings()
 
@@ -854,44 +1002,63 @@ export async function handlePostOrderLogic(order: any, cart: any, rewards_discou
     }
 
     // 2. Check for club membership activation (now works — club.ts uses admin client)
-    const activated = await checkAndActivateMembership(order.user_id, order.total)
+    const activated = await checkAndActivateMembership(
+      order.user_id,
+      order.total
+    )
     if (activated) {
       revalidateTag("customers", "max")
     }
 
     // 3. Update order metadata (rewards will be credited at delivery by admin)
     if (activated) {
-      await supabase.from("orders").update({
-        metadata: {
-          ...(order.metadata || {}),
-          newly_activated_club_member: true,
-          club_discount_percentage: settings.discount_percentage,
-          rewards_used: rewards_discount
-        }
-      }).eq("id", order.id)
+      await supabase
+        .from("orders")
+        .update({
+          metadata: {
+            ...(order.metadata || {}),
+            newly_activated_club_member: true,
+            club_discount_percentage: settings.discount_percentage,
+            rewards_used: rewards_discount,
+          },
+        })
+        .eq("id", order.id)
     } else if (rewards_discount > 0) {
-      await supabase.from("orders").update({
-        metadata: {
-          ...(order.metadata || {}),
-          rewards_used: rewards_discount
-        }
-      }).eq("id", order.id)
+      await supabase
+        .from("orders")
+        .update({
+          metadata: {
+            ...(order.metadata || {}),
+            rewards_used: rewards_discount,
+          },
+        })
+        .eq("id", order.id)
     }
 
     // 4. Persist Lifetime Club Savings (fixed: use admin API instead of getAuthUser)
     if (cart.club_savings && cart.club_savings > 0) {
       const adminSupabase = await createAdminClient()
-      const { data: { user } } = await adminSupabase.auth.admin.getUserById(order.user_id)
+      const {
+        data: { user },
+      } = await adminSupabase.auth.admin.getUserById(order.user_id)
       if (user) {
-        const currentSavings = Number(user.user_metadata?.total_club_savings || 0)
+        const currentSavings = Number(
+          user.user_metadata?.total_club_savings || 0
+        )
         const newSavings = currentSavings + cart.club_savings
 
         await adminSupabase.auth.admin.updateUserById(order.user_id, {
-          user_metadata: { ...user.user_metadata, total_club_savings: newSavings }
+          user_metadata: {
+            ...user.user_metadata,
+            total_club_savings: newSavings,
+          },
         })
-        await adminSupabase.from("profiles").update({
-          total_club_savings: newSavings
-        }).eq("id", order.user_id)
+        await adminSupabase
+          .from("profiles")
+          .update({
+            total_club_savings: newSavings,
+          })
+          .eq("id", order.user_id)
       }
     }
   }
@@ -906,18 +1073,17 @@ export async function handlePostOrderLogic(order: any, cart: any, rewards_discou
       .maybeSingle()
 
     if (promotion) {
-      await supabase.rpc('increment_promotion_uses', { promo_id: promotion.id })
+      await supabase.rpc("increment_promotion_uses", { promo_id: promotion.id })
     }
   }
 }
-
 
 export async function createBuyNowCart({
   variantId,
   productId,
   quantity,
   countryCode: _countryCode,
-  metadata
+  metadata,
 }: {
   variantId?: string | null
   productId?: string
@@ -934,7 +1100,7 @@ export async function createBuyNowCart({
     id: newCartId,
     user_id: writeContext.userId,
     currency_code: "inr",
-    email: writeContext.email
+    email: writeContext.email,
   })
 
   if (error) throw new Error(error.message)
@@ -942,7 +1108,11 @@ export async function createBuyNowCart({
   let targetProductId = productId || ""
 
   if (variantId && !targetProductId) {
-    const { data: variant } = await supabase.from("product_variants").select("product_id").eq("id", variantId).single()
+    const { data: variant } = await supabase
+      .from("product_variants")
+      .select("product_id")
+      .eq("id", variantId)
+      .single()
     if (variant) targetProductId = variant.product_id
   }
 
@@ -953,7 +1123,7 @@ export async function createBuyNowCart({
       product_id: targetProductId,
       variant_id: variantId || null,
       quantity: quantity,
-      metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null
+      metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
     })
 
     // If gift wrap is selected, add as a separate line
@@ -966,8 +1136,8 @@ export async function createBuyNowCart({
         metadata: {
           gift_wrap_line: true,
           gift_wrap_fee: metadata.gift_wrap_fee || 50,
-          parent_line_id: `parent-${variantId || productId}`
-        }
+          parent_line_id: `parent-${variantId || productId}`,
+        },
       })
     }
   }
@@ -978,7 +1148,9 @@ export async function createBuyNowCart({
   redirect(`/checkout?step=address&cartId=${newCartId}`)
 }
 
-export async function listCartOptions(): Promise<{ shipping_options: ShippingOption[] }> {
+export async function listCartOptions(): Promise<{
+  shipping_options: ShippingOption[]
+}> {
   const supabase = await getCartClient()
   const { data, error } = await supabase
     .from("shipping_options")
@@ -997,8 +1169,8 @@ export async function listCartOptions(): Promise<{ shipping_options: ShippingOpt
       amount: opt.amount,
       min_order_free_shipping: opt.min_order_free_shipping,
       price_type: "flat",
-      prices: [{ amount: opt.amount, currency_code: "inr" }]
-    }))
+      prices: [{ amount: opt.amount, currency_code: "inr" }],
+    })),
   }
 }
 
@@ -1013,7 +1185,10 @@ export async function applyPromotions(codes: string[]) {
   const supabase = await getCartClient()
 
   if (codes.length === 0) {
-    const { error } = await supabase.from("carts").update({ promo_code: null, discount_total: 0 }).eq("id", cartId)
+    const { error } = await supabase
+      .from("carts")
+      .update({ promo_code: null, discount_total: 0 })
+      .eq("id", cartId)
     if (error) throw new Error("Could not remove promotion code")
     revalidateTag("cart", "max")
     return
@@ -1042,14 +1217,19 @@ export async function applyPromotions(codes: string[]) {
   if (promotion.ends_at && new Date(promotion.ends_at) < now) {
     throw new Error("This promotion has expired")
   }
-  if (promotion.max_uses !== null && promotion.used_count >= promotion.max_uses) {
+  if (
+    promotion.max_uses !== null &&
+    promotion.used_count >= promotion.max_uses
+  ) {
     throw new Error("This promotion has reached its usage limit")
   }
 
   // Check min order amount against current cart
   const cart = await retrieveCart(cartId)
   if (cart && (cart.item_subtotal ?? 0) < (promotion.min_order_amount || 0)) {
-    throw new Error(`Minimum order amount of ₹${promotion.min_order_amount} required to use this code`)
+    throw new Error(
+      `Minimum order amount of ₹${promotion.min_order_amount} required to use this code`
+    )
   }
 
   // Calculate discount amount based on promotion type
@@ -1068,7 +1248,7 @@ export async function applyPromotions(codes: string[]) {
     .from("carts")
     .update({
       promo_code: code,
-      discount_total: discountAmount
+      discount_total: discountAmount,
     })
     .eq("id", cartId)
 
@@ -1090,7 +1270,7 @@ export async function updateCartRewards(points: number) {
 
   const metadata = {
     ...(cart?.metadata || {}),
-    rewards_to_apply: points
+    rewards_to_apply: points,
   }
 
   const { error } = await supabase
