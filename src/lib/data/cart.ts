@@ -101,6 +101,10 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     .maybeSingle()
 
   if (error || !cartData) {
+    // Clear stale cookie if cart doesn't exist or can't be accessed (e.g., guest cart after login)
+    if (!cartId) {
+      await removeCartId()
+    }
     return null
   }
 
@@ -280,7 +284,8 @@ export async function addToCart({
     // Get or create cart with better error handling
     let cartId: string
     try {
-      cartId = (await getCartId()) || (await getOrSetCart(writeContext)).id
+      const cart = await getOrSetCart(writeContext)
+      cartId = cart.id
     } catch (cartError) {
       console.error("[addToCart] Failed to get or create cart:", cartError)
       throw new Error(`Failed to get or create cart: ${cartError instanceof Error ? cartError.message : "Unknown error"}`)
@@ -408,7 +413,8 @@ export async function addMultipleToCart(items: {
   metadata?: Record<string, unknown>
 }[]) {
   const writeContext = await resolveCartWriteContext()
-  const cartId = (await getCartId()) || (await getOrSetCart(writeContext)).id
+  const cart = await getOrSetCart(writeContext)
+  const cartId = cart.id
   const supabase = writeContext.supabase
 
   for (const item of items) {
