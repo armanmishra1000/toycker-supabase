@@ -98,6 +98,7 @@ const StripePaymentButton = ({
         billingAddress: state.billingAddress || state.shippingAddress,
         paymentMethod: state.paymentMethod,
         rewardsToApply: state.rewardsToApply,
+        saveAddress: state.saveAddress,
       })
 
       if (!result.success) {
@@ -109,23 +110,24 @@ const StripePaymentButton = ({
       // Step 2: Process Stripe payment confirmation
       const clientSecret = result.paymentData?.client_secret
       if (clientSecret) {
-        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: card,
-            billing_details: {
-              name: `${state.shippingAddress.first_name} ${state.shippingAddress.last_name}`,
-              email: cart.email || undefined,
-              phone: state.shippingAddress.phone || undefined,
-              address: {
-                line1: state.shippingAddress.address_1,
-                line2: state.shippingAddress.address_2 || undefined,
-                city: state.shippingAddress.city,
-                postal_code: state.shippingAddress.postal_code,
-                country: state.shippingAddress.country_code,
+        const { error: confirmError, paymentIntent } =
+          await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card: card,
+              billing_details: {
+                name: `${state.shippingAddress.first_name} ${state.shippingAddress.last_name}`,
+                email: cart.email || undefined,
+                phone: state.shippingAddress.phone || undefined,
+                address: {
+                  line1: state.shippingAddress.address_1,
+                  line2: state.shippingAddress.address_2 || undefined,
+                  city: state.shippingAddress.city,
+                  postal_code: state.shippingAddress.postal_code,
+                  country: state.shippingAddress.country_code,
+                },
               },
             },
-          },
-        })
+          })
 
         if (confirmError) {
           setErrorMessage(confirmError.message || "Payment confirmation failed")
@@ -133,7 +135,10 @@ const StripePaymentButton = ({
           return
         }
 
-        if (paymentIntent?.status !== "succeeded" && paymentIntent?.status !== "requires_capture") {
+        if (
+          paymentIntent?.status !== "succeeded" &&
+          paymentIntent?.status !== "requires_capture"
+        ) {
           setErrorMessage("Payment status is not authorized")
           setSubmitting(false)
           return
@@ -143,9 +148,7 @@ const StripePaymentButton = ({
       // Step 3: Redirect to order confirmation
       router.push(`/order/confirmed/${result.orderId}`)
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Payment failed"
-      )
+      setErrorMessage(error instanceof Error ? error.message : "Payment failed")
       setSubmitting(false)
     }
   }
@@ -202,6 +205,7 @@ const ManualTestPaymentButton = ({
         billingAddress: state.billingAddress || state.shippingAddress,
         paymentMethod: state.paymentMethod,
         rewardsToApply: state.rewardsToApply,
+        saveAddress: state.saveAddress,
       })
 
       if (!result.success) {
@@ -213,9 +217,7 @@ const ManualTestPaymentButton = ({
       // Redirect to order confirmation
       router.push(`/order/confirmed/${result.orderId}`)
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Order failed"
-      )
+      setErrorMessage(error instanceof Error ? error.message : "Order failed")
       setSubmitting(false)
     }
   }
@@ -272,6 +274,7 @@ const PayUPaymentButton = ({
         billingAddress: state.billingAddress || state.shippingAddress,
         paymentMethod: state.paymentMethod,
         rewardsToApply: state.rewardsToApply,
+        saveAddress: state.saveAddress,
       })
 
       if (!result.success) {
@@ -302,9 +305,7 @@ const PayUPaymentButton = ({
       // Fallback redirect if no payment data (shouldn't happen for PayU)
       router.push(`/order/confirmed/${result.orderId}`)
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Payment failed"
-      )
+      setErrorMessage(error instanceof Error ? error.message : "Payment failed")
       setSubmitting(false)
     }
   }

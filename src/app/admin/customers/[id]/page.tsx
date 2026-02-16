@@ -1,8 +1,15 @@
-
 import { getAdminCustomer } from "@/lib/data/admin"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ChevronLeftIcon, ShoppingBagIcon, StarIcon, BanknotesIcon, MapIcon, CreditCardIcon, UserIcon } from "@heroicons/react/24/outline"
+import {
+  ChevronLeftIcon,
+  ShoppingBagIcon,
+  StarIcon,
+  BanknotesIcon,
+  MapIcon,
+  CreditCardIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline"
 import AdminCard from "@modules/admin/components/admin-card"
 import AdminBadge from "@modules/admin/components/admin-badge"
 import { convertToLocale } from "@lib/util/money"
@@ -13,28 +20,44 @@ import { cn } from "@lib/util/cn"
 import { formatIST } from "@/lib/util/date"
 import CustomerOrderHistory from "@modules/admin/components/customer-order-history"
 import CustomerRewardHistory from "@modules/admin/components/customer-reward-history"
+import { getRegion } from "@lib/data/regions"
+import EditAddressModal from "@modules/admin/components/edit-address-modal"
 
-export default async function AdminCustomerDetails({ params }: { params: Promise<{ id: string }> }) {
+export default async function AdminCustomerDetails({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const { id } = await params
   const customer = await getAdminCustomer(id)
+  const region = await getRegion()
 
-  if (!customer) notFound()
+  if (!customer || !region) notFound()
 
   // Use pre-calculated stats from data layer
   const totalSpent = customer.total_spent || 0
   // @ts-ignore
   const rewardBalance = customer.reward_wallet?.balance || 0
   const clubSavings = customer.total_club_savings || 0
-  const joinDate = formatIST(customer.created_at, { month: 'long', day: 'numeric', year: 'numeric' })
+  const joinDate = formatIST(customer.created_at, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
 
   // Determine membership status
   const isMember = customer.is_club_member
   const membershipVariant = isMember ? "success" : "neutral"
 
   // Calculate display name with fallbacks
-  const displayName = [customer.first_name, customer.last_name].filter(Boolean).join(" ")
-    || (customer.addresses?.[0] ? [customer.addresses[0].first_name, customer.addresses[0].last_name].filter(Boolean).join(" ") : null)
-    || "N/A"
+  const displayName =
+    [customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
+    (customer.addresses?.[0]
+      ? [customer.addresses[0].first_name, customer.addresses[0].last_name]
+          .filter(Boolean)
+          .join(" ")
+      : null) ||
+    "N/A"
 
   return (
     <div className="space-y-6 pb-20">
@@ -45,27 +68,43 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
           Back to Customers
         </Link>
       </nav>
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-gray-900">{displayName}</h1>
             {/* @ts-ignore */}
-            <AdminBadge variant={customer.role === 'admin' ? 'info' : membershipVariant}>
+            <AdminBadge
+              variant={customer.role === "admin" ? "info" : membershipVariant}
+            >
               {/* @ts-ignore */}
-              {customer.role === 'admin' ? 'Admin' : (isMember ? 'Club Member' : 'Customer')}
+              {customer.role === "admin"
+                ? "Admin"
+                : isMember
+                ? "Club Member"
+                : "Customer"}
             </AdminBadge>
           </div>
-          <p className="text-sm text-gray-500 mt-1">Customer ID: #{customer.customer_display_id || customer.id.slice(0, 8)} • Joined {joinDate}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Customer ID: #
+            {customer.customer_display_id || customer.id.slice(0, 8)} • Joined{" "}
+            {joinDate}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <ProtectedAction permission={PERMISSIONS.CUSTOMERS_DELETE} hideWhenDisabled>
-            <DeleteCustomerButton customerId={customer.id} customerName={`${customer.first_name || ''} ${customer.last_name || ''}`} />
+          <ProtectedAction
+            permission={PERMISSIONS.CUSTOMERS_DELETE}
+            hideWhenDisabled
+          >
+            <DeleteCustomerButton
+              customerId={customer.id}
+              customerName={`${customer.first_name || ""} ${
+                customer.last_name || ""
+              }`}
+            />
           </ProtectedAction>
         </div>
       </div>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
@@ -96,13 +135,14 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
           color="purple"
         />
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content (Orders & Addresses) */}
         <div className="lg:col-span-2 space-y-6">
-
           {/* Recent Orders */}
-          <AdminCard title="Order History" className="p-0 border-none shadow-sm overflow-hidden">
+          <AdminCard
+            title="Order History"
+            className="p-0 border-none shadow-sm overflow-hidden"
+          >
             <CustomerOrderHistory
               userId={customer.id}
               initialOrders={customer.orders}
@@ -118,22 +158,11 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* @ts-ignore */}
                 {customer.addresses.map((addr: any) => (
-                  <div key={addr.id} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <MapIcon className="w-4 h-4 text-gray-400" />
-                        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Address</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1 text-sm text-gray-700">
-                      <p className="font-semibold text-gray-900">{addr.first_name} {addr.last_name}</p>
-                      <p>{addr.address_1}</p>
-                      {addr.address_2 && <p>{addr.address_2}</p>}
-                      <p>{addr.city}, {addr.province} {addr.postal_code}</p>
-                      <p>{addr.country_code?.toUpperCase()}</p>
-                      {addr.phone && <p className="pt-2 text-gray-500 flex items-center gap-2 text-xs"><span className="text-gray-400">Phone:</span> {addr.phone}</p>}
-                    </div>
-                  </div>
+                  <EditAddressModal
+                    key={addr.id}
+                    address={addr}
+                    region={region}
+                  />
                 ))}
               </div>
             ) : (
@@ -153,8 +182,12 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
                   <UserIcon className="w-4 h-4 text-gray-500" />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</p>
-                  <p className="text-sm font-semibold text-gray-900">{displayName}</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Name
+                  </p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {displayName}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -162,8 +195,15 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
                   <span className="text-gray-500 text-xs font-bold">@</span>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</p>
-                  <a href={`mailto:${customer.email}`} className="text-sm font-semibold text-blue-600 hover:underline break-all">{customer.email}</a>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Email
+                  </p>
+                  <a
+                    href={`mailto:${customer.email}`}
+                    className="text-sm font-semibold text-blue-600 hover:underline break-all"
+                  >
+                    {customer.email}
+                  </a>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -171,9 +211,11 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
                   <span className="text-gray-500 text-xs font-bold">#</span>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Phone
+                  </p>
                   <p className="text-sm font-semibold text-gray-900">
-                    {customer.phone || customer.addresses?.[0]?.phone || 'N/A'}
+                    {customer.phone || customer.addresses?.[0]?.phone || "N/A"}
                   </p>
                 </div>
               </div>
@@ -184,14 +226,20 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Status</span>
-                <AdminBadge variant={membershipVariant}>{isMember ? 'Active' : 'Not Valid'}</AdminBadge>
+                <AdminBadge variant={membershipVariant}>
+                  {isMember ? "Active" : "Not Valid"}
+                </AdminBadge>
               </div>
               {isMember && (
                 <>
                   <div className="h-px bg-gray-100 my-2" />
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Member Since</p>
-                    <p className="text-sm font-medium text-gray-900">{customer.club_member_since ? formatIST(customer.club_member_since) : 'Unknown'}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {customer.club_member_since
+                        ? formatIST(customer.club_member_since)
+                        : "Unknown"}
+                    </p>
                   </div>
                 </>
               )}
@@ -199,11 +247,15 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
           </AdminCard>
         </div>
       </div>
-
       {/* Rewards Ledger */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Reward Transaction History</h2>
-        <AdminCard title="" className="p-0 border-none shadow-sm overflow-hidden">
+        <h2 className="text-lg font-semibold text-gray-900">
+          Reward Transaction History
+        </h2>
+        <AdminCard
+          title=""
+          className="p-0 border-none shadow-sm overflow-hidden"
+        >
           <CustomerRewardHistory
             userId={customer.id}
             initialTransactions={customer.reward_transactions}
@@ -211,13 +263,24 @@ export default async function AdminCustomerDetails({ params }: { params: Promise
           />
         </AdminCard>
       </div>
-
       <div className="h-20" /> {/* Spacer */}
     </div>
   )
 }
 
-function StatsCard({ title, value, subtitle, icon, color }: { title: string, value: string, subtitle?: string, icon: React.ReactNode, color: string }) {
+function StatsCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  color,
+}: {
+  title: string
+  value: string
+  subtitle?: string
+  icon: React.ReactNode
+  color: string
+}) {
   const colorClasses: Record<string, string> = {
     emerald: "bg-emerald-50 text-emerald-600",
     blue: "bg-blue-50 text-blue-600",
@@ -231,13 +294,13 @@ function StatsCard({ title, value, subtitle, icon, color }: { title: string, val
     <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{title}</p>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+            {title}
+          </p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
           {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
         </div>
-        <div className={`p-2 rounded-lg ${bgClass}`}>
-          {icon}
-        </div>
+        <div className={`p-2 rounded-lg ${bgClass}`}>{icon}</div>
       </div>
     </div>
   )
@@ -245,10 +308,15 @@ function StatsCard({ title, value, subtitle, icon, color }: { title: string, val
 
 function getStatusVariant(status: string) {
   switch (status) {
-    case 'paid': return 'success'
-    case 'pending': return 'warning'
-    case 'failed': return 'error'
-    case 'cancelled': return 'neutral'
-    default: return 'neutral'
+    case "paid":
+      return "success"
+    case "pending":
+      return "warning"
+    case "failed":
+      return "error"
+    case "cancelled":
+      return "neutral"
+    default:
+      return "neutral"
   }
 }

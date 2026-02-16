@@ -2,7 +2,23 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { Product, Order, CustomerProfile, Collection, Category, PaymentProvider, ShippingOption, OrderTimeline, ShippingPartner, OrderEventType, ProductVariant, VariantFormData, AdminRole, StaffMember, RewardTransactionWithOrder } from "@/lib/supabase/types"
+import {
+  Product,
+  Order,
+  CustomerProfile,
+  Collection,
+  Category,
+  PaymentProvider,
+  ShippingOption,
+  OrderTimeline,
+  ShippingPartner,
+  OrderEventType,
+  ProductVariant,
+  VariantFormData,
+  AdminRole,
+  StaffMember,
+  RewardTransactionWithOrder,
+} from "@/lib/supabase/types"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { requirePermission } from "@/lib/permissions/server"
@@ -11,7 +27,9 @@ import { PERMISSIONS } from "@/lib/permissions"
 // --- Auth Check ---
 export async function ensureAdmin() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     redirect("/login?next=/admin")
@@ -31,7 +49,9 @@ export async function ensureAdmin() {
 // --- Get Admin User ---
 export async function getAdminUser() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     return null
@@ -39,7 +59,9 @@ export async function getAdminUser() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, email, role, admin_role_id, admin_role:admin_roles(name)")
+    .select(
+      "first_name, last_name, email, role, admin_role_id, admin_role:admin_roles(name)"
+    )
     .eq("id", user.id)
     .single()
 
@@ -67,18 +89,25 @@ export async function getAdminStats() {
   await ensureAdmin()
   const supabase = await createClient()
 
-  const { count: productsCount } = await supabase.from("products").select("*", { count: "exact", head: true })
-  const { count: ordersCount } = await supabase.from("orders").select("*", { count: "exact", head: true })
-  const { count: customersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true })
+  const { count: productsCount } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+  const { count: ordersCount } = await supabase
+    .from("orders")
+    .select("*", { count: "exact", head: true })
+  const { count: customersCount } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
 
   const { data: orders } = await supabase.from("orders").select("total_amount")
-  const totalRevenue = orders?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
+  const totalRevenue =
+    orders?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
 
   return {
     products: productsCount || 0,
     orders: ordersCount || 0,
     customers: customersCount || 0,
-    revenue: totalRevenue
+    revenue: totalRevenue,
   }
 }
 
@@ -156,7 +185,7 @@ export async function getLowStockStats(threshold: number = 5) {
 
   return {
     lowStock: (lowStockProducts || 0) + (lowStockVariants || 0),
-    outOfStock: (outOfStockProducts || 0) + (outOfStockVariants || 0)
+    outOfStock: (outOfStockProducts || 0) + (outOfStockVariants || 0),
   }
 }
 
@@ -171,58 +200,67 @@ export type AdminSearchResult = {
   thumbnail?: string | null
 }
 
-export async function getAdminGlobalSearch(query: string): Promise<AdminSearchResult[]> {
+export async function getAdminGlobalSearch(
+  query: string
+): Promise<AdminSearchResult[]> {
   await ensureAdmin()
   const normalizedQuery = query.trim()
   if (!normalizedQuery || normalizedQuery.length < 2) return []
 
   const supabase = await createClient()
 
-  const searchNum = !isNaN(Number(normalizedQuery)) ? Number(normalizedQuery) : null
+  const searchNum = !isNaN(Number(normalizedQuery))
+    ? Number(normalizedQuery)
+    : null
 
   // Parallelize search queries
-  const [productsRes, ordersRes, customersRes, collectionsRes, categoriesRes] = await Promise.all([
-    // Search Products
-    supabase
-      .from("products")
-      .select("id, name, handle, thumbnail")
-      .or(`name.ilike.%${normalizedQuery}%,handle.ilike.%${normalizedQuery}%`)
-      .limit(5),
-
-    // Search Orders (Check if query is numeric for Order ID)
-    searchNum !== null
-      ? supabase
-        .from("orders")
-        .select("id, display_id, customer_email, status")
-        .eq("display_id", searchNum)
-        .limit(5)
-      : supabase
-        .from("orders")
-        .select("id, display_id, customer_email, status")
-        .ilike("customer_email", `%${normalizedQuery}%`)
+  const [productsRes, ordersRes, customersRes, collectionsRes, categoriesRes] =
+    await Promise.all([
+      // Search Products
+      supabase
+        .from("products")
+        .select("id, name, handle, thumbnail")
+        .or(`name.ilike.%${normalizedQuery}%,handle.ilike.%${normalizedQuery}%`)
         .limit(5),
 
-    // Search Customers
-    supabase
-      .from("profiles")
-      .select("id, first_name, last_name, email")
-      .or(`first_name.ilike.%${normalizedQuery}%,last_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`)
-      .limit(5),
+      // Search Orders (Check if query is numeric for Order ID)
+      searchNum !== null
+        ? supabase
+            .from("orders")
+            .select("id, display_id, customer_email, status")
+            .eq("display_id", searchNum)
+            .limit(5)
+        : supabase
+            .from("orders")
+            .select("id, display_id, customer_email, status")
+            .ilike("customer_email", `%${normalizedQuery}%`)
+            .limit(5),
 
-    // Search Collections
-    supabase
-      .from("collections")
-      .select("id, title, handle")
-      .or(`title.ilike.%${normalizedQuery}%,handle.ilike.%${normalizedQuery}%`)
-      .limit(5),
+      // Search Customers
+      supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email")
+        .or(
+          `first_name.ilike.%${normalizedQuery}%,last_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`
+        )
+        .limit(5),
 
-    // Search Categories
-    supabase
-      .from("categories")
-      .select("id, name, handle")
-      .or(`name.ilike.%${normalizedQuery}%,handle.ilike.%${normalizedQuery}%`)
-      .limit(5),
-  ])
+      // Search Collections
+      supabase
+        .from("collections")
+        .select("id, title, handle")
+        .or(
+          `title.ilike.%${normalizedQuery}%,handle.ilike.%${normalizedQuery}%`
+        )
+        .limit(5),
+
+      // Search Categories
+      supabase
+        .from("categories")
+        .select("id, name, handle")
+        .or(`name.ilike.%${normalizedQuery}%,handle.ilike.%${normalizedQuery}%`)
+        .limit(5),
+    ])
 
   const results: AdminSearchResult[] = []
 
@@ -310,20 +348,26 @@ interface PaginatedCategoriesResponse {
   currentPage: number
 }
 
-export async function getAdminCategories(params: GetAdminCategoriesParams = {}): Promise<PaginatedCategoriesResponse> {
+export async function getAdminCategories(
+  params: GetAdminCategoriesParams = {}
+): Promise<PaginatedCategoriesResponse> {
   await ensureAdmin()
 
   const { page = 1, limit = 20, search } = params
   const supabase = await createClient()
 
   // Calculate total count first
-  let countQuery = supabase.from("categories").select("*", { count: "exact", head: true })
+  let countQuery = supabase
+    .from("categories")
+    .select("*", { count: "exact", head: true })
 
   // If limit is -1, we want all items, but we skip pagination logic
   const isFetchAll = limit === -1
 
   if (search && search.trim()) {
-    countQuery = countQuery.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
+    countQuery = countQuery.or(
+      `name.ilike.%${search}%,handle.ilike.%${search}%`
+    )
   }
 
   const { count } = await countQuery
@@ -337,10 +381,12 @@ export async function getAdminCategories(params: GetAdminCategoriesParams = {}):
   // Fetch paginated data
   let query = supabase
     .from("categories")
-    .select(`
+    .select(
+      `
       *,
       products:product_categories(count)
-    `)
+    `
+    )
     .order("name")
 
   if (!isFetchAll) {
@@ -355,10 +401,12 @@ export async function getAdminCategories(params: GetAdminCategoriesParams = {}):
   if (error) throw error
 
   return {
-    categories: (data || []) as (Category & { products: { count: number }[] })[],
+    categories: (data || []) as (Category & {
+      products: { count: number }[]
+    })[],
     count: count || 0,
     totalPages,
-    currentPage: page
+    currentPage: page,
   }
 }
 
@@ -386,9 +434,9 @@ export async function createCategory(formData: FormData) {
 
   // Handle product associations
   if (productIds.length > 0 && newCategory) {
-    const productCategories = productIds.map(productId => ({
+    const productCategories = productIds.map((productId) => ({
       product_id: productId,
-      category_id: newCategory.id
+      category_id: newCategory.id,
     }))
 
     const { error: relError } = await supabase
@@ -420,7 +468,10 @@ export async function updateCategory(formData: FormData) {
     image_url: formData.get("image_url") as string | null,
   }
 
-  const { error } = await supabase.from("categories").update(updates).eq("id", id)
+  const { error } = await supabase
+    .from("categories")
+    .update(updates)
+    .eq("id", id)
   if (error) throw new Error(error.message)
 
   // Update product associations: Delete-Insert pattern
@@ -429,9 +480,9 @@ export async function updateCategory(formData: FormData) {
 
   // 2. Insert new associations
   if (productIds.length > 0) {
-    const productCategories = productIds.map(productId => ({
+    const productCategories = productIds.map((productId) => ({
       product_id: productId,
-      category_id: id
+      category_id: id,
     }))
 
     const { error: relError } = await supabase
@@ -453,7 +504,11 @@ export async function updateCategory(formData: FormData) {
 export async function getAdminCategory(id: string): Promise<Category | null> {
   await ensureAdmin()
   const supabase = await createClient()
-  const { data, error } = await supabase.from("categories").select("*").eq("id", id).single()
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("id", id)
+    .single()
   if (error) {
     console.error("Error fetching category:", error)
     return null
@@ -461,7 +516,9 @@ export async function getAdminCategory(id: string): Promise<Category | null> {
   return data as Category
 }
 
-export async function getCategoryProducts(categoryId: string): Promise<string[]> {
+export async function getCategoryProducts(
+  categoryId: string
+): Promise<string[]> {
   await ensureAdmin()
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -474,7 +531,7 @@ export async function getCategoryProducts(categoryId: string): Promise<string[]>
     return []
   }
 
-  return (data || []).map(cp => cp.product_id)
+  return (data || []).map((cp) => cp.product_id)
 }
 
 export async function deleteCategory(id: string) {
@@ -502,21 +559,27 @@ interface PaginatedProductsResponse {
   currentPage: number
 }
 
-export async function getAdminProducts(params: GetAdminProductsParams = {}): Promise<PaginatedProductsResponse> {
+export async function getAdminProducts(
+  params: GetAdminProductsParams = {}
+): Promise<PaginatedProductsResponse> {
   await ensureAdmin()
 
   const { page = 1, limit = 20, status, search } = params
   const supabase = await createClient()
 
   // Calculate total count first
-  let countQuery = supabase.from("products").select("*", { count: "exact", head: true })
+  let countQuery = supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
 
-  if (status && status !== 'all') {
-    countQuery = countQuery.eq('status', status)
+  if (status && status !== "all") {
+    countQuery = countQuery.eq("status", status)
   }
 
   if (search && search.trim()) {
-    countQuery = countQuery.or(`name.ilike.%${search}%,handle.ilike.%${search}%`)
+    countQuery = countQuery.or(
+      `name.ilike.%${search}%,handle.ilike.%${search}%`
+    )
   }
 
   if (params.stock_status === "low_stock") {
@@ -547,8 +610,8 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
     query = query.range(from, to)
   }
 
-  if (status && status !== 'all') {
-    query = query.eq('status', status)
+  if (status && status !== "all") {
+    query = query.eq("status", status)
   }
 
   if (search && search.trim()) {
@@ -564,7 +627,7 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
   const { data, error } = await query
   if (error) throw error
 
-  const products = (data || []).map(product => {
+  const products = (data || []).map((product) => {
     const variants = (product as any).variants || []
     if (variants.length > 0) {
       // If base price is 0, use min variant price
@@ -573,7 +636,10 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
       }
       // If stock count is 0, use sum of variant stock
       if (product.stock_count === 0) {
-        product.stock_count = variants.reduce((sum: number, v: any) => sum + (v.inventory_quantity || 0), 0)
+        product.stock_count = variants.reduce(
+          (sum: number, v: any) => sum + (v.inventory_quantity || 0),
+          0
+        )
       }
     }
     return product
@@ -583,7 +649,7 @@ export async function getAdminProducts(params: GetAdminProductsParams = {}): Pro
     products: products as Product[],
     count: count || 0,
     totalPages,
-    currentPage: page
+    currentPage: page,
   }
 }
 
@@ -610,20 +676,32 @@ export async function createProduct(formData: FormData) {
 
   // Get variants JSON if any
   const variantsJson = formData.get("variants") as string | null
-  const variantsData: VariantFormData[] = variantsJson ? JSON.parse(variantsJson) : []
+  const variantsData: VariantFormData[] = variantsJson
+    ? JSON.parse(variantsJson)
+    : []
 
-  let productPrice = formData.get("price") ? parseFloat(formData.get("price") as string) : 0
+  let productPrice = formData.get("price")
+    ? parseFloat(formData.get("price") as string)
+    : 0
   const stockCountString = formData.get("stock_count") as string | null
-  let productStockCount = (stockCountString && stockCountString.trim() !== "") ? parseInt(stockCountString) : 0
+  let productStockCount =
+    stockCountString && stockCountString.trim() !== ""
+      ? parseInt(stockCountString)
+      : 0
 
   // If we have multiple variants, override base product price/stock from them
   if (variantsData.length > 0) {
-    productPrice = Math.min(...variantsData.map(v => v.price))
-    productStockCount = variantsData.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0)
+    productPrice = Math.min(...variantsData.map((v) => v.price))
+    productStockCount = variantsData.reduce(
+      (sum, v) => sum + (v.inventory_quantity || 0),
+      0
+    )
   }
 
   // Get compare_at_price
-  const compareAtPrice = formData.get("compare_at_price") ? parseFloat(formData.get("compare_at_price") as string) : null
+  const compareAtPrice = formData.get("compare_at_price")
+    ? parseFloat(formData.get("compare_at_price") as string)
+    : null
 
   const product = {
     name: formData.get("name") as string,
@@ -632,24 +710,29 @@ export async function createProduct(formData: FormData) {
     price: productPrice,
     stock_count: productStockCount,
     image_url: formData.get("image_url") as string,
-    collection_id: primaryCollectionId && primaryCollectionId.trim() !== "" ? primaryCollectionId : null, // Set primary collection
+    collection_id:
+      primaryCollectionId && primaryCollectionId.trim() !== ""
+        ? primaryCollectionId
+        : null, // Set primary collection
     category_id: primaryCategoryId, // Set category
-    status: (formData.get("status") as string) || 'active',
+    status: (formData.get("status") as string) || "active",
     currency_code: "inr",
     metadata: {
       compare_at_price: compareAtPrice,
     },
     short_description: formData.get("short_description") as string,
     video_url: formData.get("video_url") as string,
-    images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : [],
-    seo_title: formData.get("seo_title") as string || null,
-    seo_description: formData.get("seo_description") as string || null,
+    images: formData.get("images_json")
+      ? JSON.parse(formData.get("images_json") as string)
+      : [],
+    seo_title: (formData.get("seo_title") as string) || null,
+    seo_description: (formData.get("seo_description") as string) || null,
     seo_metadata: {
-      keywords: formData.get("seo_keywords") as string || null,
-      og_title: formData.get("og_title") as string || null,
-      og_description: formData.get("og_description") as string || null,
+      keywords: (formData.get("seo_keywords") as string) || null,
+      og_title: (formData.get("og_title") as string) || null,
+      og_description: (formData.get("og_description") as string) || null,
       no_index: formData.get("no_index") === "true",
-    }
+    },
   }
 
   const { data: newProduct, error } = await supabase
@@ -664,7 +747,7 @@ export async function createProduct(formData: FormData) {
   if (newProduct) {
     if (variantsData.length > 0) {
       // Create provided variants
-      const variantsToInsert = variantsData.map(v => ({
+      const variantsToInsert = variantsData.map((v) => ({
         product_id: newProduct.id,
         title: v.title,
         sku: v.sku,
@@ -680,9 +763,9 @@ export async function createProduct(formData: FormData) {
 
   // Insert multiple collection associations
   if (collectionIds.length > 0 && newProduct) {
-    const collectionsToInsert = collectionIds.map(cid => ({
+    const collectionsToInsert = collectionIds.map((cid) => ({
       product_id: newProduct.id,
-      collection_id: cid
+      collection_id: cid,
     }))
 
     const { error: collectionsError } = await supabase
@@ -697,9 +780,9 @@ export async function createProduct(formData: FormData) {
 
   // Insert multiple category associations
   if (categoryIds.length > 0 && newProduct) {
-    const categoriesToInsert = categoryIds.map(cid => ({
+    const categoriesToInsert = categoryIds.map((cid) => ({
       product_id: newProduct.id,
-      category_id: cid
+      category_id: cid,
     }))
 
     await supabase.from("product_categories").insert(categoriesToInsert)
@@ -724,7 +807,7 @@ export async function updateProduct(formData: FormData) {
   const categoryIds = formData.getAll("category_ids") as string[]
 
   // Get product_type
-  const productType = formData.get("product_type") as string || "single"
+  const productType = (formData.get("product_type") as string) || "single"
 
   // Backwards compatibility: if category_id is set but category_ids is empty, use it
   if (categoryId && categoryId.trim() !== "" && categoryIds.length === 0) {
@@ -735,11 +818,22 @@ export async function updateProduct(formData: FormData) {
   const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null
 
   // Get current product to preserve existing metadata, price, stock and images
-  const { data: currentProduct } = await supabase.from("products").select("handle, metadata, seo_metadata, price, stock_count, images, image_url").eq("id", id).single()
+  const { data: currentProduct } = await supabase
+    .from("products")
+    .select(
+      "handle, metadata, seo_metadata, price, stock_count, images, image_url"
+    )
+    .eq("id", id)
+    .single()
 
-  const productPrice = formData.get("price") ? parseFloat(formData.get("price") as string) : currentProduct?.price || 0
+  const productPrice = formData.get("price")
+    ? parseFloat(formData.get("price") as string)
+    : currentProduct?.price || 0
   const stockCountString = formData.get("stock_count") as string | null
-  const productStockCount = (stockCountString && stockCountString.trim() !== "") ? parseInt(stockCountString) : currentProduct?.stock_count || 0
+  const productStockCount =
+    stockCountString && stockCountString.trim() !== ""
+      ? parseInt(stockCountString)
+      : currentProduct?.stock_count || 0
 
   const newImageUrl = formData.get("image_url") as string
   const imageUrlChanged = newImageUrl !== currentProduct?.image_url
@@ -751,13 +845,18 @@ export async function updateProduct(formData: FormData) {
     price: productPrice,
     stock_count: productStockCount,
     image_url: newImageUrl,
-    collection_id: primaryCollectionId && primaryCollectionId.trim() !== "" ? primaryCollectionId : null, // Update primary collection
+    collection_id:
+      primaryCollectionId && primaryCollectionId.trim() !== ""
+        ? primaryCollectionId
+        : null, // Update primary collection
     category_id: primaryCategoryId, // Update category
     status: formData.get("status") as string,
     metadata: (() => {
       const meta = {
         ...(currentProduct?.metadata || {}),
-        compare_at_price: formData.get("compare_at_price") ? parseFloat(formData.get("compare_at_price") as string) : (currentProduct?.metadata?.compare_at_price || null),
+        compare_at_price: formData.get("compare_at_price")
+          ? parseFloat(formData.get("compare_at_price") as string)
+          : currentProduct?.metadata?.compare_at_price || null,
       }
       // Remove short_description from metadata to ensure the main column is the source of truth
       delete meta.short_description
@@ -765,16 +864,18 @@ export async function updateProduct(formData: FormData) {
     })(),
     short_description: formData.get("short_description") as string,
     video_url: formData.get("video_url") as string,
-    images: formData.get("images_json") ? JSON.parse(formData.get("images_json") as string) : (currentProduct?.images || []),
-    seo_title: formData.get("seo_title") as string || null,
-    seo_description: formData.get("seo_description") as string || null,
+    images: formData.get("images_json")
+      ? JSON.parse(formData.get("images_json") as string)
+      : currentProduct?.images || [],
+    seo_title: (formData.get("seo_title") as string) || null,
+    seo_description: (formData.get("seo_description") as string) || null,
     seo_metadata: {
       ...(currentProduct?.seo_metadata || {}),
-      keywords: formData.get("seo_keywords") as string || null,
-      og_title: formData.get("og_title") as string || null,
-      og_description: formData.get("og_description") as string || null,
+      keywords: (formData.get("seo_keywords") as string) || null,
+      og_title: (formData.get("og_title") as string) || null,
+      og_description: (formData.get("og_description") as string) || null,
       no_index: formData.get("no_index") === "true",
-    }
+    },
   }
 
   // If image changed, clear the embedding so it gets regenerated
@@ -797,9 +898,9 @@ export async function updateProduct(formData: FormData) {
 
   // 2. Insert new associations
   if (collectionIds.length > 0) {
-    const collectionsToInsert = collectionIds.map(cid => ({
+    const collectionsToInsert = collectionIds.map((cid) => ({
       product_id: id,
-      collection_id: cid
+      collection_id: cid,
     }))
 
     const { error: collectionsError } = await supabase
@@ -817,9 +918,9 @@ export async function updateProduct(formData: FormData) {
 
   // 2. Insert new associations
   if (categoryIds.length > 0) {
-    const categoriesToInsert = categoryIds.map(cid => ({
+    const categoriesToInsert = categoryIds.map((cid) => ({
       product_id: id,
-      category_id: cid
+      category_id: cid,
     }))
 
     await supabase.from("product_categories").insert(categoriesToInsert)
@@ -828,7 +929,7 @@ export async function updateProduct(formData: FormData) {
   // Regenerate image embedding if image URL changed
   if (imageUrlChanged && newImageUrl) {
     // Run in background - don't await
-    regenerateImageEmbedding(id, newImageUrl).catch(err => {
+    regenerateImageEmbedding(id, newImageUrl).catch((err) => {
       console.error(`Failed to regenerate embedding for product ${id}:`, err)
     })
   }
@@ -873,7 +974,10 @@ async function regenerateImageEmbedding(productId: string, imageUrl: string) {
     if (error) throw error
     console.log(`✓ Successfully updated embedding for product ${productId}`)
   } catch (error) {
-    console.error(`✗ Failed to regenerate embedding for product ${productId}:`, error)
+    console.error(
+      `✗ Failed to regenerate embedding for product ${productId}:`,
+      error
+    )
     throw error
   }
 }
@@ -916,24 +1020,26 @@ export async function saveProductVariants(
   const supabase = await createClient()
 
   // Separate new variants from existing ones
-  const newVariants = variants.filter(v => !v.id)
-  const existingVariants = variants.filter(v => v.id)
+  const newVariants = variants.filter((v) => !v.id)
+  const existingVariants = variants.filter((v) => v.id)
 
   // Insert new variants (without id - let DB auto-generate)
   if (newVariants.length > 0) {
     const { error: insertError } = await supabase
       .from("product_variants")
-      .insert(newVariants.map(v => ({
-        product_id: productId,
-        title: v.title,
-        sku: v.sku || null,
-        price: v.price,
-        compare_at_price: v.compare_at_price || null,
-        inventory_quantity: v.inventory_quantity,
-        image_url: v.image_url || null,
-        manage_inventory: true,
-        allow_backorder: false,
-      })))
+      .insert(
+        newVariants.map((v) => ({
+          product_id: productId,
+          title: v.title,
+          sku: v.sku || null,
+          price: v.price,
+          compare_at_price: v.compare_at_price || null,
+          inventory_quantity: v.inventory_quantity,
+          image_url: v.image_url || null,
+          manage_inventory: true,
+          allow_backorder: false,
+        }))
+      )
 
     if (insertError) throw new Error(insertError.message)
   }
@@ -942,18 +1048,21 @@ export async function saveProductVariants(
   if (existingVariants.length > 0) {
     const { error: updateError } = await supabase
       .from("product_variants")
-      .upsert(existingVariants.map(v => ({
-        id: v.id,
-        product_id: productId,
-        title: v.title,
-        sku: v.sku || null,
-        price: v.price,
-        compare_at_price: v.compare_at_price || null,
-        inventory_quantity: v.inventory_quantity,
-        image_url: v.image_url || null,
-        manage_inventory: true,
-        allow_backorder: false,
-      })), { onConflict: "id" })
+      .upsert(
+        existingVariants.map((v) => ({
+          id: v.id,
+          product_id: productId,
+          title: v.title,
+          sku: v.sku || null,
+          price: v.price,
+          compare_at_price: v.compare_at_price || null,
+          inventory_quantity: v.inventory_quantity,
+          image_url: v.image_url || null,
+          manage_inventory: true,
+          allow_backorder: false,
+        })),
+        { onConflict: "id" }
+      )
 
     if (updateError) throw new Error(updateError.message)
   }
@@ -965,16 +1074,26 @@ export async function saveProductVariants(
     .eq("product_id", productId)
 
   if (allVariants && allVariants.length > 0) {
-    const totalStock = allVariants.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0)
-    const minPrice = Math.min(...allVariants.map(v => v.price))
-    await supabase.from("products").update({
-      stock_count: totalStock,
-      price: minPrice
-    }).eq("id", productId)
+    const totalStock = allVariants.reduce(
+      (sum, v) => sum + (v.inventory_quantity || 0),
+      0
+    )
+    const minPrice = Math.min(...allVariants.map((v) => v.price))
+    await supabase
+      .from("products")
+      .update({
+        stock_count: totalStock,
+        price: minPrice,
+      })
+      .eq("id", productId)
   }
 
   // Get product handle for revalidation
-  const { data: product } = await supabase.from("products").select("handle").eq("id", productId).single()
+  const { data: product } = await supabase
+    .from("products")
+    .select("handle")
+    .eq("id", productId)
+    .single()
 
   revalidatePath(`/admin/products/${productId}`)
   revalidatePath("/admin/products")
@@ -993,12 +1112,19 @@ export async function deleteVariant(variantId: string) {
     .eq("id", variantId)
     .single()
 
-  const { error } = await supabase.from("product_variants").delete().eq("id", variantId)
+  const { error } = await supabase
+    .from("product_variants")
+    .delete()
+    .eq("id", variantId)
   if (error) throw error
 
   if (variant) {
     // Get product handle for revalidation
-    const { data: product } = await supabase.from("products").select("handle").eq("id", variant.product_id).single()
+    const { data: product } = await supabase
+      .from("products")
+      .select("handle")
+      .eq("id", variant.product_id)
+      .single()
 
     revalidatePath(`/admin/products/${variant.product_id}`)
     if (product?.handle) {
@@ -1011,14 +1137,22 @@ export async function deleteVariant(variantId: string) {
       .select("inventory_quantity")
       .eq("product_id", variant.product_id)
 
-    const totalStock = allVariants?.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0) || 0
-    await supabase.from("products").update({ stock_count: totalStock }).eq("id", variant.product_id)
+    const totalStock =
+      allVariants?.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0) || 0
+    await supabase
+      .from("products")
+      .update({ stock_count: totalStock })
+      .eq("id", variant.product_id)
   }
   revalidatePath("/admin/products")
   revalidatePath("/admin/inventory")
 }
 
-export async function updateInventory(productId: string, quantity: number, variantId?: string) {
+export async function updateInventory(
+  productId: string,
+  quantity: number,
+  variantId?: string
+) {
   await ensureAdmin()
   await requirePermission(PERMISSIONS.INVENTORY_UPDATE)
   const supabase = await createClient()
@@ -1039,8 +1173,14 @@ export async function updateInventory(productId: string, quantity: number, varia
       .eq("product_id", productId)
 
     if (allVariants) {
-      const totalStock = allVariants.reduce((sum, v) => sum + (v.inventory_quantity || 0), 0)
-      await supabase.from("products").update({ stock_count: totalStock }).eq("id", productId)
+      const totalStock = allVariants.reduce(
+        (sum, v) => sum + (v.inventory_quantity || 0),
+        0
+      )
+      await supabase
+        .from("products")
+        .update({ stock_count: totalStock })
+        .eq("id", productId)
     }
   } else {
     // Update base product stock
@@ -1069,7 +1209,11 @@ export async function updateInventory(productId: string, quantity: number, varia
   revalidatePath(`/admin/products/${productId}`)
 
   // Get handle for storefront revalidation
-  const { data: product } = await supabase.from("products").select("handle").eq("id", productId).single()
+  const { data: product } = await supabase
+    .from("products")
+    .select("handle")
+    .eq("id", productId)
+    .single()
   if (product?.handle) {
     revalidatePath(`/products/${product.handle}`)
   }
@@ -1083,10 +1227,12 @@ export async function getProductOptions(productId: string) {
 
   const { data, error } = await supabase
     .from("product_options")
-    .select(`
+    .select(
+      `
       *,
       values:product_option_values(*)
-    `)
+    `
+    )
     .eq("product_id", productId)
     .order("created_at")
 
@@ -1114,9 +1260,9 @@ export async function saveProductOption(
   const { error: valuesError } = await supabase
     .from("product_option_values")
     .insert(
-      option.values.map(value => ({
+      option.values.map((value) => ({
         option_id: optionData.id,
-        value: value.trim()
+        value: value.trim(),
       }))
     )
 
@@ -1164,7 +1310,7 @@ export async function generateVariantsFromOptions(
   const combinations = generateVariantCombinations(options)
 
   // Create variants for each combination
-  const variantsToInsert = combinations.map(combination => ({
+  const variantsToInsert = combinations.map((combination) => ({
     product_id: productId,
     title: combination.join(" / "),
     price: 0,
@@ -1199,7 +1345,9 @@ interface PaginatedCollectionsResponse {
   currentPage: number
 }
 
-export async function getAdminCollections(params: GetAdminCollectionsParams = {}): Promise<PaginatedCollectionsResponse> {
+export async function getAdminCollections(
+  params: GetAdminCollectionsParams = {}
+): Promise<PaginatedCollectionsResponse> {
   await ensureAdmin()
 
   const { page = 1, limit = 20, search } = params
@@ -1209,11 +1357,14 @@ export async function getAdminCollections(params: GetAdminCollectionsParams = {}
   const isFetchAll = limit === -1
 
   // Calculate total count first
-  let countQuery = supabase.from("collections").select("*", { count: "exact", head: true })
-
+  let countQuery = supabase
+    .from("collections")
+    .select("*", { count: "exact", head: true })
 
   if (search && search.trim()) {
-    countQuery = countQuery.or(`title.ilike.%${search}%,handle.ilike.%${search}%`)
+    countQuery = countQuery.or(
+      `title.ilike.%${search}%,handle.ilike.%${search}%`
+    )
   }
 
   const { count } = await countQuery
@@ -1227,10 +1378,12 @@ export async function getAdminCollections(params: GetAdminCollectionsParams = {}
   // Fetch paginated data
   let query = supabase
     .from("collections")
-    .select(`
+    .select(
+      `
     *,
     products:product_collections(count)
-    `)
+    `
+    )
     .order("created_at", { ascending: false })
 
   if (!isFetchAll) {
@@ -1245,17 +1398,23 @@ export async function getAdminCollections(params: GetAdminCollectionsParams = {}
   if (error) throw error
 
   return {
-    collections: (data || []) as (Collection & { products: { count: number }[] })[],
+    collections: (data || []) as (Collection & {
+      products: { count: number }[]
+    })[],
     count: count || 0,
     totalPages,
-    currentPage: page
+    currentPage: page,
   }
 }
 
 export async function getAdminCollection(id: string) {
   await ensureAdmin()
   const supabase = await createClient()
-  const { data, error } = await supabase.from("collections").select("*").eq("id", id).single()
+  const { data, error } = await supabase
+    .from("collections")
+    .select("*")
+    .eq("id", id)
+    .single()
   if (error) throw error
   return data as Collection
 }
@@ -1268,10 +1427,12 @@ export async function getProductCategories(productId: string) {
     .eq("product_id", productId)
 
   if (error) return []
-  return data.map(item => item.category_id)
+  return data.map((item) => item.category_id)
 }
 
-export async function getProductCombinations(productId: string): Promise<string[]> {
+export async function getProductCombinations(
+  productId: string
+): Promise<string[]> {
   await ensureAdmin()
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -1284,10 +1445,13 @@ export async function getProductCombinations(productId: string): Promise<string[
     return []
   }
 
-  return data.map(item => item.related_product_id)
+  return data.map((item) => item.related_product_id)
 }
 
-export async function updateProductCombinations(productId: string, relatedProductIds: string[]) {
+export async function updateProductCombinations(
+  productId: string,
+  relatedProductIds: string[]
+) {
   await ensureAdmin()
   const supabase = await createClient()
 
@@ -1304,9 +1468,9 @@ export async function updateProductCombinations(productId: string, relatedProduc
 
   // 2. Insert new combinations
   if (relatedProductIds.length > 0) {
-    const combinationsToInsert = relatedProductIds.map(relatedId => ({
+    const combinationsToInsert = relatedProductIds.map((relatedId) => ({
       product_id: productId,
-      related_product_id: relatedId
+      related_product_id: relatedId,
     }))
 
     const { error: insertError } = await supabase
@@ -1346,9 +1510,9 @@ export async function createCollection(formData: FormData) {
   // Handle product associations
   const productIds = formData.getAll("product_ids") as string[]
   if (productIds.length > 0 && newCollection) {
-    const productCollections = productIds.map(productId => ({
+    const productCollections = productIds.map((productId) => ({
       product_id: productId,
-      collection_id: newCollection.id
+      collection_id: newCollection.id,
     }))
 
     const { error: junctionError } = await supabase
@@ -1394,9 +1558,9 @@ export async function updateCollection(formData: FormData) {
 
   // 2. Insert new associations
   if (productIds.length > 0) {
-    const productCollections = productIds.map(productId => ({
+    const productCollections = productIds.map((productId) => ({
       product_id: productId,
-      collection_id: id
+      collection_id: id,
     }))
 
     const { error: junctionError } = await supabase
@@ -1425,7 +1589,9 @@ export async function deleteCollection(id: string) {
   revalidateTag("collections", "max")
 }
 
-export async function getCollectionProducts(collectionId: string): Promise<string[]> {
+export async function getCollectionProducts(
+  collectionId: string
+): Promise<string[]> {
   await ensureAdmin()
   const supabase = await createClient()
 
@@ -1439,9 +1605,8 @@ export async function getCollectionProducts(collectionId: string): Promise<strin
     return []
   }
 
-  return data.map(item => item.product_id)
+  return data.map((item) => item.product_id)
 }
-
 
 export async function getProductCollections(productId: string) {
   await ensureAdmin()
@@ -1461,17 +1626,20 @@ export async function getProductCollections(productId: string) {
       .eq("product_id", productId)
 
     if (singularError || !singularData) {
-      console.error("Error fetching product collections:", singularError || "No data")
+      console.error(
+        "Error fetching product collections:",
+        singularError || "No data"
+      )
       return []
     }
 
     return singularData
-      .map(item => (item as any).collection as unknown as Collection)
+      .map((item) => (item as any).collection as unknown as Collection)
       .filter(Boolean)
   }
 
   return data
-    .map(item => (item as any).collections as unknown as Collection)
+    .map((item) => (item as any).collections as unknown as Collection)
     .filter(Boolean)
 }
 
@@ -1490,7 +1658,9 @@ interface PaginatedOrdersResponse {
   currentPage: number
 }
 
-export async function getAdminOrders(params: GetAdminOrdersParams = {}): Promise<PaginatedOrdersResponse> {
+export async function getAdminOrders(
+  params: GetAdminOrdersParams = {}
+): Promise<PaginatedOrdersResponse> {
   await ensureAdmin()
 
   const { page = 1, limit = 20, search } = params
@@ -1509,7 +1679,9 @@ export async function getAdminOrders(params: GetAdminOrdersParams = {}): Promise
     if (error) throw error
 
     // Filter by display_id
-    const filteredOrders = (allOrders || []).filter(order => order.display_id === searchNum)
+    const filteredOrders = (allOrders || []).filter(
+      (order) => order.display_id === searchNum
+    )
 
     // Calculate pagination for filtered results
     const count = filteredOrders.length
@@ -1521,13 +1693,15 @@ export async function getAdminOrders(params: GetAdminOrdersParams = {}): Promise
       orders: paginatedOrders as Order[],
       count,
       totalPages,
-      currentPage: page
+      currentPage: page,
     }
   }
 
   // Regular search (by email) or no search
   // Calculate total count first
-  let countQuery = supabase.from("orders").select("*", { count: "exact", head: true })
+  let countQuery = supabase
+    .from("orders")
+    .select("*", { count: "exact", head: true })
 
   if (search && search.trim()) {
     // Search by customer_email
@@ -1561,14 +1735,18 @@ export async function getAdminOrders(params: GetAdminOrdersParams = {}): Promise
     orders: (data || []) as Order[],
     count: count || 0,
     totalPages,
-    currentPage: page
+    currentPage: page,
   }
 }
 
 export async function getAdminOrder(id: string) {
   await ensureAdmin()
   const supabase = await createClient()
-  const { data, error } = await supabase.from("orders").select("*").eq("id", id).single()
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", id)
+    .single()
   if (error) throw error
   return data as Order
 }
@@ -1578,8 +1756,8 @@ export async function updateOrderStatus(id: string, status: string) {
   const supabase = await createClient()
 
   const updates: any = { status }
-  if (status === 'order_placed') {
-    updates.payment_status = 'captured'
+  if (status === "order_placed") {
+    updates.payment_status = "captured"
   }
 
   const { error } = await supabase.from("orders").update(updates).eq("id", id)
@@ -1614,25 +1792,33 @@ interface PaginatedCustomersResponse {
   currentPage: number
 }
 
-export async function getAdminCustomers(params: GetAdminCustomersParams = {}): Promise<PaginatedCustomersResponse> {
+export async function getAdminCustomers(
+  params: GetAdminCustomersParams = {}
+): Promise<PaginatedCustomersResponse> {
   await ensureAdmin()
 
   const { page = 1, limit = 20, search, type } = params
   const supabase = await createClient()
 
   // Calculate total count first
-  let countQuery = supabase.from("profiles").select("*", { count: "exact", head: true })
+  let countQuery = supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
 
   if (type === "admin") {
     countQuery = countQuery.eq("role", "admin")
   } else if (type === "club") {
     countQuery = countQuery.eq("is_club_member", true).neq("role", "admin")
   } else if (type === "customer") {
-    countQuery = countQuery.eq("is_club_member", false).or("role.is.null,role.neq.admin")
+    countQuery = countQuery
+      .eq("is_club_member", false)
+      .or("role.is.null,role.neq.admin")
   }
 
   if (search && search.trim()) {
-    countQuery = countQuery.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+    countQuery = countQuery.or(
+      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`
+    )
   }
 
   const { count } = await countQuery
@@ -1659,7 +1845,9 @@ export async function getAdminCustomers(params: GetAdminCustomersParams = {}): P
   }
 
   if (search && search.trim()) {
-    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
+    query = query.or(
+      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`
+    )
   }
 
   const { data, error } = await query
@@ -1669,7 +1857,7 @@ export async function getAdminCustomers(params: GetAdminCustomersParams = {}): P
     customers: (data || []) as CustomerProfile[],
     count: count || 0,
     totalPages,
-    currentPage: page
+    currentPage: page,
   }
 }
 
@@ -1678,7 +1866,11 @@ export async function getAdminCustomer(id: string) {
   // Use admin client to bypass user-specific RLS policies
   const supabase = await createAdminClient()
 
-  const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", id).single()
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", id)
+    .single()
   if (profileError) throw profileError
 
   // Fetch only first 5 orders and transactions for initial load
@@ -1689,11 +1881,20 @@ export async function getAdminCustomer(id: string) {
     .order("created_at", { ascending: false })
     .range(0, 4)
 
-  const { data: addresses } = await supabase.from("addresses").select("*").eq("user_id", id)
-  const { data: wallet } = await supabase.from("reward_wallets").select("*").eq("user_id", id).maybeSingle()
+  const { data: addresses } = await supabase
+    .from("addresses")
+    .select("*")
+    .eq("user_id", id)
+  const { data: wallet } = await supabase
+    .from("reward_wallets")
+    .select("*")
+    .eq("user_id", id)
+    .maybeSingle()
 
   // Fetch initial transactions
-  const initialTransactions = wallet ? await getPaginatedCustomerRewardTransactions(id, 1, 5) : { data: [], total: 0 }
+  const initialTransactions = wallet
+    ? await getPaginatedCustomerRewardTransactions(id, 1, 5)
+    : { data: [], total: 0 }
 
   // Total spent calculation
   const { data: orderTotals } = await supabase
@@ -1703,7 +1904,8 @@ export async function getAdminCustomer(id: string) {
     .not("status", "in", '("cancelled","failed")')
 
   const totalSpent = (orderTotals || []).reduce(
-    (sum, row) => sum + Number(row.total_amount || 0), 0
+    (sum, row) => sum + Number(row.total_amount || 0),
+    0
   )
 
   return {
@@ -1718,11 +1920,15 @@ export async function getAdminCustomer(id: string) {
     // Use fallback values if profile columns are null (though migration should handle this)
     is_club_member: profile.is_club_member || false,
     club_member_since: profile.club_member_since || null,
-    total_club_savings: profile.total_club_savings || 0
+    total_club_savings: profile.total_club_savings || 0,
   }
 }
 
-export async function getPaginatedCustomerOrders(userId: string, page: number = 1, limit: number = 5) {
+export async function getPaginatedCustomerOrders(
+  userId: string,
+  page: number = 1,
+  limit: number = 5
+) {
   await ensureAdmin()
   const supabase = await createAdminClient()
 
@@ -1742,11 +1948,15 @@ export async function getPaginatedCustomerOrders(userId: string, page: number = 
     data: data || [],
     total: count || 0,
     totalPages: Math.ceil((count || 0) / limit),
-    currentPage: page
+    currentPage: page,
   }
 }
 
-export async function getPaginatedCustomerRewardTransactions(userId: string, page: number = 1, limit: number = 5) {
+export async function getPaginatedCustomerRewardTransactions(
+  userId: string,
+  page: number = 1,
+  limit: number = 5
+) {
   await ensureAdmin()
   const supabase = await createAdminClient()
 
@@ -1762,21 +1972,28 @@ export async function getPaginatedCustomerRewardTransactions(userId: string, pag
   const to = from + limit - 1
 
   // 1. Fetch paginated transactions
-  const { data: transactions, count, error: txError } = await supabase
+  const {
+    data: transactions,
+    count,
+    error: txError,
+  } = await supabase
     .from("reward_transactions")
     .select("*", { count: "exact" })
     .eq("wallet_id", wallet.id)
     .order("created_at", { ascending: false })
     .range(from, to)
 
-  if (txError || !transactions) throw txError || new Error("Failed to fetch transactions")
+  if (txError || !transactions)
+    throw txError || new Error("Failed to fetch transactions")
 
   // 2. Fetch order display IDs for these transactions
-  const orderIds = Array.from(new Set(
-    transactions
-      .filter((tx: any) => tx.order_id)
-      .map((tx: any) => tx.order_id)
-  ))
+  const orderIds = Array.from(
+    new Set(
+      transactions
+        .filter((tx: any) => tx.order_id)
+        .map((tx: any) => tx.order_id)
+    )
+  )
 
   let ordersMap: Record<string, any> = {}
   if (orderIds.length > 0) {
@@ -1785,25 +2002,28 @@ export async function getPaginatedCustomerRewardTransactions(userId: string, pag
       .select("id, display_id")
       .in("id", orderIds)
 
-    orders?.forEach(o => {
+    orders?.forEach((o) => {
       ordersMap[o.id] = o
     })
   }
 
-  const data = transactions.map(tx => ({
+  const data = transactions.map((tx) => ({
     ...tx,
-    orders: ordersMap[tx.order_id] || null
+    orders: ordersMap[tx.order_id] || null,
   }))
 
   return {
     data,
     total: count || 0,
     totalPages: Math.ceil((count || 0) / limit),
-    currentPage: page
+    currentPage: page,
   }
 }
 
-export async function getAdminRewardTransactions(userId: string, supabase?: any): Promise<RewardTransactionWithOrder[]> {
+export async function getAdminRewardTransactions(
+  userId: string,
+  supabase?: any
+): Promise<RewardTransactionWithOrder[]> {
   if (!supabase) {
     await ensureAdmin()
     supabase = await createAdminClient()
@@ -1827,11 +2047,13 @@ export async function getAdminRewardTransactions(userId: string, supabase?: any)
   if (txError || !transactions) return []
 
   // 2. Collect unique order IDs
-  const orderIds = Array.from(new Set(
-    transactions
-      .filter((tx: any) => tx.order_id)
-      .map((tx: any) => tx.order_id)
-  ))
+  const orderIds = Array.from(
+    new Set(
+      transactions
+        .filter((tx: any) => tx.order_id)
+        .map((tx: any) => tx.order_id)
+    )
+  )
 
   // 3. Fetch order display IDs
   let ordersMap: Record<string, number> = {}
@@ -1852,9 +2074,10 @@ export async function getAdminRewardTransactions(userId: string, supabase?: any)
   // 4. Map display IDs back to transactions
   return transactions.map((tx: any) => ({
     ...tx,
-    orders: tx.order_id && ordersMap[tx.order_id]
-      ? { display_id: ordersMap[tx.order_id] }
-      : null
+    orders:
+      tx.order_id && ordersMap[tx.order_id]
+        ? { display_id: ordersMap[tx.order_id] }
+        : null,
   })) as RewardTransactionWithOrder[]
 }
 
@@ -1877,9 +2100,15 @@ export async function deleteCustomer(id: string) {
     console.error("ADMIN: deleteCustomer CRITICAL FAILURE:", err)
     // Return a user-friendly error if the key is missing
     if (err.message?.includes("SUPABASE_SERVICE_ROLE_KEY")) {
-      return { success: false, error: "Server Error: SUPABASE_SERVICE_ROLE_KEY is not configured." }
+      return {
+        success: false,
+        error: "Server Error: SUPABASE_SERVICE_ROLE_KEY is not configured.",
+      }
     }
-    return { success: false, error: err.message || "An unexpected error occurred." }
+    return {
+      success: false,
+      error: err.message || "An unexpected error occurred.",
+    }
   }
 }
 
@@ -1906,7 +2135,7 @@ export async function createPaymentMethod(formData: FormData) {
   const method = {
     id: formData.get("id") as string,
     name: formData.get("name") as string,
-    description: formData.get("description") as string || null,
+    description: (formData.get("description") as string) || null,
     discount_percentage: Number(formData.get("discount_percentage") || 0),
     is_active: formData.get("is_active") === "true",
   }
@@ -1927,8 +2156,9 @@ export async function updatePaymentMethod(id: string, formData: FormData) {
   const supabase = await createClient()
   const method = {
     name: formData.get("name") as string,
-    description: formData.get("description") as string || null,
-    discount_percentage: parseFloat(formData.get("discount_percentage") as string) || 0,
+    description: (formData.get("description") as string) || null,
+    discount_percentage:
+      parseFloat(formData.get("discount_percentage") as string) || 0,
     is_active: formData.get("is_active") === "true",
   }
 
@@ -2112,7 +2342,9 @@ export async function getOrderTimeline(orderId: string) {
 
 async function getAdminActorDisplay(): Promise<string> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return "Admin"
 
   const { data: profile } = await supabase
@@ -2166,7 +2398,7 @@ export async function acceptOrder(orderId: string) {
     .from("orders")
     .update({
       status: "accepted",
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId)
 
@@ -2197,7 +2429,7 @@ async function creditRewardsOnDelivery(order: {
   total: number | null
   metadata: Record<string, unknown> | null
 }) {
-  if (!order.user_id) return  // Skip guest orders
+  if (!order.user_id) return // Skip guest orders
 
   const metadata = (order.metadata || {}) as Record<string, unknown>
   if (metadata.rewards_credited === true) {
@@ -2217,8 +2449,11 @@ async function creditRewardsOnDelivery(order: {
     // Try to activate membership if order qualifies (safety net for orders placed before fix)
     const { checkAndActivateMembership } = await import("@lib/data/club")
     const orderTotal = Number(order.total || 0)
-    const activated = await checkAndActivateMembership(order.user_id, orderTotal)
-    if (!activated) return  // Not eligible, skip rewards
+    const activated = await checkAndActivateMembership(
+      order.user_id,
+      orderTotal
+    )
+    if (!activated) return // Not eligible, skip rewards
   }
 
   const { getClubSettings } = await import("@lib/data/club")
@@ -2226,20 +2461,36 @@ async function creditRewardsOnDelivery(order: {
   if (!settings.is_active || settings.rewards_percentage <= 0) return
 
   const orderSubtotal = Number(order.subtotal || order.total || 0)
-  const pointsEarned = Math.floor((orderSubtotal * settings.rewards_percentage) / 100)
+  const pointsEarned = Math.floor(
+    (orderSubtotal * settings.rewards_percentage) / 100
+  )
   if (pointsEarned <= 0) return
 
   // Use creditRewards from rewards.ts (now uses admin client internally)
   const { creditRewards } = await import("@lib/data/rewards")
-  const credited = await creditRewards(order.user_id, order.id, orderSubtotal, settings.rewards_percentage)
+  const credited = await creditRewards(
+    order.user_id,
+    order.id,
+    orderSubtotal,
+    settings.rewards_percentage
+  )
 
   // Set idempotency flag in order metadata
-  await adminSupabase.from("orders").update({
-    metadata: { ...metadata, rewards_earned: credited, rewards_credited: true }
-  }).eq("id", order.id)
+  await adminSupabase
+    .from("orders")
+    .update({
+      metadata: {
+        ...metadata,
+        rewards_earned: credited,
+        rewards_credited: true,
+      },
+    })
+    .eq("id", order.id)
 
   if (credited > 0) {
-    console.log(`[REWARDS] Credited ${credited} points to user ${order.user_id} for order ${order.id}`)
+    console.log(
+      `[REWARDS] Credited ${credited} points to user ${order.user_id} for order ${order.id}`
+    )
   }
 }
 
@@ -2250,14 +2501,20 @@ export async function markOrderAsDelivered(orderId: string) {
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, user_id, subtotal, total, payment_method, payment_status, metadata")
+    .select(
+      "id, user_id, subtotal, total, payment_method, payment_status, metadata"
+    )
     .eq("id", orderId)
     .maybeSingle()
 
   if (!order) throw new Error("Order not found")
 
   const normalizedMethod = (order.payment_method || "").toLowerCase()
-  const isCod = normalizedMethod.includes("cod") || normalizedMethod.includes("cash") || normalizedMethod.includes("pp_system_default") || normalizedMethod === "manual"
+  const isCod =
+    normalizedMethod.includes("cod") ||
+    normalizedMethod.includes("cash") ||
+    normalizedMethod.includes("pp_system_default") ||
+    normalizedMethod === "manual"
 
   const { error } = await supabase
     .from("orders")
@@ -2265,7 +2522,7 @@ export async function markOrderAsDelivered(orderId: string) {
       status: "delivered",
       fulfillment_status: "delivered",
       payment_status: isCod ? "captured" : order.payment_status,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId)
 
@@ -2304,8 +2561,12 @@ export async function cancelOrder(orderId: string) {
     .maybeSingle()
 
   if (!order) throw new Error("Order not found")
-  if (order.status === "cancelled" || order.status === "failed") return { success: true, alreadyCancelled: true }
-  if (order.status === "delivered" || order.status === "shipped") throw new Error("Cannot cancel an order that has already shipped or delivered.")
+  if (order.status === "cancelled" || order.status === "failed")
+    return { success: true, alreadyCancelled: true }
+  if (order.status === "delivered" || order.status === "shipped")
+    throw new Error(
+      "Cannot cancel an order that has already shipped or delivered."
+    )
 
   const { error } = await supabase
     .from("orders")
@@ -2313,7 +2574,7 @@ export async function cancelOrder(orderId: string) {
       status: "cancelled",
       fulfillment_status: "cancelled",
       payment_status: "cancelled",
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId)
 
@@ -2358,10 +2619,20 @@ export async function markOrderAsPaid(orderId: string) {
     throw new Error("Payment can only be marked after the order is delivered.")
   }
 
-  const paymentMethodRaw = (order.payment_method || (order.metadata as any)?.payment_method || "").toString().toLowerCase()
-  const isCod = paymentMethodRaw.includes("cod") || paymentMethodRaw.includes("cash on delivery") || paymentMethodRaw.includes("cash")
+  const paymentMethodRaw = (
+    order.payment_method ||
+    (order.metadata as any)?.payment_method ||
+    ""
+  )
+    .toString()
+    .toLowerCase()
+  const isCod =
+    paymentMethodRaw.includes("cod") ||
+    paymentMethodRaw.includes("cash on delivery") ||
+    paymentMethodRaw.includes("cash")
 
-  const alreadyPaid = order.payment_status === "paid" || order.payment_status === "captured"
+  const alreadyPaid =
+    order.payment_status === "paid" || order.payment_status === "captured"
   if (alreadyPaid) {
     return { success: true, alreadyPaid: true }
   }
@@ -2370,7 +2641,7 @@ export async function markOrderAsPaid(orderId: string) {
     .from("orders")
     .update({
       payment_status: "paid",
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId)
 
@@ -2384,7 +2655,12 @@ export async function markOrderAsPaid(orderId: string) {
       ? "Cash on Delivery payment collected and marked as paid."
       : "Payment marked as paid by admin.",
     "admin",
-    { payment_method: order.payment_method || (order.metadata as any)?.payment_method || "unknown" },
+    {
+      payment_method:
+        order.payment_method ||
+        (order.metadata as any)?.payment_method ||
+        "unknown",
+    },
     actorDisplay
   )
 
@@ -2426,7 +2702,7 @@ export async function fulfillOrder(orderId: string, formData: FormData) {
       fulfillment_status: "shipped",
       shipping_partner_id: shippingPartnerId,
       tracking_number: trackingNumber || null,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId)
 
@@ -2483,7 +2759,9 @@ export async function createRole(formData: FormData) {
 
   const name = formData.get("name") as string
   const permissionsStr = formData.get("permissions") as string
-  const permissions = permissionsStr ? JSON.parse(permissionsStr) as string[] : []
+  const permissions = permissionsStr
+    ? (JSON.parse(permissionsStr) as string[])
+    : []
 
   const { error } = await supabase.from("admin_roles").insert({
     name,
@@ -2545,7 +2823,9 @@ export async function updateRole(id: string, formData: FormData) {
 
   const name = formData.get("name") as string
   const permissionsStr = formData.get("permissions") as string
-  const permissions = permissionsStr ? JSON.parse(permissionsStr) as string[] : []
+  const permissions = permissionsStr
+    ? (JSON.parse(permissionsStr) as string[])
+    : []
 
   const { error } = await supabase
     .from("admin_roles")
@@ -2576,7 +2856,9 @@ interface PaginatedStaffMembersResponse {
   currentPage: number
 }
 
-export async function getStaffMembers(params: GetStaffMembersParams = {}): Promise<PaginatedStaffMembersResponse> {
+export async function getStaffMembers(
+  params: GetStaffMembersParams = {}
+): Promise<PaginatedStaffMembersResponse> {
   await ensureAdmin()
   const supabase = await createClient()
 
@@ -2589,7 +2871,9 @@ export async function getStaffMembers(params: GetStaffMembersParams = {}): Promi
     .not("admin_role_id", "is", null)
 
   if (search && search.trim()) {
-    countQuery = countQuery.or(`first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `)
+    countQuery = countQuery.or(
+      `first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `
+    )
   }
 
   const { count } = await countQuery
@@ -2603,7 +2887,8 @@ export async function getStaffMembers(params: GetStaffMembersParams = {}): Promi
   // Fetch paginated data
   let query = supabase
     .from("profiles")
-    .select(`
+    .select(
+      `
   id,
     email,
     first_name,
@@ -2611,13 +2896,16 @@ export async function getStaffMembers(params: GetStaffMembersParams = {}): Promi
     admin_role_id,
     created_at,
     admin_role: admin_roles(*)
-    `)
+    `
+    )
     .not("admin_role_id", "is", null)
     .order("created_at", { ascending: false })
     .range(from, to)
 
   if (search && search.trim()) {
-    query = query.or(`first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `)
+    query = query.or(
+      `first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `
+    )
   }
 
   const { data, error } = await query
@@ -2627,7 +2915,7 @@ export async function getStaffMembers(params: GetStaffMembersParams = {}): Promi
     staff: (data || []) as StaffMember[],
     count: count || 0,
     totalPages,
-    currentPage: page
+    currentPage: page,
   }
 }
 
@@ -2636,12 +2924,15 @@ export async function inviteStaffMember(email: string, roleId: string) {
   const supabaseAdmin = await createAdminClient()
 
   // Invite user via Supabase Auth Admin
-  const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/admin`,
-    data: {
-      admin_role_id: roleId,
-    }
-  })
+  const { data: inviteData, error: inviteError } =
+    await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${
+        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+      }/admin`,
+      data: {
+        admin_role_id: roleId,
+      },
+    })
 
   if (inviteError) throw new Error(inviteError.message)
 
@@ -2694,7 +2985,9 @@ export async function getRegisteredUsers(searchQuery?: string) {
     .order("email")
 
   if (searchQuery && searchQuery.trim()) {
-    query = query.or(`email.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`)
+    query = query.or(
+      `email.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`
+    )
   }
 
   const { data, error } = await query.limit(50)
@@ -2731,4 +3024,78 @@ export async function promoteToStaff(userId: string, roleId: string) {
 
   revalidatePath("/admin/team")
   redirect("/admin/team")
+}
+
+// --- Customer Address Management ---
+export async function updateAdminCustomerAddress(
+  _currentState: unknown,
+  formData: FormData
+) {
+  await ensureAdmin()
+  const supabase = await createAdminClient()
+  const addressId = formData.get("addressId") as string
+
+  const address = {
+    first_name: formData.get("first_name") as string,
+    last_name: formData.get("last_name") as string,
+    company: formData.get("company") as string,
+    address_1: formData.get("address_1") as string,
+    address_2: formData.get("address_2") as string,
+    city: formData.get("city") as string,
+    country_code: formData.get("country_code") as string,
+    province: formData.get("province") as string,
+    postal_code: formData.get("postal_code") as string,
+    phone: formData.get("phone") as string,
+  }
+
+  const { error } = await supabase
+    .from("addresses")
+    .update(address)
+    .eq("id", addressId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  // Fetch user_id to revalidate specific page
+  const { data: addr } = await supabase
+    .from("addresses")
+    .select("user_id")
+    .eq("id", addressId)
+    .single()
+
+  revalidateTag("customers", "max")
+  if (addr?.user_id) {
+    revalidatePath(`/admin/customers/${addr.user_id}`)
+  }
+  revalidatePath("/admin/customers")
+
+  return { success: true, error: null }
+}
+
+export async function deleteAdminCustomerAddress(addressId: string) {
+  await ensureAdmin()
+  const supabase = await createAdminClient()
+
+  // Fetch user_id before deletion for revalidation
+  const { data: addr } = await supabase
+    .from("addresses")
+    .select("user_id")
+    .eq("id", addressId)
+    .single()
+
+  const { error } = await supabase
+    .from("addresses")
+    .delete()
+    .eq("id", addressId)
+
+  if (error) {
+    throw error
+  }
+
+  revalidateTag("customers", "max")
+  if (addr?.user_id) {
+    revalidatePath(`/admin/customers/${addr.user_id}`)
+  }
+  revalidatePath("/admin/customers")
 }
