@@ -2,6 +2,7 @@
 
 import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { Order } from "@/lib/supabase/types"
 import { getAuthUser } from "./auth"
 import { logOrderEvent } from "@/lib/data/admin"
@@ -61,19 +62,25 @@ export async function cancelUserOrder(orderId: string) {
   if (error) throw new Error(error.message)
   if (!order) throw new Error("Order not found.")
 
-  if (["accepted", "shipped", "delivered", "cancelled", "failed"].includes(order.status)) {
+  if (
+    ["accepted", "shipped", "delivered", "cancelled", "failed"].includes(
+      order.status
+    )
+  ) {
     throw new Error("Order can no longer be cancelled.")
   }
 
-  const paymentStatus = order.payment_status === "captured" ? "refunded" : "cancelled"
+  const paymentStatus =
+    order.payment_status === "captured" ? "refunded" : "cancelled"
+  const adminSupabase = await createAdminClient()
 
-  const { error: updateError } = await supabase
+  const { error: updateError } = await adminSupabase
     .from("orders")
     .update({
       status: "cancelled",
       fulfillment_status: "cancelled",
       payment_status: paymentStatus,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId)
 
