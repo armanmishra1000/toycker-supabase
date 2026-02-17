@@ -51,7 +51,6 @@ export default function ProductPreview({
     return product.variants?.find((v) => v.id === selectedVariantId)
   }, [product.variants, selectedVariantId])
 
-
   // Use the central utility to calculate display price
   const { cheapestPrice } = useMemo(() => {
     return getProductPrice({ product, clubDiscountPercentage })
@@ -84,17 +83,37 @@ export default function ProductPreview({
     titleSizeMap[viewMode] ?? "text-base"
   )
 
-  const descriptionPreview = isListView && product.description ? product.description : undefined
+  const descriptionPreview =
+    isListView && product.description ? product.description : undefined
   // Determine if product requires option selection
-  const hasVariants = (product.variants?.length ?? 0) > 0 || (product.options?.length ?? 0) > 0
+  const hasVariants =
+    (product.variants?.length ?? 0) > 0 || (product.options?.length ?? 0) > 0
 
-  const buttonLabel = status === "added"
-    ? "Added!"
-    : status === "error"
+  // Check if product or selected variant is in stock
+  const inStock = useMemo(() => {
+    if (selectedVariant) {
+      if (
+        !selectedVariant.manage_inventory ||
+        selectedVariant.allow_backorder
+      ) {
+        return true
+      }
+      return (selectedVariant.inventory_quantity ?? 0) > 0
+    }
+    // Fallback to product stock count for simple products
+    return (product.stock_count || 0) > 0
+  }, [product.stock_count, selectedVariant])
+
+  const buttonLabel =
+    status === "added"
+      ? "Added!"
+      : status === "error"
       ? "Try again"
+      : !inStock
+      ? "Out of stock"
       : hasVariants
-        ? "View Options"
-        : "Add to cart"
+      ? "View Options"
+      : "Add to cart"
 
   const openQuickView = async (event: MouseEvent) => {
     event.preventDefault()
@@ -103,6 +122,8 @@ export default function ProductPreview({
   }
 
   const handleAction = (event: MouseEvent) => {
+    if (!inStock && !hasVariants) return // Do nothing if out of stock and no options to view
+
     if (hasVariants) {
       openQuickView(event)
       return
@@ -113,6 +134,8 @@ export default function ProductPreview({
   const handleAddToCart = (event: MouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
+
+    if (!inStock) return
 
     const startTime = performance.now()
     console.log(`[Product Card Add] Starting for ${product.name}...`)
@@ -130,7 +153,11 @@ export default function ProductPreview({
         })
 
         const endTime = performance.now()
-        console.log(`[Product Card Add] Completed in ${(endTime - startTime).toFixed(2)}ms`)
+        console.log(
+          `[Product Card Add] Completed in ${(endTime - startTime).toFixed(
+            2
+          )}ms`
+        )
 
         setTimeout(() => setStatus("idle"), 2000)
       } catch (error) {
@@ -151,7 +178,13 @@ export default function ProductPreview({
           <div className={imageWrapperClassName}>
             <Thumbnail
               thumbnail={product.thumbnail || product.image_url}
-              images={product.images ? product.images.map(img => ({ url: getImageUrl(img) || '' })) : []}
+              images={
+                product.images
+                  ? product.images.map((img) => ({
+                      url: getImageUrl(img) || "",
+                    }))
+                  : []
+              }
               size="full"
               isFeatured={isFeatured}
               className="h-full w-full rounded-2xl border-none bg-transparent p-0 shadow-none object-cover transition-transform duration-500 group-hover:scale-[1.04]"
@@ -178,13 +211,25 @@ export default function ProductPreview({
                 <button
                   type="button"
                   onClick={handleAction}
-                  disabled={isPending}
-                  className="rounded-full bg-white/90 p-2 text-ui-fg-muted transition hover:text-ui-fg-base w-12 h-12 flex justify-center items-center shadow-sm disabled:cursor-not-allowed"
+                  disabled={isPending || (!inStock && !hasVariants)}
+                  className={cn(
+                    "rounded-full p-2 transition w-12 h-12 flex justify-center items-center shadow-sm",
+                    !inStock && !hasVariants
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-white/90 text-ui-fg-muted hover:text-ui-fg-base"
+                  )}
                 >
                   {isPending ? (
                     <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
                   ) : (
-                    <ShoppingBag className="w-6 h-6 text-slate-900" />
+                    <ShoppingBag
+                      className={cn(
+                        "w-6 h-6",
+                        !inStock && !hasVariants
+                          ? "text-slate-300"
+                          : "text-slate-900"
+                      )}
+                    />
                   )}
                 </button>
               </div>
@@ -198,8 +243,13 @@ export default function ProductPreview({
                 <button
                   type="button"
                   onClick={handleAction}
-                  className="w-full bg-white text-slate-900 rounded-full py-3 text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all"
-                  disabled={isPending}
+                  className={cn(
+                    "w-full rounded-full py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all",
+                    !inStock && !hasVariants
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-white text-slate-900 hover:bg-primary hover:text-white"
+                  )}
+                  disabled={isPending || (!inStock && !hasVariants)}
                 >
                   {isPending ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
