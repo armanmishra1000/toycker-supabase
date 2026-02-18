@@ -1010,27 +1010,29 @@ export async function handlePostOrderLogic(
       revalidateTag("customers", "max")
     }
 
-    // 3. Update order metadata (rewards will be credited at delivery by admin)
+    // 3. Update order metadata
+    const metadataUpdate: any = {
+      ...(order.metadata || {}),
+      rewards_used: rewards_discount,
+    }
+
     if (activated) {
+      metadataUpdate.newly_activated_club_member = true
+      metadataUpdate.club_discount_percentage = settings.discount_percentage
+    }
+
+    if (cart.club_savings && cart.club_savings > 0) {
+      metadataUpdate.club_savings_amount = cart.club_savings
+      metadataUpdate.club_savings = cart.club_savings
+      metadataUpdate.is_club_member = true
+    }
+
+    // Always update metadata if we have something new to add
+    if (activated || rewards_discount > 0 || (cart.club_savings && cart.club_savings > 0)) {
       await supabase
         .from("orders")
         .update({
-          metadata: {
-            ...(order.metadata || {}),
-            newly_activated_club_member: true,
-            club_discount_percentage: settings.discount_percentage,
-            rewards_used: rewards_discount,
-          },
-        })
-        .eq("id", order.id)
-    } else if (rewards_discount > 0) {
-      await supabase
-        .from("orders")
-        .update({
-          metadata: {
-            ...(order.metadata || {}),
-            rewards_used: rewards_discount,
-          },
+          metadata: metadataUpdate,
         })
         .eq("id", order.id)
     }

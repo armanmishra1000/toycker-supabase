@@ -86,6 +86,15 @@ export async function cancelUserOrder(orderId: string) {
 
   if (updateError) throw new Error(updateError.message)
 
+  // Deduct Club Membership savings if any
+  try {
+    const { deductClubSavingsFromOrder } = await import("@lib/data/club")
+    await deductClubSavingsFromOrder(orderId)
+  } catch (savingsError) {
+    console.error("Failed to deduct club savings on cancellation:", savingsError)
+    // Non-blocking error for the user, but should be logged
+  }
+
   await logOrderEvent(
     orderId,
     "cancelled",
