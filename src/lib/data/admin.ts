@@ -1763,6 +1763,16 @@ export async function updateOrderStatus(id: string, status: string) {
   const { error } = await supabase.from("orders").update(updates).eq("id", id)
   if (error) throw error
 
+  // Deduct Club Membership savings if cancelled
+  if (status === "cancelled") {
+    try {
+      const { deductClubSavingsFromOrder } = await import("@lib/data/club")
+      await deductClubSavingsFromOrder(id)
+    } catch (savingsError) {
+      console.error("Failed to deduct club savings on admin cancellation:", savingsError)
+    }
+  }
+
   // Log to timeline
   await logOrderEvent(
     id,
@@ -2568,7 +2578,8 @@ export async function cancelOrder(orderId: string) {
       "Cannot cancel an order that has already shipped or delivered."
     )
 
-  const { error } = await supabase
+  const adminSupabase = await createAdminClient()
+  const { error } = await adminSupabase
     .from("orders")
     .update({
       status: "cancelled",
@@ -2578,7 +2589,19 @@ export async function cancelOrder(orderId: string) {
     })
     .eq("id", orderId)
 
-  if (error) throw error
+  if (error) {
+    console.error(`[ADMIN] Order update failed for ${orderId}:`, error)
+    throw error
+  }
+
+  // Deduct Club Membership savings if any
+  try {
+    const { deductClubSavingsFromOrder } = await import("@lib/data/club")
+    await deductClubSavingsFromOrder(orderId)
+  } catch (savingsError) {
+    console.error(`[ADMIN] Failed to deduct club savings on admin cancellation for ${orderId}:`, savingsError)
+    // Log error but don't block the cancellation flow UI
+  }
 
   await logOrderEvent(
     orderId,

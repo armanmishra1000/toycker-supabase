@@ -10,7 +10,11 @@ interface AdminSearchInputProps {
   placeholder?: string
 }
 
-export function AdminSearchInput({ defaultValue, basePath, placeholder = "Search by name or handle..." }: AdminSearchInputProps) {
+export function AdminSearchInput({
+  defaultValue,
+  basePath,
+  placeholder = "Search by name or handle...",
+}: AdminSearchInputProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [value, setValue] = useState(defaultValue)
@@ -29,27 +33,31 @@ export function AdminSearchInput({ defaultValue, basePath, placeholder = "Search
 
   // Debounced search - triggers 500ms after typing stops
   useEffect(() => {
+    // Skip if the value matches the current search param (prevents redirect on mount)
+    const currentSearch = searchParams.get("search") || ""
+    if (value.trim() === currentSearch.trim()) {
+      return
+    }
+
     const timer = setTimeout(() => {
-      const params = new URLSearchParams()
+      const params = new URLSearchParams(searchParams.toString())
 
-      // Copy static params (like status) that were set when component mounted
-      if (staticParamsRef.current) {
-        for (const [key, val] of Object.entries(staticParamsRef.current)) {
-          params.set(key, val)
-        }
-      }
-
-      // Set the new search value (or don't set it if empty)
+      // Set the new search value (or delete if empty)
       if (value.trim()) {
         params.set("search", value.trim())
+      } else {
+        params.delete("search")
       }
+
+      // Always reset to page 1 when search changes
+      params.delete("page")
 
       const queryString = params.toString()
       router.push(queryString ? `${basePath}?${queryString}` : basePath)
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [value, basePath, router])
+  }, [value, basePath, router, searchParams])
 
   // Sync input value when defaultValue changes (e.g., when navigating with URL params)
   useEffect(() => {

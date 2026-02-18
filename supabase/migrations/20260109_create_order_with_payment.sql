@@ -30,6 +30,7 @@ DECLARE
   v_shipping_methods JSONB;
   v_payment_collection JSONB;
   v_items_json JSONB;
+  v_club_savings NUMERIC := 0;
 BEGIN
   -- 1. Get cart basics, user info and payment data
   SELECT 
@@ -72,6 +73,8 @@ BEGIN
         'variant_id', ci.variant_id,
         'title', COALESCE(pv.title, p.name, 'Product'),
         'quantity', ci.quantity,
+        'original_total', ROUND(COALESCE(pv.price, p.price, 0) * ci.quantity),
+        'original_unit_price', ROUND(COALESCE(pv.price, p.price, 0)),
         'unit_price', ROUND(COALESCE(pv.price, p.price, 0) * (1 - v_club_discount_percentage / 100)),
         'total', ROUND(COALESCE(pv.price, p.price, 0) * (1 - v_club_discount_percentage / 100)) * ci.quantity,
         'metadata', ci.metadata,
@@ -79,10 +82,12 @@ BEGIN
         'created_at', ci.created_at
       )
     ),
-    SUM(ROUND(COALESCE(pv.price, p.price, 0) * (1 - v_club_discount_percentage / 100)) * ci.quantity)
+    SUM(ROUND(COALESCE(pv.price, p.price, 0) * (1 - v_club_discount_percentage / 100)) * ci.quantity),
+    SUM(ROUND(COALESCE(pv.price, p.price, 0) * ci.quantity)) - SUM(ROUND(COALESCE(pv.price, p.price, 0) * (1 - v_club_discount_percentage / 100)) * ci.quantity)
   INTO 
     v_items_json,
-    v_item_subtotal
+    v_item_subtotal,
+    v_club_savings
   FROM cart_items ci
   JOIN products p ON ci.product_id = p.id
   LEFT JOIN product_variants pv ON ci.variant_id = pv.id
@@ -151,7 +156,14 @@ BEGIN
     v_payment_collection,
     v_items_json,
     v_shipping_methods,
-    jsonb_build_object('cart_id', p_cart_id, 'rewards_used', p_rewards_to_apply),
+    jsonb_build_object(
+      'cart_id', p_cart_id, 
+      'rewards_used', p_rewards_to_apply, 
+      'club_savings_amount', v_club_savings,
+      'club_savings', v_club_savings,
+      'is_club_member', v_is_club_member,
+      'club_discount_percentage', v_club_discount_percentage
+    ),
     'pending',
     'pending',
     'not_shipped',
