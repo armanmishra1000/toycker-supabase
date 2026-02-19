@@ -34,11 +34,11 @@ export function Analytics() {
             {hasGTM && <GoogleTagManager gtmId={gtmId} />}
 
             {/* Contentsquare - for heatmaps and session recordings */}
-            {/* Using beforeInteractive ensures script is in initial server-rendered HTML */}
+            {/* Using afterInteractive for performance; verification will work because ID is now correct */}
             {hasContentsquare && (
                 <Script
                     src={`https://t.contentsquare.net/uxa/${contentsquareId}.js`}
-                    strategy="beforeInteractive"
+                    strategy="afterInteractive"
                 />
             )}
         </>
