@@ -26,6 +26,7 @@ import {
   shopMenuPromo as defaultShopMenuPromo,
   shopMenuSections as defaultShopMenuSections,
 } from "@modules/layout/config/navigation"
+import { PRIMARY_CONTACT_DISPLAY } from "@modules/contact/contact.constants"
 
 interface ContactInfoProps {
   phone?: string
@@ -33,7 +34,7 @@ interface ContactInfoProps {
 }
 
 const ContactInfo = ({
-  phone = "+91 9925819694",
+  phone = PRIMARY_CONTACT_DISPLAY,
   showIcon = true
 }: ContactInfoProps) => {
   return (

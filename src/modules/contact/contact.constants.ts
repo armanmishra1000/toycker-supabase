@@ -8,6 +8,12 @@ export type ContactHours = {
   sunday: string
 }
 
+export const PRIMARY_CONTACT_NUMBER = "9925819695"
+export const PRIMARY_CONTACT_COUNTRY_CODE = "91"
+export const PRIMARY_CONTACT_DISPLAY = `+${PRIMARY_CONTACT_COUNTRY_CODE} ${PRIMARY_CONTACT_NUMBER}`
+export const PRIMARY_CONTACT_E164 = `+${PRIMARY_CONTACT_COUNTRY_CODE}${PRIMARY_CONTACT_NUMBER}`
+export const PRIMARY_CONTACT_WHATSAPP = `${PRIMARY_CONTACT_COUNTRY_CODE}${PRIMARY_CONTACT_NUMBER}`
+
 export const contactReasons: ContactReason[] = [
   { id: "product", label: "Product inquiries" },
   { id: "tracking", label: "Order tracking" },
@@ -19,8 +25,8 @@ export const contactReasons: ContactReason[] = [
 
 export const contactInfo = {
   phone: {
-    display: "+91 9925819694",
-    href: "tel:+919925819694",
+    display: PRIMARY_CONTACT_DISPLAY,
+    href: `tel:${PRIMARY_CONTACT_E164}`,
   },
   email: {
     display: "customercare@toycker.com",
@@ -58,8 +64,8 @@ export const contactLocations: ContactLocation[] = [
       "Mota Varachha, Surat, Gujarat 394101",
     ],
     phone: {
-      display: "+91 9925819694",
-      href: "tel:919925819694",
+      display: PRIMARY_CONTACT_DISPLAY,
+      href: `tel:${PRIMARY_CONTACT_E164}`,
     },
     mapQuery: "Toycker Head Office Varachha Surat",
     virtualTourUrl: "https://maps.google.com/?q=Toycker+Head+Office+Varachha+Surat",

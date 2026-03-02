@@ -3,13 +3,14 @@
 import React from "react"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { PRIMARY_CONTACT_WHATSAPP } from "@modules/contact/contact.constants"
 
 function clx(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
 const WhatsAppButton = () => {
-    const phoneNumber = "919925819694"
+    const phoneNumber = PRIMARY_CONTACT_WHATSAPP
     const message = "Hello Toycker, I have a question about your products!"
     const encodedMessage = encodeURIComponent(message)
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`

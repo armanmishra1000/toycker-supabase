@@ -4,12 +4,13 @@ import React, { useState } from "react"
 import { MessageCircle, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@lib/util/cn"
 import { useChatbot } from "@modules/chatbot/context/chatbot-context"
+import { PRIMARY_CONTACT_WHATSAPP } from "@modules/contact/contact.constants"
 
 const ContactHub = () => {
     const [isExpanded, setIsExpanded] = useState(false)
     const { toggle, state } = useChatbot()
 
-    const phoneNumber = "919925819694"
+    const phoneNumber = PRIMARY_CONTACT_WHATSAPP
     const message = "Hello Toycker, I have a question about your products!"
     const encodedMessage = encodeURIComponent(message)
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`

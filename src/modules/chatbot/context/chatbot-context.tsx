@@ -28,6 +28,7 @@ import {
     chatbotLogin,
     ChatbotUserInfo
 } from '../actions'
+import { PRIMARY_CONTACT_DISPLAY } from "@modules/contact/contact.constants"
 
 // Local storage key for persisting messages
 const STORAGE_KEY = 'toycker_chatbot_messages'
@@ -591,7 +592,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
 
             case 'contact_call':
                 addBotMessage(
-                    "📞 **Call Us**\n\n**Main Office:** +91 9925819694\n**Branch 2:** +91 90991 44170\n\n**Hours:**\nMonday – Saturday: 10:00 AM – 10:00 PM\nSunday: Closed",
+                    `📞 **Call Us**\n\n**Main Office:** ${PRIMARY_CONTACT_DISPLAY}\n**Branch 2:** +91 90991 44170\n\n**Hours:**\nMonday – Saturday: 10:00 AM – 10:00 PM\nSunday: Closed`,
                     [BACK_TO_MENU]
                 )
                 break
@@ -605,7 +606,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
 
             case 'contact_locations':
                 addBotMessage(
-                    "📍 **Store Locations**\n\n**HEAD OFFICE - VARACHHA**\nshed no-7/8, sardar campus, opp. River Kent,\nMota Varachha, Surat, Gujarat 394101\n📞 +91 9925819694\n\n**BRANCH 2 - ADAJAN**\nGujarat Gas circle, krishna Nagar Society,\nPremjinagar Society-1, Gita Nagar,\nAdajan, Surat\n📞 +91 90991 44170",
+                    `📍 **Store Locations**\n\n**HEAD OFFICE - VARACHHA**\nshed no-7/8, sardar campus, opp. River Kent,\nMota Varachha, Surat, Gujarat 394101\n📞 ${PRIMARY_CONTACT_DISPLAY}\n\n**BRANCH 2 - ADAJAN**\nGujarat Gas circle, krishna Nagar Society,\nPremjinagar Society-1, Gita Nagar,\nAdajan, Surat\n📞 +91 90991 44170`,
                     [BACK_TO_MENU]
                 )
                 break

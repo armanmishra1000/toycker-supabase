@@ -1,3 +1,8 @@
+import {
+  PRIMARY_CONTACT_DISPLAY,
+  PRIMARY_CONTACT_E164,
+} from "@modules/contact/contact.constants"
+
 export type FooterContactType = "address" | "phone" | "email" | "fax"
 
 export interface FooterContactItem {
@@ -45,9 +50,9 @@ export const footerContactItems: FooterContactItem[] = [
   },
   {
     id: "phone",
-    label: "+91 9925819694",
-    value: "+91 9925819694",
-    href: "tel:9925819694",
+    label: PRIMARY_CONTACT_DISPLAY,
+    value: PRIMARY_CONTACT_DISPLAY,
+    href: `tel:${PRIMARY_CONTACT_E164}`,
     type: "phone",
   },
   {
