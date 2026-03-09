@@ -74,8 +74,8 @@ const ImageGallery = ({ images, variant = "default" }: ImageGalleryProps) => {
     ? "relative flex-1 overflow-hidden rounded-xl"
     : "relative overflow-hidden"
   const mainImageClassName = variant === "default"
-    ? "relative aspect-[4/4.4] w-full overflow-hidden rounded-xl bg-white"
-    : "relative aspect-[4/4.4] w-full overflow-hidden bg-white md:aspect-square"
+    ? "relative aspect-square w-full overflow-hidden rounded-xl bg-white"
+    : "relative aspect-square w-full overflow-hidden bg-white"
 
   const handleZoom = () => {
     if (!currentImage?.url) return
