@@ -137,6 +137,45 @@ async function findUniqueProfile(
   }
 }
 
+async function syncAuthUserPhone(
+  adminClient: Awaited<ReturnType<typeof createAdminClient>>,
+  userId: string,
+  normalizedPhone: string,
+  emailPatch?: { email: string; email_confirm: true }
+): Promise<boolean> {
+  const { data: existingUserData, error: existingUserError } =
+    await adminClient.auth.admin.getUserById(userId)
+
+  if (existingUserError) {
+    console.warn("Failed to load existing auth user before phone sync:", existingUserError)
+  }
+
+  const existingUserMetadata =
+    existingUserData.user?.user_metadata &&
+    typeof existingUserData.user.user_metadata === "object" &&
+    !Array.isArray(existingUserData.user.user_metadata)
+      ? (existingUserData.user.user_metadata as Record<string, unknown>)
+      : {}
+
+  const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
+    ...emailPatch,
+    phone: normalizedPhone,
+    phone_confirm: true,
+    user_metadata: {
+      ...existingUserMetadata,
+      phone: normalizedPhone,
+      phone_number: normalizedPhone,
+    },
+  })
+
+  if (updateError) {
+    console.error("Failed to sync auth user phone during OTP verification:", updateError)
+    return false
+  }
+
+  return true
+}
+
 export async function sendOtp(
   _currentState: unknown,
   formData: FormData
@@ -356,11 +395,16 @@ export async function verifyOtp(
     loginEmail = profileByPhone.row.email || syntheticEmail
     isAdmin = profileByPhone.row.role === "admin"
 
-    await adminClient.auth.admin.updateUserById(userId, {
-      ...(profileByPhone.row.email ? {} : { email: syntheticEmail, email_confirm: true }),
-      phone: normalizedPhone,
-      phone_confirm: true,
-    })
+    const authUserSynced = await syncAuthUserPhone(
+      adminClient,
+      userId,
+      normalizedPhone,
+      profileByPhone.row.email ? undefined : { email: syntheticEmail, email_confirm: true }
+    )
+
+    if (!authUserSynced) {
+      return { success: false, error: "Failed to verify your account. Please try again." }
+    }
   } else {
     const profileByEmail = await findUniqueProfile(adminClient, "email", syntheticEmail)
 
@@ -384,18 +428,23 @@ export async function verifyOtp(
       loginEmail = profileByEmail.row.email || syntheticEmail
       isAdmin = profileByEmail.row.role === "admin"
 
-      await adminClient.auth.admin.updateUserById(userId, {
-        ...(profileByEmail.row.email ? {} : { email: syntheticEmail, email_confirm: true }),
-        phone: normalizedPhone,
-        phone_confirm: true,
-      })
+      const authUserSynced = await syncAuthUserPhone(
+        adminClient,
+        userId,
+        normalizedPhone,
+        profileByEmail.row.email ? undefined : { email: syntheticEmail, email_confirm: true }
+      )
+
+      if (!authUserSynced) {
+        return { success: false, error: "Failed to verify your account. Please try again." }
+      }
     } else {
       const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
         email: syntheticEmail,
         phone: normalizedPhone,
         phone_confirm: true,
         email_confirm: true,
-        user_metadata: { phone: normalizedPhone },
+        user_metadata: { phone: normalizedPhone, phone_number: normalizedPhone },
       })
 
       if (createError || !newUser.user) {
