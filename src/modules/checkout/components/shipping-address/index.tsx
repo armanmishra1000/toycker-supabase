@@ -1,11 +1,61 @@
 import Checkbox from "@modules/common/components/checkbox"
 import Input from "@modules/common/components/input"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useDebounce } from "@lib/hooks/use-debounce"
 import AddressSelect from "../address-select"
 import CountrySelect from "../country-select"
 import { useCheckout } from "../../context/checkout-context"
 import { getCustomerFacingEmail } from "@/lib/util/customer-email"
+import { getCheckoutPhoneValue } from "@/lib/util/customer-phone"
+import { Address, Cart, CustomerProfile } from "@/lib/supabase/types"
+
+type ShippingFormData = {
+  "shipping_address.first_name": string
+  "shipping_address.last_name": string
+  "shipping_address.address_1": string
+  "shipping_address.company": string
+  "shipping_address.postal_code": string
+  "shipping_address.city": string
+  "shipping_address.country_code": string
+  "shipping_address.province": string
+  "shipping_address.phone": string
+  email: string
+}
+
+type ComparableAddress = Pick<
+  Address,
+  | "first_name"
+  | "last_name"
+  | "address_1"
+  | "company"
+  | "postal_code"
+  | "city"
+  | "country_code"
+  | "province"
+  | "phone"
+>
+
+function buildFormData(
+  cart: Cart | null,
+  customerPhone: string,
+  customerEmail: string
+): ShippingFormData {
+  return {
+    "shipping_address.first_name": cart?.shipping_address?.first_name || "",
+    "shipping_address.last_name": cart?.shipping_address?.last_name || "",
+    "shipping_address.address_1": cart?.shipping_address?.address_1 || "",
+    "shipping_address.company": cart?.shipping_address?.company || "",
+    "shipping_address.postal_code": cart?.shipping_address?.postal_code || "",
+    "shipping_address.city": cart?.shipping_address?.city || "",
+    "shipping_address.country_code": cart?.shipping_address?.country_code || "in",
+    "shipping_address.province": cart?.shipping_address?.province || "",
+    "shipping_address.phone": getCheckoutPhoneValue(
+      cart?.shipping_address?.phone,
+      customerPhone
+    ),
+    email: customerEmail,
+  }
+}
 
 const ShippingAddress = ({
   customer,
@@ -13,27 +63,19 @@ const ShippingAddress = ({
   checked,
   onChange,
 }: {
-  customer: any
-  cart: any
+  customer: CustomerProfile | null
+  cart: Cart | null
   checked: boolean
   onChange: () => void
 }) => {
   const { setEmail, setShippingAddress } = useCheckout()
   const customerFacingCartEmail = getCustomerFacingEmail(cart?.email)
+  const customerPhone = getCheckoutPhoneValue(customer?.phone)
+  const resolvedCheckoutEmail = customerFacingCartEmail || customer?.email || ""
 
-  const [formData, setFormData] = useState<Record<string, string>>({
-    "shipping_address.first_name": cart?.shipping_address?.first_name || "",
-    "shipping_address.last_name": cart?.shipping_address?.last_name || "",
-    "shipping_address.address_1": cart?.shipping_address?.address_1 || "",
-    "shipping_address.company": cart?.shipping_address?.company || "",
-    "shipping_address.postal_code": cart?.shipping_address?.postal_code || "",
-    "shipping_address.city": cart?.shipping_address?.city || "",
-    "shipping_address.country_code":
-      cart?.shipping_address?.country_code || "in", // Fixed to 'in' by default
-    "shipping_address.province": cart?.shipping_address?.province || "",
-    "shipping_address.phone": cart?.shipping_address?.phone || "",
-    email: customerFacingCartEmail || "",
-  })
+  const [formData, setFormData] = useState<ShippingFormData>(() =>
+    buildFormData(cart, customerPhone, resolvedCheckoutEmail)
+  )
 
   // Removed local state: const [saveAddress, setSaveAddress] = useState(true)
   const {
@@ -73,7 +115,7 @@ const ShippingAddress = ({
   }, [debouncedPincode])
 
   const countriesInRegion = useMemo(
-    () => cart?.region?.countries?.map((c: any) => c.iso_2),
+    () => cart?.region?.countries?.map((country) => country.iso_2),
     [cart?.region]
   )
 
@@ -81,46 +123,57 @@ const ShippingAddress = ({
   const addressesInRegion = useMemo(
     () =>
       customer?.addresses.filter(
-        (a: any) =>
-          a.country_code &&
-          (countriesInRegion?.includes(a.country_code) ||
-            a.country_code === "in")
+        (address) =>
+          Boolean(address.country_code) &&
+          (countriesInRegion?.includes(address.country_code!) ||
+            address.country_code === "in")
       ),
     [customer?.addresses, countriesInRegion]
   )
 
-  const setFormAddress = (address?: any, email?: string) => {
-    address &&
-      setFormData((prevState: Record<string, string>) => ({
-        ...prevState,
-        "shipping_address.first_name": address?.first_name || "",
-        "shipping_address.last_name": address?.last_name || "",
-        "shipping_address.address_1": address?.address_1 || "",
-        "shipping_address.company": address?.company || "",
-        "shipping_address.postal_code": address?.postal_code || "",
-        "shipping_address.city": address?.city || "",
-        "shipping_address.country_code": address?.country_code || "in",
-        "shipping_address.province": address?.province || "",
-        "shipping_address.phone": address?.phone || "",
-      }))
+  const setFormAddress = useCallback(
+    (address?: Address, email?: string) => {
+      if (address) {
+        setFormData((prevState) => ({
+          ...prevState,
+          "shipping_address.first_name": address.first_name || "",
+          "shipping_address.last_name": address.last_name || "",
+          "shipping_address.address_1": address.address_1 || "",
+          "shipping_address.company": address.company || "",
+          "shipping_address.postal_code": address.postal_code || "",
+          "shipping_address.city": address.city || "",
+          "shipping_address.country_code": address.country_code || "in",
+          "shipping_address.province": address.province || "",
+          "shipping_address.phone": getCheckoutPhoneValue(
+            address.phone,
+            customerPhone
+          ),
+        }))
+      }
 
-    email &&
-      setFormData((prevState: Record<string, string>) => ({
-        ...prevState,
-        email: email,
-      }))
-  }
+      if (email) {
+        setFormData((prevState) => ({
+          ...prevState,
+          email,
+        }))
+      }
+    },
+    [customerPhone]
+  )
 
   useEffect(() => {
-    // Ensure cart is not null and has a shipping_address before setting form data
-    if (cart && cart.shipping_address) {
-      setFormAddress(cart.shipping_address, customerFacingCartEmail || undefined)
+    if (cart?.shipping_address) {
+      setFormAddress(cart.shipping_address, resolvedCheckoutEmail || undefined)
+      return
     }
 
-    if (cart && !customerFacingCartEmail && customer?.email) {
-      setFormAddress(undefined, customer.email)
-    }
-  }, [cart, customer?.email, customerFacingCartEmail])
+    setFormData((prevState) => ({
+      ...prevState,
+      "shipping_address.phone":
+        prevState["shipping_address.phone"] || customerPhone,
+      email: prevState.email || resolvedCheckoutEmail,
+    }))
+  }, [cart?.shipping_address, customerPhone, resolvedCheckoutEmail, setFormAddress])
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -133,7 +186,7 @@ const ShippingAddress = ({
     })
   }
 
-  const addressInput = useMemo<any>(
+  const addressInput = useMemo<ComparableAddress>(
     () => ({
       first_name: formData["shipping_address.first_name"],
       last_name: formData["shipping_address.last_name"],

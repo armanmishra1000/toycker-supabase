@@ -7,13 +7,23 @@ import Radio from "@modules/common/components/radio"
 import compareAddresses from "@lib/util/compare-addresses"
 import { Address } from "@/lib/supabase/types"
 
+type ComparableAddress = Pick<
+  Address,
+  | "first_name"
+  | "last_name"
+  | "address_1"
+  | "company"
+  | "postal_code"
+  | "city"
+  | "country_code"
+  | "province"
+  | "phone"
+>
+
 type AddressSelectProps = {
-  addresses: any[]
-  addressInput: any | null
-  onSelect: (
-    _address: any | undefined,
-    _email?: string
-  ) => void
+  addresses: Address[]
+  addressInput: ComparableAddress | null
+  onSelect: (_address: Address | undefined, _email?: string) => void
 }
 
 const AddressSelect = ({
@@ -24,7 +34,7 @@ const AddressSelect = ({
   const handleSelect = (id: string) => {
     const savedAddress = addresses.find((a) => a.id === id)
     if (savedAddress) {
-      onSelect(savedAddress as Address)
+      onSelect(savedAddress)
     }
   }
 
