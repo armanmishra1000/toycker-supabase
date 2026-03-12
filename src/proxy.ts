@@ -1,6 +1,23 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const DEFAULT_CHECKOUT_RETURN_URL = '/checkout?step=address'
+
+function getCheckoutLoginReturnUrl(request: NextRequest): string {
+  const cartId = request.cookies.get('toycker_cart_id')?.value?.trim()
+
+  if (!cartId) {
+    return DEFAULT_CHECKOUT_RETURN_URL
+  }
+
+  const params = new URLSearchParams({
+    step: 'address',
+    cartId,
+  })
+
+  return `/checkout?${params.toString()}`
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -49,7 +66,7 @@ export async function updateSession(request: NextRequest) {
   // Early redirect for checkout if not authenticated
   if (request.nextUrl.pathname.startsWith('/checkout') && !user) {
     const redirectUrl = new URL('/login', request.url)
-    redirectUrl.searchParams.set('returnUrl', '/checkout?step=address')
+    redirectUrl.searchParams.set('returnUrl', getCheckoutLoginReturnUrl(request))
     return NextResponse.redirect(redirectUrl)
   }
 

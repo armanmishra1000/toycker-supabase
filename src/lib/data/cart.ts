@@ -108,16 +108,11 @@ export async function retrieveCartRaw(cartId?: string): Promise<Cart | null> {
     .maybeSingle()
 
   if (error || !cartData) {
-    // Clear stale cookie if cart doesn't exist or can't be accessed (e.g., guest cart after login)
-    if (!cartId) {
-      await removeCartId()
-    }
     return null
   }
 
   // Security: reject cart if it belongs to a different user
   if (cartData.user_id && user && cartData.user_id !== user.id) {
-    await removeCartId()
     return null
   }
 

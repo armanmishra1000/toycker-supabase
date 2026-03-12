@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { sendAiSensyAuthenticationOtp } from "@/lib/integrations/aisensy"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
+import { cookies as nextCookies } from "next/headers"
 import { ActionResult } from "@/lib/types/action-result"
 
 type SendOtpResult = ActionResult<{ cooldownSeconds: number }>
@@ -13,6 +14,11 @@ type ProfileLookup = {
   id: string
   email: string | null
   role: string | null
+}
+
+type CartOwnershipLookup = {
+  id: string
+  user_id: string | null
 }
 
 const DEFAULT_RESEND_COOLDOWN_SECONDS = 60
@@ -174,6 +180,59 @@ async function syncAuthUserPhone(
   }
 
   return true
+}
+
+async function claimGuestCartForUser(
+  adminClient: Awaited<ReturnType<typeof createAdminClient>>,
+  userId: string,
+  loginEmail: string
+): Promise<void> {
+  const cookieStore = await nextCookies()
+  const cartId = cookieStore.get("toycker_cart_id")?.value?.trim()
+
+  if (!cartId) {
+    return
+  }
+
+  const { data: cartData, error: cartError } = await adminClient
+    .from("carts")
+    .select("id, user_id")
+    .eq("id", cartId)
+    .maybeSingle<CartOwnershipLookup>()
+
+  if (cartError) {
+    console.warn("Failed to load cart during OTP login handoff:", cartError)
+    return
+  }
+
+  if (!cartData) {
+    return
+  }
+
+  if (cartData.user_id === userId) {
+    return
+  }
+
+  if (cartData.user_id && cartData.user_id !== userId) {
+    console.warn(
+      `Skipping cart claim because cart ${cartId} already belongs to a different user.`
+    )
+    return
+  }
+
+  const { error: claimError } = await adminClient
+    .from("carts")
+    .update({
+      user_id: userId,
+      email: loginEmail,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", cartId)
+    .is("user_id", null)
+
+  if (claimError) {
+    console.warn("Failed to claim guest cart during OTP login handoff:", claimError)
+  }
 }
 
 export async function sendOtp(
@@ -484,6 +543,8 @@ export async function verifyOtp(
   if (sessionError) {
     return { success: false, error: "Failed to sign in. Please try again." }
   }
+
+  await claimGuestCartForUser(adminClient, userId, loginEmail)
 
   // Revalidate caches
   revalidatePath("/", "layout")
