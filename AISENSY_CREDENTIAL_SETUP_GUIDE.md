@@ -15,9 +15,9 @@ AISENSY_BASE_URL=https://backend.aisensy.com/campaign/t1/api/v2
 AISENSY_SOURCE=toycker-storefront
 AISENSY_AUTH_TEMPLATE_EXTRA_PAYLOAD_JSON=
 OTP_HASH_SECRET=
-OTP_TTL_SECONDS=300
+OTP_TTL_SECONDS=180
 OTP_RESEND_COOLDOWN_SECONDS=60
-OTP_MAX_ATTEMPTS=5
+OTP_MAX_ATTEMPTS=3
 WHATSAPP_LOGIN_EMAIL_DOMAIN=wa.toycker.store
 ```
 
@@ -47,8 +47,8 @@ WHATSAPP_LOGIN_EMAIL_DOMAIN=wa.toycker.store
 4. Click `+ New`.
 5. Choose the template category as `Authentication`.
 6. Create the OTP template.
-7. Add a sample OTP code.
-8. In the `Copy Code` section, enter the same sample OTP again.
+7. Add a 4-digit sample OTP code like `1234`.
+8. In the `Copy Code` section, enter the same 4-digit sample OTP again.
 9. Submit the template for approval.
 10. Wait until the template is approved.
 
@@ -216,16 +216,16 @@ These are app settings, not AiSensy credentials.
 Recommended values:
 
 ```env
-OTP_TTL_SECONDS=300
+OTP_TTL_SECONDS=180
 OTP_RESEND_COOLDOWN_SECONDS=60
-OTP_MAX_ATTEMPTS=5
+OTP_MAX_ATTEMPTS=3
 ```
 
 Meaning:
 
-- `OTP_TTL_SECONDS=300` -> OTP expires in 5 minutes
+- `OTP_TTL_SECONDS=180` -> OTP expires in 3 minutes
 - `OTP_RESEND_COOLDOWN_SECONDS=60` -> user must wait 60 seconds before requesting another OTP
-- `OTP_MAX_ATTEMPTS=5` -> user gets 5 tries before the OTP is blocked
+- `OTP_MAX_ATTEMPTS=3` -> user gets 3 tries before the OTP is blocked
 
 ## Step 9: Set `WHATSAPP_LOGIN_EMAIL_DOMAIN`
 
@@ -248,9 +248,9 @@ AISENSY_BASE_URL=https://backend.aisensy.com/campaign/t1/api/v2
 AISENSY_SOURCE=toycker-storefront
 AISENSY_AUTH_TEMPLATE_EXTRA_PAYLOAD_JSON={"your":"real-extra-json-from-aisensy-with-{{OTP_CODE}}-placeholders"}
 OTP_HASH_SECRET=your-generated-random-secret
-OTP_TTL_SECONDS=300
+OTP_TTL_SECONDS=180
 OTP_RESEND_COOLDOWN_SECONDS=60
-OTP_MAX_ATTEMPTS=5
+OTP_MAX_ATTEMPTS=3
 WHATSAPP_LOGIN_EMAIL_DOMAIN=wa.toycker.store
 ```
 
@@ -270,4 +270,3 @@ WHATSAPP_LOGIN_EMAIL_DOMAIN=wa.toycker.store
 
 - API reference: https://wiki.aisensy.com/en/articles/11501889-api-reference-docs
 - Authentication template setup: https://wiki.aisensy.com/en/articles/11501833-how-to-create-and-automate-the-authentication-whatsapp-template-messages
-

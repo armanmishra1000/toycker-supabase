@@ -5,6 +5,11 @@ import { useToast } from "@modules/common/context/toast-context"
 import { sendOtp, verifyOtp } from "@lib/data/otp"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
+import {
+  PHONE_LOGIN_OTP_INPUT_PATTERN,
+  PHONE_LOGIN_OTP_LABEL,
+  PHONE_LOGIN_OTP_LENGTH,
+} from "@lib/constants/phone-login-otp"
 
 type Props = {
   next?: string
@@ -144,12 +149,12 @@ const PhoneLogin = ({ next, returnUrl }: Props) => {
         <input type="hidden" name="next" value={next || ""} />
         <div className="flex flex-col w-full gap-y-3">
           <Input
-            label="6-digit OTP"
+            label={PHONE_LOGIN_OTP_LABEL}
             name="code"
             type="text"
             inputMode="numeric"
-            pattern="[0-9]{6}"
-            maxLength={6}
+            pattern={PHONE_LOGIN_OTP_INPUT_PATTERN}
+            maxLength={PHONE_LOGIN_OTP_LENGTH}
             required
             disabled={isVerifying}
             autoComplete="one-time-code"

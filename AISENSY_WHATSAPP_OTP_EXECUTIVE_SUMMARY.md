@@ -268,7 +268,7 @@ Minimum payload shape for this project:
   "destination": "919876543210",
   "userName": "Toycker Customer",
   "source": "toycker-storefront",
-  "templateParams": ["123456"]
+  "templateParams": ["1234"]
 }
 ```
 
@@ -286,9 +286,9 @@ Add:
 - `AISENSY_CAMPAIGN_NAME`
 - `AISENSY_BASE_URL=https://backend.aisensy.com/campaign/t1/api/v2`
 - `AISENSY_SOURCE=toycker-storefront`
-- `OTP_TTL_SECONDS=300`
+- `OTP_TTL_SECONDS=180`
 - `OTP_RESEND_COOLDOWN_SECONDS=60`
-- `OTP_MAX_ATTEMPTS=5`
+- `OTP_MAX_ATTEMPTS=3`
 - `WHATSAPP_LOGIN_EMAIL_DOMAIN=wa.toycker.store`
 
 Remove after migration:

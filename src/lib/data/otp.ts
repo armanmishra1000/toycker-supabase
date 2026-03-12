@@ -9,6 +9,12 @@ import { redirect } from "next/navigation"
 import { cookies as nextCookies } from "next/headers"
 import { ActionResult } from "@/lib/types/action-result"
 import { getCustomerFacingEmail, isSyntheticWhatsAppEmail } from "@/lib/util/customer-email"
+import {
+  PHONE_LOGIN_OTP_DIGITS_REGEX,
+  PHONE_LOGIN_OTP_MAX_EXCLUSIVE,
+  PHONE_LOGIN_OTP_MIN,
+  PHONE_LOGIN_OTP_LENGTH,
+} from "@/lib/constants/phone-login-otp"
 
 type SendOtpResult = ActionResult<{ cooldownSeconds: number }>
 type ProfileLookup = {
@@ -25,8 +31,8 @@ type CartOwnershipLookup = {
 }
 
 const DEFAULT_RESEND_COOLDOWN_SECONDS = 60
-const DEFAULT_OTP_TTL_SECONDS = 300
-const DEFAULT_OTP_MAX_ATTEMPTS = 5
+const DEFAULT_OTP_TTL_SECONDS = 180
+const DEFAULT_OTP_MAX_ATTEMPTS = 3
 const DEFAULT_WHATSAPP_LOGIN_EMAIL_DOMAIN = "wa.toycker.store"
 
 function normalizePhone(phone: string): string {
@@ -71,6 +77,20 @@ function getOtpHashSecret(): string {
   return secret
 }
 
+function getOtpTtlSeconds(): number {
+  return Math.min(
+    getNumericEnv("OTP_TTL_SECONDS", DEFAULT_OTP_TTL_SECONDS),
+    DEFAULT_OTP_TTL_SECONDS
+  )
+}
+
+function getOtpMaxAttempts(): number {
+  return Math.min(
+    getNumericEnv("OTP_MAX_ATTEMPTS", DEFAULT_OTP_MAX_ATTEMPTS),
+    DEFAULT_OTP_MAX_ATTEMPTS
+  )
+}
+
 function getSyntheticEmail(normalizedPhone: string): string {
   const domain =
     process.env.WHATSAPP_LOGIN_EMAIL_DOMAIN?.trim() ||
@@ -84,6 +104,10 @@ function hashOtp(phone: string, code: string): string {
     .createHmac("sha256", getOtpHashSecret())
     .update(`${phone}:${code}`)
     .digest("hex")
+}
+
+function generatePhoneLoginOtp(): string {
+  return crypto.randomInt(PHONE_LOGIN_OTP_MIN, PHONE_LOGIN_OTP_MAX_EXCLUSIVE).toString()
 }
 
 function compareOtpHash(expectedHash: string | null, phone: string, code: string): boolean {
@@ -258,7 +282,7 @@ export async function sendOtp(
     "OTP_RESEND_COOLDOWN_SECONDS",
     DEFAULT_RESEND_COOLDOWN_SECONDS
   )
-  const otpTtlSeconds = getNumericEnv("OTP_TTL_SECONDS", DEFAULT_OTP_TTL_SECONDS)
+  const otpTtlSeconds = getOtpTtlSeconds()
 
   if (!validatePhone(phone)) {
     return { success: false, error: "Enter a valid 10-digit Indian mobile number" }
@@ -293,7 +317,7 @@ export async function sendOtp(
     }
   }
 
-  const code = crypto.randomInt(100000, 999999).toString()
+  const code = generatePhoneLoginOtp()
   const codeHash = hashOtp(normalizedPhone, code)
   const now = new Date().toISOString()
   const expiresAt = new Date(Date.now() + otpTtlSeconds * 1000).toISOString()
@@ -372,15 +396,15 @@ export async function verifyOtp(
 ): Promise<ActionResult> {
   const phone = ((formData.get("phone") as string) || "").trim()
   const code = ((formData.get("code") as string) || "").trim()
-  const maxAttempts = getNumericEnv("OTP_MAX_ATTEMPTS", DEFAULT_OTP_MAX_ATTEMPTS)
+  const maxAttempts = getOtpMaxAttempts()
   const requestedRedirectPath = getRequestedRedirectPath(formData)
 
   if (!validatePhone(phone)) {
     return { success: false, error: "Invalid phone number" }
   }
 
-  if (!/^\d{6}$/.test(code)) {
-    return { success: false, error: "Enter a valid 6-digit code" }
+  if (!PHONE_LOGIN_OTP_DIGITS_REGEX.test(code)) {
+    return { success: false, error: `Enter a valid ${PHONE_LOGIN_OTP_LENGTH}-digit code` }
   }
 
   try {
