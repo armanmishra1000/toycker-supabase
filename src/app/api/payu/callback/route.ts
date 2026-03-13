@@ -1,16 +1,38 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyPayUHash, PayUCallbackPayload } from "@/lib/payu"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { Address, Cart, Order } from "@/lib/supabase/types"
 import { retrieveCart } from "@/lib/data/cart"
+import {
+  currencyAmountsMatch,
+  getOrderPricingMetadata,
+  getPendingPaymentProviderId,
+  OrderPricingMetadata,
+} from "@/lib/util/order-pricing"
+import { getCustomerFacingEmail } from "@/lib/util/customer-email"
 
-// Ensure this runs on Node.js to support crypto
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-/**
- * Returns a standard HTML page that redirects via JavaScript.
- * This satisfies PayU's requirement for a valid "page" response.
- */
+const RECENT_CALLBACKS = new Map<string, number>()
+const THROTTLE_MS = 2000
+const PAYU_PROVIDER_ID = "pp_payu_payu"
+
+type AdminClient = Awaited<ReturnType<typeof createAdminClient>>
+
+type CreateOrderWithPaymentResponse = {
+  success?: boolean
+  order_id?: string
+}
+
+type PayUOrderSnapshot = {
+  email: string
+  shippingAddress: Address
+  billingAddress: Address
+  paymentProviderId: string
+  rewardsToApply: number
+}
+
 function htmlRedirect(path: string) {
   return new NextResponse(
     `<!doctype html><html><head><title>Redirecting...</title><meta charset="utf-8"></head>
@@ -20,16 +42,110 @@ function htmlRedirect(path: string) {
      </body></html>`,
     {
       status: 200,
-      headers: { "Content-Type": "text/html; charset=utf-8" }
+      headers: { "Content-Type": "text/html; charset=utf-8" },
     }
   )
 }
 
-const RECENT_CALLBACKS = new Map<string, number>()
-const THROTTLE_MS = 2000 // 2 seconds
+const normalizeIp = (value: string | null): string =>
+  value?.split(",")[0]?.trim() || "unknown"
+
+const buildPayUOrderSnapshot = (
+  cart: Cart,
+  fallbackEmail: string
+): PayUOrderSnapshot | null => {
+  const shippingAddress = cart.shipping_address
+  const billingAddress = cart.billing_address ?? cart.shipping_address
+
+  if (!shippingAddress || !billingAddress) {
+    return null
+  }
+
+  const rewardsToApplyFromMetadata =
+    typeof cart.metadata?.rewards_to_apply === "number"
+      ? cart.metadata.rewards_to_apply
+      : Number(cart.rewards_to_apply ?? 0)
+
+  return {
+    email:
+      getCustomerFacingEmail(fallbackEmail, cart.email) || "guest@toycker.in",
+    shippingAddress,
+    billingAddress,
+    paymentProviderId:
+      getPendingPaymentProviderId(cart.payment_collection) || PAYU_PROVIDER_ID,
+    rewardsToApply: Number.isFinite(rewardsToApplyFromMetadata)
+      ? rewardsToApplyFromMetadata
+      : 0,
+  }
+}
+
+const fetchLatestOrderForCart = async (
+  supabase: AdminClient,
+  cartId: string
+): Promise<Order | null> => {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .contains("metadata", { cart_id: cartId })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data ? (data as Order) : null
+}
+
+const refreshPendingOrderSnapshot = async (
+  supabase: AdminClient,
+  cartId: string,
+  snapshot: PayUOrderSnapshot
+): Promise<Order> => {
+  const { data, error } = await supabase.rpc("create_order_with_payment", {
+    p_cart_id: cartId,
+    p_email: snapshot.email,
+    p_shipping_address: snapshot.shippingAddress,
+    p_billing_address: snapshot.billingAddress,
+    p_payment_provider: snapshot.paymentProviderId,
+    p_rewards_to_apply: snapshot.rewardsToApply,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const result = data as CreateOrderWithPaymentResponse | null
+  if (!result?.order_id) {
+    throw new Error("create_order_with_payment did not return an order id")
+  }
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", result.order_id)
+    .single()
+
+  if (orderError || !order) {
+    throw new Error(orderError?.message || "Failed to load refreshed order")
+  }
+
+  return order as Order
+}
+
+const mergePayUMetadata = (
+  metadata: unknown,
+  payload: PayUCallbackPayload,
+  paymentMethod: string
+): OrderPricingMetadata => ({
+  ...getOrderPricingMetadata(metadata),
+  payu_payload: payload,
+  payment_method: paymentMethod,
+})
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for") || "unknown"
+  const ip = normalizeIp(request.headers.get("x-forwarded-for"))
   const now = Date.now()
   const lastHit = RECENT_CALLBACKS.get(ip)
 
@@ -39,11 +155,11 @@ export async function POST(request: NextRequest) {
   }
   RECENT_CALLBACKS.set(ip, now)
 
-  // Cleanup map periodically
-  if (RECENT_CALLBACKS.size > 1000) RECENT_CALLBACKS.clear()
+  if (RECENT_CALLBACKS.size > 1000) {
+    RECENT_CALLBACKS.clear()
+  }
 
   try {
-    // PayU sends data as application/x-www-form-urlencoded
     const bodyText = await request.text()
     const params = new URLSearchParams(bodyText)
     const payload = Object.fromEntries(params.entries()) as PayUCallbackPayload
@@ -53,19 +169,18 @@ export async function POST(request: NextRequest) {
         status: payload.status,
         txnid: payload.txnid,
         amount: payload.amount,
-        key: payload.key?.substring(0, 6) + "..."
+        key: payload.key?.substring(0, 6) + "...",
       })
     }
 
-    // 1. Retrieve Salt from Environment
     const salt = process.env.PAYU_MERCHANT_SALT
-
     if (!salt) {
-      console.error("[PAYU] Configuration error: Missing PAYU_MERCHANT_SALT env var")
+      console.error(
+        "[PAYU] Configuration error: Missing PAYU_MERCHANT_SALT env var"
+      )
       return htmlRedirect("/checkout?step=payment&error=configuration_error")
     }
 
-    // 2. Verify Hash integrity
     if (!verifyPayUHash(payload, salt)) {
       console.error("[PAYU] Hash verification failed for txnid:", payload.txnid)
       return htmlRedirect("/checkout?step=payment&error=invalid_hash")
@@ -83,8 +198,6 @@ export async function POST(request: NextRequest) {
 
     if (status === "success") {
       const supabase = await createAdminClient()
-
-      // Use cartId from UDF1 directly
       const cart = await retrieveCart(cartId)
 
       if (!cart) {
@@ -92,132 +205,156 @@ export async function POST(request: NextRequest) {
         return htmlRedirect("/checkout?error=cart_not_found")
       }
 
-      // 3. Update Existing Order or Create New One
-      // We prefer updating the one created by the RPC in completeCheckout
-      let orderIdToUse: string | null = null
-      let finalizedOrderData: any = null
+      const snapshot = buildPayUOrderSnapshot(cart, email)
+      let orderToFinalize = await fetchLatestOrderForCart(supabase, cartId)
 
-      const { data: existingOrder } = await supabase
-        .from("orders")
-        .select("*")
-        .contains("metadata", { cart_id: cartId })
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
+      const shouldRefreshPendingSnapshot =
+        !orderToFinalize ||
+        (orderToFinalize.payment_status !== "captured" &&
+          !orderToFinalize.payment_method)
 
-      if (existingOrder) {
-        console.log("[PAYU] Found existing order, updating:", existingOrder.id)
-        orderIdToUse = existingOrder.id
+      if (shouldRefreshPendingSnapshot) {
+        if (!snapshot) {
+          console.error(
+            "[PAYU] Missing checkout snapshot data for cart:",
+            cartId
+          )
+          return htmlRedirect("/checkout?error=missing_checkout_snapshot")
+        }
+
+        try {
+          orderToFinalize = await refreshPendingOrderSnapshot(
+            supabase,
+            cartId,
+            snapshot
+          )
+        } catch (refreshError) {
+          console.error("[PAYU] Failed to refresh pending order snapshot:", refreshError)
+          return htmlRedirect("/checkout?error=order_snapshot_refresh_failed")
+        }
+      }
+
+      if (!orderToFinalize) {
+        console.error("[PAYU] No order available for cart:", cartId)
+        return htmlRedirect("/checkout?error=order_not_found")
+      }
+
+      const paymentMethod =
+        snapshot?.paymentProviderId ||
+        orderToFinalize.payment_method ||
+        PAYU_PROVIDER_ID
+      const orderAlreadyCaptured = orderToFinalize.payment_status === "captured"
+      const existingMetadata = getOrderPricingMetadata(orderToFinalize.metadata)
+
+      if (
+        !orderAlreadyCaptured &&
+        !currencyAmountsMatch(orderToFinalize.total_amount, amount)
+      ) {
+        const { logOrderEvent } = await import("@/lib/data/admin")
+        await logOrderEvent(
+          orderToFinalize.id,
+          "note_added",
+          "Payment Amount Mismatch",
+          `PayU amount ${amount} did not match stored order total ${orderToFinalize.total_amount}.`,
+          "system"
+        )
+
+        console.error("[PAYU] Amount mismatch:", {
+          orderId: orderToFinalize.id,
+          orderTotal: orderToFinalize.total_amount,
+          callbackAmount: amount,
+        })
+
+        return htmlRedirect("/checkout?step=payment&error=amount_mismatch")
+      }
+
+      const shouldUpdateGatewayDetails =
+        !orderAlreadyCaptured ||
+        !orderToFinalize.payu_txn_id ||
+        !orderToFinalize.payment_method ||
+        !existingMetadata.payu_payload
+
+      let finalizedOrderData = orderToFinalize
+
+      if (shouldUpdateGatewayDetails) {
+        const metadata = mergePayUMetadata(
+          orderToFinalize.metadata,
+          payload,
+          paymentMethod
+        )
 
         const { data: updatedOrder, error: updateError } = await supabase
           .from("orders")
           .update({
             status: "order_placed",
             payment_status: "captured",
-            payu_txn_id: txnid,
-            updated_at: new Date().toISOString()
+            payment_method: paymentMethod,
+            payu_txn_id: orderAlreadyCaptured
+              ? orderToFinalize.payu_txn_id || txnid
+              : txnid,
+            metadata,
+            updated_at: new Date().toISOString(),
           })
-          .eq("id", orderIdToUse)
+          .eq("id", orderToFinalize.id)
           .select()
           .single()
 
-        if (updateError) {
-          console.error("[PAYU] Order update failed:", updateError.message)
+        if (updateError || !updatedOrder) {
+          console.error(
+            "[PAYU] Order update failed:",
+            updateError?.message || "Unknown error"
+          )
           return htmlRedirect("/checkout?error=order_update_failed_payment_success")
         }
-        finalizedOrderData = updatedOrder
-      } else {
-        console.log("[PAYU] No existing order found, creating new one")
-        // Fallback: Create New Order in Database
-        const { data: createdOrder, error } = await supabase
-          .from("orders")
-          .insert({
-            user_id: cart.user_id,
-            customer_email: email || cart.email || "guest@toycker.com",
-            email: email || cart.email || "guest@toycker.com", // Set both
-            total_amount: parseFloat(amount),
-            total: parseFloat(amount), // Set total as well
-            subtotal: cart.subtotal || cart.item_subtotal || parseFloat(amount),
-            tax_total: cart.tax_total || 0,
-            shipping_total: cart.shipping_total || 0,
-            discount_total: cart.discount_total || 0,
-            currency_code: cart.currency_code || "inr",
-            status: "order_placed",
-            payment_status: "captured",
-            fulfillment_status: "not_shipped",
-            payu_txn_id: txnid,
-            shipping_address: cart.shipping_address,
-            billing_address: cart.billing_address || cart.shipping_address,
-            items: JSON.parse(JSON.stringify(cart.items || [])),
-            shipping_methods: JSON.parse(JSON.stringify(cart.shipping_methods || [])),
-            metadata: { cartId, payu_payload: payload, cart_id: cartId }
-          })
-          .select()
-          .single()
 
-        if (error) {
-          console.error("[PAYU] Order creation failed:", error.message)
-          return htmlRedirect("/checkout?error=order_creation_failed_payment_success")
-        }
-        orderIdToUse = createdOrder.id
-        finalizedOrderData = createdOrder
+        finalizedOrderData = updatedOrder as Order
       }
 
-      console.log("[PAYU] Order processed successfully:", orderIdToUse)
+      if (!orderAlreadyCaptured) {
+        const { handlePostOrderLogic } = await import("@lib/data/cart")
+        const { logOrderEvent } = await import("@/lib/data/admin")
+        const finalizedMetadata = getOrderPricingMetadata(
+          finalizedOrderData.metadata
+        )
+        const rewardsToApply = Number(finalizedMetadata.rewards_used ?? 0)
 
-      // 4. Trigger Post-Order Logic (Rewards, Club, etc.)
-      const { handlePostOrderLogic: finalizePostOrder } = await import("@lib/data/cart")
-      const rewardsToApply = (finalizedOrderData?.metadata as any)?.rewards_used || 0
-
-      if (cart && finalizedOrderData) {
-        await finalizePostOrder(finalizedOrderData, cart, rewardsToApply)
+        await handlePostOrderLogic(finalizedOrderData, cart, rewardsToApply)
+        await logOrderEvent(
+          finalizedOrderData.id,
+          "order_placed",
+          "Order Placed",
+          "Order confirmed via PayU payment gateway callback.",
+          "system"
+        )
       }
 
-      // Log "Order Placed" event
-      const { logOrderEvent } = await import("@/lib/data/admin")
-      await logOrderEvent(
-        orderIdToUse!,
-        "order_placed",
-        "Order Placed",
-        "Order confirmed via PayU payment gateway callback.",
-        "system"
-      )
+      console.log("[PAYU] Order processed successfully:", finalizedOrderData.id)
 
-      // Success! Redirect to confirmation
-      const response = htmlRedirect(`/order/confirmed/${orderIdToUse}`)
+      const response = htmlRedirect(`/order/confirmed/${finalizedOrderData.id}`)
       response.cookies.delete("toycker_cart_id")
       return response
     }
 
-    // Handle Failure
     const failureReason = payload.error_Message || "payment_failed"
     console.log("[PAYU] Payment failed:", { status, reason: failureReason })
 
-    // Optional: Update order to failed/cancelled status
     try {
       const supabase = await createAdminClient()
-      const { data: orderToUpdate } = await supabase
-        .from("orders")
-        .select("id")
-        .contains("metadata", { cart_id: cartId })
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
+      const existingOrder = await fetchLatestOrderForCart(supabase, cartId)
 
-      if (orderToUpdate) {
+      if (existingOrder && existingOrder.payment_status !== "captured") {
         await supabase
           .from("orders")
           .update({
             status: "cancelled",
             payment_status: "failed",
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
-          .eq("id", orderToUpdate.id)
+          .eq("id", existingOrder.id)
 
-        // Log "Payment Failed" event
         const { logOrderEvent } = await import("@/lib/data/admin")
         await logOrderEvent(
-          orderToUpdate.id,
+          existingOrder.id,
           "payment_failed",
           "Payment Failed",
           `Payment attempt failed or was cancelled via PayU. Reason: ${failureReason}`,
@@ -228,7 +365,11 @@ export async function POST(request: NextRequest) {
       console.error("[PAYU] Failed to update order status for failure:", updateErr)
     }
 
-    return htmlRedirect(`/checkout?step=payment&error=${encodeURIComponent(failureReason)}&status=${encodeURIComponent(status)}`)
+    return htmlRedirect(
+      `/checkout?step=payment&error=${encodeURIComponent(
+        failureReason
+      )}&status=${encodeURIComponent(status)}`
+    )
   } catch (error) {
     console.error("[PAYU] Callback fatal error:", error)
     return htmlRedirect("/checkout?error=callback_failed")

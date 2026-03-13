@@ -130,6 +130,7 @@ export interface Cart {
   currency_code: string;
   created_at: string;
   updated_at?: string;
+  metadata?: Record<string, unknown> | null;
   items?: CartItem[];
   shipping_address?: Address | null;
   billing_address?: Address | null;
@@ -240,6 +241,7 @@ export interface Order {
   display_id: number;
   customer_email: string;
   email: string;
+  promo_code?: string | null;
   total_amount: number;
   currency_code: string;
   status: 'pending' | 'order_placed' | 'accepted' | 'shipped' | 'delivered' | 'cancelled' | 'failed';
@@ -254,6 +256,7 @@ export interface Order {
   shipping_partner?: ShippingPartner | null;
   tracking_number?: string | null;
   payment_method?: string | null;
+  payment_collection?: PaymentCollection | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;

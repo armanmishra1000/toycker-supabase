@@ -164,4 +164,41 @@ describe('Cart Calculations', () => {
         expect(totals.rewards_discount).toBe(250)
         expect(totals.total).toBe(0)
     })
+
+    it('applies club savings and payment discount together for online checkout', () => {
+        const clubDiscountedItems: CartItem[] = [
+            {
+                id: 'item-1',
+                unit_price: 190,
+                quantity: 1,
+                total: 190,
+                original_unit_price: 200,
+                original_total: 200,
+            } as CartItem,
+            {
+                id: 'item-2',
+                unit_price: 95,
+                quantity: 1,
+                total: 95,
+                original_unit_price: 100,
+                original_total: 100,
+            } as CartItem,
+        ]
+
+        const totals = calculateCartTotals({
+            items: clubDiscountedItems,
+            promotion: null,
+            shippingMethods: null,
+            availableRewards: 0,
+            cartMetadata: {},
+            isClubMember: true,
+            clubDiscountPercentage: 5,
+            paymentDiscountPercentage: 5,
+        })
+
+        expect(totals.item_subtotal).toBe(285)
+        expect(totals.club_savings).toBe(15)
+        expect(totals.payment_discount).toBe(14)
+        expect(totals.total).toBe(271)
+    })
 })
