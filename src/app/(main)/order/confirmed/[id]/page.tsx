@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { retrieveOrder } from "@lib/data/orders"
+import { getCustomerOrderPageMetadata } from "@/lib/util/customer-order-state"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 
 type Props = {
@@ -16,10 +17,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     return notFound()
   }
 
-  return {
-    title: `Order Confirmed #${order.display_id} | Toycker`,
-    description: "Your purchase was successful",
-  }
+  return getCustomerOrderPageMetadata(order)
 }
 
 export default async function OrderConfirmedPage(props: Props) {
@@ -30,5 +28,5 @@ export default async function OrderConfirmedPage(props: Props) {
     return notFound()
   }
 
-  return <OrderCompletedTemplate order={order} />
+  return <OrderCompletedTemplate order={order} context="post_checkout" />
 }

@@ -2,11 +2,11 @@
 
 import { isManual, isStripeLike, isPayU } from "@lib/constants"
 import { Button } from "@modules/common/components/button"
+import ErrorMessage from "@modules/checkout/components/error-message"
+import { useCheckout } from "@modules/checkout/context/checkout-context"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
 import React, { useState } from "react"
-import ErrorMessage from "../error-message"
 import { Cart } from "@/lib/supabase/types"
-import { useCheckout } from "../../context/checkout-context"
 import { completeCheckout } from "@/lib/actions/complete-checkout"
 import { useRouter } from "next/navigation"
 
@@ -254,7 +254,6 @@ const PayUPaymentButton = ({
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { state, isPaymentUpdating } = useCheckout()
-  const router = useRouter()
 
   const handlePayment = async () => {
     setSubmitting(true)
@@ -302,8 +301,8 @@ const PayUPaymentButton = ({
         return
       }
 
-      // Fallback redirect if no payment data (shouldn't happen for PayU)
-      router.push(`/order/confirmed/${result.orderId}`)
+      setErrorMessage("Unable to start PayU payment. Please try again.")
+      setSubmitting(false)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Payment failed")
       setSubmitting(false)

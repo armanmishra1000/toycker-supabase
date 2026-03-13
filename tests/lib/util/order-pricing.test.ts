@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import {
   currencyAmountsMatch,
   getAppliedClubSavings,
@@ -6,7 +7,7 @@ import {
   getOrderPricingMetadata,
   getPendingPaymentProviderId,
   normalizeCurrencyAmount,
-} from "./order-pricing"
+} from "@/lib/util/order-pricing"
 
 describe("order-pricing helpers", () => {
   it("reads the pending payment provider from payment collection data", () => {

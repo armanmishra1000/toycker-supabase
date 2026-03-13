@@ -101,7 +101,7 @@ export const heroContent: HeroContent = {
     href: "/contact",
   },
   image: {
-    src: "/assets/images/about-page.png",
+    src: "/assets/images/about_page.png",
     alt: "Kids laughing while playing with colorful toys",
   },
 }

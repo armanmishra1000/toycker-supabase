@@ -14,5 +14,5 @@ export default async function OrderDetailsPage({ params }: Props) {
         notFound()
     }
 
-    return <OrderCompletedTemplate order={order} />
+    return <OrderCompletedTemplate order={order} context="account" />
 }
