@@ -7,7 +7,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { getAuthUser } from "@/lib/data/auth"
-import { Order } from "@/lib/supabase/types"
+import { retrieveCustomer } from "@/lib/data/customer"
 import { getClubSettings } from "@/lib/data/club"
 import { getRewardWallet } from "@/lib/data/rewards"
 import { revalidatePath, revalidateTag } from "next/cache"
@@ -79,16 +79,21 @@ export async function getChatbotUserInfo(): Promise<ChatbotUserInfo> {
  * Get club settings for chatbot
  */
 export async function getChatbotClubInfo(): Promise<ChatbotClubInfo> {
-    const user = await getAuthUser()
-    const settings = await getClubSettings()
+    const [user, customer, settings] = await Promise.all([
+        getAuthUser(),
+        retrieveCustomer(),
+        getClubSettings(),
+    ])
 
     return {
         isActive: settings.is_active,
         minPurchaseAmount: settings.min_purchase_amount,
         discountPercentage: settings.discount_percentage,
         rewardsPercentage: settings.rewards_percentage,
-        isMember: user?.user_metadata?.is_club_member === true,
-        totalSavings: user?.user_metadata?.total_club_savings || 0
+        isMember:
+            customer?.is_club_member ??
+            (user?.user_metadata?.is_club_member === true),
+        totalSavings: customer?.total_club_savings ?? 0,
     }
 }
 

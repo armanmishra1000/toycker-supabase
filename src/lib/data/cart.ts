@@ -20,6 +20,7 @@ import { getBaseURL } from "@/lib/util/env"
 import { getAuthUser } from "./auth"
 import { getCustomerFacingEmail } from "@/lib/util/customer-email"
 import {
+  getAppliedClubSavings,
   getOrderPricingMetadata,
   OrderPricingMetadata,
 } from "@/lib/util/order-pricing"
@@ -1053,12 +1054,12 @@ export async function handlePostOrderLogic(
 ) {
   const supabase = await getCartClient()
   const orderMetadata = getOrderPricingMetadata(order.metadata)
-  const clubSavings = Number(
-    cart.club_savings ??
-      orderMetadata.club_savings ??
-      orderMetadata.club_savings_amount ??
-      0
-  )
+  const clubSavings = getAppliedClubSavings({
+    metadata: order.metadata,
+    items: order.items,
+    cartClubSavings: cart.club_savings,
+  })
+  const clubSavingsAlreadyCredited = orderMetadata.club_savings_credited === true
 
   // Handle rewards and club functionality for logged-in users
   if (order.user_id) {
@@ -1104,18 +1105,8 @@ export async function handlePostOrderLogic(
       metadataUpdate.is_club_member = true
     }
 
-    // Always update metadata if we have something new to add
-    if (activated || rewards_discount > 0 || clubSavings > 0) {
-      await supabase
-        .from("orders")
-        .update({
-          metadata: metadataUpdate,
-        })
-        .eq("id", order.id)
-    }
-
     // 4. Persist Lifetime Club Savings (fixed: use admin API instead of getAuthUser)
-    if (clubSavings > 0) {
+    if (clubSavings > 0 && !clubSavingsAlreadyCredited) {
       const adminSupabase = await createAdminClient()
       const {
         data: { user },
@@ -1138,7 +1129,25 @@ export async function handlePostOrderLogic(
             total_club_savings: newSavings,
           })
           .eq("id", order.user_id)
+
+        metadataUpdate.club_savings_credited = true
+        revalidateTag("customers", "max")
       }
+    }
+
+    // Always update metadata if we have something new to add
+    if (
+      activated ||
+      rewards_discount > 0 ||
+      clubSavings > 0 ||
+      metadataUpdate.club_savings_credited === true
+    ) {
+      await supabase
+        .from("orders")
+        .update({
+          metadata: metadataUpdate,
+        })
+        .eq("id", order.id)
     }
   }
 

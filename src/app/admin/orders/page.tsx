@@ -39,7 +39,7 @@ function getPaymentBadge(paymentStatus: string, paymentMethod?: string | null, h
       return { variant: "error" as const, label: "COD Cancelled" }
     }
     if (paymentStatus === 'captured' || paymentStatus === 'paid') {
-      return { variant: "success" as const, label: "COD Collected" }
+      return { variant: "success" as const, label: "Paid" }
     }
     return { variant: "warning" as const, label: "COD Pending" }
   }

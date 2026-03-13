@@ -84,13 +84,13 @@ const POLICY_CONTENT: Record<PolicySlug, { title: string; intro: string; section
         heading: "Delays & support",
         body: [
           "Weather, high volume, or logistics disruptions can add time—thank you for your patience if that happens.",
-          `For help, contact ${PRIMARY_CONTACT_DISPLAY} or support@toycker.com (Shed No. 7/8, Sardar Campus, Opp. River Kent, Mota Varachha, Surat, Gujarat, 394101).`,
+          `For help, contact ${PRIMARY_CONTACT_DISPLAY} or support@toycker.com (Plot No.C/4,C/5, Geetanagar Co.Op.Hou.Society, Ring Road, Gujarat Gas Circle, Adajan, Surat, Gujarat, 395009).`,
         ],
       },
       {
         heading: "Contact information",
         body: [
-          "TOYCKER INDIA, Shed No. 7/8, Sardar Campus, Opp. River Kent, Mota Varachha, Surat, Gujarat, 394101",
+          "TOYCKER INDIA, Plot No.C/4,C/5, Geetanagar Co.Op.Hou.Society, Ring Road, Gujarat Gas Circle, Adajan, Surat, Gujarat, 395009",
           `Phone: ${PRIMARY_CONTACT_DISPLAY} | Email: support@toycker.com`,
         ],
       },
@@ -179,7 +179,7 @@ const POLICY_CONTENT: Record<PolicySlug, { title: string; intro: string; section
       {
         heading: "Contact",
         body: [
-          "TOYCKER INDIA, Shed No. 7/8, Sardar Campus, Opp. River Kent, Mota Varachha, Surat, Gujarat, 394101.",
+          "TOYCKER INDIA, Plot No.C/4,C/5, Geetanagar Co.Op.Hou.Society, Ring Road, Gujarat Gas Circle, Adajan, Surat, Gujarat, 395009.",
           `support@toycker.com | ${PRIMARY_CONTACT_DISPLAY}`,
         ],
       },

@@ -4,6 +4,10 @@ import { cache } from 'react'
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { ClubSettings } from "@/lib/supabase/types"
+import {
+    getAppliedClubSavings,
+    getOrderPricingMetadata,
+} from "@/lib/util/order-pricing"
 import { revalidateTag, unstable_cache } from "next/cache"
 
 const getClubSettingsInternal = async (): Promise<ClubSettings> => {
@@ -115,33 +119,16 @@ export async function deductClubSavingsFromOrder(orderId: string) {
     }
 
     // Check if already deducted to avoid double-negative
-    const metadata = (order.metadata || {}) as any
+    const metadata = getOrderPricingMetadata(order.metadata)
     if (metadata.club_savings_deducted) {
         return
     }
 
     // 2. Determine club savings to deduct
-    let savingsToDeduct = 0
-    if (metadata.club_savings_amount !== undefined) {
-        savingsToDeduct = Number(metadata.club_savings_amount)
-    } else if (metadata.club_savings !== undefined) {
-        savingsToDeduct = Number(metadata.club_savings)
-    } else if (metadata.club_discount_amount !== undefined) {
-        savingsToDeduct = Number(metadata.club_discount_amount)
-    } else {
-        console.warn(`[CLUB] No club_savings in metadata for order ${orderId}. Using fallback calculation.`)
-
-        const items = (order.items || []) as any[]
-        let totalSavings = 0
-        items.forEach(item => {
-            const original = item.original_total || item.total || 0
-            const current = item.total || 0
-            if (original > current) {
-                totalSavings += (original - current)
-            }
-        })
-        savingsToDeduct = totalSavings
-    }
+    const savingsToDeduct = getAppliedClubSavings({
+        metadata: order.metadata,
+        items: order.items,
+    })
 
     if (savingsToDeduct <= 0) {
         return

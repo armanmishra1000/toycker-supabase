@@ -35,7 +35,7 @@ const OrderDetails = ({ order }: OrderDetailsProps) => {
 
   const paymentLabel = isCOD
     ? normalizedPaymentStatus === "paid" || normalizedPaymentStatus === "captured"
-      ? "COD Collected"
+      ? "Paid"
       : normalizedPaymentStatus === "cancelled" || normalizedPaymentStatus === "failed"
         ? "COD Cancelled"
         : normalizedPaymentStatus === "refunded"

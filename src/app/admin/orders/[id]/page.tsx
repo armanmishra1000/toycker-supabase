@@ -263,7 +263,7 @@ export default async function AdminOrderDetails({ params }: Props) {
                   <p className="text-xs text-gray-500">
                     {paymentMethod.includes('Cash on Delivery') || paymentMethod.includes('Manual')
                       ? normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'captured'
-                        ? 'COD - Collected'
+                        ? 'Paid'
                         : normalizedPaymentStatus === 'cancelled' || normalizedPaymentStatus === 'failed'
                           ? 'COD - Cancelled'
                           : normalizedPaymentStatus === 'refunded'

@@ -2580,7 +2580,7 @@ export async function markOrderAsDelivered(orderId: string) {
     "delivered",
     "Order Delivered",
     isCod
-      ? "Order delivered. COD marked as collected."
+      ? "Order delivered. Payment marked as paid."
       : "Order has been successfully delivered to the customer.",
     "admin",
     {},
@@ -2707,9 +2707,9 @@ export async function markOrderAsPaid(orderId: string) {
   await logOrderEvent(
     orderId,
     "payment_captured",
-    isCod ? "COD Payment Collected" : "Payment Marked as Paid",
+    "Payment Marked as Paid",
     isCod
-      ? "Cash on Delivery payment collected and marked as paid."
+      ? "Cash on Delivery payment marked as paid."
       : "Payment marked as paid by admin.",
     "admin",
     {
