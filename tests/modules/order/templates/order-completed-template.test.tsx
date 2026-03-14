@@ -5,6 +5,7 @@ import { Order } from "@/lib/supabase/types"
 import OrderCompletedTemplate from "@modules/order/templates/order-completed-template"
 
 const orderDetailsSpy = vi.fn()
+const shippingDetailsSpy = vi.fn()
 
 vi.mock("@modules/common/components/cart-totals", () => ({
   default: () => <div>CartTotals</div>,
@@ -45,7 +46,10 @@ vi.mock("@modules/order/components/order-tracking", () => ({
 }))
 
 vi.mock("@modules/order/components/shipping-details", () => ({
-  default: () => <div>ShippingDetails</div>,
+  default: (props: { order: Order }) => {
+    shippingDetailsSpy(props)
+    return <div>ShippingDetails</div>
+  },
 }))
 
 const buildOrder = (overrides: Partial<Order> = {}): Order => ({
@@ -140,6 +144,34 @@ describe("OrderCompletedTemplate", () => {
       expect.objectContaining({
         order,
         customerPhone: "919876543210",
+      })
+    )
+  })
+
+  it("passes the order shipping snapshot to the shipping details component", async () => {
+    orderDetailsSpy.mockClear()
+    shippingDetailsSpy.mockClear()
+
+    const order = buildOrder({
+      shipping_address: {
+        first_name: "Receiver",
+        last_name: "Updated",
+        address_1: "22 New Lane",
+        address_2: "Floor 2",
+        city: "Surat",
+        country_code: "in",
+        province: "Gujarat",
+        postal_code: "395003",
+        phone: "9898989898",
+        company: "Warehouse",
+      },
+    })
+
+    render(await OrderCompletedTemplate({ order, context: "account" }))
+
+    expect(shippingDetailsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order,
       })
     )
   })

@@ -1,5 +1,10 @@
 import { getAdminOrder, getActiveShippingPartners, getOrderTimeline, getCustomerDisplayId } from "@/lib/data/admin"
+import { getRegion } from "@/lib/data/regions"
 import { formatCustomerDisplayId } from "@/lib/util/customer"
+import {
+  canEditOrderShippingAddress,
+  ORDER_SHIPPING_ADDRESS_LOCK_MESSAGE,
+} from "@/lib/util/order-shipping-address-edit"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ChevronLeftIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, CheckIcon, TruckIcon, CreditCardIcon, GiftIcon } from "@heroicons/react/24/outline"
@@ -10,6 +15,7 @@ import Image from "next/image"
 import FulfillmentModal from "./fulfillment-modal"
 import { MarkAsPaidButton } from "./mark-as-paid-button"
 import { AcceptOrderButton, CancelOrderButton, MarkAsDeliveredButton } from "./order-action-buttons"
+import EditOrderShippingAddressModal from "./edit-order-shipping-address-modal"
 import { formatIST } from "@/lib/util/date"
 import { fixUrl } from "@/lib/util/images"
 import { RealtimeOrderManager } from "@modules/common/components/realtime-order-manager"
@@ -44,11 +50,13 @@ export default async function AdminOrderDetails({ params }: Props) {
   if (!order) notFound()
 
   // Fetch additional data
-  const [shippingPartners, timeline, customerDisplayId] = await Promise.all([
+  const [shippingPartners, timeline, customerDisplayId, region] = await Promise.all([
     getActiveShippingPartners(),
     getOrderTimeline(id).catch(() => []),
-    order.user_id ? getCustomerDisplayId(order.user_id).catch(() => null) : null
+    order.user_id ? getCustomerDisplayId(order.user_id).catch(() => null) : null,
+    getRegion(),
   ])
+  const canEditShippingAddress = canEditOrderShippingAddress(order.status)
 
   const actions = (
     <div className="flex gap-2">
@@ -327,6 +335,25 @@ export default async function AdminOrderDetails({ params }: Props) {
           {/* Shipping Info */}
           <AdminCard title="Shipping">
             <div className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="text-xs font-medium text-gray-500">
+                  {canEditShippingAddress
+                    ? "You can update the delivery address until this order is shipped."
+                    : ORDER_SHIPPING_ADDRESS_LOCK_MESSAGE}
+                </div>
+                {canEditShippingAddress && (
+                  <ProtectedAction
+                    permission={PERMISSIONS.ORDERS_UPDATE}
+                    hideWhenDisabled
+                  >
+                    <EditOrderShippingAddressModal
+                      orderId={order.id}
+                      address={order.shipping_address}
+                      region={region}
+                    />
+                  </ProtectedAction>
+                )}
+              </div>
               {order.shipping_partner_id && order.tracking_number && (
                 <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
                   <div className="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center">

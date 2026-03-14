@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import {
+  Address,
   Product,
   Order,
   CustomerProfile,
@@ -25,6 +26,7 @@ import { requirePermission } from "@/lib/permissions/server"
 import { PERMISSIONS } from "@/lib/permissions"
 import { getCustomerFacingEmail } from "@/lib/util/customer-email"
 import { resolveCustomerPhone } from "@/lib/util/customer-contact-phone"
+import { canEditOrderShippingAddress } from "@/lib/util/order-shipping-address-edit"
 
 type EmailBackedRow = {
   email: string | null
@@ -39,6 +41,37 @@ type CustomerProfileRow = Omit<CustomerProfile, "email"> &
 
 type CustomerPhoneRow = {
   phone: string | null
+}
+
+type OrderAddressActionState = {
+  success: boolean
+  error: string | null
+}
+
+function getTrimmedFormValue(formData: FormData, key: string): string {
+  const value = formData.get(key)
+
+  if (typeof value !== "string") {
+    return ""
+  }
+
+  return value.trim()
+}
+
+function buildOrderShippingAddress(formData: FormData): Address {
+  return {
+    first_name: getTrimmedFormValue(formData, "first_name") || null,
+    last_name: getTrimmedFormValue(formData, "last_name") || null,
+    company: getTrimmedFormValue(formData, "company") || null,
+    address_1: getTrimmedFormValue(formData, "address_1") || null,
+    address_2: getTrimmedFormValue(formData, "address_2") || null,
+    city: getTrimmedFormValue(formData, "city") || null,
+    country_code:
+      getTrimmedFormValue(formData, "country_code").toLowerCase() || null,
+    province: getTrimmedFormValue(formData, "province") || null,
+    postal_code: getTrimmedFormValue(formData, "postal_code") || null,
+    phone: getTrimmedFormValue(formData, "phone") || null,
+  }
 }
 
 export type AdminOrder = Order & {
@@ -2708,6 +2741,99 @@ export async function cancelOrder(orderId: string) {
   revalidatePath("/admin/orders")
 
   return { success: true }
+}
+
+export async function updateOrderShippingAddress(
+  _currentState: OrderAddressActionState,
+  formData: FormData
+): Promise<OrderAddressActionState> {
+  await ensureAdmin()
+  await requirePermission(PERMISSIONS.ORDERS_UPDATE)
+
+  const orderId = getTrimmedFormValue(formData, "orderId")
+
+  if (!orderId) {
+    return { success: false, error: "Order ID is required." }
+  }
+
+  const shippingAddress = buildOrderShippingAddress(formData)
+
+  if (
+    !shippingAddress.first_name ||
+    !shippingAddress.last_name ||
+    !shippingAddress.address_1 ||
+    !shippingAddress.city ||
+    !shippingAddress.postal_code ||
+    !shippingAddress.country_code ||
+    !shippingAddress.phone
+  ) {
+    return {
+      success: false,
+      error: "Fill all required shipping address fields before saving.",
+    }
+  }
+
+  const supabase = await createClient()
+  const actorDisplay = await getAdminActorDisplay()
+  const { data: orderRow, error: fetchError } = await supabase
+    .from("orders")
+    .select("id, status, shipping_address")
+    .eq("id", orderId)
+    .maybeSingle()
+
+  const order = orderRow as
+    | Pick<Order, "id" | "status" | "shipping_address">
+    | null
+
+  if (fetchError || !order) {
+    return {
+      success: false,
+      error: fetchError?.message || "Order not found.",
+    }
+  }
+
+  if (!canEditOrderShippingAddress(order.status)) {
+    return {
+      success: false,
+      error: "Shipping address can only be edited before the order is shipped.",
+    }
+  }
+
+  const adminSupabase = await createAdminClient()
+  const { error: updateError } = await adminSupabase
+    .from("orders")
+    .update({
+      shipping_address: shippingAddress,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", orderId)
+
+  if (updateError) {
+    return {
+      success: false,
+      error: updateError.message,
+    }
+  }
+
+  await logOrderEvent(
+    orderId,
+    "note_added",
+    "Shipping Address Updated",
+    "Admin updated the delivery address before shipment.",
+    "admin",
+    {
+      previous_shipping_address: order.shipping_address,
+      updated_shipping_address: shippingAddress,
+    },
+    actorDisplay
+  )
+
+  revalidatePath(`/admin/orders/${orderId}`)
+  revalidatePath(`/order/confirmed/${orderId}`)
+  revalidatePath(`/account/orders/details/${orderId}`)
+  revalidatePath("/admin/orders")
+
+  return { success: true, error: null }
 }
 
 export async function markOrderAsPaid(orderId: string) {
