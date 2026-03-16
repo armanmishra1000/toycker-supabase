@@ -26,23 +26,31 @@ export const metadata = {
 
 export const revalidate = 30
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   await ensureAdmin()
   const adminUser = await getAdminUser()
 
   // Fetch permissions server-side for initial render (performance optimization)
   const initialPermissions = await getUserPermissions()
 
-  // Generate initials from name or email
-  const getInitials = (firstName: string, lastName: string, email: string) => {
+  // Generate initials from name or contact
+  const getInitials = (
+    firstName: string,
+    lastName: string,
+    contact: string
+  ) => {
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`.toUpperCase()
     }
     if (firstName) {
       return firstName.slice(0, 2).toUpperCase()
     }
-    if (email) {
-      return email.slice(0, 2).toUpperCase()
+    if (contact) {
+      return contact.slice(0, 2).toUpperCase()
     }
     return "AD"
   }
@@ -58,16 +66,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const initials = adminUser
-    ? getInitials(adminUser.firstName, adminUser.lastName, adminUser.email)
+    ? getInitials(adminUser.firstName, adminUser.lastName, adminUser.contact)
     : "AD"
   const displayName = adminUser
     ? getDisplayName(adminUser.firstName, adminUser.lastName)
     : "Admin"
-  const email = adminUser?.email || ""
+  const contact = adminUser?.contact || ""
 
   return (
     <PermissionsProvider initialPermissions={initialPermissions}>
-      <div className={`flex flex-col lg:grid lg:grid-cols-[260px_1fr] min-h-screen bg-gray-50 ${inter.variable} font-inter`}>
+      <div
+        className={`flex flex-col lg:grid lg:grid-cols-[260px_1fr] min-h-screen bg-gray-50 ${inter.variable} font-inter`}
+      >
         {/* Desktop Sidebar - Hidden on mobile, visible on lg+ */}
         <aside className="hidden lg:flex bg-white border-r border-gray-200 flex-col sticky top-0 h-screen overflow-hidden">
           {/* Logo Section */}
@@ -83,15 +93,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 />
               </div>
               <div className="flex flex-col">
-                <span className="font-semibold text-base text-gray-900 leading-tight">Toycker</span>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-wider w-fit mt-1 ${(adminUser?.role || "").toLowerCase().includes("owner")
-                    ? "bg-purple-50 text-purple-600 border-purple-100"
-                    : (adminUser?.role || "").toLowerCase().includes("admin")
+                <span className="font-semibold text-base text-gray-900 leading-tight">
+                  Toycker
+                </span>
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-wider w-fit mt-1 ${
+                    (adminUser?.role || "").toLowerCase().includes("owner")
+                      ? "bg-purple-50 text-purple-600 border-purple-100"
+                      : (adminUser?.role || "").toLowerCase().includes("admin")
                       ? "bg-blue-50 text-blue-600 border-blue-100"
                       : (adminUser?.role || "").toLowerCase().includes("staff")
-                        ? "bg-gray-50 text-gray-500 border-gray-100"
-                        : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                  }`}>
+                      ? "bg-gray-50 text-gray-500 border-gray-100"
+                      : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                  }`}
+                >
                   {adminUser?.role || "Admin"}
                 </span>
               </div>
@@ -141,7 +156,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <AdminMobileMenu />
 
                 {/* Mobile Logo */}
-                <Link href="/admin" className="lg:hidden flex items-center gap-2">
+                <Link
+                  href="/admin"
+                  className="lg:hidden flex items-center gap-2"
+                >
                   <div className="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden">
                     <Image
                       src="/icon-512x512.png"
@@ -152,15 +170,24 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                     />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-semibold text-sm text-gray-900 leading-tight">Toycker</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-wider w-fit mt-0.5 scale-90 origin-left ${(adminUser?.role || "").toLowerCase().includes("owner")
-                        ? "bg-purple-50 text-purple-600 border-purple-100"
-                        : (adminUser?.role || "").toLowerCase().includes("admin")
+                    <span className="font-semibold text-sm text-gray-900 leading-tight">
+                      Toycker
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-wider w-fit mt-0.5 scale-90 origin-left ${
+                        (adminUser?.role || "").toLowerCase().includes("owner")
+                          ? "bg-purple-50 text-purple-600 border-purple-100"
+                          : (adminUser?.role || "")
+                              .toLowerCase()
+                              .includes("admin")
                           ? "bg-blue-50 text-blue-600 border-blue-100"
-                          : (adminUser?.role || "").toLowerCase().includes("staff")
-                            ? "bg-gray-50 text-gray-500 border-gray-100"
-                            : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                      }`}>
+                          : (adminUser?.role || "")
+                              .toLowerCase()
+                              .includes("staff")
+                          ? "bg-gray-50 text-gray-500 border-gray-100"
+                          : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                      }`}
+                    >
                       {adminUser?.role || "Admin"}
                     </span>
                   </div>
@@ -183,8 +210,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                     {initials}
                   </div>
                   <div className="hidden xl:flex flex-col items-start gap-0.5">
-                    <span className="text-sm font-semibold text-gray-900 leading-none">{displayName}</span>
-                    <span className="text-[10px] font-medium text-gray-400">{email}</span>
+                    <span className="text-sm font-semibold text-gray-900 leading-none">
+                      {displayName}
+                    </span>
+                    <span className="text-[10px] font-medium text-gray-400">
+                      {contact}
+                    </span>
                   </div>
                 </button>
               </div>

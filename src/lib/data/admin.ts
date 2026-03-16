@@ -24,16 +24,26 @@ import { revalidatePath, revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { requirePermission } from "@/lib/permissions/server"
 import { PERMISSIONS } from "@/lib/permissions"
-import { getCustomerFacingEmail } from "@/lib/util/customer-email"
+import {
+  getCustomerFacingEmail,
+  isSyntheticWhatsAppEmail,
+} from "@/lib/util/customer-email"
 import { resolveCustomerPhone } from "@/lib/util/customer-contact-phone"
 import { canEditOrderShippingAddress } from "@/lib/util/order-shipping-address-edit"
-import {
-  DEFAULT_MANUAL_PRODUCT_STATUS,
-} from "@/lib/util/product-visibility"
+import { DEFAULT_MANUAL_PRODUCT_STATUS } from "@/lib/util/product-visibility"
 
 type EmailBackedRow = {
   email: string | null
   contact_email?: string | null
+}
+
+type ContactBackedRow = EmailBackedRow & {
+  phone?: string | null
+}
+
+type AdminIdentityRow = ContactBackedRow & {
+  first_name: string | null
+  last_name: string | null
 }
 
 type CustomerProfileRow = Omit<CustomerProfile, "email"> &
@@ -41,6 +51,19 @@ type CustomerProfileRow = Omit<CustomerProfile, "email"> &
     role?: string | null
     is_club_member?: boolean | null
   }
+
+type AdminProfileRow = AdminIdentityRow & {
+  role: string | null
+  admin_role_id: string | null
+  admin_role?: AdminRole[] | AdminRole | null
+}
+
+type StaffMemberRow = AdminIdentityRow & {
+  id: string
+  admin_role_id: string | null
+  admin_role?: AdminRole[] | AdminRole | null
+  created_at: string
+}
 
 type CustomerPhoneRow = {
   phone: string | null
@@ -77,7 +100,9 @@ function buildOrderShippingAddress(formData: FormData): Address {
   }
 }
 
-function revalidateStorefrontProductPaths(handles: Array<string | null | undefined>) {
+function revalidateStorefrontProductPaths(
+  handles: Array<string | null | undefined>
+) {
   const uniqueHandles = Array.from(
     new Set(
       handles.filter((handle): handle is string => Boolean(handle?.trim()))
@@ -112,12 +137,66 @@ export interface RegisteredUserOption {
   display_contact: string
 }
 
+export type PromoteToStaffInput = {
+  userId: string
+  roleId: string
+  firstName: string
+  lastName: string
+  contactEmail: string
+}
+
+const SIMPLE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function resolveEmailBackedValue(row: EmailBackedRow): string {
+  return getCustomerFacingEmail(row.contact_email, row.email) || ""
+}
+
+function resolveContactBackedValue(
+  row: ContactBackedRow,
+  fallback = "No email or phone"
+): string {
+  return resolveEmailBackedValue(row) || row.phone?.trim() || fallback
+}
+
+function resolvePersonName(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
+  fallback = ""
+): string {
+  const name = `${firstName || ""} ${lastName || ""}`.trim()
+  return name || fallback
+}
+
+function normalizeAdminContactEmail(email: string): string {
+  const normalizedEmail = email.trim().toLowerCase()
+
+  if (
+    !SIMPLE_EMAIL_REGEX.test(normalizedEmail) ||
+    isSyntheticWhatsAppEmail(normalizedEmail)
+  ) {
+    throw new Error("Enter a valid public email address for this staff member")
+  }
+
+  return normalizedEmail
+}
+
+function mapStaffMemberRow(row: StaffMemberRow): StaffMember {
+  const resolvedEmail = resolveEmailBackedValue(row)
+
+  return {
+    ...row,
+    email: resolvedEmail,
+    phone: row.phone ?? null,
+    display_contact: resolveContactBackedValue(row),
+  }
+}
+
 function mapEmailBackedRow<T extends EmailBackedRow>(
   row: T
 ): Omit<T, "email"> & { email: string } {
   return {
     ...row,
-    email: getCustomerFacingEmail(row.contact_email, row.email) || "",
+    email: resolveEmailBackedValue(row),
   }
 }
 
@@ -157,10 +236,10 @@ export async function getAdminUser() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "first_name, last_name, email, role, admin_role_id, admin_role:admin_roles(name)"
+      "first_name, last_name, email, contact_email, phone, role, admin_role_id, admin_role:admin_roles(name)"
     )
     .eq("id", user.id)
-    .single()
+    .single<AdminProfileRow>()
 
   let roleName = "Admin"
   if (profile?.admin_role) {
@@ -173,10 +252,32 @@ export async function getAdminUser() {
     roleName = "System Admin"
   }
 
+  const firstName =
+    profile?.first_name ||
+    (user.user_metadata?.first_name as string | undefined) ||
+    ""
+  const lastName =
+    profile?.last_name ||
+    (user.user_metadata?.last_name as string | undefined) ||
+    ""
+  const resolvedEmail = resolveEmailBackedValue({
+    contact_email: profile?.contact_email,
+    email: profile?.email || user.email || null,
+  })
+  const contact = resolveContactBackedValue(
+    {
+      contact_email: profile?.contact_email,
+      email: profile?.email || user.email || null,
+      phone: profile?.phone || user.phone || null,
+    },
+    ""
+  )
+
   return {
-    email: profile?.email || user.email || "",
-    firstName: profile?.first_name || "",
-    lastName: profile?.last_name || "",
+    email: resolvedEmail,
+    contact,
+    firstName,
+    lastName,
     role: roleName,
   }
 }
@@ -336,9 +437,9 @@ export async function getAdminGlobalSearch(
       // Search Customers
       supabase
         .from("profiles")
-        .select("id, first_name, last_name, email")
+        .select("id, first_name, last_name, email, contact_email, phone")
         .or(
-          `first_name.ilike.%${normalizedQuery}%,last_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`
+          `first_name.ilike.%${normalizedQuery}%,last_name.ilike.%${normalizedQuery}%,contact_email.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%,phone.ilike.%${normalizedQuery}%`
         )
         .limit(5),
 
@@ -394,7 +495,7 @@ export async function getAdminGlobalSearch(
       results.push({
         id: c.id,
         title: `${c.first_name || ""} ${c.last_name || ""}`.trim() || "No Name",
-        subtitle: `Customer • ${c.email}`,
+        subtitle: `Customer • ${resolveContactBackedValue(c)}`,
         type: "customer",
         url: `/admin/customers/${c.id}`,
       })
@@ -1924,7 +2025,10 @@ export async function updateOrderStatus(id: string, status: string) {
       const { deductClubSavingsFromOrder } = await import("@lib/data/club")
       await deductClubSavingsFromOrder(id)
     } catch (savingsError) {
-      console.error("Failed to deduct club savings on admin cancellation:", savingsError)
+      console.error(
+        "Failed to deduct club savings on admin cancellation:",
+        savingsError
+      )
     }
   }
 
@@ -2018,7 +2122,9 @@ export async function getAdminCustomers(
   const { data, error } = await query
   if (error) throw error
 
-  const customers = ((data || []) as CustomerProfileRow[]).map(mapEmailBackedRow)
+  const customers = ((data || []) as CustomerProfileRow[]).map(
+    mapEmailBackedRow
+  )
 
   return {
     customers: customers as CustomerProfile[],
@@ -2048,12 +2154,12 @@ export async function getAdminCustomer(id: string) {
     .order("created_at", { ascending: false })
     .range(0, 4)
 
-    const { data: addresses } = await supabase
-      .from("addresses")
-      .select("*")
-      .order("is_default_billing", { ascending: false })
-      .order("is_default_shipping", { ascending: false })
-      .eq("user_id", id)
+  const { data: addresses } = await supabase
+    .from("addresses")
+    .select("*")
+    .order("is_default_billing", { ascending: false })
+    .order("is_default_shipping", { ascending: false })
+    .eq("user_id", id)
   const { data: wallet } = await supabase
     .from("reward_wallets")
     .select("*")
@@ -2519,12 +2625,21 @@ async function getAdminActorDisplay(): Promise<string> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, email")
+    .select("first_name, last_name, email, contact_email, phone")
     .eq("id", user.id)
-    .maybeSingle()
+    .maybeSingle<AdminIdentityRow>()
 
-  const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim()
-  return name || profile?.email || user.email || "Admin"
+  const name = resolvePersonName(profile?.first_name, profile?.last_name)
+  const contact = resolveContactBackedValue(
+    {
+      contact_email: profile?.contact_email,
+      email: profile?.email || user.email || null,
+      phone: profile?.phone || user.phone || null,
+    },
+    ""
+  )
+
+  return name || contact || "Admin"
 }
 
 export async function logOrderEvent(
@@ -2759,7 +2874,10 @@ export async function cancelOrder(orderId: string) {
     const { deductClubSavingsFromOrder } = await import("@lib/data/club")
     await deductClubSavingsFromOrder(orderId)
   } catch (savingsError) {
-    console.error(`[ADMIN] Failed to deduct club savings on admin cancellation for ${orderId}:`, savingsError)
+    console.error(
+      `[ADMIN] Failed to deduct club savings on admin cancellation for ${orderId}:`,
+      savingsError
+    )
     // Log error but don't block the cancellation flow UI
   }
 
@@ -2817,9 +2935,10 @@ export async function updateOrderShippingAddress(
     .eq("id", orderId)
     .maybeSingle()
 
-  const order = orderRow as
-    | Pick<Order, "id" | "status" | "shipping_address">
-    | null
+  const order = orderRow as Pick<
+    Order,
+    "id" | "status" | "shipping_address"
+  > | null
 
   if (fetchError || !order) {
     return {
@@ -3148,7 +3267,7 @@ export async function getStaffMembers(
 
   if (search && search.trim()) {
     countQuery = countQuery.or(
-      `first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `
+      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,contact_email.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
     )
   }
 
@@ -3167,6 +3286,8 @@ export async function getStaffMembers(
       `
   id,
     email,
+    contact_email,
+    phone,
     first_name,
     last_name,
     admin_role_id,
@@ -3180,7 +3301,7 @@ export async function getStaffMembers(
 
   if (search && search.trim()) {
     query = query.or(
-      `first_name.ilike.% ${search}%, last_name.ilike.% ${search}%, email.ilike.% ${search}% `
+      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,contact_email.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`
     )
   }
 
@@ -3188,7 +3309,7 @@ export async function getStaffMembers(
   if (error) throw error
 
   return {
-    staff: (data || []) as StaffMember[],
+    staff: ((data || []) as StaffMemberRow[]).map(mapStaffMemberRow),
     count: count || 0,
     totalPages,
     currentPage: page,
@@ -3216,7 +3337,11 @@ export async function inviteStaffMember(email: string, roleId: string) {
   if (inviteData?.user) {
     await supabaseAdmin
       .from("profiles")
-      .update({ admin_role_id: roleId })
+      .update({
+        admin_role_id: roleId,
+        role: "admin",
+        contact_email: email.trim().toLowerCase(),
+      })
       .eq("id", inviteData.user.id)
   }
 
@@ -3258,9 +3383,11 @@ export async function getRegisteredUsers(
 
   let query = supabase
     .from("profiles")
-    .select("id, email, contact_email, phone, first_name, last_name, created_at")
+    .select(
+      "id, email, contact_email, phone, first_name, last_name, created_at"
+    )
     .is("admin_role_id", null) // Only non-staff users
-    .order("email")
+    .order("created_at", { ascending: false })
 
   if (searchQuery && searchQuery.trim()) {
     query = query.or(
@@ -3271,41 +3398,60 @@ export async function getRegisteredUsers(
   const { data, error } = await query.limit(50)
   if (error) throw error
 
-  return (((data || []) as Array<
-    EmailBackedRow & {
-      id: string
-      phone: string | null
-      first_name: string | null
-      last_name: string | null
-      created_at: string
-    }
-  >).map((row) => {
-    const resolvedEmail = getCustomerFacingEmail(
-      row.contact_email,
-      row.email
-    )
+  return (
+    (data || []) as Array<
+      EmailBackedRow & {
+        id: string
+        phone: string | null
+        first_name: string | null
+        last_name: string | null
+        created_at: string
+      }
+    >
+  ).map((row) => {
+    const resolvedEmail = resolveEmailBackedValue(row)
 
     return {
       id: row.id,
-      email: resolvedEmail,
+      email: resolvedEmail || null,
       phone: row.phone,
       first_name: row.first_name,
       last_name: row.last_name,
       created_at: row.created_at,
-      display_contact: resolvedEmail || row.phone || "No email or phone",
+      display_contact: resolveContactBackedValue(row),
     }
-  }))
+  })
 }
 
-export async function promoteToStaff(userId: string, roleId: string) {
+export async function promoteToStaff({
+  userId,
+  roleId,
+  firstName,
+  lastName,
+  contactEmail,
+}: PromoteToStaffInput) {
   await ensureAdmin()
-  const supabase = await createClient()
+  const normalizedUserId = userId.trim()
+  const normalizedRoleId = roleId.trim()
+  const normalizedFirstName = firstName.trim()
+  const normalizedLastName = lastName.trim()
+
+  if (!normalizedUserId || !normalizedRoleId) {
+    throw new Error("User and role are required")
+  }
+
+  if (!normalizedFirstName || !normalizedLastName) {
+    throw new Error("First name and last name are required for staff members")
+  }
+
+  const normalizedContactEmail = normalizeAdminContactEmail(contactEmail)
+  const supabase = await createAdminClient()
 
   // Verify user exists and is not already staff
   const { data: user, error: userError } = await supabase
     .from("profiles")
     .select("id, admin_role_id")
-    .eq("id", userId)
+    .eq("id", normalizedUserId)
     .single()
 
   if (userError || !user) {
@@ -3319,13 +3465,55 @@ export async function promoteToStaff(userId: string, roleId: string) {
   // Assign the role AND set admin access
   const { error } = await supabase
     .from("profiles")
-    .update({ admin_role_id: roleId, role: "admin" })
-    .eq("id", userId)
+    .update({
+      admin_role_id: normalizedRoleId,
+      role: "admin",
+      first_name: normalizedFirstName,
+      last_name: normalizedLastName,
+      contact_email: normalizedContactEmail,
+    })
+    .eq("id", normalizedUserId)
 
   if (error) throw new Error(error.message)
 
+  const { data: authUserData, error: authUserError } =
+    await supabase.auth.admin.getUserById(normalizedUserId)
+
+  if (authUserError) {
+    console.warn(
+      "Failed to load auth user while syncing promoted staff metadata:",
+      authUserError
+    )
+  } else {
+    const existingMetadata =
+      authUserData.user?.user_metadata &&
+      typeof authUserData.user.user_metadata === "object" &&
+      !Array.isArray(authUserData.user.user_metadata)
+        ? (authUserData.user.user_metadata as Record<string, unknown>)
+        : {}
+
+    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
+      normalizedUserId,
+      {
+        user_metadata: {
+          ...existingMetadata,
+          first_name: normalizedFirstName,
+          last_name: normalizedLastName,
+          full_name: `${normalizedFirstName} ${normalizedLastName}`.trim(),
+        },
+      }
+    )
+
+    if (authUpdateError) {
+      console.warn(
+        "Failed to sync promoted staff metadata to auth user:",
+        authUpdateError
+      )
+    }
+  }
+
   revalidatePath("/admin/team")
-  redirect("/admin/team")
+  revalidatePath("/admin", "layout")
 }
 
 // --- Customer Address Management ---
